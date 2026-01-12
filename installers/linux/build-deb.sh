@@ -50,8 +50,33 @@ cp "${BUILD_DIR}/clients/core-daemon/parthenond.conf" "${DEB_DIR}/etc/parthenon/
 
 # Copy documentation
 cp ../../README.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
-cp ../../LICENSE "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+cp ../../EULA.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+cp ../../WHITEPAPER.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+if [ -f "../../LICENSE" ]; then
+    cp ../../LICENSE "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+fi
 cp ../../CHANGELOG.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+
+# Copy icon if available
+if [ -f "../../clients/desktop/assets/icon.png" ]; then
+    mkdir -p "${DEB_DIR}/usr/share/pixmaps"
+    cp "../../clients/desktop/assets/icon.png" "${DEB_DIR}/usr/share/pixmaps/parthenon.png"
+fi
+
+# Create desktop entry
+mkdir -p "${DEB_DIR}/usr/share/applications"
+cat > "${DEB_DIR}/usr/share/applications/parthenon-qt.desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Name=ParthenonChain Wallet
+Comment=Multi-Asset Blockchain Wallet
+Exec=/usr/bin/parthenon-qt
+Icon=parthenon
+Terminal=false
+Type=Application
+Categories=Finance;Network;
+Keywords=blockchain;cryptocurrency;wallet;
+EOF
 
 # Create systemd service
 cat > "${DEB_DIR}/lib/systemd/system/parthenond.service" << EOF

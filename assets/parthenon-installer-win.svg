@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Windows Installer Icon -->
+  <!-- Design: Temple being constructed (installation process) -->
+  
+  <defs>
+    <style>
+      .primary { fill: #1F3A5F; }
+      .accent { fill: #B08D57; }
+    </style>
+  </defs>
+  
+  <!-- Four window panes (Windows logo abstraction) -->
+  <rect x="40" y="40" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
+  <rect x="136" y="40" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
+  <rect x="40" y="136" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
+  <rect x="136" y="136" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
+  
+  <!-- Temple structure in center -->
+  <g transform="translate(128, 128)">
+    <!-- Base (complete) -->
+    <rect x="-40" y="32" width="80" height="6" class="accent"/>
+    
+    <!-- Columns (partially built - installation in progress) -->
+    <rect x="-28" y="8" width="8" height="24" class="primary"/>
+    <rect x="-4" y="8" width="8" height="24" class="primary"/>
+    <rect x="20" y="8" width="8" height="24" class="primary" opacity="0.3"/>
+    
+    <!-- Architrave (partial) -->
+    <rect x="-32" y="4" width="48" height="4" class="accent"/>
+    <rect x="16" y="4" width="16" height="4" class="accent" opacity="0.3"/>
+  </g>
+</svg>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- OBOLOS Token - Smart Contract Gas -->
+  <!-- Design: Circle with Ω (Omega) geometry and energy lines -->
+  
+  <defs>
+    <style>
+      .coin { fill: #7A2E2E; }
+      .symbol { fill: #F5F5F2; }
+    </style>
+  </defs>
+  
+  <!-- Outer coin circle -->
+  <circle cx="128" cy="128" r="100" class="coin"/>
+  
+  <!-- Inner border circle -->
+  <circle cx="128" cy="128" r="88" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  
+  <!-- Omega (Ω) - geometric horseshoe representing computation cycle -->
+  <path d="M 80 160 L 80 120 Q 80 80 128 80 Q 176 80 176 120 L 176 160" 
+        fill="none" stroke="#F5F5F2" stroke-width="8"/>
+  <rect x="76" y="156" width="20" height="8" class="symbol"/>
+  <rect x="160" y="156" width="20" height="8" class="symbol"/>
+  
+  <!-- Energy/computation lines (eight radial lines) -->
+  <line x1="128" y1="24" x2="128" y2="36" stroke="#F5F5F2" stroke-width="2"/>
+  <line x1="181" y1="47" x2="172" y2="56" stroke="#F5F5F2" stroke-width="2"/>
+  <line x1="209" y1="128" x2="197" y2="128" stroke="#F5F5F2" stroke-width="2"/>
+  <line x1="181" y1="209" x2="172" y2="200" stroke="#F5F5F2" stroke-width="2"/>
+  <line x1="128" y1="220" x2="128" y2="232" stroke="#F5F5F2" stroke-width="2"/>
+  <line x1="75" y1="209" x2="84" y2="200" stroke="#F5F5F2" stroke-width="2"/>
+  <line x1="47" y1="128" x2="59" y2="128" stroke="#F5F5F2" stroke-width="2"/>
+  <line x1="75" y1="47" x2="84" y2="56" stroke="#F5F5F2" stroke-width="2"/>
+</svg>

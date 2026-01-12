@@ -51,6 +51,8 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << EOF
     <string>${VERSION}</string>
     <key>CFBundleVersion</key>
     <string>${VERSION}</string>
+    <key>CFBundleIconFile</key>
+    <string>icon.icns</string>
     <key>LSMinimumSystemVersion</key>
     <string>10.15</string>
     <key>NSHighResolutionCapable</key>
@@ -59,10 +61,22 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << EOF
 </plist>
 EOF
 
+# Copy icon if available
+if [ -f "../../clients/desktop/assets/icon.icns" ]; then
+    echo "Copying app icon..."
+    cp "../../clients/desktop/assets/icon.icns" "${APP_BUNDLE}/Contents/Resources/icon.icns"
+else
+    echo "Warning: icon.icns not found. App will use default icon."
+fi
+
 # Copy documentation
 mkdir -p "${STAGING_DIR}/Documentation"
 cp ../../README.md "${STAGING_DIR}/Documentation/"
-cp ../../LICENSE "${STAGING_DIR}/Documentation/"
+cp ../../EULA.md "${STAGING_DIR}/Documentation/"
+cp ../../WHITEPAPER.md "${STAGING_DIR}/Documentation/"
+if [ -f "../../LICENSE" ]; then
+    cp ../../LICENSE "${STAGING_DIR}/Documentation/"
+fi
 
 # Create symbolic link to Applications
 ln -s /Applications "${STAGING_DIR}/Applications"
