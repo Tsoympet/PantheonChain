@@ -106,4 +106,138 @@ Before declaring a task complete:
 ## Final Principle
 
 > If it cannot safely run mainnet, it is not finished.
+this is the final structure
+ParthenonChain/
+├─ README.md
+├─ LICENSE
+├─ SECURITY.md
+├─ CHANGELOG.md
+├─ VERSION
+├─ .gitignore
+├─ CMakeLists.txt
+│
+├─ docs/
+│  ├─ ARCHITECTURE.md          # Layer 1 / 2 / Clients overview
+│  ├─ LAYER1_CORE.md
+│  ├─ LAYER2_PROTOCOLS.md
+│  ├─ INSTALLATION.md          # like bitcoin.org instructions
+│  ├─ RELEASES.md
+│  ├─ GENESIS.md
+│  └─ SECURITY_MODEL.md
+│
+├─ layer1/                     # 🔒 CONSENSUS-CRITICAL
+│  ├─ core/
+│  │  ├─ crypto/
+│  │  ├─ primitives/
+│  │  ├─ consensus/
+│  │  ├─ chainstate/
+│  │  ├─ validation/
+│  │  ├─ mempool/
+│  │  ├─ mining/
+│  │  ├─ p2p/
+│  │  └─ node/
+│  │
+│  ├─ wallet/
+│  ├─ rpc/
+│  ├─ evm/                     # OBL EVM-like module
+│  ├─ settlement/              # DRM settlement
+│  ├─ crosschain/
+│  └─ CMakeLists.txt
+│
+├─ layer2/                     # ⚙️ NON-CONSENSUS / EXTENSIONS
+│  ├─ payment_channels/
+│  │  ├─ ChannelState.cpp
+│  │  ├─ ChannelState.h
+│  │  └─ README.md
+│  │
+│  ├─ bridges/
+│  │  ├─ htlc/
+│  │  ├─ spv/
+│  │  └─ README.md
+│  │
+│  ├─ indexers/
+│  │  ├─ tx_indexer/
+│  │  ├─ contract_indexer/
+│  │  └─ README.md
+│  │
+│  └─ apis/
+│     ├─ graphql/
+│     ├─ websocket/
+│     └─ README.md
+│
+├─ clients/
+│  ├─ core-daemon/              # parthenond (like bitcoind)
+│  │  ├─ main.cpp
+│  │  ├─ parthenond.conf
+│  │  └─ README.md
+│  │
+│  ├─ cli/                      # parthenon-cli (like bitcoin-cli)
+│  │  ├─ main.cpp
+│  │  └─ README.md
+│  │
+│  ├─ desktop/
+│  │  ├─ gui/
+│  │  │  ├─ Qt/
+│  │  │  └─ README.md
+│  │  └─ README.md
+│  │
+│  └─ mobile/
+│     ├─ react-native/
+│     │  ├─ src/
+│     │  ├─ android/
+│     │  ├─ ios/
+│     │  └─ README.md
+│     └─ mining-module/         # phone share-miner
+│
+├─ installers/                  # 🧱 READY-TO-DOWNLOAD BUILDS
+│  ├─ windows/
+│  │  ├─ nsis/
+│  │  │  ├─ parthenon.nsi
+│  │  │  └─ README.md
+│  │  └─ build.ps1
+│  │
+│  ├─ macos/
+│  │  ├─ dmg/
+│  │  │  ├─ parthenon.dmgproj
+│  │  │  └─ README.md
+│  │  └─ build.sh
+│  │
+│  ├─ linux/
+│  │  ├─ deb/
+│  │  │  ├─ control
+│  │  │  └─ README.md
+│  │  ├─ rpm/
+│  │  └─ build.sh
+│  │
+│  └─ checksums/
+│     ├─ SHA256SUMS
+│     └─ SIGNATURES.asc
+│
+├─ packaging/
+│  ├─ desktop/
+│  ├─ mobile/
+│  └─ README.md
+│
+├─ ci/
+│  ├─ github/
+│  │  └─ workflows/
+│  │     ├─ build-layer1.yml
+│  │     ├─ build-layer2.yml
+│  │     ├─ installers.yml
+│  │     ├─ mobile.yml
+│  │     └─ release.yml
+│
+├─ tools/
+│  ├─ genesis_builder/
+│  ├─ chain_params/
+│  ├─ key_tools/
+│  └─ README.md
+│
+├─ tests/
+│  ├─ unit/
+│  ├─ integration/
+│  └─ consensus/
+│
+└─ third_party/
+   └─ secp256k1/
 
