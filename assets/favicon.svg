@@ -1,30 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <!-- ParthenonChain Favicon - Ultra simplified -->
+  <!-- ParthenonChain Favicon -->
+  <!-- Design: Ultra-simplified temple (maximum legibility at small size) -->
   
   <defs>
-    <linearGradient id="favGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
-    </linearGradient>
+    <style>
+      .bg { fill: #1F3A5F; }
+      .temple { fill: #B08D57; }
+    </style>
   </defs>
   
   <!-- Background -->
-  <rect width="32" height="32" rx="6" fill="url(#favGradient)"/>
+  <rect width="32" height="32" rx="6" class="bg"/>
   
-  <!-- Simplified Parthenon pillars -->
-  <rect x="4" y="10" width="3" height="16" fill="#ffffff"/>
-  <rect x="10" y="10" width="3" height="16" fill="#ffffff"/>
-  <rect x="14.5" y="8" width="3" height="18" fill="#ffffff"/>
-  <rect x="19" y="10" width="3" height="16" fill="#ffffff"/>
-  <rect x="25" y="10" width="3" height="16" fill="#ffffff"/>
-  
-  <!-- Top beam -->
-  <rect x="3" y="8" width="26" height="2" fill="#fbbf24"/>
-  
+  <!-- Simplified temple -->
   <!-- Base -->
-  <rect x="2" y="26" width="28" height="2" fill="#fbbf24"/>
+  <rect x="4" y="26" width="24" height="2" class="temple"/>
   
-  <!-- Pediment triangle -->
-  <path d="M 16 4 L 30 8 L 2 8 Z" fill="#fbbf24"/>
+  <!-- Three columns (minimal) -->
+  <rect x="6" y="14" width="3" height="12" class="temple"/>
+  <rect x="14.5" y="12" width="3" height="14" class="temple"/>
+  <rect x="23" y="14" width="3" height="12" class="temple"/>
+  
+  <!-- Architrave -->
+  <rect x="5" y="12" width="22" height="2" class="temple"/>
+  
+  <!-- Pediment (triangle) -->
+  <path d="M 16 6 L 28 12 L 4 12 Z" class="temple"/>
 </svg>

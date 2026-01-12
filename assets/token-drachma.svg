@@ -1,76 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- DRACHMA Token Icon - Medium of Exchange -->
-  <!-- Design: Silver coin with trade/commerce symbolism -->
+  <!-- DRACHMA Token - Medium of Exchange -->
+  <!-- Design: Circle with exchange/flow arrows (Δ Delta geometry) -->
   
   <defs>
-    <linearGradient id="draGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#e5e7eb;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#9ca3af;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#6b7280;stop-opacity:1" />
-    </linearGradient>
-    <radialGradient id="draShine" cx="40%" cy="40%">
-      <stop offset="0%" style="stop-color:#f9fafb;stop-opacity:0.9" />
-      <stop offset="50%" style="stop-color:#d1d5db;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#6b7280;stop-opacity:0" />
-    </radialGradient>
-    <linearGradient id="draInner" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
-    </linearGradient>
+    <style>
+      .coin { fill: #2A2A2E; }
+      .symbol { fill: #F5F5F2; }
+    </style>
   </defs>
   
-  <!-- Outer coin rim -->
-  <circle cx="128" cy="128" r="120" fill="url(#draGradient)" stroke="#374151" stroke-width="3"/>
+  <!-- Outer coin circle -->
+  <circle cx="128" cy="128" r="100" class="coin"/>
   
-  <!-- Decorative outer ring -->
-  <circle cx="128" cy="128" r="110" fill="none" stroke="#374151" stroke-width="2" opacity="0.5"/>
-  <circle cx="128" cy="128" r="115" fill="none" stroke="#f9fafb" stroke-width="1" opacity="0.6"/>
+  <!-- Inner border circle -->
+  <circle cx="128" cy="128" r="88" fill="none" stroke="#F5F5F2" stroke-width="2"/>
   
-  <!-- Inner circle -->
-  <circle cx="128" cy="128" r="95" fill="url(#draInner)"/>
+  <!-- Delta (Δ) - geometric triangle representing change/flow -->
+  <path d="M 128 80 L 176 160 L 80 160 Z" fill="none" stroke="#F5F5F2" stroke-width="8"/>
   
-  <!-- Shine effect -->
-  <circle cx="128" cy="128" r="95" fill="url(#draShine)" opacity="0.5"/>
-  
-  <!-- Commerce symbols: arrows indicating exchange/flow -->
-  <g opacity="0.5">
-    <!-- Circular arrows showing exchange -->
-    <path d="M 128 50 Q 170 60 190 90" fill="none" stroke="#d1d5db" stroke-width="3" 
-          marker-end="url(#arrowhead1)"/>
-    <path d="M 206 128 Q 196 170 166 190" fill="none" stroke="#d1d5db" stroke-width="3" 
-          marker-end="url(#arrowhead1)"/>
-    <path d="M 128 206 Q 86 196 66 166" fill="none" stroke="#d1d5db" stroke-width="3" 
-          marker-end="url(#arrowhead1)"/>
-    <path d="M 50 128 Q 60 86 90 66" fill="none" stroke="#d1d5db" stroke-width="3" 
-          marker-end="url(#arrowhead1)"/>
-  </g>
-  
-  <defs>
-    <marker id="arrowhead1" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto">
-      <polygon points="0 0, 10 3, 0 6" fill="#d1d5db" />
-    </marker>
-  </defs>
-  
-  <!-- Central symbol: D (for Drachma) with exchange symbol -->
-  <g transform="translate(128, 128)">
-    <!-- Exchange/handshake background symbol -->
-    <path d="M -25 -10 L -10 -10 L -10 0 L 10 0 L 10 -10 L 25 -10 
-             M -25 10 L -10 10 L -10 0 M 25 10 L 10 10 L 10 0"
-          stroke="#9ca3af" stroke-width="3" fill="none" opacity="0.3"/>
-    
-    <!-- Letter D in serif font style -->
-    <text x="0" y="20" font-family="serif" font-size="80" font-weight="bold" 
-          fill="#d1d5db" text-anchor="middle" letter-spacing="2">D</text>
-    
-    <!-- Subtitle -->
-    <text x="0" y="48" font-family="serif" font-size="14" font-weight="normal" 
-          fill="#d1d5db" text-anchor="middle" opacity="0.8">DRACHMA</text>
-  </g>
-  
-  <!-- Decorative corner elements (trade nodes) -->
-  <circle cx="64" cy="64" r="5" fill="#d1d5db" opacity="0.6"/>
-  <circle cx="192" cy="64" r="5" fill="#d1d5db" opacity="0.6"/>
-  <circle cx="64" cy="192" r="5" fill="#d1d5db" opacity="0.6"/>
-  <circle cx="192" cy="192" r="5" fill="#d1d5db" opacity="0.6"/>
+  <!-- Four directional arrows (exchange in all directions) -->
+  <!-- Top arrow -->
+  <path d="M 128 32 L 128 52 M 120 44 L 128 32 L 136 44" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  <!-- Bottom arrow -->
+  <path d="M 128 204 L 128 224 M 120 212 L 128 224 L 136 212" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  <!-- Left arrow -->
+  <path d="M 32 128 L 52 128 M 44 120 L 32 128 L 44 136" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  <!-- Right arrow -->
+  <path d="M 204 128 L 224 128 M 212 120 L 224 128 L 212 136" fill="none" stroke="#F5F5F2" stroke-width="2"/>
 </svg>

@@ -1,65 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- TALANTON Token Icon - Premium Store of Value -->
-  <!-- Design: Golden coin with classical Greek styling -->
+  <!-- TALANTON Token - Store of Value -->
+  <!-- Design: Solid circle (completeness, permanence) with Λ (Lambda) geometry -->
   
   <defs>
-    <linearGradient id="talGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#f59e0b;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
-    </linearGradient>
-    <radialGradient id="talShine" cx="40%" cy="40%">
-      <stop offset="0%" style="stop-color:#fef3c7;stop-opacity:0.8" />
-      <stop offset="50%" style="stop-color:#fbbf24;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#d97706;stop-opacity:0" />
-    </radialGradient>
-    <linearGradient id="talInner" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#92400e;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#78350f;stop-opacity:1" />
-    </linearGradient>
+    <style>
+      .coin { fill: #B08D57; }
+      .symbol { fill: #0F0F12; }
+    </style>
   </defs>
   
-  <!-- Outer coin rim -->
-  <circle cx="128" cy="128" r="120" fill="url(#talGradient)" stroke="#92400e" stroke-width="3"/>
+  <!-- Outer coin circle -->
+  <circle cx="128" cy="128" r="100" class="coin"/>
   
-  <!-- Decorative outer ring -->
-  <circle cx="128" cy="128" r="110" fill="none" stroke="#92400e" stroke-width="2" opacity="0.5"/>
-  <circle cx="128" cy="128" r="115" fill="none" stroke="#fef3c7" stroke-width="1" opacity="0.6"/>
+  <!-- Inner border circle -->
+  <circle cx="128" cy="128" r="88" fill="none" stroke="#0F0F12" stroke-width="2"/>
   
-  <!-- Inner circle -->
-  <circle cx="128" cy="128" r="95" fill="url(#talInner)"/>
+  <!-- Lambda (Λ) - geometric triangle form representing value -->
+  <path d="M 128 80 L 88 176 L 104 176 L 128 116 L 152 176 L 168 176 Z" class="symbol"/>
   
-  <!-- Shine effect -->
-  <circle cx="128" cy="128" r="95" fill="url(#talShine)" opacity="0.4"/>
-  
-  <!-- Greek key pattern border (simplified) -->
-  <path d="M 128 45 L 128 55 L 138 55 L 138 65 L 128 65 L 128 75 M 
-           180 75 L 180 85 L 170 85 L 170 95 L 180 95 L 180 105 M
-           180 150 L 180 160 L 170 160 L 170 170 L 180 170 L 180 180 M
-           75 180 L 75 170 L 85 170 L 85 160 L 75 160 L 75 150 M
-           75 105 L 75 95 L 85 95 L 85 85 L 75 85 L 75 75"
-        stroke="#fbbf24" stroke-width="2" fill="none" opacity="0.6"/>
-  
-  <!-- Central symbol: T (for Talanton) in Greek style -->
-  <g transform="translate(128, 128)">
-    <!-- Laurel wreath background -->
-    <path d="M -40 0 Q -40 -20 -30 -35 Q -20 -45 -10 -40 Q 0 -35 0 -25 L 0 0
-             M 40 0 Q 40 -20 30 -35 Q 20 -45 10 -40 Q 0 -35 0 -25"
-          fill="none" stroke="#fbbf24" stroke-width="2" opacity="0.4"/>
-    
-    <!-- Letter T in serif font style -->
-    <text x="0" y="20" font-family="serif" font-size="80" font-weight="bold" 
-          fill="#fbbf24" text-anchor="middle" letter-spacing="2">T</text>
-    
-    <!-- Subtitle -->
-    <text x="0" y="48" font-family="serif" font-size="14" font-weight="normal" 
-          fill="#fbbf24" text-anchor="middle" opacity="0.8">TALANTON</text>
-  </g>
-  
-  <!-- Decorative corner elements -->
-  <circle cx="64" cy="64" r="4" fill="#fbbf24" opacity="0.6"/>
-  <circle cx="192" cy="64" r="4" fill="#fbbf24" opacity="0.6"/>
-  <circle cx="64" cy="192" r="4" fill="#fbbf24" opacity="0.6"/>
-  <circle cx="192" cy="192" r="4" fill="#fbbf24" opacity="0.6"/>
+  <!-- Four corner marks (cardinal directions - stability) -->
+  <rect x="124" y="20" width="8" height="12" class="symbol"/>
+  <rect x="124" y="224" width="8" height="12" class="symbol"/>
+  <rect x="20" y="124" width="12" height="8" class="symbol"/>
+  <rect x="224" y="124" width="12" height="8" class="symbol"/>
 </svg>

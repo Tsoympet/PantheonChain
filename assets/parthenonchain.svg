@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- ParthenonChain Network Symbol -->
+  <!-- Design: Simplified Parthenon temple as geometric abstraction -->
+  <!-- Following ancient Greek geometric principles -->
+  
+  <defs>
+    <style>
+      .primary { fill: #1F3A5F; }
+      .secondary { fill: #B08D57; }
+    </style>
+  </defs>
+  
+  <!-- Background: transparent -->
+  
+  <!-- Base platform (foundation) -->
+  <rect x="32" y="200" width="192" height="12" class="secondary"/>
+  
+  <!-- Five Doric columns (simplified vertical bars) -->
+  <!-- Using 1:2:3 proportional system -->
+  <rect x="48" y="92" width="16" height="108" class="primary"/>
+  <rect x="88" y="92" width="16" height="108" class="primary"/>
+  <rect x="128" y="72" width="16" height="128" class="primary"/>
+  <rect x="168" y="92" width="16" height="108" class="primary"/>
+  <rect x="208" y="92" width="16" height="108" class="primary"/>
+  
+  <!-- Column capitals (simplified) -->
+  <rect x="44" y="84" width="24" height="8" class="secondary"/>
+  <rect x="84" y="84" width="24" height="8" class="secondary"/>
+  <rect x="124" y="64" width="24" height="8" class="secondary"/>
+  <rect x="164" y="84" width="24" height="8" class="secondary"/>
+  <rect x="204" y="84" width="24" height="8" class="secondary"/>
+  
+  <!-- Architrave (horizontal beam connecting columns) -->
+  <rect x="40" y="72" width="184" height="12" class="secondary"/>
+  
+  <!-- Pediment (triangular top) - pure geometric triangle -->
+  <path d="M 128 32 L 232 64 L 24 64 Z" class="secondary"/>
+  
+  <!-- Abstract blockchain element: three linked squares in center -->
+  <g opacity="0.9">
+    <rect x="80" y="140" width="20" height="20" fill="none" stroke="#B08D57" stroke-width="2"/>
+    <rect x="118" y="140" width="20" height="20" fill="none" stroke="#B08D57" stroke-width="2"/>
+    <rect x="156" y="140" width="20" height="20" fill="none" stroke="#B08D57" stroke-width="2"/>
+    <!-- Links -->
+    <line x1="100" y1="150" x2="118" y2="150" stroke="#B08D57" stroke-width="2"/>
+    <line x1="138" y1="150" x2="156" y2="150" stroke="#B08D57" stroke-width="2"/>
+  </g>
+</svg>
