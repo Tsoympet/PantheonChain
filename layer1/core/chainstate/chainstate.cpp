@@ -56,9 +56,17 @@ bool ChainState::ValidateBlock(const primitives::Block& block) const {
             return false;
         }
         
-        // Verify adding this won't exceed supply cap
-        uint64_t new_supply = total_supply_.at(asset) + amount;
-        if (new_supply > primitives::AssetSupply::GetMaxSupply(asset)) {
+        // Verify adding this won't exceed supply cap (with overflow check)
+        uint64_t current_supply = total_supply_.at(asset);
+        uint64_t max_supply = primitives::AssetSupply::GetMaxSupply(asset);
+        
+        // Check for overflow
+        if (current_supply + amount < current_supply) {
+            return false; // Overflow
+        }
+        
+        uint64_t new_supply = current_supply + amount;
+        if (new_supply > max_supply) {
             return false;
         }
     }

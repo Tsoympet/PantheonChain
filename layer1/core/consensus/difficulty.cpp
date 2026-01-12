@@ -38,9 +38,18 @@ std::array<uint8_t, 32> Difficulty::CompactToBits256(uint32_t compact) {
     } else if (exponent <= 32) {
         // Place mantissa at the appropriate position (little-endian)
         int offset = exponent - 3; // Position of the least significant mantissa byte
-        target[offset] = static_cast<uint8_t>(mantissa);
-        target[offset + 1] = static_cast<uint8_t>(mantissa >> 8);
-        target[offset + 2] = static_cast<uint8_t>(mantissa >> 16);
+        // Bounds check: ensure we don't write past array bounds
+        if (offset + 2 < 32) {
+            target[offset] = static_cast<uint8_t>(mantissa);
+            target[offset + 1] = static_cast<uint8_t>(mantissa >> 8);
+            target[offset + 2] = static_cast<uint8_t>(mantissa >> 16);
+        } else if (offset + 1 < 32) {
+            target[offset] = static_cast<uint8_t>(mantissa);
+            target[offset + 1] = static_cast<uint8_t>(mantissa >> 8);
+        } else if (offset < 32) {
+            target[offset] = static_cast<uint8_t>(mantissa);
+        }
+        // else: offset too large, skip (invalid compact format)
     }
     // else: exponent too large, target remains zero (impossible difficulty)
     
