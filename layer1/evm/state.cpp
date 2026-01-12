@@ -116,7 +116,8 @@ void WorldState::DeleteAccount(const Address& addr) {
 
 std::array<uint8_t, 32> WorldState::CalculateStateRoot() const {
     // Simplified Merkle Patricia Trie state root calculation
-    // For production, this would be a full MPT implementation
+    // NOTE: This is a simplified hash-based approach for initial implementation
+    // TODO: Implement full Merkle Patricia Trie for production
     
     crypto::SHA256 hasher;
     
@@ -125,7 +126,11 @@ std::array<uint8_t, 32> WorldState::CalculateStateRoot() const {
     for (const auto& [addr, _] : accounts_) {
         addresses.push_back(addr);
     }
-    std::sort(addresses.begin(), addresses.end());
+    
+    // Sort addresses using custom comparator for determinism
+    std::sort(addresses.begin(), addresses.end(), [](const Address& a, const Address& b) {
+        return std::memcmp(a.data(), b.data(), 20) < 0;
+    });
     
     for (const auto& addr : addresses) {
         const auto& account = accounts_.at(addr);
