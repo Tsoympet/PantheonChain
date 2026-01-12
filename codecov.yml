@@ -1,0 +1,74 @@
+# Codecov Configuration for ParthenonChain
+# Code coverage tracking for C/C++ codebase
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    # Overall project coverage
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+
+    # Coverage for changes in PR
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        base: auto
+        if_ci_failed: error
+
+# Comment on PRs with coverage information
+comment:
+  layout: "reach,diff,flags,tree,footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+# Ignore paths that should not be tracked for coverage
+ignore:
+  - "third_party/**/*"
+  - "build/**/*"
+  - "cmake-build-*/**/*"
+  - "_codeql_build_dir/**/*"
+  - "installers/**/*"
+  - "clients/mobile/node_modules/**/*"
+  - "clients/desktop/node_modules/**/*"
+  - "**/*.md"
+  - "**/*.txt"
+  - "**/CMakeLists.txt"
+  - "tests/**/*"  # Test code itself doesn't need coverage
+  - "docs/**/*"
+
+# Define flags for different parts of the codebase
+flags:
+  layer1_core:
+    paths:
+      - layer1/core/
+    carryforward: true
+
+  layer1_evm:
+    paths:
+      - layer1/evm/
+    carryforward: true
+
+  layer1_settlement:
+    paths:
+      - layer1/settlement/
+    carryforward: true
+
+  layer2:
+    paths:
+      - layer2/
+    carryforward: true
+
+  clients:
+    paths:
+      - clients/
+    carryforward: true

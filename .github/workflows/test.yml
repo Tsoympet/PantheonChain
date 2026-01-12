@@ -1,0 +1,129 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  test-ubuntu:
+    name: Test (Ubuntu with Coverage)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          g++ \
+          libssl-dev \
+          libboost-all-dev \
+          ninja-build \
+          gcov \
+          lcov
+
+    - name: Configure CMake with coverage
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_C_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure --verbose
+
+    - name: Generate coverage report
+      run: |
+        lcov --directory build --capture --output-file coverage.info
+        lcov --remove coverage.info \
+          '/usr/*' \
+          '*/third_party/*' \
+          '*/tests/*' \
+          '*/build/*' \
+          --output-file coverage.info
+        lcov --list coverage.info
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.info
+        flags: unittests
+        name: ubuntu-coverage
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-macos:
+    name: Test (macOS)
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        brew install cmake openssl boost ninja
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure --verbose
+
+  test-windows:
+    name: Test (Windows)
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Install dependencies
+      run: |
+        choco install cmake ninja -y
+
+    - name: Configure CMake
+      run: |
+        cmake -B build `
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure --verbose

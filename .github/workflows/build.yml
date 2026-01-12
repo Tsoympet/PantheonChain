@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-ubuntu:
+    name: Build (Ubuntu)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          g++ \
+          libssl-dev \
+          libboost-all-dev \
+          ninja-build
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-build
+        path: build/
+        retention-days: 7
+
+  build-macos:
+    name: Build (macOS)
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        brew install cmake openssl boost ninja
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-build
+        path: build/
+        retention-days: 7
+
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Install dependencies
+      run: |
+        choco install cmake ninja -y
+
+    - name: Configure CMake
+      run: |
+        cmake -B build `
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: build/
+        retention-days: 7
