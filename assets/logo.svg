@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- ParthenonChain Logo -->
+  <!-- Parthenon-inspired design with blockchain elements -->
+  
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#gradient1)" opacity="0.1"/>
+  
+  <!-- Parthenon columns representing blockchain pillars -->
+  <g id="columns">
+    <!-- Left column -->
+    <rect x="120" y="180" width="40" height="180" fill="url(#gradient1)" rx="4"/>
+    <rect x="120" y="160" width="40" height="15" fill="url(#gradient2)"/>
+    
+    <!-- Center-left column -->
+    <rect x="190" y="180" width="40" height="180" fill="url(#gradient1)" rx="4"/>
+    <rect x="190" y="160" width="40" height="15" fill="url(#gradient2)"/>
+    
+    <!-- Center column (tallest - main pillar) -->
+    <rect x="236" y="140" width="40" height="220" fill="url(#gradient1)" rx="4"/>
+    <rect x="236" y="120" width="40" height="15" fill="url(#gradient2)"/>
+    
+    <!-- Center-right column -->
+    <rect x="282" y="180" width="40" height="180" fill="url(#gradient1)" rx="4"/>
+    <rect x="282" y="160" width="40" height="15" fill="url(#gradient2)"/>
+    
+    <!-- Right column -->
+    <rect x="352" y="180" width="40" height="180" fill="url(#gradient1)" rx="4"/>
+    <rect x="352" y="160" width="40" height="15" fill="url(#gradient2)"/>
+  </g>
+  
+  <!-- Top architrave (connecting beam) -->
+  <rect x="110" y="140" width="292" height="20" fill="url(#gradient2)" rx="2"/>
+  
+  <!-- Base platform -->
+  <rect x="100" y="360" width="312" height="25" fill="url(#gradient2)" rx="3"/>
+  <rect x="90" y="385" width="332" height="15" fill="#1e3a8a" opacity="0.3" rx="2"/>
+  
+  <!-- Blockchain elements - linked blocks -->
+  <g id="chain" opacity="0.8">
+    <!-- Block 1 -->
+    <rect x="140" y="260" width="35" height="35" fill="none" stroke="url(#gradient2)" stroke-width="3" rx="3"/>
+    <circle cx="157.5" cy="277.5" r="4" fill="url(#gradient2)"/>
+    
+    <!-- Block 2 -->
+    <rect x="208" y="260" width="35" height="35" fill="none" stroke="url(#gradient2)" stroke-width="3" rx="3"/>
+    <circle cx="225.5" cy="277.5" r="4" fill="url(#gradient2)"/>
+    
+    <!-- Block 3 -->
+    <rect x="269" y="260" width="35" height="35" fill="none" stroke="url(#gradient2)" stroke-width="3" rx="3"/>
+    <circle cx="286.5" cy="277.5" r="4" fill="url(#gradient2)"/>
+    
+    <!-- Block 4 -->
+    <rect x="337" y="260" width="35" height="35" fill="none" stroke="url(#gradient2)" stroke-width="3" rx="3"/>
+    <circle cx="354.5" cy="277.5" r="4" fill="url(#gradient2)"/>
+    
+    <!-- Chain links -->
+    <line x1="175" y1="277.5" x2="208" y2="277.5" stroke="url(#gradient2)" stroke-width="2"/>
+    <line x1="243" y1="277.5" x2="269" y2="277.5" stroke="url(#gradient2)" stroke-width="2"/>
+    <line x1="304" y1="277.5" x2="337" y2="277.5" stroke="url(#gradient2)" stroke-width="2"/>
+  </g>
+  
+  <!-- Pediment (triangular top) -->
+  <path d="M 256 100 L 420 140 L 92 140 Z" fill="url(#gradient2)" opacity="0.9"/>
+  
+  <!-- Central emblem - Greek letter Pi (Π) representing Parthenon -->
+  <text x="256" y="115" font-family="serif" font-size="32" font-weight="bold" fill="#1e3a8a" text-anchor="middle">Π</text>
+</svg>

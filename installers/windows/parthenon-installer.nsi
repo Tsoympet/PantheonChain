@@ -26,11 +26,15 @@ RequestExecutionLevel admin
 
 ; Interface settings
 !define MUI_ABORTWARNING
+; Custom icons - Update these paths when icon files are generated
+; !define MUI_ICON "..\..\clients\desktop\assets\icon.ico"
+; !define MUI_UNICON "..\..\clients\desktop\assets\icon.ico"
+; Temporary: use default NSIS icons until custom icons are generated
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 
 ; Pages
-!insertmacro MUI_PAGE_LICENSE "..\..\LICENSE"
+!insertmacro MUI_PAGE_LICENSE "..\..\EULA.md"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES

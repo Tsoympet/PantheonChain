@@ -109,6 +109,7 @@ For detailed installation instructions, see [INSTALLATION.md](docs/INSTALLATION.
 
 ## Documentation
 
+- **[Whitepaper](WHITEPAPER.md)** - Technical whitepaper and system overview
 - [Architecture Overview](docs/ARCHITECTURE.md) - System design and layer separation
 - [Layer 1 Core](docs/LAYER1_CORE.md) - Consensus implementation details
 - [Layer 2 Protocols](docs/LAYER2_PROTOCOLS.md) - Off-chain protocols
@@ -116,6 +117,7 @@ For detailed installation instructions, see [INSTALLATION.md](docs/INSTALLATION.
 - [Security Model](docs/SECURITY_MODEL.md) - Security architecture
 - [Genesis Block](docs/GENESIS.md) - Genesis configuration
 - [Release Process](docs/RELEASES.md) - How releases are created
+- [End-User License Agreement](EULA.md) - Software license terms
 
 ## Project Structure
 
@@ -133,9 +135,10 @@ ParthenonChain/
 ├── clients/          # End-user applications
 │   ├── core-daemon/  # Full node (parthenond)
 │   ├── cli/          # Command-line interface
-│   ├── desktop/      # Desktop GUI
-│   └── mobile/       # Mobile wallet
+│   ├── desktop/      # Desktop GUI (with icons)
+│   └── mobile/       # Mobile wallet (with icons)
 ├── installers/       # Platform-specific installers
+├── assets/           # SVG icons and branding
 ├── tests/            # Test suites
 └── docs/             # Documentation
 ```
