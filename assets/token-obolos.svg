@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- OBOLOS Token Icon - Smart Contract Gas -->
+  <!-- Design: Bronze/copper coin with energy/computational symbolism -->
+  
+  <defs>
+    <linearGradient id="oblGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ea580c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c2410c;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="oblShine" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#fed7aa;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#fb923c;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#c2410c;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="oblInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c2d12;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#431407;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer coin rim -->
+  <circle cx="128" cy="128" r="120" fill="url(#oblGradient)" stroke="#7c2d12" stroke-width="3"/>
+  
+  <!-- Decorative outer ring -->
+  <circle cx="128" cy="128" r="110" fill="none" stroke="#7c2d12" stroke-width="2" opacity="0.5"/>
+  <circle cx="128" cy="128" r="115" fill="none" stroke="#fed7aa" stroke-width="1" opacity="0.6"/>
+  
+  <!-- Inner circle -->
+  <circle cx="128" cy="128" r="95" fill="url(#oblInner)"/>
+  
+  <!-- Shine effect -->
+  <circle cx="128" cy="128" r="95" fill="url(#oblShine)" opacity="0.4"/>
+  
+  <!-- Energy/circuit pattern -->
+  <g opacity="0.4">
+    <!-- Circuit board style connections -->
+    <path d="M 128 45 L 128 70 M 128 186 L 128 211" 
+          stroke="#fb923c" stroke-width="3"/>
+    <path d="M 45 128 L 70 128 M 186 128 L 211 128" 
+          stroke="#fb923c" stroke-width="3"/>
+    
+    <!-- Diagonal energy lines -->
+    <path d="M 70 70 L 90 90 M 186 70 L 166 90 M 70 186 L 90 166 M 186 186 L 166 166" 
+          stroke="#fb923c" stroke-width="2"/>
+    
+    <!-- Corner nodes -->
+    <circle cx="70" cy="70" r="6" fill="#fb923c"/>
+    <circle cx="186" cy="70" r="6" fill="#fb923c"/>
+    <circle cx="70" cy="186" r="6" fill="#fb923c"/>
+    <circle cx="186" cy="186" r="6" fill="#fb923c"/>
+  </g>
+  
+  <!-- Central symbol: O (for Obolos) with gas flame -->
+  <g transform="translate(128, 128)">
+    <!-- Flame/energy symbol behind -->
+    <g opacity="0.5">
+      <!-- Stylized flame -->
+      <path d="M 0 -40 Q -8 -30 -5 -20 Q -2 -10 0 0 Q 2 -10 5 -20 Q 8 -30 0 -40 Z" 
+            fill="#fb923c" opacity="0.6"/>
+      <path d="M 0 -35 Q -5 -28 -3 -20 Q -1 -12 0 -5 Q 1 -12 3 -20 Q 5 -28 0 -35 Z" 
+            fill="#fed7aa" opacity="0.8"/>
+    </g>
+    
+    <!-- Letter O in serif font style -->
+    <text x="0" y="22" font-family="serif" font-size="80" font-weight="bold" 
+          fill="#fb923c" text-anchor="middle" letter-spacing="2">O</text>
+    
+    <!-- Subtitle -->
+    <text x="0" y="48" font-family="serif" font-size="14" font-weight="normal" 
+          fill="#fb923c" text-anchor="middle" opacity="0.8">OBOLOS</text>
+  </g>
+  
+  <!-- Gas indicator lines (like fuel gauge) -->
+  <g transform="translate(128, 128)" opacity="0.5">
+    <line x1="-50" y1="-50" x2="-45" y2="-45" stroke="#fb923c" stroke-width="2"/>
+    <line x1="-55" y1="-40" x2="-48" y2="-40" stroke="#fb923c" stroke-width="2"/>
+    <line x1="-58" y1="-30" x2="-50" y2="-30" stroke="#fb923c" stroke-width="2"/>
+    
+    <line x1="50" y1="-50" x2="45" y2="-45" stroke="#fb923c" stroke-width="2"/>
+    <line x1="55" y1="-40" x2="48" y2="-40" stroke="#fb923c" stroke-width="2"/>
+    <line x1="58" y1="-30" x2="50" y2="-30" stroke="#fb923c" stroke-width="2"/>
+  </g>
+  
+  <!-- Supply indicator: 61M -->
+  <text x="128" y="220" font-family="sans-serif" font-size="10" 
+        fill="#fb923c" text-anchor="middle" opacity="0.7">61M MAX</text>
+</svg>
