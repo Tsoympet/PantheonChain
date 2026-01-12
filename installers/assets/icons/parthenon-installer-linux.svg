@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Linux Installer Icon -->
+  <!-- Design: Temple in package box with DEB/RPM and terminal aesthetics -->
+  
+  <defs>
+    <style>
+      .primary { fill: #1F3A5F; }
+      .accent { fill: #B08D57; }
+      .package { fill: none; stroke: #1F3A5F; stroke-width: 3; }
+    </style>
+  </defs>
+  
+  <!-- 3D Package box (isometric view) -->
+  <path d="M 56 72 L 128 32 L 200 72 L 200 184 L 128 224 L 56 184 Z" class="package"/>
+  
+  <!-- Package construction lines -->
+  <line x1="128" y1="32" x2="128" y2="224" stroke="#1F3A5F" stroke-width="2" opacity="0.4"/>
+  <line x1="56" y1="72" x2="128" y2="112" stroke="#1F3A5F" stroke-width="2" opacity="0.4"/>
+  <line x1="200" y1="72" x2="128" y2="112" stroke="#1F3A5F" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Front face panels -->
+  <path d="M 128 112 L 56 72 L 56 184 L 128 224" fill="none" stroke="#1F3A5F" stroke-width="2"/>
+  <path d="M 128 112 L 200 72 L 200 184 L 128 224" fill="none" stroke="#1F3A5F" stroke-width="2"/>
+  
+  <!-- DEB/RPM package label indicators -->
+  <rect x="64" y="84" width="32" height="12" fill="none" stroke="#B08D57" stroke-width="1" opacity="0.6"/>
+  <rect x="160" y="84" width="32" height="12" fill="none" stroke="#B08D57" stroke-width="1" opacity="0.6"/>
+  
+  <!-- Temple being packaged/installed -->
+  <g transform="translate(128, 156)">
+    <!-- Strong foundation -->
+    <rect x="-36" y="36" width="72" height="6" class="accent"/>
+    
+    <!-- Columns (four columns representing stability) -->
+    <rect x="-28" y="4" width="8" height="32" class="primary"/>
+    <rect x="-12" y="4" width="8" height="32" class="primary"/>
+    <rect x="4" y="4" width="8" height="32" class="primary"/>
+    <rect x="20" y="4" width="8" height="32" class="primary"/>
+    
+    <!-- Capitals -->
+    <rect x="-32" y="0" width="16" height="4" class="accent"/>
+    <rect x="-16" y="0" width="16" height="4" class="accent"/>
+    <rect x="0" y="0" width="16" height="4" class="accent"/>
+    <rect x="16" y="0" width="16" height="4" class="accent"/>
+    
+    <!-- Architrave -->
+    <rect x="-36" y="-4" width="72" height="4" class="accent"/>
+    
+    <!-- Pediment -->
+    <path d="M 0 -28 L 40 -4 L -40 -4 Z" class="accent"/>
+  </g>
+  
+  <!-- Linux/Terminal command indicators -->
+  <g transform="translate(128, 92)">
+    <!-- Terminal prompt symbol (tux-like simplification) -->
+    <path d="M -8 -8 L 0 0 L -8 8" fill="none" stroke="#B08D57" stroke-width="2" opacity="0.7"/>
+    <path d="M 8 -8 L 0 0 L 8 8" fill="none" stroke="#B08D57" stroke-width="2" opacity="0.7"/>
+  </g>
+  
+  <!-- Package version/install indicator -->
+  <rect x="104" y="200" width="48" height="4" class="accent" opacity="0.6"/>
+  <circle cx="128" cy="202" r="2" class="accent"/>
+</svg>
