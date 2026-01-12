@@ -25,10 +25,16 @@ target_compile_options(parthenon_crypto PRIVATE
 add_library(parthenon_primitives STATIC
     primitives/amount.cpp
     primitives/asset.cpp
+    primitives/transaction.cpp
+    primitives/block.cpp
 )
 
 target_include_directories(parthenon_primitives PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_primitives PUBLIC
+    parthenon_crypto
 )
 
 # Set strict compiler flags for consensus code
