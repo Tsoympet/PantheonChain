@@ -1,0 +1,190 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Install NSIS
+      run: choco install nsis -y
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+    
+    - name: Run Tests
+      run: cd build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+    
+    - name: Build NSIS Installer
+      run: |
+        cd installers/windows
+        makensis parthenon-installer.nsi
+    
+    - name: Upload Windows Installer
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-installer
+        path: installers/windows/*.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Install Dependencies
+      run: brew install cmake openssl boost qt
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+    
+    - name: Run Tests
+      run: cd build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+    
+    - name: Create DMG
+      run: |
+        cd installers/macos
+        chmod +x create-dmg.sh
+        ./create-dmg.sh
+    
+    - name: Upload macOS DMG
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-dmg
+        path: installers/macos/*.dmg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [deb, rpm]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev libboost-all-dev qt6-base-dev
+        if [ "${{ matrix.package }}" = "rpm" ]; then
+          sudo apt-get install -y rpm
+        fi
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+    
+    - name: Run Tests
+      run: cd build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+    
+    - name: Build Package
+      run: |
+        cd installers/linux
+        chmod +x build-${{ matrix.package }}.sh
+        ./build-${{ matrix.package }}.sh
+    
+    - name: Upload Linux Package
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-${{ matrix.package }}
+        path: installers/linux/*.${{ matrix.package }}
+
+  create-release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download All Artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Generate Checksums
+      run: |
+        cd installers/checksums
+        chmod +x generate-checksums.sh
+        ./generate-checksums.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm
+    
+    - name: Sign Artifacts (if GPG key available)
+      if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      run: |
+        echo "$GPG_PRIVATE_KEY" | gpg --import
+        cd installers/checksums
+        chmod +x sign-release.sh
+        GPG_KEY_ID=$GPG_KEY_ID ./sign-release.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: true
+        files: |
+          windows-installer/*.exe
+          windows-installer/*.exe.asc
+          macos-dmg/*.dmg
+          macos-dmg/*.dmg.asc
+          linux-deb/*.deb
+          linux-deb/*.deb.asc
+          linux-rpm/*.rpm
+          linux-rpm/*.rpm.asc
+          installers/checksums/parthenon-*-checksums.txt
+        body: |
+          # ParthenonChain ${{ github.ref_name }}
+          
+          ## Downloads
+          
+          ### Windows
+          - `parthenon-*-windows-x64-setup.exe` - Windows installer (NSIS)
+          
+          ### macOS
+          - `parthenon-*-macos.dmg` - macOS disk image
+          
+          ### Linux
+          - `parthenon_*_amd64.deb` - Debian/Ubuntu package
+          - `parthenon-*.rpm` - RPM package (RHEL/Fedora/CentOS)
+          
+          ## Verification
+          
+          All release artifacts are signed with GPG. Verify with:
+          ```bash
+          gpg --verify <file>.asc <file>
+          ```
+          
+          SHA-256/SHA-512 checksums are provided in `parthenon-*-checksums.txt`.
+          
+          ## Installation
+          
+          See [Installation Guide](https://github.com/Tsoympet/PantheonChain/wiki/Installation) for detailed instructions.
+          
+          ## What's Changed
+          
+          - Full implementation of Phases 1-10
+          - Complete consensus engine with three native assets
+          - EVM-compatible smart contracts (OBOLOS)
+          - Layer 2 payment channels and HTLCs
+          - Production clients (daemon, CLI, GUI, mobile)
+          
+          **Full Changelog**: https://github.com/Tsoympet/PantheonChain/compare/v0.9.0...${{ github.ref_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
