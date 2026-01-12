@@ -15,6 +15,6 @@ target_include_directories(settlement PUBLIC
 )
 
 target_link_libraries(settlement PUBLIC
-    crypto
-    primitives
+    parthenon_crypto
+    parthenon_primitives
 )

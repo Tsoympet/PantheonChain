@@ -7,7 +7,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace pantheon {
+namespace parthenon {
 namespace layer2 {
 
 struct MerkleProof {
@@ -25,9 +25,9 @@ public:
     static bool VerifyMerkleProof(const MerkleProof& proof,
                                   const std::vector<uint8_t>& merkle_root);
     
-    static bool VerifyTransactionInclusion(const Transaction& tx,
+    static bool VerifyTransactionInclusion(const parthenon::primitives::Transaction& tx,
                                           const MerkleProof& proof,
-                                          const BlockHeader& header);
+                                          const parthenon::primitives::BlockHeader& header);
     
     static MerkleProof BuildMerkleProof(const std::vector<uint8_t>& tx_hash,
                                        const std::vector<std::vector<uint8_t>>& tx_hashes);
@@ -40,6 +40,6 @@ private:
 };
 
 } // namespace layer2
-} // namespace pantheon
+} // namespace parthenon
 
 #endif // PANTHEON_LAYER2_SPV_SPV_BRIDGE_H

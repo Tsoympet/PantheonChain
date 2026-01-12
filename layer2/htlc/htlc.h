@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace pantheon {
+namespace parthenon {
 namespace layer2 {
 
 class HTLC {
@@ -69,6 +69,6 @@ private:
 };
 
 } // namespace layer2
-} // namespace pantheon
+} // namespace parthenon
 
 #endif // PANTHEON_LAYER2_HTLC_HTLC_H

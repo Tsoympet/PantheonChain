@@ -1,7 +1,7 @@
 #include "spv_bridge.h"
 #include <algorithm>
 
-namespace pantheon {
+namespace parthenon {
 namespace layer2 {
 
 bool SPVBridge::VerifyMerkleProof(const MerkleProof& proof,
@@ -25,19 +25,22 @@ bool SPVBridge::VerifyMerkleProof(const MerkleProof& proof,
     return current_hash == merkle_root;
 }
 
-bool SPVBridge::VerifyTransactionInclusion(const Transaction& tx,
+bool SPVBridge::VerifyTransactionInclusion(const parthenon::primitives::Transaction& tx,
                                           const MerkleProof& proof,
-                                          const BlockHeader& header) {
-    // Compute transaction hash
-    std::vector<uint8_t> tx_hash = tx.GetHash();
+                                          const parthenon::primitives::BlockHeader& header) {
+    // Compute transaction hash - serialize and hash it
+    auto tx_data = tx.Serialize();
+    auto hash_arr = parthenon::crypto::SHA256::Hash256(tx_data);
+    std::vector<uint8_t> tx_hash(hash_arr.begin(), hash_arr.end());
     
     // Verify hash matches proof
     if (tx_hash != proof.tx_hash) {
         return false;
     }
     
-    // Verify merkle proof
-    return VerifyMerkleProof(proof, header.merkle_root);
+    // Convert merkle_root array to vector
+    std::vector<uint8_t> merkle_root_vec(header.merkle_root.begin(), header.merkle_root.end());
+    return VerifyMerkleProof(proof, merkle_root_vec);
 }
 
 MerkleProof SPVBridge::BuildMerkleProof(const std::vector<uint8_t>& tx_hash,
@@ -110,11 +113,11 @@ std::vector<uint8_t> SPVBridge::HashPair(const std::vector<uint8_t>& left,
     std::vector<uint8_t> combined;
     combined.insert(combined.end(), left.begin(), left.end());
     combined.insert(combined.end(), right.begin(), right.end());
-    auto hash1 = pantheon::crypto::SHA256::Hash256(combined);
+    auto hash1 = parthenon::crypto::SHA256::Hash256(combined);
     std::vector<uint8_t> hash1_vec(hash1.begin(), hash1.end());
-    auto hash2 = pantheon::crypto::SHA256::Hash256(hash1_vec);
+    auto hash2 = parthenon::crypto::SHA256::Hash256(hash1_vec);
     return std::vector<uint8_t>(hash2.begin(), hash2.end());
 }
 
 } // namespace layer2
-} // namespace pantheon
+} // namespace parthenon

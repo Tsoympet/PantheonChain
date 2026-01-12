@@ -4,7 +4,7 @@
 #include <cassert>
 #include <iostream>
 
-using namespace pantheon::layer2;
+using namespace parthenon::layer2;
 
 void test_payment_channel() {
     std::cout << "Testing payment channels..." << std::endl;
@@ -52,7 +52,8 @@ void test_htlc() {
     
     // Create hash lock
     std::vector<uint8_t> preimage = {1, 2, 3, 4, 5};
-    std::vector<uint8_t> hash_lock = pantheon::crypto::SHA256(preimage);
+    auto hash_arr = parthenon::crypto::SHA256::Hash256(preimage);
+    std::vector<uint8_t> hash_lock(hash_arr.begin(), hash_arr.end());
     
     std::vector<uint8_t> sender(32, 0xAA);
     std::vector<uint8_t> receiver(32, 0xBB);
