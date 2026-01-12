@@ -67,6 +67,8 @@ target_compile_options(parthenon_primitives PRIVATE
 # Chainstate library
 add_library(parthenon_chainstate STATIC
     chainstate/chainstate.cpp
+    chainstate/utxo.cpp
+    chainstate/chain.cpp
 )
 
 target_include_directories(parthenon_chainstate PUBLIC
@@ -80,6 +82,27 @@ target_link_libraries(parthenon_chainstate PUBLIC
 
 # Set strict compiler flags for consensus code
 target_compile_options(parthenon_chainstate PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+)
+
+# Validation library
+add_library(parthenon_validation STATIC
+    validation/validation.cpp
+)
+
+target_include_directories(parthenon_validation PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_validation PUBLIC
+    parthenon_chainstate
+    parthenon_primitives
+    parthenon_consensus
+)
+
+# Set strict compiler flags for consensus code
+target_compile_options(parthenon_validation PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
 )
