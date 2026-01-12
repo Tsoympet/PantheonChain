@@ -24,5 +24,8 @@ add_subdirectory(third_party/secp256k1 EXCLUDE_FROM_ALL)
 # Layer 1 Core - Consensus Critical
 add_subdirectory(layer1)
 
+# Layer 2 - Non-Consensus Modules
+add_subdirectory(layer2)
+
 # Tests
 add_subdirectory(tests)
