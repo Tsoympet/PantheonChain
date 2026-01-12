@@ -1,0 +1,18 @@
+Package: parthenon
+Version: 1.0.0
+Section: net
+Priority: optional
+Architecture: amd64
+Depends: libssl3 (>= 3.0.0), libboost-system1.74.0 | libboost-system1.81.0, libboost-filesystem1.74.0 | libboost-filesystem1.81.0
+Maintainer: ParthenonChain Foundation <contact@parthenonchain.org>
+Description: ParthenonChain - Production-grade Layer-1 blockchain
+ ParthenonChain is a Proof-of-Work blockchain with multi-asset UTXO ledger,
+ Schnorr signatures, and EVM-compatible smart contracts.
+ .
+ Features:
+  - SHA-256d PoW consensus
+  - Three native tokens: TALANTON (21M), DRACHMA (41M), OBOLOS (61M)
+  - Schnorr signatures (BIP-340)
+  - OBL EVM-compatible smart contracts
+  - DRM settlement primitives
+Homepage: https://parthenonchain.org
