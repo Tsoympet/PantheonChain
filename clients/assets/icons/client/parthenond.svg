@@ -1,40 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Parthenond - Full Node Daemon Symbol -->
-  <!-- Design: Solid temple structure (always running, foundational) -->
+  <!-- Parthenond Client Icon - Full Node Daemon -->
+  <!-- Design: Solid temple with network connections radiating outward -->
   
   <defs>
     <style>
       .primary { fill: #1F3A5F; }
       .accent { fill: #B08D57; }
+      .network { fill: none; stroke: #B08D57; stroke-width: 2; }
     </style>
   </defs>
   
-  <!-- Outer circle (node boundary) -->
-  <circle cx="128" cy="128" r="112" fill="none" stroke="#1F3A5F" stroke-width="4"/>
+  <!-- Outer network ring (node connectivity) -->
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#1F3A5F" stroke-width="3"/>
   
-  <!-- Inner temple structure - solid (daemon is always active) -->
+  <!-- Network connection nodes at cardinal points -->
+  <circle cx="128" cy="8" r="6" class="accent"/>
+  <circle cx="248" cy="128" r="6" class="accent"/>
+  <circle cx="128" cy="248" r="6" class="accent"/>
+  <circle cx="8" cy="128" r="6" class="accent"/>
+  
+  <!-- Diagonal connection nodes -->
+  <circle cx="213" cy="43" r="5" class="accent" opacity="0.7"/>
+  <circle cx="213" cy="213" r="5" class="accent" opacity="0.7"/>
+  <circle cx="43" cy="213" r="5" class="accent" opacity="0.7"/>
+  <circle cx="43" cy="43" r="5" class="accent" opacity="0.7"/>
+  
+  <!-- Central temple structure (daemon core) - robust and solid -->
   <g transform="translate(128, 128)">
-    <!-- Base -->
-    <rect x="-64" y="64" width="128" height="8" class="accent"/>
+    <!-- Strong foundation -->
+    <rect x="-72" y="72" width="144" height="12" class="accent"/>
     
-    <!-- Three solid columns (stability) -->
-    <rect x="-48" y="0" width="12" height="64" class="primary"/>
-    <rect x="-6" y="0" width="12" height="64" class="primary"/>
-    <rect x="36" y="0" width="12" height="64" class="primary"/>
+    <!-- Five solid columns (always-on, stable daemon) -->
+    <rect x="-56" y="-8" width="16" height="80" class="primary"/>
+    <rect x="-24" y="-8" width="16" height="80" class="primary"/>
+    <rect x="8" y="-8" width="16" height="80" class="primary"/>
+    <rect x="40" y="-8" width="16" height="80" class="primary"/>
+    <rect x="-88" y="-8" width="16" height="80" class="primary" opacity="0.8"/>
     
-    <!-- Capitals -->
-    <rect x="-52" y="-4" width="20" height="4" class="accent"/>
-    <rect x="-10" y="-4" width="20" height="4" class="accent"/>
-    <rect x="32" y="-4" width="20" height="4" class="accent"/>
+    <!-- Column capitals -->
+    <rect x="-60" y="-14" width="24" height="6" class="accent"/>
+    <rect x="-28" y="-14" width="24" height="6" class="accent"/>
+    <rect x="4" y="-14" width="24" height="6" class="accent"/>
+    <rect x="36" y="-14" width="24" height="6" class="accent"/>
+    <rect x="-92" y="-14" width="24" height="6" class="accent" opacity="0.8"/>
     
     <!-- Architrave -->
-    <rect x="-56" y="-8" width="112" height="8" class="accent"/>
+    <rect x="-80" y="-24" width="160" height="10" class="accent"/>
     
-    <!-- Pediment -->
-    <path d="M 0 -48 L 64 -8 L -64 -8 Z" class="accent"/>
+    <!-- Pediment roof -->
+    <path d="M 0 -64 L 88 -24 L -88 -24 Z" class="accent"/>
     
-    <!-- Core indicator (active node) - small circle -->
-    <circle cx="0" cy="32" r="6" class="accent"/>
+    <!-- Active daemon indicator - pulsing core -->
+    <circle cx="0" cy="32" r="8" class="accent"/>
+    <circle cx="0" cy="32" r="12" fill="none" stroke="#B08D57" stroke-width="2" opacity="0.5"/>
   </g>
+  
+  <!-- Network connection lines from temple to outer nodes -->
+  <line x1="128" y1="64" x2="128" y2="8" class="network" opacity="0.4"/>
+  <line x1="164" y1="92" x2="213" y2="43" class="network" opacity="0.3"/>
+  <line x1="192" y1="128" x2="248" y2="128" class="network" opacity="0.4"/>
+  <line x1="164" y1="164" x2="213" y2="213" class="network" opacity="0.3"/>
+  <line x1="128" y1="192" x2="128" y2="248" class="network" opacity="0.4"/>
+  <line x1="92" y1="164" x2="43" y2="213" class="network" opacity="0.3"/>
+  <line x1="64" y1="128" x2="8" y2="128" class="network" opacity="0.4"/>
+  <line x1="92" y1="92" x2="43" y2="43" class="network" opacity="0.3"/>
 </svg>

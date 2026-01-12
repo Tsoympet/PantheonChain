@@ -1,33 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Parthenon CLI - Command Line Interface Symbol -->
-  <!-- Design: Single column (minimal, direct) with prompt indicator -->
+  <!-- Parthenon CLI Client Icon - Command Line Interface -->
+  <!-- Design: Terminal window with column and command symbols -->
   
   <defs>
     <style>
       .primary { fill: #1F3A5F; }
       .accent { fill: #B08D57; }
+      .terminal { fill: none; stroke: #1F3A5F; stroke-width: 3; }
     </style>
   </defs>
   
-  <!-- Terminal window frame (square) -->
-  <rect x="32" y="32" width="192" height="192" fill="none" stroke="#1F3A5F" stroke-width="4"/>
+  <!-- Terminal window frame (monospace aesthetic) -->
+  <rect x="24" y="24" width="208" height="208" class="terminal"/>
   
-  <!-- Single prominent column (simplicity of CLI) -->
-  <g transform="translate(128, 128)">
-    <!-- Column -->
-    <rect x="-12" y="-48" width="24" height="96" class="primary"/>
+  <!-- Terminal title bar -->
+  <rect x="24" y="24" width="208" height="20" class="primary"/>
+  <line x1="24" y1="44" x2="232" y2="44" stroke="#1F3A5F" stroke-width="2"/>
+  
+  <!-- Terminal window controls -->
+  <circle cx="36" cy="34" r="3" fill="#B08D57"/>
+  <circle cx="48" cy="34" r="3" fill="#B08D57" opacity="0.7"/>
+  <circle cx="60" cy="34" r="3" fill="#B08D57" opacity="0.5"/>
+  
+  <!-- Central column (minimal, direct - CLI essence) -->
+  <g transform="translate(80, 140)">
+    <!-- Single prominent column -->
+    <rect x="-14" y="-56" width="28" height="112" class="primary"/>
     
     <!-- Capital -->
-    <rect x="-16" y="-52" width="32" height="4" class="accent"/>
+    <rect x="-18" y="-62" width="36" height="6" class="accent"/>
     
     <!-- Base -->
-    <rect x="-16" y="48" width="32" height="4" class="accent"/>
-    
-    <!-- Command prompt indicator: right angle (>) abstracted -->
-    <path d="M -48 -16 L -32 0 L -48 16" fill="none" stroke="#B08D57" stroke-width="3"/>
-    
-    <!-- Cursor/active indicator -->
-    <rect x="24" y="-4" width="16" height="8" class="accent"/>
+    <rect x="-18" y="56" width="36" height="6" class="accent"/>
   </g>
+  
+  <!-- Command prompt symbols (terminal commands) -->
+  <g transform="translate(156, 100)">
+    <!-- Prompt chevron (>) -->
+    <path d="M -12 -16 L 4 0 L -12 16" fill="none" stroke="#B08D57" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Command text representation (abstract lines) -->
+    <rect x="12" y="-4" width="32" height="4" class="accent" opacity="0.8"/>
+    <rect x="12" y="4" width="24" height="4" class="accent" opacity="0.6"/>
+  </g>
+  
+  <!-- Additional terminal output lines -->
+  <g transform="translate(156, 140)">
+    <!-- Output line 1 -->
+    <rect x="-48" y="-4" width="56" height="3" class="accent" opacity="0.5"/>
+    <!-- Output line 2 -->
+    <rect x="-48" y="4" width="48" height="3" class="accent" opacity="0.4"/>
+    <!-- Output line 3 -->
+    <rect x="-48" y="12" width="40" height="3" class="accent" opacity="0.3"/>
+  </g>
+  
+  <!-- Blinking cursor indicator -->
+  <rect x="164" y="176" width="12" height="16" class="accent"/>
+  
+  <!-- Status line at bottom (like a shell status) -->
+  <line x1="32" y1="216" x2="224" y2="216" stroke="#B08D57" stroke-width="1" opacity="0.4"/>
+  <rect x="36" y="212" width="16" height="3" class="accent" opacity="0.5"/>
+  <rect x="60" y="212" width="24" height="3" class="accent" opacity="0.5"/>
 </svg>

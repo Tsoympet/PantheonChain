@@ -1,45 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Parthenon Desktop - GUI Application Symbol -->
-  <!-- Design: Temple within window frame (desktop application) -->
+  <!-- Parthenon Desktop App Icon -->
+  <!-- Design: Temple with desktop window chrome and menu bar -->
   
   <defs>
     <style>
       .primary { fill: #1F3A5F; }
       .accent { fill: #B08D57; }
+      .window { fill: none; stroke: #1F3A5F; stroke-width: 3; }
     </style>
   </defs>
   
-  <!-- Desktop window frame -->
-  <rect x="24" y="40" width="208" height="176" fill="none" stroke="#1F3A5F" stroke-width="4"/>
+  <!-- Desktop window outer frame -->
+  <rect x="16" y="32" width="224" height="200" rx="6" class="window"/>
   
-  <!-- Window title bar -->
-  <rect x="24" y="40" width="208" height="16" class="primary"/>
+  <!-- Window title bar with controls -->
+  <rect x="16" y="32" width="224" height="24" rx="6" class="primary"/>
+  <rect x="16" y="48" width="224" height="8" class="primary"/>
   
-  <!-- Three window controls (circles) -->
-  <circle cx="40" cy="48" r="3" class="accent"/>
-  <circle cx="52" cy="48" r="3" class="accent"/>
-  <circle cx="64" cy="48" r="3" class="accent"/>
+  <!-- Window control buttons (macOS style) -->
+  <circle cx="32" cy="44" r="4" fill="#B08D57"/>
+  <circle cx="48" cy="44" r="4" fill="#B08D57" opacity="0.7"/>
+  <circle cx="64" cy="44" r="4" fill="#B08D57" opacity="0.5"/>
   
-  <!-- Temple structure inside window -->
-  <g transform="translate(128, 144)">
-    <!-- Base -->
-    <rect x="-48" y="48" width="96" height="6" class="accent"/>
+  <!-- Menu bar items (simplified) -->
+  <rect x="96" y="36" width="24" height="4" class="accent" opacity="0.6"/>
+  <rect x="128" y="36" width="32" height="4" class="accent" opacity="0.6"/>
+  <rect x="168" y="36" width="28" height="4" class="accent" opacity="0.6"/>
+  
+  <!-- Content area with temple -->
+  <g transform="translate(128, 152)">
+    <!-- Temple base -->
+    <rect x="-56" y="56" width="112" height="8" class="accent"/>
     
-    <!-- Three columns -->
-    <rect x="-32" y="8" width="10" height="40" class="primary"/>
-    <rect x="-5" y="8" width="10" height="40" class="primary"/>
-    <rect x="22" y="8" width="10" height="40" class="primary"/>
+    <!-- Five columns (desktop app richness) -->
+    <rect x="-48" y="8" width="12" height="48" class="primary"/>
+    <rect x="-24" y="8" width="12" height="48" class="primary"/>
+    <rect x="0" y="4" width="12" height="52" class="primary"/>
+    <rect x="24" y="8" width="12" height="48" class="primary"/>
+    <rect x="48" y="8" width="12" height="48" class="primary"/>
     
     <!-- Capitals -->
-    <rect x="-36" y="4" width="18" height="4" class="accent"/>
-    <rect x="-9" y="4" width="18" height="4" class="accent"/>
-    <rect x="18" y="4" width="18" height="4" class="accent"/>
+    <rect x="-52" y="2" width="20" height="6" class="accent"/>
+    <rect x="-28" y="2" width="20" height="6" class="accent"/>
+    <rect x="-4" y="-2" width="20" height="6" class="accent"/>
+    <rect x="20" y="2" width="20" height="6" class="accent"/>
+    <rect x="44" y="2" width="20" height="6" class="accent"/>
     
     <!-- Architrave -->
-    <rect x="-40" y="0" width="80" height="4" class="accent"/>
+    <rect x="-56" y="-8" width="112" height="10" class="accent"/>
     
     <!-- Pediment -->
-    <path d="M 0 -24 L 48 0 L -48 0 Z" class="accent"/>
+    <path d="M 0 -36 L 64 -8 L -64 -8 Z" class="accent"/>
+    
+    <!-- Desktop grid indicator (3x3 grid pattern) -->
+    <rect x="-40" y="24" width="16" height="16" fill="none" stroke="#B08D57" stroke-width="2" opacity="0.4"/>
+    <rect x="-16" y="24" width="16" height="16" fill="none" stroke="#B08D57" stroke-width="2" opacity="0.4"/>
+    <rect x="8" y="24" width="16" height="16" fill="none" stroke="#B08D57" stroke-width="2" opacity="0.4"/>
   </g>
 </svg>
