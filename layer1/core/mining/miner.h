@@ -8,12 +8,15 @@
 #include "consensus/difficulty.h"
 #include "consensus/issuance.h"
 #include "chainstate/chainstate.h"
+#include "evm/state.h"
 #include <vector>
 #include <memory>
 #include <optional>
 
 namespace parthenon {
 namespace mining {
+
+using uint256_t = evm::uint256_t;
 
 /**
  * BlockTemplate contains all data needed to mine a new block
