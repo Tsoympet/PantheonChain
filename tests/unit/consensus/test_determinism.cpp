@@ -8,6 +8,10 @@
 #include <cassert>
 #include <vector>
 #include <string>
+#include <cstring>
+#include <algorithm>
+#include <thread>
+#include <chrono>
 
 using namespace parthenon::crypto;
 using namespace parthenon::primitives;
@@ -72,23 +76,23 @@ void TestTransactionSerializationDeterminism() {
     
     // Create a transaction with known inputs
     Transaction tx;
-    tx.nVersion = 1;
-    tx.nLockTime = 0;
+    tx.version = 1;
+    tx.locktime = 0;
     
     // Add a deterministic input
-    TxIn input;
-    input.prevout.hash.fill(0x42);
-    input.prevout.n = 0;
-    input.scriptSig = {0x01, 0x02, 0x03};
-    input.nSequence = 0xFFFFFFFF;
-    tx.vin.push_back(input);
+    TxInput input;
+    input.prevout.txid.fill(0x42);
+    input.prevout.vout = 0;
+    input.signature_script = {0x01, 0x02, 0x03};
+    input.sequence = 0xFFFFFFFF;
+    tx.inputs.push_back(input);
     
     // Add a deterministic output
-    TxOut output;
-    output.nValue = Amount(1000000);
-    output.assetId = AssetID::TALANTON;
-    output.scriptPubKey = {0x04, 0x05, 0x06};
-    tx.vout.push_back(output);
+    TxOutput output;
+    output.value = Amount(1000000);
+    output.asset_id = AssetID::TALANTON;
+    output.script_pubkey = {0x04, 0x05, 0x06};
+    tx.outputs.push_back(output);
     
     // Serialize multiple times
     auto serialized1 = tx.Serialize();
@@ -100,8 +104,8 @@ void TestTransactionSerializationDeterminism() {
     assert(serialized2 == serialized3);
     
     // Hash multiple times (should also be deterministic)
-    auto txid1 = tx.GetHash();
-    auto txid2 = tx.GetHash();
+    auto txid1 = tx.GetTxID();
+    auto txid2 = tx.GetTxID();
     
     assert(txid1 == txid2);
     
@@ -113,17 +117,17 @@ void TestBlockSerializationDeterminism() {
     
     // Create a block with deterministic data
     Block block;
-    block.nVersion = 1;
-    block.hashPrevBlock.fill(0x00);
-    block.hashMerkleRoot.fill(0x11);
-    block.nTime = 1234567890;
-    block.nBits = 0x1d00ffff;
-    block.nNonce = 42;
+    block.header.version = 1;
+    block.header.prev_block_hash.fill(0x00);
+    block.header.merkle_root.fill(0x11);
+    block.header.timestamp = 1234567890;
+    block.header.bits = 0x1d00ffff;
+    block.header.nonce = 42;
     
     // Serialize multiple times
-    auto serialized1 = block.SerializeHeader();
-    auto serialized2 = block.SerializeHeader();
-    auto serialized3 = block.SerializeHeader();
+    auto serialized1 = block.header.Serialize();
+    auto serialized2 = block.header.Serialize();
+    auto serialized3 = block.header.Serialize();
     
     // All serializations must be identical
     assert(serialized1 == serialized2);
@@ -166,17 +170,17 @@ void TestMerkleRootDeterminism() {
     std::cout << "Test: Merkle root determinism" << std::endl;
     
     // Create a set of transaction hashes
-    std::vector<Hash256> txHashes;
+    std::vector<std::array<uint8_t, 32>> txHashes;
     for (int i = 0; i < 5; i++) {
-        Hash256 hash;
+        std::array<uint8_t, 32> hash;
         hash.fill(static_cast<uint8_t>(i));
         txHashes.push_back(hash);
     }
     
     // Compute merkle root multiple times
-    auto root1 = Block::ComputeMerkleRoot(txHashes);
-    auto root2 = Block::ComputeMerkleRoot(txHashes);
-    auto root3 = Block::ComputeMerkleRoot(txHashes);
+    auto root1 = MerkleTree::CalculateRoot(txHashes);
+    auto root2 = MerkleTree::CalculateRoot(txHashes);
+    auto root3 = MerkleTree::CalculateRoot(txHashes);
     
     // All roots must be identical
     assert(root1 == root2);
@@ -192,8 +196,20 @@ void TestDeterministicOrdering() {
     std::vector<Transaction> txs;
     for (int i = 0; i < 10; i++) {
         Transaction tx;
-        tx.nVersion = 1;
-        tx.nLockTime = i;
+        tx.version = 1;
+        tx.locktime = i;
+        
+        // Add dummy input/output to make it valid
+        TxInput input;
+        input.prevout.txid.fill(static_cast<uint8_t>(i));
+        input.prevout.vout = 0;
+        tx.inputs.push_back(input);
+        
+        TxOutput output;
+        output.value = Amount(1000);
+        output.asset_id = AssetID::TALANTON;
+        tx.outputs.push_back(output);
+        
         txs.push_back(tx);
     }
     
@@ -203,17 +219,17 @@ void TestDeterministicOrdering() {
     
     std::sort(sorted1.begin(), sorted1.end(), 
               [](const Transaction& a, const Transaction& b) {
-                  return a.GetHash() < b.GetHash();
+                  return a.GetTxID() < b.GetTxID();
               });
     
     std::sort(sorted2.begin(), sorted2.end(), 
               [](const Transaction& a, const Transaction& b) {
-                  return a.GetHash() < b.GetHash();
+                  return a.GetTxID() < b.GetTxID();
               });
     
     // Verify same ordering
     for (size_t i = 0; i < sorted1.size(); i++) {
-        assert(sorted1[i].GetHash() == sorted2[i].GetHash());
+        assert(sorted1[i].GetTxID() == sorted2[i].GetTxID());
     }
     
     std::cout << "  ✓ Passed (Ordering is deterministic)" << std::endl;
@@ -227,7 +243,7 @@ void TestNoSystemDependencies() {
     
     // Verify block timestamp must be explicitly provided (not system time)
     Block block;
-    block.nTime = 1234567890; // Explicit timestamp
+    block.header.timestamp = 1234567890; // Explicit timestamp
     
     auto hash1 = block.GetHash();
     
