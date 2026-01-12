@@ -176,7 +176,15 @@ bool Chain::ConnectBlock(const primitives::Block& block, BlockUndo& undo) {
     UpdateSupply(coinbase, true);
     
     // Add to block index
-    uint64_t chain_work = (height_ == 1) ? 1 : (block_index_[block.header.prev_block_hash].chain_work + 1);
+    uint64_t chain_work = 1; // Default for genesis
+    if (height_ > 1) {
+        // Get previous block's chain work
+        auto prev_index = block_index_.find(block.header.prev_block_hash);
+        if (prev_index != block_index_.end()) {
+            chain_work = prev_index->second.chain_work + 1;
+        }
+        // If prev block not found, still use 1 (shouldn't happen in valid chain)
+    }
     block_index_[tip_hash_] = BlockIndex(block.header, height_, chain_work);
     
     return true;

@@ -18,7 +18,7 @@ Transaction CreateCoinbase(uint64_t height) {
     // Coinbase input
     TxInput coinbase_input;
     coinbase_input.prevout.txid = std::array<uint8_t, 32>{};
-    coinbase_input.prevout.vout = 0xffffffff;
+    coinbase_input.prevout.vout = COINBASE_VOUT_INDEX;
     tx.inputs.push_back(coinbase_input);
     
     // Coinbase outputs

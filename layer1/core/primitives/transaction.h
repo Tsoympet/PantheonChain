@@ -15,6 +15,9 @@
 namespace parthenon {
 namespace primitives {
 
+// Coinbase transaction marker
+static constexpr uint32_t COINBASE_VOUT_INDEX = 0xFFFFFFFF;
+
 /**
  * OutPoint identifies a specific output from a previous transaction
  * (txid, output_index)
@@ -147,7 +150,7 @@ public:
      * Check if this is a coinbase transaction (mining reward)
      */
     bool IsCoinbase() const {
-        return inputs.size() == 1 && inputs[0].prevout.vout == 0xFFFFFFFF &&
+        return inputs.size() == 1 && inputs[0].prevout.vout == COINBASE_VOUT_INDEX &&
                inputs[0].prevout.txid == std::array<uint8_t, 32>{};
     }
     
