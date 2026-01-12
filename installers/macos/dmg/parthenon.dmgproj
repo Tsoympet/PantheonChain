@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>DMGTitle</key>
+    <string>ParthenonChain</string>
+    <key>DMGFileName</key>
+    <string>parthenon-1.0.0-macos.dmg</string>
+    <key>DMGBackgroundImage</key>
+    <string>background.png</string>
+    <key>DMGVolumeName</key>
+    <string>ParthenonChain</string>
+    <key>DMGWindowPosition</key>
+    <string>200 120</string>
+    <key>DMGWindowSize</key>
+    <string>800 400</string>
+    <key>DMGIconSize</key>
+    <integer>128</integer>
+    <key>DMGTextSize</key>
+    <integer>12</integer>
+</dict>
+</plist>
