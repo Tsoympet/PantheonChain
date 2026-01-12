@@ -1,6 +1,6 @@
 #include "htlc.h"
 
-namespace pantheon {
+namespace parthenon {
 namespace layer2 {
 
 HTLC::HTLC(const std::vector<uint8_t>& hash_lock,
@@ -47,7 +47,7 @@ bool HTLC::IsExpired(uint32_t current_time) const {
 }
 
 bool HTLC::VerifyPreimage(const std::vector<uint8_t>& preimage) const {
-    auto hash_arr = pantheon::crypto::SHA256::Hash256(preimage);
+    auto hash_arr = parthenon::crypto::SHA256::Hash256(preimage);
     std::vector<uint8_t> hash(hash_arr.begin(), hash_arr.end());
     return hash == hash_lock_;
 }
@@ -86,4 +86,4 @@ bool HTLCRoute::Validate() const {
 }
 
 } // namespace layer2
-} // namespace pantheon
+} // namespace parthenon

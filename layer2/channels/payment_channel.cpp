@@ -2,7 +2,7 @@
 #include <cstring>
 #include <ctime>
 
-namespace pantheon {
+namespace parthenon {
 namespace layer2 {
 
 PaymentChannel::PaymentChannel(const std::vector<uint8_t>& party_a_pubkey,
@@ -25,7 +25,7 @@ PaymentChannel::PaymentChannel(const std::vector<uint8_t>& party_a_pubkey,
     data.insert(data.end(), party_a_pubkey.begin(), party_a_pubkey.end());
     data.insert(data.end(), party_b_pubkey.begin(), party_b_pubkey.end());
     
-    auto hash_arr = pantheon::crypto::SHA256::Hash256(data);
+    auto hash_arr = parthenon::crypto::SHA256::Hash256(data);
     channel_id_ = std::vector<uint8_t>(hash_arr.begin(), hash_arr.end());
 }
 
@@ -118,4 +118,4 @@ bool PaymentChannel::VerifyBalances() const {
 }
 
 } // namespace layer2
-} // namespace pantheon
+} // namespace parthenon

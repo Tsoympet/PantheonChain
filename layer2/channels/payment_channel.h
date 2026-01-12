@@ -7,7 +7,7 @@
 #include <vector>
 #include <map>
 
-namespace pantheon {
+namespace parthenon {
 namespace layer2 {
 
 enum class ChannelState {
@@ -71,6 +71,6 @@ private:
 };
 
 } // namespace layer2
-} // namespace pantheon
+} // namespace parthenon
 
 #endif // PANTHEON_LAYER2_CHANNELS_PAYMENT_CHANNEL_H
