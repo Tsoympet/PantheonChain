@@ -223,7 +223,7 @@ std::optional<VersionMessage> VersionMessage::Deserialize(const uint8_t* data, s
     
     // User agent
     uint64_t ua_len = ReadCompactSize(ptr);
-    if (ua_len > 256) return std::nullopt; // Sanity check
+    if (ua_len > 256 || ptr + ua_len > data + len) return std::nullopt; // Bounds check
     msg.user_agent = std::string(reinterpret_cast<const char*>(ptr), ua_len);
     ptr += ua_len;
     
@@ -345,7 +345,13 @@ std::vector<uint8_t> CreateNetworkMessage(
 ) {
     MessageHeader header;
     header.magic = magic;
-    std::strncpy(header.command, command, 12);
+    // Safe string copy with null termination
+    size_t len = std::strlen(command);
+    if (len >= 12) len = 11; // Leave room for null terminator
+    std::memcpy(header.command, command, len);
+    header.command[len] = '\0';
+    // Fill remaining with zeros
+    std::memset(header.command + len + 1, 0, 12 - len - 1);
     header.length = static_cast<uint32_t>(payload.size());
     header.checksum = CalculateChecksum(payload);
     

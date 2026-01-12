@@ -48,10 +48,21 @@ bool Mempool::ValidateTransaction(
     error = validation::TransactionValidator::ValidateAgainstUTXO(tx, utxo_set, height);
     if (error) return false;
     
-    // Check fee rate meets minimum
+    // Check fee rate meets minimum (with overflow protection)
     size_t tx_size = tx.Serialize().size();
     uint64_t fee = CalculateFee(tx, utxo_set);
-    uint64_t fee_rate = (tx_size > 0) ? ((fee * 1000) / tx_size) : 0;
+    
+    // Calculate fee rate safely (satoshis per KB)
+    uint64_t fee_rate = 0;
+    if (tx_size > 0) {
+        // Check for overflow: fee * 1000 < UINT64_MAX
+        if (fee <= UINT64_MAX / 1000) {
+            fee_rate = (fee * 1000) / tx_size;
+        } else {
+            // Very large fee, compute differently
+            fee_rate = fee / (tx_size / 1000);
+        }
+    }
     
     if (fee_rate < min_relay_fee_) {
         return false;
