@@ -102,11 +102,8 @@ Before declaring a task complete:
 - Installers build successfully
 
 ---
+This is the final structure(may missing the assets for client and app)
 
-## Final Principle
-
-> If it cannot safely run mainnet, it is not finished.
-this is the final structure
 ParthenonChain/
 ├─ README.md
 ├─ LICENSE
@@ -240,5 +237,6 @@ ParthenonChain/
 │
 └─ third_party/
    └─ secp256k1/
+
 
 
