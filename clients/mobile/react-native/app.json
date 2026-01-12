@@ -1,0 +1,31 @@
+{
+  "name": "ParthenonMobile",
+  "displayName": "Parthenon Wallet",
+  "expo": {
+    "name": "Parthenon Wallet",
+    "slug": "parthenon-wallet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.parthenon.wallet"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.parthenon.wallet"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

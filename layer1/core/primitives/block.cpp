@@ -2,6 +2,7 @@
 // Consensus-critical: Block serialization, validation, and Merkle tree
 
 #include "block.h"
+#include "consensus/difficulty.h"
 #include <cstring>
 
 namespace parthenon {
@@ -85,31 +86,7 @@ std::array<uint8_t, 32> BlockHeader::GetHash() const {
 
 bool BlockHeader::MeetsDifficultyTarget() const {
     auto hash = GetHash();
-    
-    // Extract target from compact bits format
-    uint32_t exponent = bits >> 24;
-    uint32_t mantissa = bits & 0x00FFFFFF;
-    
-    // Convert to 256-bit target
-    // For now, simplified check - production needs full big integer comparison
-    // Suppress unused warnings for now
-    (void)exponent;
-    (void)mantissa;
-    
-    // Check leading zeros (simplified difficulty check)
-    int leading_zeros = 0;
-    for (int i = 31; i >= 0; i--) {
-        if (hash[i] == 0) {
-            leading_zeros++;
-        } else {
-            break;
-        }
-    }
-    
-    // Require at least some leading zeros based on difficulty
-    // Production implementation needs proper difficulty calculation
-    (void)leading_zeros;
-    return true; // Placeholder
+    return consensus::Difficulty::CheckProofOfWork(hash, bits);
 }
 
 // Block methods
