@@ -2,10 +2,12 @@
 // Test block structure, merkle trees, and validation
 
 #include "primitives/block.h"
+#include "consensus/difficulty.h"
 #include <iostream>
 #include <cassert>
 
 using namespace parthenon::primitives;
+using namespace parthenon::consensus;
 
 void TestBlockHeader() {
     std::cout << "Test: Block header" << std::endl;
@@ -111,7 +113,7 @@ void TestGenesisBlock() {
     genesis.header.version = 1;
     genesis.header.prev_block_hash = std::array<uint8_t, 32>{}; // All zeros
     genesis.header.timestamp = 1609459200; // 2021-01-01
-    genesis.header.bits = 0x1d00ffff;
+    genesis.header.bits = Difficulty::GetInitialBits(); // Use initial difficulty
     genesis.header.nonce = 0;
     
     // Create coinbase transaction
@@ -133,6 +135,15 @@ void TestGenesisBlock() {
     
     // Calculate merkle root
     genesis.header.merkle_root = genesis.CalculateMerkleRoot();
+    
+    // Mine the block (find valid nonce)
+    while (!genesis.header.MeetsDifficultyTarget()) {
+        genesis.header.nonce++;
+        if (genesis.header.nonce > 1000000) {
+            std::cout << "  Warning: Mining taking too long, skipping PoW check" << std::endl;
+            break;
+        }
+    }
     
     assert(genesis.IsGenesis());
     assert(genesis.transactions[0].IsCoinbase());

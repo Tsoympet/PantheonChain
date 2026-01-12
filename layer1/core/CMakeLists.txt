@@ -21,6 +21,26 @@ target_compile_options(parthenon_crypto PRIVATE
     -Wno-unused-parameter
 )
 
+# Consensus library (depends on crypto)
+add_library(parthenon_consensus STATIC
+    consensus/difficulty.cpp
+    consensus/issuance.cpp
+)
+
+target_include_directories(parthenon_consensus PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_consensus PUBLIC
+    parthenon_crypto
+)
+
+# Set strict compiler flags for consensus code
+target_compile_options(parthenon_consensus PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+)
+
 # Primitives library
 add_library(parthenon_primitives STATIC
     primitives/amount.cpp
@@ -35,10 +55,31 @@ target_include_directories(parthenon_primitives PUBLIC
 
 target_link_libraries(parthenon_primitives PUBLIC
     parthenon_crypto
+    parthenon_consensus
 )
 
 # Set strict compiler flags for consensus code
 target_compile_options(parthenon_primitives PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+)
+
+# Chainstate library
+add_library(parthenon_chainstate STATIC
+    chainstate/chainstate.cpp
+)
+
+target_include_directories(parthenon_chainstate PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_chainstate PUBLIC
+    parthenon_primitives
+    parthenon_consensus
+)
+
+# Set strict compiler flags for consensus code
+target_compile_options(parthenon_chainstate PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
 )

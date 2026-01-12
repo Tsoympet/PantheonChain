@@ -36,6 +36,7 @@ add_executable(test_block
 
 target_link_libraries(test_block PRIVATE
     parthenon_primitives
+    parthenon_consensus
 )
 
 add_test(NAME test_block COMMAND test_block)
