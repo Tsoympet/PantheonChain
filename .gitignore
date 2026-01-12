@@ -1,0 +1,37 @@
+# Build directories
+build/
+cmake-build-*/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Test binaries
+test_*
+!test_*.cpp
+!test_*.h
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+*.tmp
