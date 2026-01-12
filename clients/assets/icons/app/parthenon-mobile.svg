@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Parthenon Mobile - Mobile Wallet Symbol -->
+  <!-- Design: Temple within mobile device frame (portrait) -->
+  
+  <defs>
+    <style>
+      .primary { fill: #1F3A5F; }
+      .accent { fill: #B08D57; }
+    </style>
+  </defs>
+  
+  <!-- Mobile device frame (portrait rectangle with rounded corners) -->
+  <rect x="64" y="16" width="128" height="224" rx="12" fill="none" stroke="#1F3A5F" stroke-width="4"/>
+  
+  <!-- Screen area -->
+  <rect x="72" y="32" width="112" height="192" fill="none" stroke="#1F3A5F" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Home button indicator -->
+  <circle cx="128" cy="232" r="6" fill="none" stroke="#1F3A5F" stroke-width="2"/>
+  
+  <!-- Simplified temple (compact for mobile) -->
+  <g transform="translate(128, 120)">
+    <!-- Base -->
+    <rect x="-32" y="40" width="64" height="4" class="accent"/>
+    
+    <!-- Three columns (compact) -->
+    <rect x="-20" y="8" width="8" height="32" class="primary"/>
+    <rect x="-4" y="8" width="8" height="32" class="primary"/>
+    <rect x="12" y="8" width="8" height="32" class="primary"/>
+    
+    <!-- Capitals -->
+    <rect x="-24" y="4" width="16" height="4" class="accent"/>
+    <rect x="-8" y="4" width="16" height="4" class="accent"/>
+    <rect x="8" y="4" width="16" height="4" class="accent"/>
+    
+    <!-- Architrave -->
+    <rect x="-28" y="0" width="56" height="4" class="accent"/>
+    
+    <!-- Pediment -->
+    <path d="M 0 -20 L 32 0 L -32 0 Z" class="accent"/>
+  </g>
+</svg>
