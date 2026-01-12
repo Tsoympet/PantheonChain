@@ -106,3 +106,45 @@ target_compile_options(parthenon_validation PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
 )
+
+# P2P library
+add_library(parthenon_p2p STATIC
+    p2p/protocol.cpp
+    p2p/message.cpp
+)
+
+target_include_directories(parthenon_p2p PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_p2p PUBLIC
+    parthenon_primitives
+    parthenon_crypto
+)
+
+# Set strict compiler flags
+target_compile_options(parthenon_p2p PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+)
+
+# Mempool library
+add_library(parthenon_mempool STATIC
+    mempool/mempool.cpp
+)
+
+target_include_directories(parthenon_mempool PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_mempool PUBLIC
+    parthenon_chainstate
+    parthenon_validation
+    parthenon_primitives
+)
+
+# Set strict compiler flags
+target_compile_options(parthenon_mempool PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+)
