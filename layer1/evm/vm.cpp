@@ -97,62 +97,171 @@ uint64_t VM::GetGasRemaining() const {
     return ctx_.gas_limit - gas_used_;
 }
 
-// Arithmetic operations (simplified 256-bit - production would need full big-int library)
-// NOTE: Current implementation works for values that fit in uint64_t
-// TODO: Implement full 256-bit arithmetic for production use
+// Arithmetic operations - Full 256-bit implementation
+// All operations use big-endian byte arrays for 256-bit integers
+// Implements proper carry/borrow propagation for EVM compatibility
+
 uint256_t VM::Add(const uint256_t& a, const uint256_t& b) const {
-    // Simplified: use uint64_t for now
-    uint64_t a_val = ToUint64(a);
-    uint64_t b_val = ToUint64(b);
-    // Check for overflow
-    uint64_t result_val = a_val + b_val;
-    return ToUint256(result_val);
+    uint256_t result{};
+    uint16_t carry = 0;
+    
+    // Process bytes from least significant (index 31) to most significant (index 0)
+    for (int i = 31; i >= 0; i--) {
+        uint16_t sum = static_cast<uint16_t>(a[i]) + static_cast<uint16_t>(b[i]) + carry;
+        result[i] = static_cast<uint8_t>(sum & 0xFF);
+        carry = sum >> 8;
+    }
+    
+    // Note: Overflow is allowed in EVM (wraps around modulo 2^256)
+    return result;
 }
 
 uint256_t VM::Sub(const uint256_t& a, const uint256_t& b) const {
-    // Simplified: use uint64_t for now
-    uint64_t a_val = ToUint64(a);
-    uint64_t b_val = ToUint64(b);
-    uint64_t result_val = (a_val >= b_val) ? (a_val - b_val) : 0;
-    return ToUint256(result_val);
+    uint256_t result{};
+    int16_t borrow = 0;
+    
+    // Process bytes from least significant (index 31) to most significant (index 0)
+    for (int i = 31; i >= 0; i--) {
+        int16_t diff = static_cast<int16_t>(a[i]) - static_cast<int16_t>(b[i]) - borrow;
+        if (diff < 0) {
+            diff += 256;
+            borrow = 1;
+        } else {
+            borrow = 0;
+        }
+        result[i] = static_cast<uint8_t>(diff);
+    }
+    
+    // Note: Underflow wraps around modulo 2^256 (two's complement)
+    return result;
 }
 
 uint256_t VM::Mul(const uint256_t& a, const uint256_t& b) const {
-    // Simplified: use uint64_t for now
-    uint64_t a_val = ToUint64(a);
-    uint64_t b_val = ToUint64(b);
-    return ToUint256(a_val * b_val);
+    // Use long multiplication algorithm for 256-bit values
+    uint256_t result{};
+    
+    // For each byte in b (multiplier)
+    for (int i = 31; i >= 0; i--) {
+        if (b[i] == 0) continue;
+        
+        uint16_t carry = 0;
+        // Multiply each byte of a by b[i]
+        for (int j = 31; j >= 0; j--) {
+            int result_idx = j + (31 - i);
+            if (result_idx >= 32) continue; // Skip overflow
+            
+            uint32_t product = static_cast<uint32_t>(a[j]) * static_cast<uint32_t>(b[i]) + 
+                               static_cast<uint32_t>(result[result_idx]) + carry;
+            result[result_idx] = static_cast<uint8_t>(product & 0xFF);
+            carry = product >> 8;
+        }
+    }
+    
+    return result;
 }
 
 uint256_t VM::Div(const uint256_t& a, const uint256_t& b) const {
-    if (IsZero(b)) return uint256_t{};
-    uint64_t a_val = ToUint64(a);
-    uint64_t b_val = ToUint64(b);
-    return ToUint256(a_val / b_val);
+    if (IsZero(b)) return uint256_t{}; // Division by zero returns 0 in EVM
+    
+    // Use long division algorithm for 256-bit values
+    uint256_t quotient{};
+    uint256_t remainder{};
+    
+    // Process bits from most significant to least significant
+    for (int i = 0; i < 256; i++) {
+        // Shift remainder left by 1
+        uint16_t carry = 0;
+        for (int j = 31; j >= 0; j--) {
+            uint16_t shifted = (static_cast<uint16_t>(remainder[j]) << 1) | carry;
+            remainder[j] = static_cast<uint8_t>(shifted & 0xFF);
+            carry = shifted >> 8;
+        }
+        
+        // Add current bit of dividend to remainder
+        int byte_idx = i / 8;
+        int bit_idx = 7 - (i % 8);
+        if ((a[byte_idx] >> bit_idx) & 1) {
+            remainder[31] |= 1;
+        }
+        
+        // Check if remainder >= divisor
+        bool ge = !Lt(remainder, b);
+        if (ge) {
+            // Subtract divisor from remainder
+            remainder = Sub(remainder, b);
+            
+            // Set bit in quotient
+            int quot_byte = i / 8;
+            int quot_bit = 7 - (i % 8);
+            quotient[quot_byte] |= (1 << quot_bit);
+        }
+    }
+    
+    return quotient;
 }
 
 uint256_t VM::Mod(const uint256_t& a, const uint256_t& b) const {
-    if (IsZero(b)) return uint256_t{};
-    uint64_t a_val = ToUint64(a);
-    uint64_t b_val = ToUint64(b);
-    return ToUint256(a_val % b_val);
+    if (IsZero(b)) return uint256_t{}; // Modulo by zero returns 0 in EVM
+    
+    // Use long division to get remainder
+    uint256_t remainder{};
+    
+    // Process bits from most significant to least significant
+    for (int i = 0; i < 256; i++) {
+        // Shift remainder left by 1
+        uint16_t carry = 0;
+        for (int j = 31; j >= 0; j--) {
+            uint16_t shifted = (static_cast<uint16_t>(remainder[j]) << 1) | carry;
+            remainder[j] = static_cast<uint8_t>(shifted & 0xFF);
+            carry = shifted >> 8;
+        }
+        
+        // Add current bit of dividend to remainder
+        int byte_idx = i / 8;
+        int bit_idx = 7 - (i % 8);
+        if ((a[byte_idx] >> bit_idx) & 1) {
+            remainder[31] |= 1;
+        }
+        
+        // Check if remainder >= divisor
+        bool ge = !Lt(remainder, b);
+        if (ge) {
+            // Subtract divisor from remainder
+            remainder = Sub(remainder, b);
+        }
+    }
+    
+    return remainder;
 }
 
 uint256_t VM::Exp(const uint256_t& base, const uint256_t& exponent) const {
-    // Simplified: use uint64_t for now
-    // TODO: Implement proper modular exponentiation for production
-    uint64_t base_val = ToUint64(base);
-    uint64_t exp_val = ToUint64(exponent);
+    // Exponentiation by squaring (binary method)
+    if (IsZero(exponent)) return ToUint256(1);
+    if (IsZero(base)) return uint256_t{};
     
-    if (exp_val == 0) return ToUint256(1);
-    if (base_val == 0) return ToUint256(0);
+    uint256_t result = ToUint256(1);
+    uint256_t current_base = base;
+    uint256_t exp = exponent;
     
-    uint64_t result = 1;
-    for (uint64_t i = 0; i < exp_val && i < 64; i++) {
-        result *= base_val;
-        if (result == 0) break; // Overflow to zero
+    // Process exponent bits from least to most significant
+    for (int i = 0; i < 256; i++) {
+        // Check if current bit of exponent is set
+        int byte_idx = 31 - (i / 8);
+        int bit_idx = i % 8;
+        if ((exp[byte_idx] >> bit_idx) & 1) {
+            result = Mul(result, current_base);
+        }
+        
+        // Square the base for next iteration
+        current_base = Mul(current_base, current_base);
+        
+        // Early exit if base becomes 0 or 1
+        if (IsZero(current_base)) break;
+        uint256_t one = ToUint256(1);
+        if (Eq(current_base, one) && !Eq(result, one)) break;
     }
-    return ToUint256(result);
+    
+    return result;
 }
 
 bool VM::Lt(const uint256_t& a, const uint256_t& b) const {
