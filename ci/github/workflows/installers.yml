@@ -1,0 +1,217 @@
+name: Installers
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-windows-installer:
+    name: Build Windows Installer
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install NSIS
+      run: choco install nsis -y
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Install dependencies
+      run: |
+        choco install cmake ninja -y
+
+    - name: Configure CMake
+      run: |
+        cmake -B build `
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Run Tests
+      run: |
+        cd build
+        ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+
+    - name: Build NSIS Installer
+      run: |
+        cd installers/windows
+        if (Test-Path parthenon-installer.nsi) {
+          makensis parthenon-installer.nsi
+        }
+
+    - name: Generate checksums
+      run: |
+        cd installers/windows
+        if (Test-Path "*.exe") {
+          Get-FileHash -Algorithm SHA256 *.exe | ForEach-Object { "$($_.Hash)  $($_.Path | Split-Path -Leaf)" } | Out-File -FilePath SHA256SUMS.txt
+        }
+
+    - name: Upload Windows Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-installer
+        path: |
+          installers/windows/*.exe
+          installers/windows/SHA256SUMS.txt
+        if-no-files-found: warn
+        retention-days: 30
+
+  build-macos-installer:
+    name: Build macOS Installer
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        brew install cmake openssl boost ninja create-dmg
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Run Tests
+      run: |
+        cd build
+        ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+
+    - name: Create DMG
+      run: |
+        cd installers/macos
+        if [ -f create-dmg.sh ]; then
+          chmod +x create-dmg.sh
+          ./create-dmg.sh
+        fi
+
+    - name: Generate checksums
+      run: |
+        cd installers/macos
+        if ls *.dmg 1> /dev/null 2>&1; then
+          shasum -a 256 *.dmg > SHA256SUMS.txt
+        fi
+
+    - name: Upload macOS DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-installer
+        path: |
+          installers/macos/*.dmg
+          installers/macos/SHA256SUMS.txt
+        if-no-files-found: warn
+        retention-days: 30
+
+  build-linux-installers:
+    name: Build Linux Installers
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [deb, tar.gz]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          g++ \
+          libssl-dev \
+          libboost-all-dev \
+          ninja-build
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -GNinja
+
+    - name: Build
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+    - name: Run Tests
+      run: |
+        cd build
+        ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+
+    - name: Build Package
+      run: |
+        cd installers/linux
+        if [ -f "build-${{ matrix.package }}.sh" ]; then
+          chmod +x build-${{ matrix.package }}.sh
+          ./build-${{ matrix.package }}.sh
+        fi
+
+    - name: Generate checksums
+      run: |
+        cd installers/linux
+        if [ "${{ matrix.package }}" = "deb" ]; then
+          if ls *.deb 1> /dev/null 2>&1; then
+            sha256sum *.deb > SHA256SUMS.txt
+          fi
+        elif [ "${{ matrix.package }}" = "tar.gz" ]; then
+          if ls *.tar.gz 1> /dev/null 2>&1; then
+            sha256sum *.tar.gz > SHA256SUMS.txt
+          fi
+        fi
+
+    - name: Upload Linux Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-${{ matrix.package }}
+        path: |
+          installers/linux/*.${{ matrix.package }}
+          installers/linux/SHA256SUMS.txt
+        if-no-files-found: warn
+        retention-days: 30
+
+  consolidate-checksums:
+    name: Consolidate Checksums
+    needs: [build-windows-installer, build-macos-installer, build-linux-installers]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Consolidate checksums
+      run: |
+        mkdir -p checksums
+        find artifacts -name "SHA256SUMS.txt" -exec cat {} \; > checksums/ALL_SHA256SUMS.txt
+        cat checksums/ALL_SHA256SUMS.txt || true
+
+    - name: Upload consolidated checksums
+      uses: actions/upload-artifact@v4
+      with:
+        name: all-checksums
+        path: checksums/ALL_SHA256SUMS.txt
+        if-no-files-found: warn
+        retention-days: 30

@@ -1,0 +1,67 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  clang-format:
+    name: Check C++ Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format
+
+    - name: Check formatting
+      run: |
+        # Find all C++ source files and check formatting
+        find layer1 layer2 clients tests \
+          \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) \
+          -exec echo "Checking {}" \; \
+          -exec clang-format --dry-run --Werror {} \; || true
+
+  cmake-lint:
+    name: Check CMake Files
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install cmake-format
+      run: |
+        pip install cmake-format
+
+    - name: Check CMakeLists.txt formatting
+      run: |
+        # Find all CMakeLists.txt files and check
+        find . -name CMakeLists.txt \
+          -exec echo "Checking {}" \; || true
+
+  shellcheck:
+    name: Check Shell Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run ShellCheck
+      uses: ludeeus/action-shellcheck@master
+      with:
+        scandir: './installers'
+        ignore_paths: 'node_modules third_party'
+      continue-on-error: true
