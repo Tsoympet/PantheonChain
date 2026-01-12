@@ -43,7 +43,7 @@ ParthenonChain is a **Proof-of-Work Layer-1 blockchain** with:
 ### Clients
 - `parthenond` (full node daemon)
 - `parthenon-cli`
-- Desktop GUI (optional)
+- Desktop GUI 
 - Mobile wallet + share-mining client
 
 ### Distribution
@@ -240,4 +240,5 @@ ParthenonChain/
 │
 └─ third_party/
    └─ secp256k1/
+
 
