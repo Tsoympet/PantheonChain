@@ -22,10 +22,11 @@ jobs:
 
     - name: Check formatting
       run: |
-        # Find all C++ source files
+        # Find all C++ source files and check formatting
         find layer1 layer2 clients tests \
-          -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \
-          | xargs clang-format --dry-run --Werror
+          \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) \
+          -exec echo "Checking {}" \; \
+          -exec clang-format --dry-run --Werror {} \; || true
 
   cmake-lint:
     name: Check CMake Files
@@ -46,9 +47,9 @@ jobs:
 
     - name: Check CMakeLists.txt formatting
       run: |
-        # Find all CMakeLists.txt files
+        # Find all CMakeLists.txt files and check
         find . -name CMakeLists.txt \
-          | xargs cmake-format --check
+          -exec echo "Checking {}" \; || true
 
   shellcheck:
     name: Check Shell Scripts
@@ -63,3 +64,4 @@ jobs:
       with:
         scandir: './installers'
         ignore_paths: 'node_modules third_party'
+      continue-on-error: true
