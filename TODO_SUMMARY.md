@@ -788,53 +788,56 @@ The project is **on track** and has a realistic, achievable roadmap to productio
 
 ### Complete List of TODO Comments (35 total)
 
-#### Layer 2 Infrastructure (6 TODOs)
-1. `layer2/indexers/tx_indexer/tx_indexer.h:47` - Database backend
+**Note:** This list reflects actual TODO comments found in the codebase via grep scan.
+
+#### Layer 2 Infrastructure (7 TODOs)
+1. `layer2/indexers/tx_indexer/tx_indexer.h:47` - Database backend (LevelDB/RocksDB)
 2. `layer2/indexers/contract_indexer/contract_indexer.h:58` - Database backend
-3. `layer2/apis/graphql/graphql_api.h:41` - GraphQL schema
-4. `layer2/apis/graphql/graphql_api.h:42` - Auth/rate limiting
-5. `layer2/apis/websocket/websocket_api.h:52` - WebSocket server
-6. `layer2/apis/websocket/websocket_api.h:53-54` - Auth/subscriptions
+3. `layer2/apis/graphql/graphql_api.h:41` - GraphQL schema and resolvers
+4. `layer2/apis/graphql/graphql_api.h:42` - Authentication/rate limiting
+5. `layer2/apis/websocket/websocket_api.h:52` - WebSocket server implementation
+6. `layer2/apis/websocket/websocket_api.h:53` - Authentication/rate limiting (WebSocket)
+7. `layer2/apis/websocket/websocket_api.h:54` - Subscription management
 
-#### Network & Node (12 TODOs)
-7. `layer1/core/node/node.cpp:32-34` - Disk I/O, P2P listener, sync
-8. `layer1/core/node/node.cpp:50-52` - P2P shutdown, state save
-9. `layer1/core/node/node.cpp:179` - Peer connection
-10. `layer1/core/p2p/zero_copy_network.cpp:144` - DPDK EAL init
-11. `layer1/core/p2p/zero_copy_network.cpp:160` - Port config
-12. `layer1/core/p2p/zero_copy_network.cpp:174` - Send packet burst
-13. `layer1/core/p2p/zero_copy_network.cpp:185` - Receive packets
-14. `layer1/core/p2p/zero_copy_network.cpp:193` - dlopen DPDK
-15. `layer1/core/p2p/zero_copy_network.cpp:202` - Port statistics
-16. `layer1/core/p2p/zero_copy_network.cpp:211` - Cleanup
+#### Network & P2P (8 TODOs)
+8. `layer1/core/node/node.cpp:179` - Initiate connection to peer
+9. `layer1/core/p2p/zero_copy_network.cpp:144` - Initialize DPDK EAL
+10. `layer1/core/p2p/zero_copy_network.cpp:160` - Configure port
+11. `layer1/core/p2p/zero_copy_network.cpp:174` - Send packet burst
+12. `layer1/core/p2p/zero_copy_network.cpp:185` - Receive packet burst
+13. `layer1/core/p2p/zero_copy_network.cpp:193` - dlopen librte_eal.so
+14. `layer1/core/p2p/zero_copy_network.cpp:202` - Get port statistics
+15. `layer1/core/p2p/zero_copy_network.cpp:211` - Stop ports and cleanup
 
-#### RPC & Wallet (5 TODOs - 4 in deprecated file)
-17. `layer1/rpc/rpc_server_old.cpp:36` - HTTP init (✅ DONE in rpc_server.cpp)
-18. `layer1/rpc/rpc_server_old.cpp:49` - HTTP shutdown (✅ DONE in rpc_server.cpp)
-19. `layer1/rpc/rpc_server_old.cpp:196` - Block retrieval (✅ DONE in rpc_server.cpp)
-20. `layer1/rpc/rpc_server_old.cpp:245` - TX deserialization (✅ DONE in rpc_server.cpp)
-21. `layer1/wallet/wallet.cpp:205` - Chain sync (ACTIVE TODO)
+#### RPC & Wallet (5 TODOs - 4 obsolete in old file)
+16. `layer1/rpc/rpc_server_old.cpp:36` - HTTP init (✅ DONE in rpc_server.cpp)
+17. `layer1/rpc/rpc_server_old.cpp:49` - HTTP shutdown (✅ DONE in rpc_server.cpp)
+18. `layer1/rpc/rpc_server_old.cpp:196` - Block retrieval (✅ DONE in rpc_server.cpp)
+19. `layer1/rpc/rpc_server_old.cpp:245` - TX deserialization (✅ DONE in rpc_server.cpp)
+20. `layer1/wallet/wallet.cpp:205` - Implement chain sync
 
-#### Hardware Acceleration (5 TODOs)
-22. `layer1/core/crypto/hardware_crypto.cpp:96` - CUDA init
-23. `layer1/core/crypto/hardware_crypto.cpp:126` - GPU verification
-24. `layer1/core/crypto/hardware_crypto.cpp:142` - GPU info
-25. `layer1/core/crypto/hardware_crypto.cpp:151` - CUDA runtime check
-26. `layer1/core/crypto/hardware_crypto.cpp:166` - CUDA cleanup
+#### Hardware Acceleration (5 TODOs - Optional)
+21. `layer1/core/crypto/hardware_crypto.cpp:96` - Initialize CUDA context
+22. `layer1/core/crypto/hardware_crypto.cpp:126` - Implement GPU batch verification
+23. `layer1/core/crypto/hardware_crypto.cpp:142` - Query GPU info
+24. `layer1/core/crypto/hardware_crypto.cpp:151` - Check for CUDA runtime
+25. `layer1/core/crypto/hardware_crypto.cpp:166` - Free CUDA resources
 
-#### Tests (7 TODOs)
-27. `tests/integration/test_integration.cpp:23` - Block production test
-28. `tests/integration/test_integration.cpp:47` - Transaction flow test
-29. `tests/integration/test_integration.cpp:71` - Network sync test
-30. `tests/integration/test_integration.cpp:93` - Smart contract test
-31. `tests/integration/test_integration_automated.cpp:236` - Contract deployment
-32. `tests/consensus/test_consensus.cpp:74` - Multi-asset schedules
-33. `tests/consensus/test_consensus.cpp:85` - Difficulty with chain data
-34. `tests/consensus/test_consensus.cpp:101` - Block validation
-35. `tests/consensus/test_consensus.cpp:118` - Chain management
+#### Integration Tests (5 TODOs)
+26. `tests/integration/test_integration.cpp:23` - Block production flow test
+27. `tests/integration/test_integration.cpp:47` - Transaction flow test
+28. `tests/integration/test_integration.cpp:71` - Network synchronization test
+29. `tests/integration/test_integration.cpp:93` - Smart contract flow test
+30. `tests/integration/test_integration_automated.cpp:236` - Contract deployment fields
+
+#### Consensus Tests (4 TODOs)
+31. `tests/consensus/test_consensus.cpp:74` - Test DRACHMA/OBOLOS schedules
+32. `tests/consensus/test_consensus.cpp:85` - Implement with chain data
+33. `tests/consensus/test_consensus.cpp:101` - Implement with block validation
+34. `tests/consensus/test_consensus.cpp:118` - Implement with chain management
 
 #### Tools (1 TODO)
-35. `tools/genesis_builder/genesis_builder.cpp:62` - Parse hex address
+35. `tools/genesis_builder/genesis_builder.cpp:62` - Parse hex address to pubkey
 
 ---
 
