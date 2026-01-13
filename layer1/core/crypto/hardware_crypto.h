@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <vector>
 #include <array>
+#include <string>
 
 namespace parthenon {
 namespace crypto {
