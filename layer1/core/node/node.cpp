@@ -130,14 +130,26 @@ bool Node::ProcessBlock(const primitives::Block& block, const std::string& peer_
 
 bool Node::SubmitTransaction(const primitives::Transaction& tx) {
     // Validate transaction
-    validation::TransactionValidator validator(*chain_);
-    if (!validator.ValidateTransaction(tx)) {
-        std::cout << "Rejected invalid transaction" << std::endl;
+    auto error = validation::TransactionValidator::ValidateStructure(tx);
+    if (error) {
+        std::cout << "Rejected invalid transaction: " << error->message << std::endl;
+        return false;
+    }
+    
+    error = validation::TransactionValidator::ValidateAgainstUTXO(tx, chain_->GetUTXOSet(), GetHeight());
+    if (error) {
+        std::cout << "Transaction validation failed: " << error->message << std::endl;
+        return false;
+    }
+    
+    error = validation::TransactionValidator::ValidateSignatures(tx, chain_->GetUTXOSet());
+    if (error) {
+        std::cout << "Invalid transaction signature: " << error->message << std::endl;
         return false;
     }
     
     // Add to mempool
-    if (!mempool_->AddTransaction(tx)) {
+    if (!mempool_->AddTransaction(tx, chain_->GetUTXOSet(), GetHeight())) {
         std::cout << "Transaction already in mempool" << std::endl;
         return false;
     }
@@ -157,14 +169,14 @@ uint32_t Node::GetHeight() const {
     return static_cast<uint32_t>(chain_->GetHeight());
 }
 
-std::optional<primitives::Block> Node::GetBlockByHeight(uint32_t height) const {
+std::optional<primitives::Block> Node::GetBlockByHeight(uint32_t /* height */) const {
     // TODO: Implement block storage and retrieval
     // For now, return nullopt
     return std::nullopt;
 }
 
 std::optional<primitives::Block> Node::GetBlockByHash(
-    const std::array<uint8_t, 32>& hash
+    const std::array<uint8_t, 32>& /* hash */
 ) const {
     // TODO: Implement block hash index
     // For now, return nullopt
@@ -201,14 +213,27 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     }
     
     // Validate all transactions
-    validation::TransactionValidator validator(*chain_);
     for (const auto& tx : block.transactions) {
         // Skip validation for coinbase (first transaction)
         if (&tx == &block.transactions[0]) {
             continue;
         }
         
-        if (!validator.ValidateTransaction(tx)) {
+        // Validate structure
+        auto error = validation::TransactionValidator::ValidateStructure(tx);
+        if (error) {
+            return false;
+        }
+        
+        // Validate against UTXO
+        error = validation::TransactionValidator::ValidateAgainstUTXO(tx, chain_->GetUTXOSet(), GetHeight());
+        if (error) {
+            return false;
+        }
+        
+        // Validate signatures
+        error = validation::TransactionValidator::ValidateSignatures(tx, chain_->GetUTXOSet());
+        if (error) {
             return false;
         }
     }
@@ -227,12 +252,12 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     return true;
 }
 
-void Node::BroadcastBlock(const primitives::Block& block) {
+void Node::BroadcastBlock(const primitives::Block& /* block */) {
     // TODO: Send block to all connected peers
     std::cout << "Broadcasting block at height " << GetHeight() << std::endl;
 }
 
-void Node::BroadcastTransaction(const primitives::Transaction& tx) {
+void Node::BroadcastTransaction(const primitives::Transaction& /* tx */) {
     // TODO: Send transaction to all connected peers
     std::cout << "Broadcasting transaction" << std::endl;
 }

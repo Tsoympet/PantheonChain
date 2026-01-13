@@ -36,9 +36,9 @@ std::optional<BlockTemplate> Miner::CreateBlockTemplate(size_t max_transactions)
     std::vector<primitives::AssetAmount> coinbase_rewards;
     
     // Get block rewards for each asset
-    auto tal_reward = consensus::IssuanceSchedule::GetBlockReward(primitives::AssetID::TALANTON, height);
-    auto dra_reward = consensus::IssuanceSchedule::GetBlockReward(primitives::AssetID::DRACHMA, height);
-    auto obl_reward = consensus::IssuanceSchedule::GetBlockReward(primitives::AssetID::OBOLOS, height);
+    auto tal_reward = consensus::Issuance::GetBlockReward(height, primitives::AssetID::TALANTON);
+    auto dra_reward = consensus::Issuance::GetBlockReward(height, primitives::AssetID::DRACHMA);
+    auto obl_reward = consensus::Issuance::GetBlockReward(height, primitives::AssetID::OBOLOS);
     
     // Add fees to rewards
     coinbase_rewards.push_back(primitives::AssetAmount(

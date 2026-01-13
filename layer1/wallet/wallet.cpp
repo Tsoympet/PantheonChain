@@ -3,6 +3,7 @@
 #include "wallet.h"
 #include "crypto/sha256.h"
 #include <algorithm>
+#include <stdexcept>
 
 namespace parthenon {
 namespace wallet {
@@ -165,7 +166,7 @@ std::optional<primitives::Transaction> Wallet::CreateTransaction(
         auto sighash = tx.GetSignatureHash(i);
         
         // Sign with Schnorr
-        auto signature_opt = crypto::Schnorr::Sign(sighash, privkey);
+        auto signature_opt = crypto::Schnorr::Sign(privkey, sighash.data());
         if (!signature_opt) {
             return std::nullopt; // Signature generation failed
         }
@@ -200,7 +201,7 @@ void Wallet::MarkSpent(const primitives::OutPoint& outpoint) {
     }
 }
 
-void Wallet::SyncWithChain(const chainstate::UTXOSet& utxo_set) {
+void Wallet::SyncWithChain(const chainstate::UTXOSet& /* utxo_set */) {
     // TODO: Implement chain sync
     // For each wallet address:
     // 1. Query chainstate for UTXOs to that address

@@ -324,12 +324,11 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
     
     // Create output
     primitives::TxOutput output;
-    output.amount = amount;
-    output.asset_id = asset_id;
+    output.value = primitives::AssetAmount(asset_id, amount);
     output.pubkey_script = recipient_pubkey;
     
-    // Create transaction
-    auto tx_result = wallet_->CreateTransaction({output}, 1000); // 1000 sat fee
+    // Create transaction using wallet
+    auto tx_result = wallet_->CreateTransaction({output}, asset_id, 1000); // 1000 sat fee
     
     if (!tx_result.has_value()) {
         response.error = "Failed to create transaction (insufficient funds?)";
@@ -343,7 +342,7 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
     
     if (success) {
         // Return transaction ID
-        auto tx_hash = tx.GetHash();
+        auto tx_hash = tx.GetTxID();
         std::ostringstream hex;
         hex << std::hex << std::setfill('0');
         for (uint8_t byte : tx_hash) {

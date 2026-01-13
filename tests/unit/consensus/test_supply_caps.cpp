@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <cmath>
+#include <vector>
 
 using namespace parthenon::consensus;
 using namespace parthenon::primitives;
