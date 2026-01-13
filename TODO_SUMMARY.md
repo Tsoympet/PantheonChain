@@ -824,7 +824,7 @@ The project is **on track** and has a realistic, achievable roadmap to productio
 35. `tests/consensus/test_consensus.cpp:118` - Chain management
 
 #### Tools (1 TODO)
-36. `tools/genesis_builder/genesis_builder.cpp:62` - Parse hex address
+35. `tools/genesis_builder/genesis_builder.cpp:62` - Parse hex address
 
 ---
 
