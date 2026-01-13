@@ -199,8 +199,7 @@ void TestAuxiliaryRandomness() {
     assert(sig_opt.has_value());
     
     // Verify the signature
-    bool valid = Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt);
-    assert(valid);
+    assert(Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt));
     
     std::cout << "  ✓ Passed" << std::endl;
 }
@@ -229,8 +228,7 @@ void TestBatchSignatures() {
         auto sig_opt = Schnorr::Sign(privkey, msg_hash.data(), nullptr);
         assert(sig_opt.has_value());
         
-        bool valid = Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt);
-        assert(valid);
+        assert(Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt));
     }
     
     std::cout << "  ✓ Passed (5 signatures)" << std::endl;
