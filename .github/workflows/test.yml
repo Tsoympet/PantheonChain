@@ -60,12 +60,6 @@ jobs:
           --output-file coverage.info
         lcov --list coverage.info
 
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: Tsoympet/PantheonChain
-
   test-macos:
     name: Test (macOS)
     runs-on: macos-latest
