@@ -201,12 +201,30 @@ void Wallet::MarkSpent(const primitives::OutPoint& outpoint) {
     }
 }
 
-void Wallet::SyncWithChain(const chainstate::UTXOSet& /* utxo_set */) {
-    // TODO: Implement chain sync
+void Wallet::SyncWithChain(const chainstate::UTXOSet& utxo_set) {
+    // Clear existing UTXOs and resync from chain
+    utxos_.clear();
+    
     // For each wallet address:
     // 1. Query chainstate for UTXOs to that address
     // 2. Add to wallet UTXO tracking
-    // 3. Mark spent UTXOs
+    for (const auto& addr : addresses_) {
+        // Get all UTXOs from the chainstate
+        const auto& all_utxos = utxo_set.GetAllUTXOs();
+        
+        for (const auto& [outpoint, utxo_entry] : all_utxos) {
+            // Check if this UTXO belongs to our wallet
+            if (utxo_entry.output.pubkey_script == addr.pubkey) {
+                // Add to wallet tracking
+                WalletUTXO wallet_utxo;
+                wallet_utxo.outpoint = outpoint;
+                wallet_utxo.output = utxo_entry.output;
+                wallet_utxo.height = utxo_entry.height;
+                wallet_utxo.is_spent = false;
+                utxos_.push_back(wallet_utxo);
+            }
+        }
+    }
 }
 
 crypto::Schnorr::PrivateKey Wallet::DeriveKey(uint64_t index) {
