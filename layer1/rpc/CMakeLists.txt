@@ -14,4 +14,6 @@ target_link_libraries(parthenon_rpc PUBLIC
     parthenon_primitives
     parthenon_node
     parthenon_wallet
+    leveldb
+    pthread
 )
