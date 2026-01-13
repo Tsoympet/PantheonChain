@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 add_library(layer2
-    payment_channels/payment_channel.cpp
+    bridges/channels/payment_channel.cpp
     bridges/htlc/htlc.cpp
     bridges/spv/spv_bridge.cpp
 )
@@ -16,5 +16,7 @@ target_link_libraries(layer2
     parthenon_primitives
 )
 
-# Note: Legacy paths (channels/, htlc/, spv/) maintained for backward compatibility
-# New code should use payment_channels/, bridges/htlc/, bridges/spv/
+# All layer2 code now organized under proper subdirectories:
+# - bridges/channels/ for payment channels
+# - bridges/htlc/ for hash time-locked contracts
+# - bridges/spv/ for simplified payment verification
