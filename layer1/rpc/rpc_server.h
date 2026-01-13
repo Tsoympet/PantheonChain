@@ -8,6 +8,12 @@
 #include <map>
 #include <memory>
 
+// Forward declarations
+namespace parthenon {
+    namespace node { class Node; }
+    namespace wallet { class Wallet; }
+}
+
 namespace parthenon {
 namespace rpc {
 
@@ -48,6 +54,16 @@ public:
     ~RPCServer();
     
     /**
+     * Set node instance for blockchain queries
+     */
+    void SetNode(node::Node* node);
+    
+    /**
+     * Set wallet instance for wallet operations
+     */
+    void SetWallet(wallet::Wallet* wallet);
+    
+    /**
      * Start the RPC server
      * @return true if server started successfully
      */
@@ -82,15 +98,21 @@ private:
     bool running_;
     std::map<std::string, RPCHandler> methods_;
     
+    // Component references
+    node::Node* node_;
+    wallet::Wallet* wallet_;
+    
     // Initialize standard RPC methods
     void InitializeStandardMethods();
     
-    // Standard method handlers (stubs for now)
+    // Standard method handlers
     RPCResponse HandleGetInfo(const RPCRequest& req);
     RPCResponse HandleGetBalance(const RPCRequest& req);
     RPCResponse HandleGetBlockCount(const RPCRequest& req);
     RPCResponse HandleGetBlock(const RPCRequest& req);
     RPCResponse HandleSendTransaction(const RPCRequest& req);
+    RPCResponse HandleGetNewAddress(const RPCRequest& req);
+    RPCResponse HandleSendToAddress(const RPCRequest& req);
 };
 
 } // namespace rpc

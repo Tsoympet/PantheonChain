@@ -151,3 +151,6 @@ target_compile_options(parthenon_mempool PRIVATE
 
 # Mining library
 add_subdirectory(mining)
+
+# Node library
+add_subdirectory(node)

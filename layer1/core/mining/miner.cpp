@@ -59,13 +59,14 @@ std::optional<BlockTemplate> Miner::CreateBlockTemplate(size_t max_transactions)
     
     // Construct block
     BlockTemplate block_template;
-    block_template.block.version = 1;
+    block_template.block.header.version = 1;
     // Previous block hash would come from chain tip - use zeros for now
-    block_template.block.prev_block = std::array<uint8_t, 32>{};
-    block_template.block.timestamp = static_cast<uint32_t>(
+    block_template.block.header.prev_block_hash = std::array<uint8_t, 32>{};
+    block_template.block.header.timestamp = static_cast<uint32_t>(
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())
     );
-    block_template.block.nonce = 0;
+    block_template.block.header.nonce = 0;
+    block_template.block.header.bits = 0x1d00ffff; // Initial difficulty target
     
     // Add transactions (coinbase first)
     block_template.block.transactions.push_back(coinbase);
@@ -76,7 +77,7 @@ std::optional<BlockTemplate> Miner::CreateBlockTemplate(size_t max_transactions)
     );
     
     // Calculate merkle root
-    block_template.block.merkle_root = ComputeMerkleRoot(block_template.block.transactions);
+    block_template.block.header.merkle_root = ComputeMerkleRoot(block_template.block.transactions);
     
     // Fill template metadata
     block_template.height = height;
@@ -110,7 +111,7 @@ std::optional<primitives::Block> Miner::MineBlock(
             return std::nullopt; // Mining stopped
         }
         
-        block.nonce = static_cast<uint32_t>(i);
+        block.header.nonce = static_cast<uint32_t>(i);
         
         // Check if this nonce produces a valid block
         if (VerifyProofOfWork(block, target)) {

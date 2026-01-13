@@ -100,7 +100,7 @@ std::optional<primitives::Transaction> Wallet::CreateTransaction(
     tx.version = 1;
     tx.locktime = 0;
     
-    // Add inputs (without signatures for now)
+    // Add inputs (without signatures initially)
     for (const auto& utxo : selected) {
         primitives::TxInput input;
         input.prevout = utxo.outpoint;
@@ -116,16 +116,65 @@ std::optional<primitives::Transaction> Wallet::CreateTransaction(
     // Add change output if needed
     if (total_in > total_out) {
         uint64_t change = total_in - total_out;
-        // TODO: Get change address
-        // For now, skip change output
+        
+        // Generate change address
+        auto change_addr = GenerateAddress("change");
+        
+        primitives::TxOutput change_output;
+        change_output.value = primitives::AssetAmount(asset, change);
+        change_output.pubkey_script = change_addr.pubkey;
+        
+        tx.outputs.push_back(change_output);
     }
     
     // Sign inputs
-    // TODO: Implement signature generation
-    // For each input, need to:
-    // 1. Get signature hash
-    // 2. Sign with corresponding private key
-    // 3. Set signature_script
+    for (size_t i = 0; i < tx.inputs.size(); i++) {
+        const auto& utxo = selected[i];
+        
+        // Find the private key for this UTXO
+        // Extract pubkey from UTXO's pubkey_script (assuming it's the raw 32-byte pubkey)
+        if (utxo.output.pubkey_script.size() != 32) {
+            return std::nullopt; // Invalid pubkey format
+        }
+        
+        // Find which address owns this UTXO
+        uint64_t key_index = 0;
+        bool found = false;
+        for (const auto& addr : addresses_) {
+            if (addr.pubkey == utxo.output.pubkey_script) {
+                key_index = addr.index;
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            return std::nullopt; // Don't have the key for this UTXO
+        }
+        
+        // Get the private key
+        auto it = keys_.find(key_index);
+        if (it == keys_.end()) {
+            // Derive the key if we don't have it cached
+            keys_[key_index] = DeriveKey(key_index);
+        }
+        
+        const auto& privkey = keys_[key_index];
+        
+        // Calculate signature hash for this input
+        auto sighash = tx.GetSignatureHash(i);
+        
+        // Sign with Schnorr
+        auto signature_opt = crypto::Schnorr::Sign(sighash, privkey);
+        if (!signature_opt) {
+            return std::nullopt; // Signature generation failed
+        }
+        
+        // Set the signature script (just the 64-byte signature)
+        tx.inputs[i].signature_script = std::vector<uint8_t>(
+            signature_opt->begin(), signature_opt->end()
+        );
+    }
     
     return tx;
 }

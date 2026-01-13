@@ -12,4 +12,6 @@ target_include_directories(parthenon_rpc PUBLIC
 target_link_libraries(parthenon_rpc PUBLIC
     parthenon_chainstate
     parthenon_primitives
+    parthenon_node
+    parthenon_wallet
 )
