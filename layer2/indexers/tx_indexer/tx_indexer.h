@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <memory>
 
 namespace parthenon {
 namespace layer2 {

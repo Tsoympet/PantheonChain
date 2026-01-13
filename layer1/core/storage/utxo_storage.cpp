@@ -42,7 +42,7 @@ std::string UTXOStorage::SerializeOutput(const primitives::TxOutput& output) {
     std::ostringstream oss;
     
     // Serialize asset amount
-    uint8_t asset_id = static_cast<uint8_t>(output.value.asset_id);
+    uint8_t asset_id = static_cast<uint8_t>(output.value.asset);
     oss.write(reinterpret_cast<const char*>(&asset_id), sizeof(asset_id));
     oss.write(reinterpret_cast<const char*>(&output.value.amount), sizeof(output.value.amount));
     
@@ -65,7 +65,7 @@ std::optional<primitives::TxOutput> UTXOStorage::DeserializeOutput(const std::st
     // Deserialize asset amount
     uint8_t asset_id;
     iss.read(reinterpret_cast<char*>(&asset_id), sizeof(asset_id));
-    output.value.asset_id = static_cast<primitives::AssetID>(asset_id);
+    output.value.asset = static_cast<primitives::AssetID>(asset_id);
     iss.read(reinterpret_cast<char*>(&output.value.amount), sizeof(output.value.amount));
     
     // Deserialize pubkey_script
@@ -177,7 +177,10 @@ bool UTXOStorage::LoadUTXOSet(chainstate::UTXOSet& utxo_set) {
         // Deserialize output
         auto output = DeserializeOutput(it->value().ToString());
         if (output.has_value()) {
-            utxo_set.AddUTXO(txid, vout, output.value());
+            // Create a Coin from the output (height and is_coinbase unknown from storage)
+            chainstate::Coin coin(output.value(), 0, false);
+            primitives::OutPoint outpoint(txid, vout);
+            utxo_set.AddCoin(outpoint, coin);
         }
     }
     
@@ -204,9 +207,9 @@ bool UTXOStorage::SaveUTXOSet(const chainstate::UTXOSet& utxo_set) {
     auto& utxos = utxo_set.GetUTXOs();
     uint64_t count = 0;
     
-    for (const auto& [outpoint, output] : utxos) {
+    for (const auto& [outpoint, coin] : utxos) {
         std::string key = UTXOKey(outpoint.txid, outpoint.vout);
-        std::string value = SerializeOutput(output);
+        std::string value = SerializeOutput(coin.output);
         batch.Put(key, value);
         count++;
     }

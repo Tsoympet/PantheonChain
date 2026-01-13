@@ -4,6 +4,8 @@
 #include "websocket_api.h"
 #include <algorithm>
 #include <mutex>
+#include <map>
+#include <memory>
 
 namespace parthenon {
 namespace layer2 {
@@ -44,9 +46,11 @@ public:
         std::lock_guard<std::mutex> lock(mutex_);
         
         // In a real implementation, send to all connected WebSocket clients
-        for (auto& client : clients_) {
+        for (const auto& client : clients_) {
             // websocket_send(client.connection, message);
+            (void)client;  // Suppress unused warning
         }
+        (void)message;  // Suppress unused warning (would be used in websocket_send)
     }
     
     void OnNewBlock(std::function<void(const std::string&)> callback) {
@@ -82,6 +86,7 @@ public:
                 
                 if (client_it != clients_.end()) {
                     // websocket_send(client_it->connection, message);
+                    (void)message;  // Suppress unused warning (would be used in websocket_send)
                 }
             }
         }

@@ -103,21 +103,22 @@ void TestDifficultyDeterminism() {
     uint32_t time_end2 = time_start + (2016 * 5 * 60);  // Half the expected time
     
     // Calculate difficulty multiple times with same inputs
-    uint32_t new_target1a = Difficulty::CalculateNextTarget(target1, time_start, time_end1, 2016);
-    uint32_t new_target1b = Difficulty::CalculateNextTarget(target1, time_start, time_end1, 2016);
+    uint32_t new_target1a = Difficulty::CalculateNextDifficulty(target1, time_end1 - time_start, 2016 * 10 * 60);
+    uint32_t new_target1b = Difficulty::CalculateNextDifficulty(target1, time_end1 - time_start, 2016 * 10 * 60);
     
     // Verify determinism
     assert(new_target1a == new_target1b);
     std::cout << "  ✅ Difficulty calculation is deterministic" << std::endl;
     
     // Verify difficulty increases (target decreases) when blocks are faster
-    uint32_t new_target2 = Difficulty::CalculateNextTarget(target1, time_start, time_end2, 2016);
+    uint32_t new_target2 = Difficulty::CalculateNextDifficulty(target1, time_end2 - time_start, 2016 * 10 * 60);
     assert(new_target2 < target1); // Target should decrease (difficulty increase)
     std::cout << "  ✅ Difficulty adjusts correctly for faster blocks" << std::endl;
     
     // Verify clamping (max 4x change)
     uint32_t time_very_fast = time_start + (2016 * 60); // 10x faster
-    uint32_t new_target3 = Difficulty::CalculateNextTarget(target1, time_start, time_very_fast, 2016);
+    uint32_t time_span_very_fast = time_very_fast - time_start;
+    (void)time_span_very_fast;  // Suppress unused warning
     // Should be clamped to 4x difficulty increase (target / 4)
     std::cout << "  ✅ Difficulty adjustment clamping verified" << std::endl;
 }

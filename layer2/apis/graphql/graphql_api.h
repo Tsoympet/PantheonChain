@@ -4,6 +4,8 @@
 #pragma once
 
 #include <string>
+#include <functional>
+#include <memory>
 
 namespace parthenon {
 namespace layer2 {

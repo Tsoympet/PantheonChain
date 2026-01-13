@@ -9,6 +9,7 @@
 #include "primitives/transaction.h"
 #include <vector>
 #include <map>
+#include <set>
 #include <memory>
 #include <thread>
 #include <mutex>
