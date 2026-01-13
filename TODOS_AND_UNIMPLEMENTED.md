@@ -6,18 +6,45 @@
 
 ---
 
+## ⚠️ CRITICAL SECURITY WARNING ⚠️
+
+**IMMEDIATE ACTION REQUIRED BEFORE ANY TESTNET/MAINNET DEPLOYMENT:**
+
+There is a **CRITICAL SECURITY VULNERABILITY** in the GPU signature verification code:
+
+- **File:** `layer1/core/crypto/hardware_crypto.cpp`
+- **Line:** 126
+- **Issue:** `GPUSignatureVerifier::BatchVerify()` returns ALL signatures as VALID without performing any verification
+- **Impact:** Accepting invalid transactions, complete security bypass
+- **Risk Level:** CRITICAL - DO NOT USE GPU verification path
+
+**Required Action:** The GPU verification path MUST be disabled before any network deployment. Recommended fix:
+```cpp
+// In hardware_crypto.cpp, line 151
+bool GPUSignatureVerifier::IsAvailable() {
+    return false;  // Disable GPU path until proper CUDA implementation
+}
+```
+
+**Alternative:** Always use CPU-based signature verification (fully implemented and secure).
+
+---
+
 ## EXECUTIVE SUMMARY
 
 This document provides a **complete inventory** of all TODO comments, stub implementations, and unimplemented features in the PantheonChain codebase.
 
 ### Quick Statistics
 
-- **TODO Comments in Code:** 16 (in C++ source files)
-- **Documented TODOs:** 26 (per TODO_SUMMARY.md)
+- **TODO Comments in Code:** 16 (in C++ source files with exact line numbers)
+- **Documented TODOs:** 26 (per TODO_SUMMARY.md - includes additional planning items)
+- **Note:** The difference (26 vs 16) is because TODO_SUMMARY.md includes:
+  - 16 actual TODO comments in code
+  - 10 additional documented features/enhancements without explicit TODO comments
 - **Major Unimplemented Features:** 7
 - **Stub Implementations:** 5 components
 - **Current Completion:** 72% production-ready
-- **Critical Blockers:** 0 (all resolved)
+- **Critical Security Issues:** 1 (GPU signature verification - see warning above)
 - **High Priority Items:** 3
 - **Medium Priority Items:** 8
 - **Low Priority Items:** 5

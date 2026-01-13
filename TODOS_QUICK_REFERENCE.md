@@ -5,19 +5,33 @@
 
 ---
 
+## ⚠️ CRITICAL SECURITY WARNING
+
+**GPU Signature Verification Vulnerability**
+- **File:** `layer1/core/crypto/hardware_crypto.cpp:126`
+- **Issue:** Returns ALL signatures as VALID without verification
+- **Action Required:** Disable GPU path before deployment (change line 151 to `return false;`)
+- **See:** [Full security warning in detailed report](TODOS_AND_UNIMPLEMENTED.md#critical-security-warning)
+
+---
+
 ## Quick Stats
 
-| Metric | Count |
-|--------|-------|
-| TODO Comments in C++ Code | 16 |
-| Documented TODOs (TODO_SUMMARY.md) | 26 |
-| Major Unimplemented Features | 7 |
-| Stub Implementations | 5 |
-| Current Completion | 72% |
-| Critical Security Issues | 1 |
-| High Priority Items | 3 |
-| Medium Priority Items | 8 |
-| Low Priority Items | 5 |
+| Metric | Count | Note |
+|--------|-------|------|
+| TODO Comments in C++ Code | 16 | Actual code comments |
+| Documented TODOs (TODO_SUMMARY.md) | 26 | Includes 10 planning items |
+| Major Unimplemented Features | 7 | Layer 2, GUI, etc. |
+| Stub Implementations | 5 | GPU, DPDK, RPC, P2P, Wallet |
+| Current Completion | 72% | Production-ready |
+| Critical Security Issues | 1 | GPU verification (see above) |
+| High Priority Items | 3 | P2P, Wallet, RPC |
+| Medium Priority Items | 8 | Various enhancements |
+| Low Priority Items | 5 | Optional optimizations |
+
+**Note on TODO counts:** The 16 vs 26 difference is because TODO_SUMMARY.md includes both:
+- 16 explicit TODO comments in source code
+- 10 documented features/enhancements without TODO comments
 
 ---
 
