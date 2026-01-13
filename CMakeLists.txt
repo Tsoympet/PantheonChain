@@ -28,25 +28,18 @@ set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON CACHE BOOL "Enable Schnorr signature m
 set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON CACHE BOOL "Enable extra keys module")
 add_subdirectory(third_party/secp256k1 EXCLUDE_FROM_ALL)
 
-# Build LevelDB for blockchain storage (without -Werror)
-if(MSVC)
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} /W3")
-else()
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
-endif()
+# Build LevelDB for blockchain storage (without strict warnings)
 set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build LevelDB tests")
 set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build LevelDB benchmarks")
 add_subdirectory(third_party/leveldb EXCLUDE_FROM_ALL)
-# Restore flags
-if(MSVC)
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} /W4 /WX")
-else()
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror")
+# Remove strict warning flags from leveldb target to avoid errors in third-party code
+if(TARGET leveldb)
+  target_compile_options(leveldb PRIVATE -Wno-error -Wno-conversion -Wno-old-style-cast -Wno-shadow)
 endif()
 
-# Include directories for header-only libraries
-include_directories(${CMAKE_SOURCE_DIR}/third_party/cpp-httplib)
-include_directories(${CMAKE_SOURCE_DIR}/third_party/json/include)
+# Include directories for header-only libraries (as system includes to suppress warnings)
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party/cpp-httplib)
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party/json/include)
 
 # Layer 1 Core - Consensus Critical
 add_subdirectory(layer1)

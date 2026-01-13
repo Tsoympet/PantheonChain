@@ -153,7 +153,7 @@ uint256_t VM::Mul(const uint256_t& a, const uint256_t& b) const {
             uint32_t product = static_cast<uint32_t>(a[j]) * static_cast<uint32_t>(b[i]) + 
                                static_cast<uint32_t>(result[result_idx]) + carry;
             result[result_idx] = static_cast<uint8_t>(product & 0xFF);
-            carry = product >> 8;
+            carry = static_cast<uint16_t>(product >> 8);
         }
     }
     

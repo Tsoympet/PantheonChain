@@ -177,7 +177,7 @@ std::optional<Block> Block::Deserialize(const uint8_t* data, size_t len) {
     
     // Transactions
     for (uint64_t i = 0; i < tx_count; i++) {
-        size_t remaining = len - (ptr - data);
+        size_t remaining = len - static_cast<size_t>(ptr - data);
         auto tx = Transaction::Deserialize(ptr, remaining);
         if (!tx) return std::nullopt;
         block.transactions.push_back(*tx);

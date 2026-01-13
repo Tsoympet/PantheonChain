@@ -172,7 +172,7 @@ bool UTXOStorage::LoadUTXOSet(chainstate::UTXOSet& utxo_set) {
         if (underscore_pos == std::string::npos) {
             continue;
         }
-        uint32_t vout = std::stoul(key.substr(underscore_pos + 1));
+        uint32_t vout = static_cast<uint32_t>(std::stoul(key.substr(underscore_pos + 1)));
         
         // Deserialize output
         auto output = DeserializeOutput(it->value().ToString());

@@ -36,13 +36,6 @@ updates:
     open-pull-requests-limit: 10
     reviewers:
       - "Tsoympet"
-    # Security updates only for critical crypto libraries
-    allow: 
-      - dependency-name: "third_party/secp256k1"
-        update-types: ["version-update:semver-patch", "version-update:semver-minor"]
-      - dependency-name: "third_party/leveldb"
-      - dependency-name: "third_party/cpp-httplib"
-      - dependency-name: "third_party/json"
     # Group related updates
     groups:
       crypto-libraries:
