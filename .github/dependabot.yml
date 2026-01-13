@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: 
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    
+  # Enable version updates for Docker (if you use Docker)
+  - package-ecosystem: "docker"
+    directory:  "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+    
+  # Enable security updates for pip (if you have any Python scripts)
+  - package-ecosystem:  "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: 
+      - "dependencies"
+      - "python"
