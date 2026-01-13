@@ -207,6 +207,14 @@ bool Node::ProcessBlock(const primitives::Block& block, const std::string& peer_
         is_syncing_ = false;
     }
     
+    // Update wallet if attached
+    {
+        std::lock_guard<std::mutex> lock(wallet_mutex_);
+        if (wallet_) {
+            wallet_->ProcessBlock(block, block_height);
+        }
+    }
+    
     // Notify callbacks
     for (const auto& callback : block_callbacks_) {
         callback(block);
@@ -614,6 +622,60 @@ Node::MiningStats Node::GetMiningStats() const {
     }
     
     return stats;
+}
+
+void Node::AttachWallet(std::shared_ptr<wallet::Wallet> wallet) {
+    std::lock_guard<std::mutex> lock(wallet_mutex_);
+    wallet_ = wallet;
+    std::cout << "Wallet attached to node" << std::endl;
+    
+    // Sync wallet with current chain state if node is running
+    if (running_ && wallet_) {
+        std::cout << "Syncing wallet with blockchain..." << std::endl;
+        SyncWalletWithChain();
+    }
+}
+
+void Node::DetachWallet() {
+    std::lock_guard<std::mutex> lock(wallet_mutex_);
+    wallet_ = nullptr;
+    std::cout << "Wallet detached from node" << std::endl;
+}
+
+void Node::SyncWalletWithChain() {
+    std::lock_guard<std::mutex> lock(wallet_mutex_);
+    
+    if (!wallet_) {
+        std::cout << "No wallet attached" << std::endl;
+        return;
+    }
+    
+    std::cout << "Syncing wallet with chain..." << std::endl;
+    
+    uint32_t current_height = GetHeight();
+    std::cout << "Processing " << current_height + 1 << " blocks..." << std::endl;
+    
+    // Process all blocks from genesis to current height
+    for (uint32_t height = 0; height <= current_height; height++) {
+        auto block_opt = GetBlockByHeight(height);
+        if (block_opt) {
+            wallet_->ProcessBlock(*block_opt, height);
+        }
+        
+        // Show progress every 100 blocks
+        if (height % 100 == 0 && height > 0) {
+            std::cout << "  Processed " << height << " / " << current_height + 1 << " blocks" << std::endl;
+        }
+    }
+    
+    std::cout << "Wallet sync complete!" << std::endl;
+    
+    // Display wallet balances
+    auto balances = wallet_->GetBalances();
+    std::cout << "Wallet balances:" << std::endl;
+    std::cout << "  TALANTON: " << balances[primitives::AssetID::TALANTON] / 100000000.0 << std::endl;
+    std::cout << "  DRACHMA:  " << balances[primitives::AssetID::DRACHMA] / 100000000.0 << std::endl;
+    std::cout << "  OBOLOS:   " << balances[primitives::AssetID::OBOLOS] / 100000000.0 << std::endl;
 }
 
 } // namespace node

@@ -12,12 +12,14 @@
 #include "mining/miner.h"
 #include "storage/block_storage.h"
 #include "storage/utxo_storage.h"
+#include "wallet/wallet.h"
 #include <vector>
 #include <map>
 #include <memory>
 #include <functional>
 #include <thread>
 #include <atomic>
+#include <mutex>
 
 namespace parthenon {
 namespace node {
@@ -162,6 +164,30 @@ public:
     };
     MiningStats GetMiningStats() const;
     
+    /**
+     * Attach a wallet for UTXO synchronization
+     * Wallet will be automatically updated when blocks are processed
+     * @param wallet Shared pointer to wallet instance
+     */
+    void AttachWallet(std::shared_ptr<wallet::Wallet> wallet);
+    
+    /**
+     * Detach wallet from node
+     */
+    void DetachWallet();
+    
+    /**
+     * Get attached wallet
+     * @return Shared pointer to wallet, or nullptr if no wallet attached
+     */
+    std::shared_ptr<wallet::Wallet> GetWallet() const { return wallet_; }
+    
+    /**
+     * Sync wallet with current blockchain state
+     * Processes all blocks from genesis to current tip
+     */
+    void SyncWalletWithChain();
+    
 private:
     std::string data_dir_;
     uint16_t port_;
@@ -195,6 +221,10 @@ private:
     std::atomic<uint64_t> total_hashes_;
     std::atomic<uint32_t> blocks_mined_;
     std::vector<uint8_t> coinbase_pubkey_;
+    
+    // Wallet for UTXO tracking
+    std::shared_ptr<wallet::Wallet> wallet_;
+    std::mutex wallet_mutex_;
     
     // Internal methods
     void SyncLoop();
