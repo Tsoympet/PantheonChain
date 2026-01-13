@@ -1,7 +1,11 @@
 # Tests directory
 
 # Suppress unused variable warnings in test files
-add_compile_options(-Wno-unused-variable -Wno-unused-but-set-variable)
+if(MSVC)
+  add_compile_options(/wd4101 /wd4189)
+else()
+  add_compile_options(-Wno-unused-variable -Wno-unused-but-set-variable)
+endif()
 
 add_subdirectory(unit)
 
