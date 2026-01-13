@@ -11,7 +11,7 @@ namespace primitives {
 // BlockHeader methods
 std::vector<uint8_t> BlockHeader::Serialize() const {
     std::vector<uint8_t> result;
-    result.reserve(80); // Block header is always 80 bytes
+    result.reserve(104); // Extended header: 80 + 24 = 104 bytes
     
     // Version (4 bytes)
     result.push_back(static_cast<uint8_t>(version));
@@ -42,6 +42,36 @@ std::vector<uint8_t> BlockHeader::Serialize() const {
     result.push_back(static_cast<uint8_t>(nonce >> 8));
     result.push_back(static_cast<uint8_t>(nonce >> 16));
     result.push_back(static_cast<uint8_t>(nonce >> 24));
+    
+    // Base fee per gas (8 bytes)
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas));
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas >> 8));
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas >> 16));
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas >> 24));
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas >> 32));
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas >> 40));
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas >> 48));
+    result.push_back(static_cast<uint8_t>(base_fee_per_gas >> 56));
+    
+    // Gas used (8 bytes)
+    result.push_back(static_cast<uint8_t>(gas_used));
+    result.push_back(static_cast<uint8_t>(gas_used >> 8));
+    result.push_back(static_cast<uint8_t>(gas_used >> 16));
+    result.push_back(static_cast<uint8_t>(gas_used >> 24));
+    result.push_back(static_cast<uint8_t>(gas_used >> 32));
+    result.push_back(static_cast<uint8_t>(gas_used >> 40));
+    result.push_back(static_cast<uint8_t>(gas_used >> 48));
+    result.push_back(static_cast<uint8_t>(gas_used >> 56));
+    
+    // Gas limit (8 bytes)
+    result.push_back(static_cast<uint8_t>(gas_limit));
+    result.push_back(static_cast<uint8_t>(gas_limit >> 8));
+    result.push_back(static_cast<uint8_t>(gas_limit >> 16));
+    result.push_back(static_cast<uint8_t>(gas_limit >> 24));
+    result.push_back(static_cast<uint8_t>(gas_limit >> 32));
+    result.push_back(static_cast<uint8_t>(gas_limit >> 40));
+    result.push_back(static_cast<uint8_t>(gas_limit >> 48));
+    result.push_back(static_cast<uint8_t>(gas_limit >> 56));
     
     return result;
 }
@@ -75,6 +105,29 @@ BlockHeader BlockHeader::Deserialize(const uint8_t* data) {
     // Nonce
     header.nonce = data[0] | (static_cast<uint32_t>(data[1]) << 8) |
                   (static_cast<uint32_t>(data[2]) << 16) | (static_cast<uint32_t>(data[3]) << 24);
+    data += 4;
+    
+    // Base fee per gas (8 bytes) - if available (version >= 2)
+    if (header.version >= 2) {
+        header.base_fee_per_gas = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                                 (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
+                                 (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
+                                 (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
+        data += 8;
+        
+        // Gas used (8 bytes)
+        header.gas_used = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                         (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
+                         (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
+                         (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
+        data += 8;
+        
+        // Gas limit (8 bytes)
+        header.gas_limit = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                          (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
+                          (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
+                          (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
+    }
     
     return header;
 }
