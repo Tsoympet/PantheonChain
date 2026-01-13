@@ -35,11 +35,19 @@ struct PeerInfo {
     uint32_t invalid_messages;
     uint32_t protocol_violations;
     
+    // Geographic diversity tracking
+    std::string country_code;  // ISO 3166-1 alpha-2 (e.g., "US", "CN", "DE")
+    std::string asn;           // Autonomous System Number
+    double latitude;
+    double longitude;
+    std::string isp;
+    
     PeerInfo() : port(0), services(0), last_seen(0), first_seen(0),
                  connection_attempts(0), successful_connections(0),
                  failed_connections(0), is_banned(false), ban_until(0),
                  score(0.0), blocks_received(0), txs_received(0),
-                 invalid_messages(0), protocol_violations(0) {}
+                 invalid_messages(0), protocol_violations(0),
+                 latitude(0.0), longitude(0.0) {}
 };
 
 /**
@@ -82,6 +90,16 @@ public:
     // Statistics
     size_t GetPeerCount();
     size_t GetBannedCount();
+    
+    // Geographic diversity
+    void SetPeerGeolocation(const std::string& address, uint16_t port,
+                            const std::string& country_code,
+                            const std::string& asn,
+                            double latitude, double longitude,
+                            const std::string& isp = "");
+    std::map<std::string, size_t> GetCountryDistribution();
+    std::map<std::string, size_t> GetASNDistribution();
+    std::vector<PeerInfo> GetGeographicallyDiversePeers(size_t max_count = 100);
     
 private:
     std::string MakeKey(const std::string& address, uint16_t port);

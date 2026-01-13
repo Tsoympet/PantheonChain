@@ -9,6 +9,8 @@ add_library(parthenon_p2p STATIC
     network_manager.cpp
     peer_database.cpp
     tls_connection.cpp
+    zero_copy_network.cpp
+    certificate_rotation.cpp
 )
 
 target_include_directories(parthenon_p2p PUBLIC

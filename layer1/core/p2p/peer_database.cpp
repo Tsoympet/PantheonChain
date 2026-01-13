@@ -304,5 +304,112 @@ size_t PeerDatabase::GetBannedCount() {
     return count;
 }
 
+void PeerDatabase::SetPeerGeolocation(const std::string& address, uint16_t port,
+                                       const std::string& country_code,
+                                       const std::string& asn,
+                                       double latitude, double longitude,
+                                       const std::string& isp) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::string key = MakeKey(address, port);
+    auto& info = peers_[key];
+    info.country_code = country_code;
+    info.asn = asn;
+    info.latitude = latitude;
+    info.longitude = longitude;
+    info.isp = isp;
+}
+
+std::map<std::string, size_t> PeerDatabase::GetCountryDistribution() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::map<std::string, size_t> distribution;
+    
+    for (const auto& pair : peers_) {
+        if (!pair.second.country_code.empty()) {
+            distribution[pair.second.country_code]++;
+        }
+    }
+    
+    return distribution;
+}
+
+std::map<std::string, size_t> PeerDatabase::GetASNDistribution() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::map<std::string, size_t> distribution;
+    
+    for (const auto& pair : peers_) {
+        if (!pair.second.asn.empty()) {
+            distribution[pair.second.asn]++;
+        }
+    }
+    
+    return distribution;
+}
+
+std::vector<PeerInfo> PeerDatabase::GetGeographicallyDiversePeers(size_t max_count) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    std::vector<PeerInfo> candidates;
+    time_t now = std::time(nullptr);
+    
+    // Filter: not banned, good score, has geolocation
+    for (const auto& pair : peers_) {
+        const auto& info = pair.second;
+        if (!info.is_banned && 
+            (info.ban_until == 0 || info.ban_until < now) &&
+            info.score >= 25.0 &&
+            !info.country_code.empty()) {
+            candidates.push_back(info);
+        }
+    }
+    
+    if (candidates.size() <= max_count) {
+        return candidates;
+    }
+    
+    // Diversity selection algorithm:
+    // 1. Group by country
+    // 2. Select peers evenly from different countries
+    // 3. Within each country, select by highest score
+    
+    std::map<std::string, std::vector<PeerInfo>> by_country;
+    for (const auto& peer : candidates) {
+        by_country[peer.country_code].push_back(peer);
+    }
+    
+    // Sort each country's peers by score
+    for (auto& pair : by_country) {
+        std::sort(pair.second.begin(), pair.second.end(),
+                  [](const PeerInfo& a, const PeerInfo& b) {
+                      return a.score > b.score;
+                  });
+    }
+    
+    // Round-robin selection from countries
+    std::vector<PeerInfo> result;
+    size_t index = 0;
+    
+    while (result.size() < max_count) {
+        bool added = false;
+        
+        for (auto& pair : by_country) {
+            if (index < pair.second.size()) {
+                result.push_back(pair.second[index]);
+                added = true;
+                
+                if (result.size() >= max_count) {
+                    break;
+                }
+            }
+        }
+        
+        if (!added) {
+            break; // No more peers available
+        }
+        index++;
+    }
+    
+    return result;
+}
+
 } // namespace p2p
 } // namespace parthenon

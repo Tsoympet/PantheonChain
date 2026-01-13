@@ -4,6 +4,7 @@
 add_library(parthenon_crypto STATIC
     crypto/sha256.cpp
     crypto/schnorr.cpp
+    crypto/hardware_crypto.cpp
 )
 
 target_include_directories(parthenon_crypto PUBLIC
