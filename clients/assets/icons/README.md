@@ -15,9 +15,19 @@ icons/
 │   ├── parthenon-desktop.svg    # Desktop GUI application
 │   └── parthenon-mobile.svg     # Mobile wallet
 │
-└── client/        # Client daemon/CLI icons
-    ├── parthenond.svg           # Full node daemon
-    └── parthenon-cli.svg        # Command-line interface
+├── client/        # Client daemon/CLI icons
+│   ├── parthenond.svg           # Full node daemon
+│   └── parthenon-cli.svg        # Command-line interface
+│
+├── common/        # Common branding assets
+│   ├── icon.svg                 # Main icon
+│   ├── logo.svg                 # Main logo
+│   └── favicon.svg              # Favicon
+│
+└── tokens/        # Token icons
+    ├── token-drachma.svg        # Drachma token
+    ├── token-obolos.svg         # Obolos token
+    └── token-talanton.svg       # Talanton token
 ```
 
 ## Icon Specifications
@@ -114,11 +124,25 @@ done
 ## Naming Conventions
 
 All filenames follow deterministic naming:
+
+**Application Icons:**
 - `parthenonchain.svg` - Main protocol/network icon
-- `parthenond.svg` - Full node daemon
-- `parthenon-cli.svg` - Command-line interface
 - `parthenon-desktop.svg` - Desktop GUI
 - `parthenon-mobile.svg` - Mobile wallet
+
+**Client Icons:**
+- `parthenond.svg` - Full node daemon
+- `parthenon-cli.svg` - Command-line interface
+
+**Common Branding:**
+- `icon.svg` - Main icon
+- `logo.svg` - Main logo
+- `favicon.svg` - Favicon
+
+**Token Icons:**
+- `token-drachma.svg` - Drachma token
+- `token-obolos.svg` - Obolos token
+- `token-talanton.svg` - Talanton token
 
 **No ambiguous names.** Each icon has a clear, singular purpose.
 
