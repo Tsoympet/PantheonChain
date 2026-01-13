@@ -136,7 +136,7 @@ jobs:
         GPG_KEY_ID=$GPG_KEY_ID ./sign-release.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm
     
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         draft: true
         files: |
