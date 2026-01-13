@@ -210,7 +210,7 @@ void Wallet::SyncWithChain(const chainstate::UTXOSet& utxo_set) {
     // 2. Add to wallet UTXO tracking
     for (const auto& addr : addresses_) {
         // Get all UTXOs from the chainstate
-        const auto& all_utxos = utxo_set.GetAllUTXOs();
+        const auto& all_utxos = utxo_set.GetUTXOs();
         
         for (const auto& [outpoint, utxo_entry] : all_utxos) {
             // Check if this UTXO belongs to our wallet

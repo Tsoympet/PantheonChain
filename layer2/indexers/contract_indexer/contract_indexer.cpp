@@ -107,10 +107,16 @@ public:
         return result;
     }
     
-    std::optional<ContractInfo> GetContractInfo(const std::array<uint8_t, 20>& address) {
+    std::optional<ContractIndexer::ContractInfo> GetContractInfo(const std::array<uint8_t, 20>& address) {
         auto it = contracts_.find(address);
         if (it != contracts_.end()) {
-            return it->second;
+            // Convert internal ContractInfo to external ContractInfo
+            ContractIndexer::ContractInfo result;
+            result.address = it->second.address;
+            result.code = it->second.code;
+            result.deployment_height = it->second.deployment_height;
+            result.event_count = it->second.event_count;
+            return result;
         }
         return std::nullopt;
     }

@@ -380,7 +380,7 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     }
     
     // Store block to disk
-    uint32_t height = block.header.height;
+    uint32_t height = chain_->GetHeight();  // Get height from chain state
     if (block_storage_ && block_storage_->IsOpen()) {
         block_storage_->StoreBlock(block, height);
         auto block_hash = block.GetHash();
@@ -518,14 +518,16 @@ void Node::StartMining(const std::vector<uint8_t>& coinbase_pubkey, size_t num_t
         if (num_threads == 0) num_threads = 1;
     }
     
-    // Initialize miner
-    auto& chainstate = chain_->GetChainState();
-    miner_ = std::make_unique<mining::Miner>(chainstate, coinbase_pubkey_);
+    // Note: Miner initialization would require passing chainstate
+    // For now, mining is not fully integrated with the node
+    // TODO: Create miner with proper chainstate reference
+    // miner_ = std::make_unique<mining::Miner>(chainstate, coinbase_pubkey);
     
     is_mining_ = true;
     total_hashes_ = 0;
     
     std::cout << "Starting mining with " << num_threads << " threads" << std::endl;
+    std::cout << "NOTE: Mining integration with node is pending full implementation" << std::endl;
     
     // Start mining threads
     for (size_t i = 0; i < num_threads; ++i) {

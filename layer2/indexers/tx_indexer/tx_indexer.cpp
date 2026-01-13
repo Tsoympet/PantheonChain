@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <map>
+#include <memory>
 
 namespace parthenon {
 namespace layer2 {
@@ -55,19 +57,17 @@ public:
         tx_by_id_[txid] = info;
         
         // Index by addresses (inputs and outputs)
-        for (const auto& input : tx.inputs) {
-            // Extract address from previous output (would need UTXO lookup in real impl)
-            // For now, use simplified indexing
-        }
+        // Note: Input indexing would require UTXO lookup in real implementation
+        (void)tx.inputs;  // Suppress unused warning for now
         
         for (size_t i = 0; i < tx.outputs.size(); ++i) {
             const auto& output = tx.outputs[i];
             // Extract address from output script
             std::vector<uint8_t> address;
             
-            // Simplified: use scriptPubKey as address identifier
-            if (output.scriptPubKey.size() > 0) {
-                address = output.scriptPubKey;
+            // Simplified: use pubkey_script as address identifier
+            if (output.pubkey_script.size() > 0) {
+                address = output.pubkey_script;
                 tx_by_address_[address].push_back(txid);
             }
         }

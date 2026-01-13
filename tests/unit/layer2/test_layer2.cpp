@@ -1,6 +1,6 @@
-#include "layer2/channels/payment_channel.h"
-#include "layer2/htlc/htlc.h"
-#include "layer2/spv/spv_bridge.h"
+#include "layer2/bridges/channels/payment_channel.h"
+#include "layer2/bridges/htlc/htlc.h"
+#include "layer2/bridges/spv/spv_bridge.h"
 #include <cassert>
 #include <iostream>
 
