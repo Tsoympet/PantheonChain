@@ -22,10 +22,10 @@
 | TODO Comments in C++ Code | 12 | Down from 16 (4 fixed) |
 | Documented TODOs (TODO_SUMMARY.md) | 26 | Includes 10 planning items |
 | Major Unimplemented Features | 7 | Layer 2, GUI, etc. |
-| Stub Implementations | 3 | DPDK, RPC, Wallet (GPU & P2P fixed) |
-| Current Completion | 75% | Up from 72% |
+| Stub Implementations | 2 | DPDK, RPC (GPU, P2P, Wallet fixed) |
+| Current Completion | 76% | Up from 72% |
 | Critical Security Issues | 0 | Fixed! (was 1) |
-| High Priority Items | 2 | Down from 3 (P2P fixed) |
+| High Priority Items | 1 | Down from 3 (P2P & Wallet fixed) |
 | Medium Priority Items | 6 | Unchanged |
 | Low Priority Items | 5 | Unchanged |
 
@@ -100,25 +100,23 @@
 - **Status:** FIXED in commit 6149484
 - **Impact:** Integration tests now properly test contract deployment
 
+### 3. Wallet UTXO Synchronization ✅
+- **File:** `layer1/wallet/wallet.cpp` + `layer1/core/node/node.cpp`
+- **Issue:** Wallet not integrated with node, couldn't track balance from blockchain
+- **Fix:** Added wallet integration to Node class with AttachWallet(), SyncWalletWithChain()
+- **Status:** FIXED in commit e61d46a
+- **Impact:** Wallets can now track UTXOs from P2P blockchain, maintain accurate balances
+- **Note:** Wallet already had ProcessBlock() and UTXO tracking - just needed node integration
+
 ---
 
 ## High Priority 🔴
-
-### 3. Wallet UTXO Synchronization
-- **File:** `layer1/wallet/wallet.cpp`
-- **Issue:** Cannot track balance from blockchain
-- **Effort:** 3-5 days
-- **Blocks:** Functional wallet
 
 ### 4. RPC Server HTTP Backend
 - **File:** `layer1/rpc/rpc_server.cpp`
 - **Issue:** No HTTP server (stubs only)
 - **Effort:** 2-4 hours with cpp-httplib
 - **Note:** Functional alternative exists
-- **Issue:** Returned all signatures as VALID without checking (CRITICAL)
-- **Fix:** Changed `IsAvailable()` to return false, disabling unsafe GPU path
-- **Status:** FIXED in commit b223170
-- **Impact:** Security vulnerability eliminated
 
 ### 6. Genesis Builder ✅
 - **File:** `tools/genesis_builder/genesis_builder.cpp:62`
