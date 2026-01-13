@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  parthenond:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parthenon-node
+    restart: unless-stopped
+    ports:
+      - "8333:8333"  # P2P network port
+      - "8332:8332"  # RPC port (localhost only recommended)
+    volumes:
+      - parthenon-data:/home/parthenon/.parthenon
+      - ./parthenond.conf:/etc/parthenon/parthenond.conf:ro
+    environment:
+      - PARTHENON_NETWORK=mainnet
+      - PARTHENON_LOG_LEVEL=info
+    networks:
+      - parthenon-network
+    healthcheck:
+      test: ["CMD", "parthenon-cli", "getinfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+  # Optional: Monitoring with Prometheus
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: parthenon-prometheus
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus-data:/prometheus
+  #   networks:
+  #     - parthenon-network
+
+  # Optional: Grafana for visualization
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: parthenon-grafana
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=changeme
+  #   networks:
+  #     - parthenon-network
+
+volumes:
+  parthenon-data:
+    driver: local
+  # prometheus-data:
+  #   driver: local
+  # grafana-data:
+  #   driver: local
+
+networks:
+  parthenon-network:
+    driver: bridge
