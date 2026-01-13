@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- DRACHMA Token - Medium of Exchange -->
+  <!-- Design: Circle with exchange/flow arrows (Δ Delta geometry) -->
+  
+  <defs>
+    <style>
+      .coin { fill: #2A2A2E; }
+      .symbol { fill: #F5F5F2; }
+    </style>
+  </defs>
+  
+  <!-- Outer coin circle -->
+  <circle cx="128" cy="128" r="100" class="coin"/>
+  
+  <!-- Inner border circle -->
+  <circle cx="128" cy="128" r="88" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  
+  <!-- Delta (Δ) - geometric triangle representing change/flow -->
+  <path d="M 128 80 L 176 160 L 80 160 Z" fill="none" stroke="#F5F5F2" stroke-width="8"/>
+  
+  <!-- Four directional arrows (exchange in all directions) -->
+  <!-- Top arrow -->
+  <path d="M 128 32 L 128 52 M 120 44 L 128 32 L 136 44" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  <!-- Bottom arrow -->
+  <path d="M 128 204 L 128 224 M 120 212 L 128 224 L 136 212" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  <!-- Left arrow -->
+  <path d="M 32 128 L 52 128 M 44 120 L 32 128 L 44 136" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+  <!-- Right arrow -->
+  <path d="M 204 128 L 224 128 M 212 120 L 224 128 L 212 136" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+</svg>

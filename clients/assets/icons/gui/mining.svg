@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- MINING Icon - Mining/Hashrate -->
+  <!-- Design: Pickaxe with geometric blocks (mining metaphor) -->
+  
+  <style>
+    .pick { fill: none; stroke: #B08D57; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+    .block { fill: none; stroke: #1F3A5F; stroke-width: 8; }
+  </style>
+  
+  <!-- Mining blocks (geometric) -->
+  <rect x="48" y="128" width="48" height="48" class="block"/>
+  <rect x="160" y="80" width="48" height="48" class="block"/>
+  
+  <!-- Pickaxe -->
+  <path d="M 180 76 L 152 104" class="pick"/>
+  <path d="M 152 104 L 80 176" class="pick"/>
+  <path d="M 172 60 L 196 84" class="pick"/>
+  
+  <!-- Sparkle/hash effect (mining activity) -->
+  <line x1="120" y1="60" x2="120" y2="80" stroke="#B08D57" stroke-width="4"/>
+  <line x1="110" y1="70" x2="130" y2="70" stroke="#B08D57" stroke-width="4"/>
+  <line x1="200" y1="140" x2="200" y2="160" stroke="#B08D57" stroke-width="4"/>
+  <line x1="190" y1="150" x2="210" y2="150" stroke="#B08D57" stroke-width="4"/>
+</svg>

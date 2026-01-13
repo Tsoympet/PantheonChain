@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- RECEIVE Icon - Incoming Transaction -->
+  <!-- Design: Arrow pointing down and left (incoming/receiving) -->
+  
+  <style>
+    .arrow { fill: none; stroke: #1F3A5F; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
+    .circle { fill: none; stroke: #B08D57; stroke-width: 12; }
+  </style>
+  
+  <!-- Outer circle -->
+  <circle cx="128" cy="128" r="100" class="circle"/>
+  
+  <!-- Arrow pointing down-left (receiving) -->
+  <path d="M 176 80 L 80 176" class="arrow"/>
+  <path d="M 112 176 L 80 176 L 80 144" class="arrow"/>
+</svg>

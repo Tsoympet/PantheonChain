@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- NETWORK Icon - Network/Connection Status -->
+  <!-- Design: Nodes connected in geometric pattern -->
+  
+  <style>
+    .line { fill: none; stroke: #1F3A5F; stroke-width: 8; }
+    .node { fill: #B08D57; }
+  </style>
+  
+  <!-- Connection lines -->
+  <line x1="128" y1="64" x2="80" y2="128" class="line"/>
+  <line x1="128" y1="64" x2="176" y2="128" class="line"/>
+  <line x1="80" y1="128" x2="176" y2="128" class="line"/>
+  <line x1="80" y1="128" x2="104" y2="192" class="line"/>
+  <line x1="176" y1="128" x2="152" y2="192" class="line"/>
+  <line x1="104" y1="192" x2="152" y2="192" class="line"/>
+  
+  <!-- Network nodes -->
+  <circle cx="128" cy="64" r="16" class="node"/>
+  <circle cx="80" cy="128" r="16" class="node"/>
+  <circle cx="176" cy="128" r="16" class="node"/>
+  <circle cx="104" cy="192" r="16" class="node"/>
+  <circle cx="152" cy="192" r="16" class="node"/>
+</svg>

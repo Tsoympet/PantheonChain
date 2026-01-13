@@ -15,9 +15,30 @@ icons/
 │   ├── parthenon-desktop.svg    # Desktop GUI application
 │   └── parthenon-mobile.svg     # Mobile wallet
 │
-└── client/        # Client daemon/CLI icons
-    ├── parthenond.svg           # Full node daemon
-    └── parthenon-cli.svg        # Command-line interface
+├── client/        # Client daemon/CLI icons
+│   ├── parthenond.svg           # Full node daemon
+│   └── parthenon-cli.svg        # Command-line interface
+│
+├── common/        # Common branding assets
+│   ├── icon.svg                 # Main icon
+│   ├── logo.svg                 # Main logo
+│   └── favicon.svg              # Favicon
+│
+├── gui/           # GUI action icons (wallet operations)
+│   ├── send.svg                 # Send transaction
+│   ├── receive.svg              # Receive transaction
+│   ├── transactions.svg         # Transaction history/list
+│   ├── wallet.svg               # Wallet overview
+│   ├── qr-code.svg              # QR code scanner/display
+│   ├── mining.svg               # Mining operations
+│   ├── settings.svg             # Settings/configuration
+│   ├── network.svg              # Network/connection status
+│   └── history.svg              # History/time-based view
+│
+└── tokens/        # Token icons
+    ├── token-drachma.svg        # Drachma token
+    ├── token-obolos.svg         # Obolos token
+    └── token-talanton.svg       # Talanton token
 ```
 
 ## Icon Specifications
@@ -114,11 +135,36 @@ done
 ## Naming Conventions
 
 All filenames follow deterministic naming:
+
+**Application Icons:**
 - `parthenonchain.svg` - Main protocol/network icon
-- `parthenond.svg` - Full node daemon
-- `parthenon-cli.svg` - Command-line interface
 - `parthenon-desktop.svg` - Desktop GUI
 - `parthenon-mobile.svg` - Mobile wallet
+
+**Client Icons:**
+- `parthenond.svg` - Full node daemon
+- `parthenon-cli.svg` - Command-line interface
+
+**Common Branding:**
+- `icon.svg` - Main icon
+- `logo.svg` - Main logo
+- `favicon.svg` - Favicon
+
+**GUI Action Icons:**
+- `send.svg` - Send transaction
+- `receive.svg` - Receive transaction
+- `transactions.svg` - Transaction history/list
+- `wallet.svg` - Wallet overview
+- `qr-code.svg` - QR code scanner/display
+- `mining.svg` - Mining operations
+- `settings.svg` - Settings/configuration
+- `network.svg` - Network/connection status
+- `history.svg` - History/time-based view
+
+**Token Icons:**
+- `token-drachma.svg` - Drachma token
+- `token-obolos.svg` - Obolos token
+- `token-talanton.svg` - Talanton token
 
 **No ambiguous names.** Each icon has a clear, singular purpose.
 
