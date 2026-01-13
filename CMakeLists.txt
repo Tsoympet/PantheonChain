@@ -34,19 +34,7 @@ set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build LevelDB benchmarks")
 add_subdirectory(third_party/leveldb EXCLUDE_FROM_ALL)
 # Remove strict warning flags from leveldb target to avoid errors in third-party code
 if(TARGET leveldb)
-  # Get current compile options
-  get_target_property(LEVELDB_COMPILE_OPTIONS leveldb COMPILE_OPTIONS)
-  if(LEVELDB_COMPILE_OPTIONS)
-    # Remove problematic warning flags
-    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Werror")
-    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wconversion")
-    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wold-style-cast")
-    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wshadow")
-    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wpedantic")
-    set_target_properties(leveldb PROPERTIES COMPILE_OPTIONS "${LEVELDB_COMPILE_OPTIONS}")
-  endif()
-  # Also clear CMAKE_CXX_FLAGS for the leveldb directory
-  set_property(TARGET leveldb APPEND PROPERTY COMPILE_OPTIONS "-Wno-error" "-Wno-conversion" "-Wno-old-style-cast" "-Wno-shadow")
+  target_compile_options(leveldb PRIVATE -Wno-error -Wno-conversion -Wno-old-style-cast -Wno-shadow)
 endif()
 
 # Include directories for header-only libraries (as system includes to suppress warnings)
