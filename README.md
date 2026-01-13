@@ -244,4 +244,4 @@ See [LICENSE](LICENSE) file for details.
 
 **Recommendation**: Suitable for controlled testnet deployment with monitoring. Integration tests needed before public testnet. Not recommended for mainnet until external audit is completed and 6-12 months of testnet operation is achieved.
 
-For current development status, see [AUDIT_UPDATE_2026-01-13.md](AUDIT_UPDATE_2026-01-13.md) and [AUDIT_EXECUTIVE_SUMMARY.md](AUDIT_EXECUTIVE_SUMMARY.md).
+For current development status, see [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
