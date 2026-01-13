@@ -1,0 +1,78 @@
+# Git files
+.git/
+.gitignore
+.gitmodules
+.github/
+
+# Build artifacts
+build/
+build_*/
+cmake-build-*/
+_codeql_build_dir/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Documentation (not needed in container)
+docs/
+*.md
+!README.md
+
+# Test files
+tests/
+test_*
+!test_*.cpp
+!test_*.h
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Installer build artifacts
+installers/*/deb_build/
+installers/*/rpm_build/
+installers/*/dmg_staging/
+installers/*/*.deb
+installers/*/*.rpm
+installers/*/*.dmg
+installers/*/*.exe
+
+# Node modules (if any)
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Data directories
+.parthenon/
+data/
+
+# Docker files themselves
+Dockerfile*
+docker-compose*.yml
+.dockerignore
