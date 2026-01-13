@@ -29,7 +29,6 @@ jobs:
           libssl-dev \
           libboost-all-dev \
           ninja-build \
-          gcov \
           lcov
 
     - name: Configure CMake with coverage

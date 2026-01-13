@@ -17,10 +17,14 @@ target_link_libraries(parthenon_crypto PUBLIC
 )
 
 # Set strict compiler flags for consensus code
-target_compile_options(parthenon_crypto PRIVATE
+if(MSVC)
+  target_compile_options(parthenon_crypto PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_crypto PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
-)
+  )
+endif()
 
 # Consensus library (depends on crypto)
 add_library(parthenon_consensus STATIC
@@ -37,10 +41,14 @@ target_link_libraries(parthenon_consensus PUBLIC
 )
 
 # Set strict compiler flags for consensus code
-target_compile_options(parthenon_consensus PRIVATE
+if(MSVC)
+  target_compile_options(parthenon_consensus PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_consensus PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
-)
+  )
+endif()
 
 # Primitives library
 add_library(parthenon_primitives STATIC
@@ -60,10 +68,14 @@ target_link_libraries(parthenon_primitives PUBLIC
 )
 
 # Set strict compiler flags for consensus code
-target_compile_options(parthenon_primitives PRIVATE
+if(MSVC)
+  target_compile_options(parthenon_primitives PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_primitives PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
-)
+  )
+endif()
 
 # Chainstate library
 add_library(parthenon_chainstate STATIC
@@ -82,10 +94,14 @@ target_link_libraries(parthenon_chainstate PUBLIC
 )
 
 # Set strict compiler flags for consensus code
-target_compile_options(parthenon_chainstate PRIVATE
+if(MSVC)
+  target_compile_options(parthenon_chainstate PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_chainstate PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
-)
+  )
+endif()
 
 # Validation library
 add_library(parthenon_validation STATIC
@@ -103,10 +119,14 @@ target_link_libraries(parthenon_validation PUBLIC
 )
 
 # Set strict compiler flags for consensus code
-target_compile_options(parthenon_validation PRIVATE
+if(MSVC)
+  target_compile_options(parthenon_validation PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_validation PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
-)
+  )
+endif()
 
 # P2P library
 add_library(parthenon_p2p STATIC
@@ -126,10 +146,14 @@ target_link_libraries(parthenon_p2p PUBLIC
 )
 
 # Set strict compiler flags
-target_compile_options(parthenon_p2p PRIVATE
+if(MSVC)
+  target_compile_options(parthenon_p2p PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_p2p PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
-)
+  )
+endif()
 
 # Mempool library
 add_library(parthenon_mempool STATIC
@@ -147,10 +171,14 @@ target_link_libraries(parthenon_mempool PUBLIC
 )
 
 # Set strict compiler flags
-target_compile_options(parthenon_mempool PRIVATE
+if(MSVC)
+  target_compile_options(parthenon_mempool PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_mempool PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
-)
+  )
+endif()
 
 # Mining library
 add_subdirectory(mining)
