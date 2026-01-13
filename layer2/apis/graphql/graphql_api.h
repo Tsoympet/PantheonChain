@@ -30,16 +30,33 @@ public:
     void Stop();
     
     /**
+     * Check if server is running
+     */
+    bool IsRunning() const;
+    
+    /**
      * Handle GraphQL query
      */
     std::string HandleQuery(const std::string& query);
     
-private:
-    uint16_t port_;
-    bool running_;
+    /**
+     * Set callback for block queries
+     */
+    void SetBlockCallback(std::function<std::string(const std::string&)> callback);
     
-    // TODO: Implement GraphQL schema and resolvers
-    // TODO: Add authentication/rate limiting
+    /**
+     * Set callback for transaction queries
+     */
+    void SetTransactionCallback(std::function<std::string(const std::string&)> callback);
+    
+    /**
+     * Set callback for contract queries
+     */
+    void SetContractCallback(std::function<std::string(const std::string&)> callback);
+    
+private:
+    class Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 } // namespace apis

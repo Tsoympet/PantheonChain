@@ -4,6 +4,10 @@ add_library(layer2
     bridges/channels/payment_channel.cpp
     bridges/htlc/htlc.cpp
     bridges/spv/spv_bridge.cpp
+    indexers/tx_indexer/tx_indexer.cpp
+    indexers/contract_indexer/contract_indexer.cpp
+    apis/graphql/graphql_api.cpp
+    apis/websocket/websocket_api.cpp
 )
 
 target_include_directories(layer2 PUBLIC
@@ -20,3 +24,5 @@ target_link_libraries(layer2
 # - bridges/channels/ for payment channels
 # - bridges/htlc/ for hash time-locked contracts
 # - bridges/spv/ for simplified payment verification
+# - indexers/ for transaction and contract indexing
+# - apis/ for GraphQL and WebSocket APIs

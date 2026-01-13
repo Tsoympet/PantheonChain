@@ -33,6 +33,16 @@ public:
     ~ContractIndexer();
     
     /**
+     * Open the indexer database
+     */
+    bool Open(const std::string& db_path);
+    
+    /**
+     * Close the indexer database
+     */
+    void Close();
+    
+    /**
      * Index a contract deployment
      */
     void IndexContractDeployment(
@@ -54,8 +64,49 @@ public:
         uint32_t limit = 100
     );
     
+    /**
+     * Get events by topic (event signature)
+     */
+    std::vector<ContractEvent> GetEventsByTopic(
+        const std::array<uint8_t, 32>& topic,
+        uint32_t limit = 100
+    );
+    
+    /**
+     * Contract information
+     */
+    struct ContractInfo {
+        std::array<uint8_t, 20> address;
+        std::vector<uint8_t> code;
+        uint32_t deployment_height;
+        uint64_t event_count;
+    };
+    
+    /**
+     * Get contract information
+     */
+    std::optional<ContractInfo> GetContractInfo(
+        const std::array<uint8_t, 20>& address
+    );
+    
+    /**
+     * Get total number of indexed contracts
+     */
+    size_t GetContractCount() const;
+    
+    /**
+     * Get total number of indexed events
+     */
+    size_t GetEventCount() const;
+    
+    /**
+     * Get all contract addresses
+     */
+    std::vector<std::array<uint8_t, 20>> GetAllContracts() const;
+    
 private:
-    // TODO: Implement database backend
+    class Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 } // namespace indexers
