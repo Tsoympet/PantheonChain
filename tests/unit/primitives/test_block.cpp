@@ -22,7 +22,8 @@ void TestBlockHeader() {
     
     // Serialize
     auto serialized = header.Serialize();
-    assert(serialized.size() == 80); // Block header is always 80 bytes
+    // Extended header: 80 bytes (Bitcoin-like) + 24 bytes (EVM fields) = 104 bytes
+    assert(serialized.size() == 104);
     
     // Deserialize
     auto header2 = BlockHeader::Deserialize(serialized.data());

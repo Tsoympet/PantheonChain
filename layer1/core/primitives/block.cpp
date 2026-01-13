@@ -107,27 +107,25 @@ BlockHeader BlockHeader::Deserialize(const uint8_t* data) {
                   (static_cast<uint32_t>(data[2]) << 16) | (static_cast<uint32_t>(data[3]) << 24);
     data += 4;
     
-    // Base fee per gas (8 bytes) - if available (version >= 2)
-    if (header.version >= 2) {
-        header.base_fee_per_gas = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
-                                 (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
-                                 (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
-                                 (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
-        data += 8;
-        
-        // Gas used (8 bytes)
-        header.gas_used = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
-                         (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
-                         (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
-                         (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
-        data += 8;
-        
-        // Gas limit (8 bytes)
-        header.gas_limit = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
-                          (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
-                          (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
-                          (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
-    }
+    // Base fee per gas (8 bytes)
+    header.base_fee_per_gas = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                             (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
+                             (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
+                             (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
+    data += 8;
+    
+    // Gas used (8 bytes)
+    header.gas_used = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                     (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
+                     (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
+                     (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
+    data += 8;
+    
+    // Gas limit (8 bytes)
+    header.gas_limit = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                      (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24) |
+                      (static_cast<uint64_t>(data[4]) << 32) | (static_cast<uint64_t>(data[5]) << 40) |
+                      (static_cast<uint64_t>(data[6]) << 48) | (static_cast<uint64_t>(data[7]) << 56);
     
     return header;
 }
@@ -146,7 +144,7 @@ bool BlockHeader::MeetsDifficultyTarget() const {
 std::vector<uint8_t> Block::Serialize() const {
     std::vector<uint8_t> result;
     
-    // Header (80 bytes)
+    // Header (104 bytes with EVM fields)
     auto header_bytes = header.Serialize();
     result.insert(result.end(), header_bytes.begin(), header_bytes.end());
     
@@ -163,14 +161,15 @@ std::vector<uint8_t> Block::Serialize() const {
 }
 
 std::optional<Block> Block::Deserialize(const uint8_t* data, size_t len) {
-    if (len < 81) return std::nullopt; // Minimum block size
+    // Minimum block size: 104 (extended header) + 1 (compact size) = 105 bytes
+    if (len < 105) return std::nullopt;
     
     Block block;
     const uint8_t* ptr = data;
     
-    // Header
+    // Header (104 bytes with EVM fields)
     block.header = BlockHeader::Deserialize(ptr);
-    ptr += 80;
+    ptr += 104;  // Extended header size
     
     // Transaction count
     uint64_t tx_count = ReadCompactSize(ptr);

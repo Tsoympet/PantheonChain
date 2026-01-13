@@ -20,8 +20,33 @@ uint64_t Issuance::GetInitialReward(primitives::AssetID asset) {
 }
 
 uint64_t Issuance::GetBlockReward(uint64_t height, primitives::AssetID asset) {
-    // Calculate halving epoch
-    uint64_t halvings = height / HALVING_INTERVAL;
+    // Staggered launch schedule for different assets:
+    // - TALANTON starts at block 0
+    // - DRACHMA starts at block 210,000 (aligned with first TALANTON halving interval)
+    // - OBOLOS starts at block 420,000 (aligned with second TALANTON halving interval)
+    uint64_t start_height = 0;
+    switch (asset) {
+        case primitives::AssetID::TALANTON:
+            start_height = 0;
+            break;
+        case primitives::AssetID::DRACHMA:
+            start_height = HALVING_INTERVAL;  // 210000
+            break;
+        case primitives::AssetID::OBOLOS:
+            start_height = 2 * HALVING_INTERVAL;  // 420000
+            break;
+        default:
+            return 0;
+    }
+    
+    // If before asset launch, return 0
+    if (height < start_height) {
+        return 0;
+    }
+    
+    // Calculate halving epoch from asset launch
+    uint64_t blocks_since_launch = height - start_height;
+    uint64_t halvings = blocks_since_launch / HALVING_INTERVAL;
     
     // After 64 halvings, reward is zero (2^64 would overflow)
     if (halvings >= 64) {
@@ -38,10 +63,32 @@ uint64_t Issuance::GetBlockReward(uint64_t height, primitives::AssetID asset) {
 }
 
 uint64_t Issuance::CalculateSupplyAtHeight(uint64_t height, primitives::AssetID asset) {
+    // Determine asset launch height
+    uint64_t start_height = 0;
+    switch (asset) {
+        case primitives::AssetID::TALANTON:
+            start_height = 0;
+            break;
+        case primitives::AssetID::DRACHMA:
+            start_height = HALVING_INTERVAL;  // 210000
+            break;
+        case primitives::AssetID::OBOLOS:
+            start_height = 2 * HALVING_INTERVAL;  // 420000
+            break;
+        default:
+            return 0;
+    }
+    
+    // If before asset launch, supply is 0
+    if (height < start_height) {
+        return 0;
+    }
+    
     uint64_t total_supply = 0;
     
-    // Calculate supply for each halving epoch up to current height
-    uint64_t remaining_height = height;
+    // Calculate supply for each halving epoch from launch to current height
+    uint64_t blocks_since_launch = height - start_height;
+    uint64_t remaining_height = blocks_since_launch;
     uint64_t halvings = 0;
     
     while (remaining_height > 0 && halvings < 64) {

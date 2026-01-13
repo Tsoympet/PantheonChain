@@ -19,12 +19,11 @@ std::optional<BlockTemplate> Miner::CreateBlockTemplate(size_t max_transactions)
     // Get current chain height
     uint32_t height = static_cast<uint32_t>(chainstate_.GetHeight() + 1);
     
-    // Calculate target difficulty (simplified - use constant for now)
-    uint256_t target{};
-    // Set max difficulty target (all bits set)
-    for (size_t i = 0; i < 32; i++) {
-        target[i] = 0xFF;
-    }
+    // Get initial difficulty bits
+    uint32_t bits = consensus::Difficulty::GetInitialBits();
+    
+    // Convert bits to target for template
+    uint256_t target = consensus::Difficulty::CompactToBits256(bits);
     
     // Select transactions from mempool
     auto transactions = SelectTransactions(max_transactions);
@@ -66,7 +65,7 @@ std::optional<BlockTemplate> Miner::CreateBlockTemplate(size_t max_transactions)
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())
     );
     block_template.block.header.nonce = 0;
-    block_template.block.header.bits = 0x1d00ffff; // Initial difficulty target
+    block_template.block.header.bits = bits; // Use calculated difficulty bits
     
     // Add transactions (coinbase first)
     block_template.block.transactions.push_back(coinbase);

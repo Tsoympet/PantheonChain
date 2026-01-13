@@ -50,9 +50,21 @@ namespace {
             return false; \
         } \
     } while(0)
+    
+    // Easy difficulty for testing - allows quick nonce finding
+    constexpr uint32_t EASY_TEST_DIFFICULTY_BITS = 0x207fffff;
+    
+    // Helper to generate a deterministic seed for testing purposes only
+    // NOT cryptographically secure - use only in tests
+    std::array<uint8_t, 32> GenerateTestSeedDeterministic(uint8_t seed_byte = 0x42) {
+        std::array<uint8_t, 32> seed;
+        for (size_t i = 0; i < 32; i++) {
+            seed[i] = static_cast<uint8_t>((seed_byte + i) & 0xFF);
+        }
+        return seed;
+    }
 }
 
-#if 0  // TODO: Disabled - needs implementation of crypto::Seed, Wallet::GetNewAddress, etc.
 // Test 1: Complete block production and validation flow
 bool test_block_production_flow() {
     TEST_START("Block Production Flow");
@@ -60,34 +72,56 @@ bool test_block_production_flow() {
     // Create temporary test directory
     std::filesystem::create_directories("/tmp/test_block_prod");
     
-    // Initialize node
-    node::Node node("/tmp/test_block_prod", 18333);
-    ASSERT_TRUE(node.Start(), "Node failed to start");
+    // Initialize chainstate
+    chainstate::ChainState chain_state;
     
     // Create wallet for coinbase
-    crypto::Seed seed = crypto::GenerateSeed();
+    auto seed = GenerateTestSeedDeterministic(0x11);
     wallet::Wallet wallet(seed);
-    auto address = wallet.GetNewAddress();
+    auto address = wallet.GenerateAddress("mining");
     
-    // Mine a block
-    mining::Miner miner;
-    auto block = miner.MineBlock(address, 0, {});
-    ASSERT_TRUE(block != nullptr, "Failed to mine block");
+    // Create miner
+    mining::Miner miner(chain_state, address.pubkey);
     
-    // Validate and add block
-    ASSERT_TRUE(node.ProcessBlock(*block, "local"), "Failed to process mined block");
+    // Create block template
+    auto template_opt = miner.CreateBlockTemplate();
+    ASSERT_TRUE(template_opt.has_value(), "Failed to create block template");
     
-    // Verify block was added
-    ASSERT_EQ(node.GetHeight(), 0u, "Block height should be 0");
+    // Verify template structure
+    auto& block_template = *template_opt;
+    ASSERT_TRUE(block_template.block.transactions.size() > 0, "Template should have transactions");
+    ASSERT_TRUE(block_template.block.transactions[0].IsCoinbase(), "First tx should be coinbase");
+    ASSERT_EQ(block_template.height, 1u, "First block should be height 1");
     
-    // Stop node
-    node.Stop();
+    // For testing, manually create a valid block without full PoW mining
+    // Set difficulty to minimum and use nonce 0
+    auto block = block_template.block;
+    block.header.bits = EASY_TEST_DIFFICULTY_BITS;
+    block.header.nonce = 0;
     
-    // Restart node and verify persistence
-    node::Node node2("/tmp/test_block_prod", 18333);
-    ASSERT_TRUE(node2.Start(), "Node failed to restart");
-    ASSERT_EQ(node2.GetHeight(), 0u, "Block should persist across restarts");
-    node2.Stop();
+    // Try a few nonces to find one that works (much faster than full mining)
+    bool found = false;
+    for (uint32_t nonce = 0; nonce < 1000000; nonce++) {
+        block.header.nonce = nonce;
+        if (block.header.MeetsDifficultyTarget()) {
+            found = true;
+            break;
+        }
+    }
+    ASSERT_TRUE(found, "Failed to find valid nonce");
+    
+    // Verify block structure
+    ASSERT_TRUE(block.IsValid(), "Block should be valid");
+    
+    // Validate and apply block to chainstate
+    ASSERT_TRUE(chain_state.ValidateBlock(block), "Block validation failed");
+    ASSERT_TRUE(chain_state.ApplyBlock(block), "Failed to apply block");
+    
+    // Verify chainstate updated
+    ASSERT_EQ(chain_state.GetHeight(), 1u, "Chain height should be 1");
+    
+    // Verify block hash meets difficulty
+    ASSERT_TRUE(block.header.MeetsDifficultyTarget(), "Block doesn't meet difficulty");
     
     // Cleanup
     std::filesystem::remove_all("/tmp/test_block_prod");
@@ -95,7 +129,6 @@ bool test_block_production_flow() {
     TEST_PASS("Block Production Flow");
     return true;
 }
-#endif
 
 #if 0  // TODO: Disabled - needs implementation
 // Test 2: Complete transaction flow from creation to confirmation
@@ -433,14 +466,13 @@ int main() {
     std::cout << "╚══════════════════════════════════════════════════════════╝\n";
     
     // Run all tests
-    // TODO: Following tests disabled due to unimplemented APIs (crypto::Seed, Wallet::GetNewAddress, etc.)
-    // test_block_production_flow();
-    // test_transaction_flow();
-    // test_network_sync();
-    // test_smart_contract_flow();
+    test_block_production_flow();
+    // test_transaction_flow();  // TODO: Needs wallet transaction creation
+    // test_network_sync();  // TODO: Needs P2P network implementation
+    // test_smart_contract_flow();  // TODO: Needs contract deployment
     test_peer_database();
-    // test_utxo_persistence();
-    // test_performance_validation(); // TODO: Disabled - needs implementation fixes
+    // test_utxo_persistence();  // TODO: Needs node persistence
+    // test_performance_validation();  // TODO: Needs implementation fixes
     
     // Print summary
     std::cout << "\n";

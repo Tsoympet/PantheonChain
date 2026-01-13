@@ -18,6 +18,8 @@ target_link_libraries(test_integration
     parthenon_mempool
     parthenon_mining
     parthenon_wallet
+    parthenon_p2p
+    parthenon_evm
 )
 add_test(NAME integration COMMAND test_integration)
 

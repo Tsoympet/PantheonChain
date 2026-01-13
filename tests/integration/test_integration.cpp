@@ -1,6 +1,16 @@
 // ParthenonChain - Integration Test Suite
 // End-to-end blockchain functionality tests
 
+#include "chainstate/chainstate.h"
+#include "mining/miner.h"
+#include "wallet/wallet.h"
+#include "primitives/transaction.h"
+#include "primitives/block.h"
+#include "p2p/protocol.h"
+#include "p2p/message.h"
+#include "evm/vm.h"
+#include "evm/state.h"
+#include "evm/opcodes.h"
 #include <iostream>
 #include <cassert>
 
@@ -12,7 +22,7 @@ namespace integration_tests {
  * 
  * Tests the complete flow:
  * 1. Create block template
- * 2. Mine block (find valid nonce)
+ * 2. Find valid nonce (simplified mining)
  * 3. Validate block structure
  * 4. Apply block to chainstate
  * 5. Verify state changes
@@ -20,24 +30,62 @@ namespace integration_tests {
 void TestBlockProductionFlow() {
     std::cout << "Integration Test: Block Production Flow" << std::endl;
     
-    // All components are implemented:
-    std::cout << "  ✓ Mining module: Complete (Miner class with CreateBlockTemplate)" << std::endl;
-    std::cout << "  ✓ Validation module: Complete (block and transaction validation)" << std::endl;
-    std::cout << "  ✓ Chainstate module: Complete (UTXO set management, chain tracking)" << std::endl;
-    std::cout << "  ✓ Consensus module: Complete (difficulty adjustment, issuance schedules)" << std::endl;
-    std::cout << "  ℹ Full integration test ready for implementation once persistence layer is added" << std::endl;
+    // Initialize chainstate
+    chainstate::ChainState chain_state;
     
-    // Example workflow (to be fully implemented):
-    // 1. Initialize chainstate
-    // 2. Create miner with coinbase address
-    // 3. Create block template using miner.CreateBlockTemplate()
-    // 4. Mine block (iterate nonce until valid hash found)
-    // 5. Validate block using validation::ValidateBlock()
-    // 6. Apply block using chainstate.ApplyBlock()
-    // 7. Verify chainstate height increased
-    // 8. Verify coinbase UTXO added to set
+    // Create wallet for coinbase
+    std::array<uint8_t, 32> seed{};
+    for (size_t i = 0; i < 32; i++) seed[i] = static_cast<uint8_t>(i);
+    wallet::Wallet wallet(seed);
+    auto address = wallet.GenerateAddress("test");
     
-    std::cout << "  [READY] All components implemented - integration pending persistence" << std::endl;
+    // Create miner with coinbase address
+    mining::Miner miner(chain_state, address.pubkey);
+    
+    // Create block template
+    auto template_opt = miner.CreateBlockTemplate();
+    if (!template_opt.has_value()) {
+        std::cout << "  ❌ FAIL: Failed to create block template" << std::endl;
+        return;
+    }
+    
+    // Get block from template
+    auto block = template_opt->block;
+    
+    // Find valid nonce (simplified mining - try up to 1M nonces)
+    bool found = false;
+    for (uint32_t nonce = 0; nonce < 1000000; nonce++) {
+        block.header.nonce = nonce;
+        if (block.header.MeetsDifficultyTarget()) {
+            found = true;
+            break;
+        }
+    }
+    
+    if (!found) {
+        std::cout << "  ❌ FAIL: Failed to find valid nonce" << std::endl;
+        return;
+    }
+    
+    // Validate block
+    if (!chain_state.ValidateBlock(block)) {
+        std::cout << "  ❌ FAIL: Block validation failed" << std::endl;
+        return;
+    }
+    
+    // Apply block to chainstate
+    if (!chain_state.ApplyBlock(block)) {
+        std::cout << "  ❌ FAIL: Failed to apply block" << std::endl;
+        return;
+    }
+    
+    // Verify chainstate height increased
+    if (chain_state.GetHeight() != 1) {
+        std::cout << "  ❌ FAIL: Chain height should be 1, got " << chain_state.GetHeight() << std::endl;
+        return;
+    }
+    
+    std::cout << "  ✅ PASS: Block production flow working" << std::endl;
 }
 
 /**
@@ -45,97 +93,215 @@ void TestBlockProductionFlow() {
  * 
  * Tests:
  * 1. Create and sign transaction
- * 2. Add to mempool
- * 3. Mine block including transaction
- * 4. Verify transaction in block
- * 5. Verify UTXO changes
+ * 2. Verify transaction structure
+ * 3. Demonstrate transaction creation workflow
  */
 void TestTransactionFlow() {
     std::cout << "Integration Test: Transaction Flow" << std::endl;
     
-    // This test demonstrates wallet, mempool, and transaction integration
-    std::cout << "  ✓ Wallet module: Complete (HD key derivation, UTXO tracking, signing)" << std::endl;
-    std::cout << "  ✓ Mempool module: Complete (transaction validation, ordering)" << std::endl;
-    std::cout << "  ✓ Validation module: Complete (signature verification)" << std::endl;
-    std::cout << "  ✓ Mining module: Complete (block template, coinbase, PoW)" << std::endl;
-    std::cout << "  ℹ Full integration test ready for implementation once persistence layer is added" << std::endl;
+    // Create wallet with seed
+    std::array<uint8_t, 32> seed{};
+    for (size_t i = 0; i < 32; i++) seed[i] = static_cast<uint8_t>(i + 42);
+    wallet::Wallet wallet(seed);
     
-    // Example workflow (to be fully implemented):
-    // 1. Create wallet with seed
-    // 2. Generate addresses
-    // 3. Fund wallet (manual UTXO addition for testing)
-    // 4. Create transaction using wallet.CreateTransaction()
-    // 5. Validate and add to mempool using mempool.AddTransaction()
-    // 6. Mine block including mempool transactions
-    // 7. Verify transaction applied to chainstate
-    // 8. Verify UTXO changes via wallet.SyncWithChain()
+    // Generate addresses
+    auto addr1 = wallet.GenerateAddress("addr1");
+    auto addr2 = wallet.GenerateAddress("addr2");
     
-    std::cout << "  [READY] All components implemented - integration pending persistence" << std::endl;
+    if (addr1.pubkey.size() != 32 || addr2.pubkey.size() != 32) {
+        std::cout << "  ❌ FAIL: Address generation failed" << std::endl;
+        return;
+    }
+    
+    // Manually add a UTXO to wallet for testing
+    std::array<uint8_t, 32> txid{};
+    txid[0] = 1;
+    primitives::OutPoint outpoint(txid, 0);
+    primitives::TxOutput output(
+        primitives::AssetID::TALANTON,
+        1000000000,  // 10 TALN
+        addr1.pubkey
+    );
+    wallet.AddUTXO(outpoint, output, 100);
+    
+    // Verify wallet has balance
+    uint64_t balance = wallet.GetBalance(primitives::AssetID::TALANTON);
+    if (balance == 0) {
+        std::cout << "  ❌ FAIL: Wallet should have balance after adding UTXO" << std::endl;
+        return;
+    }
+    
+    // Create transaction outputs
+    std::vector<primitives::TxOutput> outputs;
+    outputs.push_back(primitives::TxOutput(
+        primitives::AssetID::TALANTON,
+        500000000,  // 5 TALN
+        addr2.pubkey
+    ));
+    
+    // Create transaction
+    auto tx_opt = wallet.CreateTransaction(
+        outputs,
+        primitives::AssetID::TALANTON,
+        1000000  // 0.01 TALN fee
+    );
+    
+    if (!tx_opt.has_value()) {
+        std::cout << "  ❌ FAIL: Failed to create transaction" << std::endl;
+        return;
+    }
+    
+    // Verify transaction structure
+    auto& tx = *tx_opt;
+    if (tx.inputs.empty()) {
+        std::cout << "  ❌ FAIL: Transaction should have inputs" << std::endl;
+        return;
+    }
+    
+    if (tx.outputs.empty()) {
+        std::cout << "  ❌ FAIL: Transaction should have outputs" << std::endl;
+        return;
+    }
+    
+    if (!tx.IsValid()) {
+        std::cout << "  ❌ FAIL: Transaction should be valid" << std::endl;
+        return;
+    }
+    
+    std::cout << "  ✅ PASS: Transaction flow working (wallet, tx creation, signing)" << std::endl;
 }
 
 /**
  * Test: Network synchronization
  * 
  * Tests:
- * 1. Start two nodes
- * 2. Mine blocks on node 1
- * 3. Sync blocks to node 2
- * 4. Verify both nodes have same state
+ * 1. Verify P2P message structures work
+ * 2. Demonstrate block serialization for network transmission
  */
 void TestNetworkSync() {
     std::cout << "Integration Test: Network Synchronization" << std::endl;
     
-    // Current status:
-    std::cout << "  ✓ P2P protocol: Complete (message structures, serialization)" << std::endl;
-    std::cout << "  ✓ Block validation: Complete (consensus rules, signature verification)" << std::endl;
-    std::cout << "  ✓ Chainstate: Complete (UTXO set, chain management)" << std::endl;
-    std::cout << "  ⚠ Network layer: Partial (TCP sockets and peer management pending)" << std::endl;
-    std::cout << "  ℹ Full integration test pending network layer completion" << std::endl;
+    // Test P2P message serialization
+    p2p::PingPongMessage ping(0x123456789ABCDEF0ULL);
+    auto bytes = ping.Serialize();
+    auto deserialized = p2p::PingPongMessage::Deserialize(bytes.data(), bytes.size());
     
-    // Example workflow (to be fully implemented):
-    // 1. Initialize two chainstate instances (simulating two nodes)
-    // 2. Mine blocks on first chainstate
-    // 3. Serialize blocks using P2P message format
-    // 4. Deserialize and validate on second chainstate
-    // 5. Apply blocks to second chainstate
-    // 6. Verify both chainstates have identical:
-    //    - Block height
-    //    - Best block hash
-    //    - UTXO set
-    //    - Total issuance
+    if (!deserialized.has_value() || deserialized->nonce != ping.nonce) {
+        std::cout << "  ❌ FAIL: Ping message serialization failed" << std::endl;
+        return;
+    }
     
-    std::cout << "  [PARTIAL] Core components ready - TCP networking pending" << std::endl;
+    // Test block serialization (for network transmission)
+    primitives::Block block;
+    block.header.version = 1;
+    block.header.timestamp = 1234567890;
+    block.header.bits = 0x207fffff;
+    block.header.nonce = 42;
+    
+    // Add coinbase transaction
+    primitives::Transaction coinbase;
+    coinbase.version = 1;
+    primitives::TxInput input;
+    input.prevout.vout = primitives::COINBASE_VOUT_INDEX;
+    coinbase.inputs.push_back(input);
+    std::vector<uint8_t> pubkey(32, 0xAA);
+    coinbase.outputs.push_back(primitives::TxOutput(
+        primitives::AssetID::TALANTON, 5000000000, pubkey
+    ));
+    block.transactions.push_back(coinbase);
+    block.header.merkle_root = block.CalculateMerkleRoot();
+    
+    // Serialize block
+    auto block_bytes = block.Serialize();
+    if (block_bytes.empty()) {
+        std::cout << "  ❌ FAIL: Block serialization failed" << std::endl;
+        return;
+    }
+    
+    // Deserialize block
+    auto block2 = primitives::Block::Deserialize(block_bytes.data(), block_bytes.size());
+    if (!block2.has_value()) {
+        std::cout << "  ❌ FAIL: Block deserialization failed" << std::endl;
+        return;
+    }
+    
+    // Verify blocks match
+    if (block.GetHash() != block2->GetHash()) {
+        std::cout << "  ❌ FAIL: Block hash mismatch after serialization" << std::endl;
+        return;
+    }
+    
+    std::cout << "  ✅ PASS: P2P protocol and serialization working" << std::endl;
+    std::cout << "  ℹ  Note: Full network layer (TCP sockets, peer management) requires additional implementation" << std::endl;
 }
 
 /**
  * Test: Smart contract deployment and execution
  * 
  * Tests:
- * 1. Deploy EVM contract
- * 2. Call contract functions
- * 3. Verify state changes
- * 4. Verify gas consumption
+ * 1. Deploy simple EVM contract
+ * 2. Execute contract code
+ * 3. Verify state changes and gas consumption
  */
 void TestSmartContractFlow() {
     std::cout << "Integration Test: Smart Contract Flow" << std::endl;
     
-    // All components are implemented:
-    std::cout << "  ✓ EVM module: Complete (full 256-bit arithmetic, opcode execution)" << std::endl;
-    std::cout << "  ✓ EVM state: Complete (account storage, code storage, gas tracking)" << std::endl;
-    std::cout << "  ✓ Transaction module: Complete (contract deployment and calls)" << std::endl;
-    std::cout << "  ✓ Signature validation: Complete (transaction signing and verification)" << std::endl;
-    std::cout << "  ℹ Full integration test ready for implementation" << std::endl;
+    // Create EVM world state
+    evm::WorldState state;
     
-    // Example workflow (to be fully implemented):
-    // 1. Create contract deployment transaction (bytecode in output data)
-    // 2. Mine block with deployment transaction
-    // 3. Verify contract code stored in EVM state
-    // 4. Create contract call transaction
-    // 5. Execute contract via vm.Execute()
-    // 6. Verify EVM state changes (storage updates)
-    // 7. Verify gas consumption and limits
+    // Create execution context
+    evm::ExecutionContext ctx;
+    ctx.gas_limit = 1000000;
+    ctx.gas_price = 1;
+    ctx.block_number = 1;
+    ctx.timestamp = 1234567890;
+    ctx.difficulty = 1000;
+    ctx.gas_limit_block = 10000000;
+    ctx.chain_id = 1;
+    ctx.base_fee = 10;
+    ctx.is_static = false;
+    ctx.depth = 0;
+    ctx.address = evm::Address{};
     
-    std::cout << "  [READY] All components implemented - ready for integration testing" << std::endl;
+    // Create VM
+    evm::VM vm(state, ctx);
+    
+    // Simple contract: PUSH1 42, PUSH1 0, SSTORE (store 42 at slot 0)
+    std::vector<uint8_t> code = {
+        static_cast<uint8_t>(evm::Opcode::PUSH1), 0x2A,  // Push 42
+        static_cast<uint8_t>(evm::Opcode::PUSH1), 0x00,  // Push 0 (storage slot)
+        static_cast<uint8_t>(evm::Opcode::SSTORE),       // Store
+        static_cast<uint8_t>(evm::Opcode::STOP)
+    };
+    
+    // Execute contract
+    auto [result, data] = vm.Execute(code);
+    
+    if (result != evm::ExecResult::SUCCESS) {
+        std::cout << "  ❌ FAIL: Contract execution failed" << std::endl;
+        return;
+    }
+    
+    // Verify storage was updated
+    evm::uint256_t storage_key{};
+    auto storage_value = state.GetStorage(ctx.address, storage_key);
+    
+    // Check if value is 42 (0x2A)
+    bool correct_value = storage_value[31] == 0x2A;
+    for (size_t i = 0; i < 31; i++) {
+        if (storage_value[i] != 0) {
+            correct_value = false;
+            break;
+        }
+    }
+    
+    if (!correct_value) {
+        std::cout << "  ❌ FAIL: Storage value incorrect" << std::endl;
+        return;
+    }
+    
+    std::cout << "  ✅ PASS: EVM smart contract execution working" << std::endl;
+    std::cout << "  ℹ  Note: Full contract deployment via transactions requires additional transaction types" << std::endl;
 }
 
 } // namespace integration_tests
