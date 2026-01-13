@@ -20,10 +20,10 @@ uint64_t Issuance::GetInitialReward(primitives::AssetID asset) {
 }
 
 uint64_t Issuance::GetBlockReward(uint64_t height, primitives::AssetID asset) {
-    // Staggered launch schedule:
+    // Staggered launch schedule for different assets:
     // - TALANTON starts at block 0
-    // - DRACHMA starts at block 210000 (after first TALANTON halving)
-    // - OBOLOS starts at block 420000 (after second TALANTON halving)
+    // - DRACHMA starts at block 210,000 (aligned with first TALANTON halving interval)
+    // - OBOLOS starts at block 420,000 (aligned with second TALANTON halving interval)
     uint64_t start_height = 0;
     switch (asset) {
         case primitives::AssetID::TALANTON:

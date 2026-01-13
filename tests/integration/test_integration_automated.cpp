@@ -51,8 +51,12 @@ namespace {
         } \
     } while(0)
     
-    // Helper to generate a simple seed for testing
-    std::array<uint8_t, 32> GenerateTestSeed(uint8_t seed_byte = 0x42) {
+    // Easy difficulty for testing - allows quick nonce finding
+    constexpr uint32_t EASY_TEST_DIFFICULTY_BITS = 0x207fffff;
+    
+    // Helper to generate a deterministic seed for testing purposes only
+    // NOT cryptographically secure - use only in tests
+    std::array<uint8_t, 32> GenerateTestSeedDeterministic(uint8_t seed_byte = 0x42) {
         std::array<uint8_t, 32> seed;
         for (size_t i = 0; i < 32; i++) {
             seed[i] = static_cast<uint8_t>((seed_byte + i) & 0xFF);
@@ -72,7 +76,7 @@ bool test_block_production_flow() {
     chainstate::ChainState chain_state;
     
     // Create wallet for coinbase
-    auto seed = GenerateTestSeed(0x11);
+    auto seed = GenerateTestSeedDeterministic(0x11);
     wallet::Wallet wallet(seed);
     auto address = wallet.GenerateAddress("mining");
     
@@ -92,7 +96,7 @@ bool test_block_production_flow() {
     // For testing, manually create a valid block without full PoW mining
     // Set difficulty to minimum and use nonce 0
     auto block = block_template.block;
-    block.header.bits = 0x207fffff;  // Easy difficulty for testing
+    block.header.bits = EASY_TEST_DIFFICULTY_BITS;
     block.header.nonce = 0;
     
     // Try a few nonces to find one that works (much faster than full mining)
