@@ -107,7 +107,7 @@ uint256_t VM::Add(const uint256_t& a, const uint256_t& b) const {
     
     // Process bytes from least significant (index 31) to most significant (index 0)
     for (int i = 31; i >= 0; i--) {
-        uint16_t sum = static_cast<uint16_t>(a[i]) + static_cast<uint16_t>(b[i]) + carry;
+        uint16_t sum = static_cast<uint16_t>(static_cast<uint16_t>(a[i]) + static_cast<uint16_t>(b[i]) + carry);
         result[i] = static_cast<uint8_t>(sum & 0xFF);
         carry = sum >> 8;
     }
@@ -122,7 +122,7 @@ uint256_t VM::Sub(const uint256_t& a, const uint256_t& b) const {
     
     // Process bytes from least significant (index 31) to most significant (index 0)
     for (int i = 31; i >= 0; i--) {
-        int16_t diff = static_cast<int16_t>(a[i]) - static_cast<int16_t>(b[i]) - borrow;
+        int16_t diff = static_cast<int16_t>(static_cast<int16_t>(a[i]) - static_cast<int16_t>(b[i]) - borrow);
         if (diff < 0) {
             diff += 256;
             borrow = 1;
@@ -153,7 +153,7 @@ uint256_t VM::Mul(const uint256_t& a, const uint256_t& b) const {
             uint32_t product = static_cast<uint32_t>(a[j]) * static_cast<uint32_t>(b[i]) + 
                                static_cast<uint32_t>(result[result_idx]) + carry;
             result[result_idx] = static_cast<uint8_t>(product & 0xFF);
-            carry = product >> 8;
+            carry = static_cast<uint16_t>(product >> 8);
         }
     }
     

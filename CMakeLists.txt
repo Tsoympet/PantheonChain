@@ -28,25 +28,30 @@ set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON CACHE BOOL "Enable Schnorr signature m
 set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON CACHE BOOL "Enable extra keys module")
 add_subdirectory(third_party/secp256k1 EXCLUDE_FROM_ALL)
 
-# Build LevelDB for blockchain storage (without -Werror)
-if(MSVC)
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} /W3")
-else()
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
-endif()
+# Build LevelDB for blockchain storage (without strict warnings)
 set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build LevelDB tests")
 set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build LevelDB benchmarks")
 add_subdirectory(third_party/leveldb EXCLUDE_FROM_ALL)
-# Restore flags
-if(MSVC)
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} /W4 /WX")
-else()
-  set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror")
+# Remove strict warning flags from leveldb target to avoid errors in third-party code
+if(TARGET leveldb)
+  # Get current compile options
+  get_target_property(LEVELDB_COMPILE_OPTIONS leveldb COMPILE_OPTIONS)
+  if(LEVELDB_COMPILE_OPTIONS)
+    # Remove problematic warning flags
+    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Werror")
+    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wconversion")
+    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wold-style-cast")
+    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wshadow")
+    list(FILTER LEVELDB_COMPILE_OPTIONS EXCLUDE REGEX "-Wpedantic")
+    set_target_properties(leveldb PROPERTIES COMPILE_OPTIONS "${LEVELDB_COMPILE_OPTIONS}")
+  endif()
+  # Also clear CMAKE_CXX_FLAGS for the leveldb directory
+  set_property(TARGET leveldb APPEND PROPERTY COMPILE_OPTIONS "-Wno-error" "-Wno-conversion" "-Wno-old-style-cast" "-Wno-shadow")
 endif()
 
-# Include directories for header-only libraries
-include_directories(${CMAKE_SOURCE_DIR}/third_party/cpp-httplib)
-include_directories(${CMAKE_SOURCE_DIR}/third_party/json/include)
+# Include directories for header-only libraries (as system includes to suppress warnings)
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party/cpp-httplib)
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party/json/include)
 
 # Layer 1 Core - Consensus Critical
 add_subdirectory(layer1)

@@ -320,7 +320,7 @@ bool Mempool::ReplaceTransaction(
         }
     }
     
-    if (new_fee_rate < min_replaced_fee_rate * MIN_RBF_FEE_RATE_MULTIPLIER) {
+    if (static_cast<double>(new_fee_rate) < static_cast<double>(min_replaced_fee_rate) * MIN_RBF_FEE_RATE_MULTIPLIER) {
         return false;
     }
     

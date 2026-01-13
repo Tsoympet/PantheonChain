@@ -146,7 +146,7 @@ std::optional<primitives::Block> BlockStorage::GetBlockByHash(const std::array<u
     }
     
     // Then get block by height
-    uint32_t height = std::stoul(height_str);
+    uint32_t height = static_cast<uint32_t>(std::stoul(height_str));
     return GetBlockByHeight(height);
 }
 
@@ -162,7 +162,7 @@ uint32_t BlockStorage::GetHeight() {
         return 0;
     }
     
-    return std::stoul(value);
+    return static_cast<uint32_t>(std::stoul(value));
 }
 
 bool BlockStorage::UpdateChainTip(uint32_t height, const std::array<uint8_t, 32>& best_hash) {

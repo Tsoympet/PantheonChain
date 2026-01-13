@@ -675,9 +675,9 @@ void Node::SyncWalletWithChain() {
     // Display wallet balances
     auto balances = wallet_->GetBalances();
     std::cout << "Wallet balances:" << std::endl;
-    std::cout << "  TALANTON: " << balances[primitives::AssetID::TALANTON] / 100000000.0 << std::endl;
-    std::cout << "  DRACHMA:  " << balances[primitives::AssetID::DRACHMA] / 100000000.0 << std::endl;
-    std::cout << "  OBOLOS:   " << balances[primitives::AssetID::OBOLOS] / 100000000.0 << std::endl;
+    std::cout << "  TALANTON: " << static_cast<double>(balances[primitives::AssetID::TALANTON]) / 100000000.0 << std::endl;
+    std::cout << "  DRACHMA:  " << static_cast<double>(balances[primitives::AssetID::DRACHMA]) / 100000000.0 << std::endl;
+    std::cout << "  OBOLOS:   " << static_cast<double>(balances[primitives::AssetID::OBOLOS]) / 100000000.0 << std::endl;
 }
 
 } // namespace node
