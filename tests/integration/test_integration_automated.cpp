@@ -228,6 +228,10 @@ bool test_smart_contract_flow() {
         0x55,       // SSTORE
     };
     
+    // Contract deployment costs
+    constexpr uint64_t CONTRACT_GAS_COST = 1000000;     // Gas for deployment (OBOLOS)
+    constexpr uint64_t MINING_REWARD = 100000000;       // Block reward (TALANTON)
+    
     // Create contract deployment transaction
     // In a UTXO model, contract deployment is done via a special output
     primitives::Transaction deploy_tx;
@@ -246,17 +250,18 @@ bool test_smart_contract_flow() {
     primitives::TxOutput contract_output;
     contract_output.value = primitives::AssetAmount(
         primitives::AssetID::OBOLOS,
-        1000000  // Gas for deployment
+        CONTRACT_GAS_COST
     );
     // Contract deployment uses bytecode as the pubkey_script
     contract_output.pubkey_script = contract_code;
     deploy_tx.outputs.push_back(contract_output);
     
     // Output 2: Change output (return remaining funds)
+    // In real implementation, would calculate: input_amount - gas_cost - fee
     primitives::TxOutput change_output;
     change_output.value = primitives::AssetAmount(
         primitives::AssetID::TALANTON,
-        99000000  // Simplified change amount
+        MINING_REWARD - CONTRACT_GAS_COST  // Simplified: return most of mining reward
     );
     change_output.pubkey_script = addr.pubkey;  // Return to wallet
     deploy_tx.outputs.push_back(change_output);

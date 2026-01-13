@@ -12,7 +12,17 @@ using namespace parthenon;
 
 /**
  * Parse hex string to bytes
- * Returns empty vector if parsing fails
+ * 
+ * Converts a hexadecimal string to a vector of bytes.
+ * Supports strings with or without "0x" prefix.
+ * 
+ * @param hex_str Hexadecimal string to parse (e.g., "0x1234abcd" or "1234abcd")
+ * @return Vector of bytes representing the parsed hex data
+ *         Empty vector if parsing fails (invalid characters or odd length)
+ * 
+ * @note The function expects an even-length hex string (after removing prefix)
+ * @note Valid hex characters are 0-9, a-f, A-F
+ * @note Errors are logged to stderr and result in empty vector return
  */
 std::vector<uint8_t> ParseHexString(const std::string& hex_str) {
     std::vector<uint8_t> result;
