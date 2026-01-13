@@ -37,7 +37,7 @@ std::array<uint8_t, 32> Difficulty::CompactToBits256(uint32_t compact) {
         if (exponent >= 3) target[2] = static_cast<uint8_t>(shifted >> 16);
     } else if (exponent <= 32) {
         // Place mantissa at the appropriate position (little-endian)
-        int offset = exponent - 3; // Position of the least significant mantissa byte
+        size_t offset = static_cast<size_t>(exponent - 3); // Position of the least significant mantissa byte
         // Bounds check: ensure we don't write past array bounds
         if (offset + 2 < 32) {
             target[offset] = static_cast<uint8_t>(mantissa);
@@ -58,7 +58,7 @@ std::array<uint8_t, 32> Difficulty::CompactToBits256(uint32_t compact) {
 
 uint32_t Difficulty::Bits256ToCompact(const std::array<uint8_t, 32>& target) {
     // Find the most significant non-zero byte
-    int exponent = 32;
+    size_t exponent = 32;
     while (exponent > 0 && target[exponent - 1] == 0) {
         exponent--;
     }
@@ -86,7 +86,7 @@ uint32_t Difficulty::Bits256ToCompact(const std::array<uint8_t, 32>& target) {
         exponent++;
     }
     
-    return (exponent << 24) | mantissa;
+    return (static_cast<uint32_t>(exponent) << 24) | mantissa;
 }
 
 int Difficulty::Compare256(
@@ -94,9 +94,9 @@ int Difficulty::Compare256(
     const std::array<uint8_t, 32>& b
 ) {
     // Compare from most significant byte (big-endian comparison)
-    for (int i = 31; i >= 0; i--) {
-        if (a[i] < b[i]) return -1;
-        if (a[i] > b[i]) return 1;
+    for (size_t i = 32; i > 0; i--) {
+        if (a[i-1] < b[i-1]) return -1;
+        if (a[i-1] > b[i-1]) return 1;
     }
     return 0;
 }
@@ -140,19 +140,19 @@ uint32_t Difficulty::CalculateNextDifficulty(
     // Using 64-bit arithmetic for intermediate results
     
     // First, find the most significant non-zero position
-    int msb_pos = 31;
-    while (msb_pos >= 0 && current_target[msb_pos] == 0) {
+    size_t msb_pos = 31;
+    while (msb_pos > 0 && current_target[msb_pos] == 0) {
         msb_pos--;
     }
     
-    if (msb_pos < 0) {
-        // Current target is zero (shouldn't happen), return unchanged
+    if (msb_pos == 0 && current_target[0] == 0) {
+        // Current target is all zeros (shouldn't happen), return unchanged
         return current_bits;
     }
     
     // Extract significant bytes into a 64-bit number
     uint64_t target_val = 0;
-    for (int i = 0; i <= std::min(msb_pos, 7); i++) {
+    for (size_t i = 0; i <= std::min(msb_pos, static_cast<size_t>(7)); i++) {
         target_val |= static_cast<uint64_t>(current_target[msb_pos - i]) << (8 * i);
     }
     
@@ -161,13 +161,13 @@ uint32_t Difficulty::CalculateNextDifficulty(
     
     // Write back to target array
     std::array<uint8_t, 32> new_target{};
-    for (int i = 0; i <= std::min(msb_pos, 7); i++) {
+    for (size_t i = 0; i <= std::min(msb_pos, static_cast<size_t>(7)); i++) {
         new_target[msb_pos - i] = static_cast<uint8_t>(target_val >> (8 * i));
     }
     
     // Copy any remaining less significant bytes unchanged
     if (msb_pos > 7) {
-        for (int i = 0; i < msb_pos - 7; i++) {
+        for (size_t i = 0; i < msb_pos - 7; i++) {
             new_target[i] = current_target[i];
         }
     }

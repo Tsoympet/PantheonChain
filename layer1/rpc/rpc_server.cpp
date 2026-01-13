@@ -266,7 +266,7 @@ RPCResponse RPCServer::HandleGetBlock(const RPCRequest& req) {
         json block_info;
         
         // Convert block hash to hex
-        auto block_hash = block.GetBlockHash();
+        auto block_hash = block.GetHash();
         std::ostringstream hash_hex;
         hash_hex << std::hex << std::setfill('0');
         for (uint8_t byte : block_hash) {
@@ -275,14 +275,14 @@ RPCResponse RPCServer::HandleGetBlock(const RPCRequest& req) {
         block_info["hash"] = hash_hex.str();
         
         block_info["height"] = height;
-        block_info["version"] = block.version;
-        block_info["timestamp"] = block.timestamp;
-        block_info["nonce"] = block.nonce;
+        block_info["version"] = block.header.version;
+        block_info["timestamp"] = block.header.timestamp;
+        block_info["nonce"] = block.header.nonce;
         
         // Convert previous hash to hex
         std::ostringstream prev_hex;
         prev_hex << std::hex << std::setfill('0');
-        for (uint8_t byte : block.prev_block_hash) {
+        for (uint8_t byte : block.header.prev_block_hash) {
             prev_hex << std::setw(2) << static_cast<int>(byte);
         }
         block_info["previousblockhash"] = prev_hex.str();
@@ -290,7 +290,7 @@ RPCResponse RPCServer::HandleGetBlock(const RPCRequest& req) {
         // Convert merkle root to hex
         std::ostringstream merkle_hex;
         merkle_hex << std::hex << std::setfill('0');
-        for (uint8_t byte : block.merkle_root) {
+        for (uint8_t byte : block.header.merkle_root) {
             merkle_hex << std::setw(2) << static_cast<int>(byte);
         }
         block_info["merkleroot"] = merkle_hex.str();

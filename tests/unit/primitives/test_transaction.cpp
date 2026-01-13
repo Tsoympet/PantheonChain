@@ -23,8 +23,7 @@ void TestOutPoint() {
     op.Serialize(serialized);
     assert(serialized.size() == 36); // 32 + 4
     
-    OutPoint op2 = OutPoint::Deserialize(serialized.data());
-    assert(op == op2);
+    assert(op == OutPoint::Deserialize(serialized.data()));
     
     std::cout << "  ✓ Passed" << std::endl;
 }
@@ -131,9 +130,7 @@ void TestTransactionSerialization() {
     assert(tx2->outputs.size() == tx.outputs.size());
     
     // Verify TXID is deterministic
-    auto txid1 = tx.GetTxID();
-    auto txid2 = tx2->GetTxID();
-    assert(txid1 == txid2);
+    assert(tx.GetTxID() == tx2->GetTxID());
     
     std::cout << "  ✓ Passed (deterministic)" << std::endl;
 }
@@ -145,20 +142,20 @@ void TestCompactSize() {
     
     // Small number
     WriteCompactSize(buffer, 100);
-    const uint8_t* ptr = buffer.data();
-    assert(ReadCompactSize(ptr) == 100);
+    const uint8_t* ptr1 = buffer.data();
+    assert(ReadCompactSize(ptr1) == 100);
     
     // Medium number
     buffer.clear();
     WriteCompactSize(buffer, 1000);
-    ptr = buffer.data();
-    assert(ReadCompactSize(ptr) == 1000);
+    const uint8_t* ptr2 = buffer.data();
+    assert(ReadCompactSize(ptr2) == 1000);
     
     // Large number
     buffer.clear();
     WriteCompactSize(buffer, 100000);
-    ptr = buffer.data();
-    assert(ReadCompactSize(ptr) == 100000);
+    const uint8_t* ptr3 = buffer.data();
+    assert(ReadCompactSize(ptr3) == 100000);
     
     std::cout << "  ✓ Passed" << std::endl;
 }

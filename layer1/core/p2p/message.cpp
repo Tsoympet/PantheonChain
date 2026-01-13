@@ -266,6 +266,7 @@ std::optional<PingPongMessage> PingPongMessage::Deserialize(const uint8_t* data,
 
 std::vector<uint8_t> InvVect::Serialize() const {
     std::vector<uint8_t> result;
+    result.reserve(36);  // 4 bytes for type + 32 bytes for hash
     
     // Type (4 bytes)
     uint32_t type_val = static_cast<uint32_t>(type);

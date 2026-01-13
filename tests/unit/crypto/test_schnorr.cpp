@@ -192,15 +192,11 @@ void TestAuxiliaryRandomness() {
     // Create auxiliary randomness
     uint8_t aux_rand[32];
     for (int i = 0; i < 32; i++) {
-        aux_rand[i] = i;
+        aux_rand[i] = static_cast<uint8_t>(i);
     }
     
     auto sig_opt = Schnorr::Sign(privkey, msg_hash.data(), aux_rand);
-    assert(sig_opt.has_value());
-    
-    // Verify the signature
-    bool valid = Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt);
-    assert(valid);
+    assert(sig_opt.has_value() && Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt));
     
     std::cout << "  ✓ Passed" << std::endl;
 }
@@ -227,10 +223,7 @@ void TestBatchSignatures() {
         );
         
         auto sig_opt = Schnorr::Sign(privkey, msg_hash.data(), nullptr);
-        assert(sig_opt.has_value());
-        
-        bool valid = Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt);
-        assert(valid);
+        assert(sig_opt.has_value() && Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt));
     }
     
     std::cout << "  ✓ Passed (5 signatures)" << std::endl;
