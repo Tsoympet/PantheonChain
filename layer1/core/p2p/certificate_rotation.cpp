@@ -13,6 +13,9 @@
 namespace parthenon {
 namespace p2p {
 
+// Forward declaration of helper function
+static time_t ASN1_TIME_to_time_t(ASN1_TIME* time);
+
 bool CertificateInfo::IsExpired() const {
     return std::time(nullptr) >= valid_until;
 }

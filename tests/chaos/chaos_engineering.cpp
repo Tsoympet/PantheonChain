@@ -11,7 +11,7 @@ namespace testing {
 
 bool ChaosEngineering::Init() {
     std::cout << "╔══════════════════════════════════════════════════════════╗\n";
-    std::cout << "║  PantheonChain - Chaos Engineering Test Framework       ║\n";
+    std::cout << "║  ParthenonChain - Chaos Engineering Test Framework      ║\n";
     std::cout << "╚══════════════════════════════════════════════════════════╝\n\n";
     
     // Seed RNG
