@@ -201,12 +201,71 @@ void Wallet::MarkSpent(const primitives::OutPoint& outpoint) {
     }
 }
 
-void Wallet::SyncWithChain(const chainstate::UTXOSet& /* utxo_set */) {
-    // TODO: Implement chain sync
-    // For each wallet address:
-    // 1. Query chainstate for UTXOs to that address
-    // 2. Add to wallet UTXO tracking
-    // 3. Mark spent UTXOs
+void Wallet::SyncWithChain(const chainstate::UTXOSet& utxo_set) {
+    // Clear existing UTXOs (we'll rebuild from chain)
+    utxos_.clear();
+    
+    // Get all UTXOs from the set
+    const auto& all_utxos = utxo_set.GetUTXOs();
+    
+    // For each UTXO in the chain
+    for (const auto& [outpoint, output] : all_utxos) {
+        // Check if this output belongs to one of our addresses
+        if (IsOurPubkey(output.pubkey_script)) {
+            // Add to wallet tracking
+            WalletUTXO wallet_utxo;
+            wallet_utxo.outpoint = outpoint;
+            wallet_utxo.output = output;
+            wallet_utxo.height = 0; // Height would need to be tracked separately
+            wallet_utxo.is_spent = false;
+            
+            utxos_[outpoint] = wallet_utxo;
+        }
+    }
+}
+
+void Wallet::ProcessBlock(const primitives::Block& block, uint32_t height) {
+    // Process all transactions in the block
+    for (const auto& tx : block.transactions) {
+        auto txid = tx.GetTxID();
+        
+        // Mark inputs as spent
+        for (const auto& input : tx.inputs) {
+            MarkSpent(input.prev_output);
+        }
+        
+        // Add new outputs that belong to us
+        for (uint32_t vout = 0; vout < tx.outputs.size(); vout++) {
+            const auto& output = tx.outputs[vout];
+            
+            if (IsOurPubkey(output.pubkey_script)) {
+                WalletUTXO wallet_utxo;
+                wallet_utxo.outpoint = {txid, vout};
+                wallet_utxo.output = output;
+                wallet_utxo.height = height;
+                wallet_utxo.is_spent = false;
+                
+                utxos_[wallet_utxo.outpoint] = wallet_utxo;
+            }
+        }
+    }
+}
+
+void Wallet::MarkSpent(const primitives::OutPoint& outpoint) {
+    auto it = utxos_.find(outpoint);
+    if (it != utxos_.end()) {
+        it->second.is_spent = true;
+    }
+}
+
+bool Wallet::IsOurPubkey(const std::vector<uint8_t>& pubkey) const {
+    // Check if this pubkey matches any of our addresses
+    for (const auto& addr : addresses_) {
+        if (addr.pubkey == pubkey) {
+            return true;
+        }
+    }
+    return false;
 }
 
 crypto::Schnorr::PrivateKey Wallet::DeriveKey(uint64_t index) {

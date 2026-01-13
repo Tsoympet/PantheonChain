@@ -16,6 +16,8 @@ Node::Node(const std::string& data_dir, uint16_t port)
     // Initialize components
     chain_ = std::make_unique<chainstate::Chain>();
     mempool_ = std::make_unique<mempool::Mempool>();
+    block_storage_ = std::make_unique<storage::BlockStorage>();
+    utxo_storage_ = std::make_unique<storage::UTXOStorage>();
 }
 
 Node::~Node() {
@@ -29,9 +31,26 @@ bool Node::Start() {
     
     std::cout << "Starting ParthenonChain node on port " << port_ << std::endl;
     
-    // Load blockchain data from disk (stub implementation)
-    std::cout << "Loading blockchain data from " << data_dir_ << std::endl;
-    // In production: Deserialize chain state from disk
+    // Open block storage database
+    std::string block_db_path = data_dir_ + "/blocks";
+    if (!block_storage_->Open(block_db_path)) {
+        std::cerr << "Failed to open block storage database" << std::endl;
+        return false;
+    }
+    std::cout << "Opened block storage at " << block_db_path << std::endl;
+    
+    // Open UTXO storage database
+    std::string utxo_db_path = data_dir_ + "/utxo";
+    if (!utxo_storage_->Open(utxo_db_path)) {
+        std::cerr << "Failed to open UTXO storage database" << std::endl;
+        block_storage_->Close();
+        return false;
+    }
+    std::cout << "Opened UTXO storage at " << utxo_db_path << std::endl;
+    
+    // Load blockchain height from storage
+    uint32_t stored_height = block_storage_->GetHeight();
+    std::cout << "Loaded blockchain height: " << stored_height << std::endl;
     
     // Initialize P2P network listener (stub implementation)
     std::cout << "Initializing P2P network on port " << port_ << std::endl;
@@ -59,9 +78,15 @@ void Node::Stop() {
     std::cout << "Stopping P2P network..." << std::endl;
     // In production: Close all peer connections, stop listener
     
-    // Save blockchain state to disk (stub implementation)
-    std::cout << "Saving blockchain state to " << data_dir_ << std::endl;
-    // In production: Serialize chain state to disk
+    // Save UTXO set to disk
+    std::cout << "Saving UTXO set to disk..." << std::endl;
+    auto& utxo_set = chain_->GetUTXOSet();
+    utxo_storage_->SaveUTXOSet(utxo_set);
+    
+    // Close storage databases
+    std::cout << "Closing storage databases..." << std::endl;
+    block_storage_->Close();
+    utxo_storage_->Close();
     
     // Stop sync thread (stub implementation)
     is_syncing_ = false;
@@ -184,17 +209,19 @@ uint32_t Node::GetHeight() const {
     return static_cast<uint32_t>(chain_->GetHeight());
 }
 
-std::optional<primitives::Block> Node::GetBlockByHeight(uint32_t /* height */) const {
-    // TODO: Implement block storage and retrieval
-    // For now, return nullopt
+std::optional<primitives::Block> Node::GetBlockByHeight(uint32_t height) const {
+    if (block_storage_ && block_storage_->IsOpen()) {
+        return block_storage_->GetBlockByHeight(height);
+    }
     return std::nullopt;
 }
 
 std::optional<primitives::Block> Node::GetBlockByHash(
-    const std::array<uint8_t, 32>& /* hash */
+    const std::array<uint8_t, 32>& hash
 ) const {
-    // TODO: Implement block hash index
-    // For now, return nullopt
+    if (block_storage_ && block_storage_->IsOpen()) {
+        return block_storage_->GetBlockByHash(hash);
+    }
     return std::nullopt;
 }
 
@@ -284,11 +311,25 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
         return false;
     }
     
+    // Store block to disk
+    uint32_t height = block.header.height;
+    if (block_storage_ && block_storage_->IsOpen()) {
+        block_storage_->StoreBlock(block, height);
+        auto block_hash = block.GetHash();
+        block_storage_->UpdateChainTip(height, block_hash);
+    }
+    
+    // Update UTXO storage
+    if (utxo_storage_ && utxo_storage_->IsOpen()) {
+        utxo_storage_->SaveUTXOSet(chain_->GetUTXOSet());
+    }
+    
     // Remove transactions from mempool
     for (const auto& tx : block.transactions) {
         mempool_->RemoveTransaction(tx.GetTxID());
     }
     
+    std::cout << "Block " << height << " validated, applied, and stored" << std::endl;
     return true;
 }
 

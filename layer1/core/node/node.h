@@ -8,6 +8,8 @@
 #include "chainstate/chain.h"
 #include "p2p/protocol.h"
 #include "mempool/mempool.h"
+#include "storage/block_storage.h"
+#include "storage/utxo_storage.h"
 #include <vector>
 #include <map>
 #include <memory>
@@ -146,6 +148,10 @@ private:
     // Callbacks
     std::vector<std::function<void(const primitives::Block&)>> block_callbacks_;
     std::vector<std::function<void(const primitives::Transaction&)>> tx_callbacks_;
+    
+    // Storage backends
+    std::unique_ptr<storage::BlockStorage> block_storage_;
+    std::unique_ptr<storage::UTXOStorage> utxo_storage_;
     
     // Internal methods
     void SyncLoop();
