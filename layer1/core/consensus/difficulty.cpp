@@ -145,8 +145,8 @@ uint32_t Difficulty::CalculateNextDifficulty(
         msb_pos--;
     }
     
-    if (current_target[msb_pos] == 0) {
-        // Current target is zero (shouldn't happen), return unchanged
+    if (msb_pos == 0 && current_target[0] == 0) {
+        // Current target is all zeros (shouldn't happen), return unchanged
         return current_bits;
     }
     
