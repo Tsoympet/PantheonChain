@@ -60,14 +60,11 @@ jobs:
           --output-file coverage.info
         lcov --list coverage.info
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
       with:
-        files: ./coverage.info
-        flags: unittests
-        name: ubuntu-coverage
-        fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
+        slug: Tsoympet/PantheonChain
 
   test-macos:
     name: Test (macOS)

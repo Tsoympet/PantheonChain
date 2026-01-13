@@ -51,21 +51,21 @@ static inline uint32_t ReadBE32(const uint8_t* ptr) {
 }
 
 static inline void WriteBE32(uint8_t* ptr, uint32_t val) {
-    ptr[0] = val >> 24;
-    ptr[1] = val >> 16;
-    ptr[2] = val >> 8;
-    ptr[3] = val;
+    ptr[0] = static_cast<uint8_t>(val >> 24);
+    ptr[1] = static_cast<uint8_t>(val >> 16);
+    ptr[2] = static_cast<uint8_t>(val >> 8);
+    ptr[3] = static_cast<uint8_t>(val);
 }
 
 static inline void WriteBE64(uint8_t* ptr, uint64_t val) {
-    ptr[0] = val >> 56;
-    ptr[1] = val >> 48;
-    ptr[2] = val >> 40;
-    ptr[3] = val >> 32;
-    ptr[4] = val >> 24;
-    ptr[5] = val >> 16;
-    ptr[6] = val >> 8;
-    ptr[7] = val;
+    ptr[0] = static_cast<uint8_t>(val >> 56);
+    ptr[1] = static_cast<uint8_t>(val >> 48);
+    ptr[2] = static_cast<uint8_t>(val >> 40);
+    ptr[3] = static_cast<uint8_t>(val >> 32);
+    ptr[4] = static_cast<uint8_t>(val >> 24);
+    ptr[5] = static_cast<uint8_t>(val >> 16);
+    ptr[6] = static_cast<uint8_t>(val >> 8);
+    ptr[7] = static_cast<uint8_t>(val);
 }
 
 SHA256::SHA256() {

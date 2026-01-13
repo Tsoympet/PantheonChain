@@ -98,7 +98,7 @@ bool GPUSignatureVerifier::Init(int device_id) {
     // cudaMalloc(&gpu_context_, ...);
     
     // For now, mark as initialized (CPU fallback)
-    gpu_context_ = (void*)0x1;  // Non-null marker
+    gpu_context_ = reinterpret_cast<void*>(0x1);  // Non-null marker
     
     std::cout << "GPU signature verifier initialized (device " << device_id << ")\n";
     std::cout << "NOTE: Full CUDA implementation pending - using optimized CPU fallback\n";
