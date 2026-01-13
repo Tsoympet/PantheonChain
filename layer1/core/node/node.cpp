@@ -11,7 +11,8 @@ namespace node {
 
 Node::Node(const std::string& data_dir, uint16_t port)
     : data_dir_(data_dir), port_(port), running_(false),
-      is_syncing_(false), sync_target_height_(0) {
+      is_syncing_(false), sync_target_height_(0),
+      is_mining_(false), total_hashes_(0), blocks_mined_(0) {
     
     // Initialize components
     chain_ = std::make_unique<chainstate::Chain>();
@@ -107,6 +108,11 @@ void Node::Stop() {
     }
     
     std::cout << "Stopping node..." << std::endl;
+    
+    // Stop mining first
+    if (is_mining_) {
+        StopMining();
+    }
     
     // Stop sync thread
     is_syncing_ = false;
@@ -474,6 +480,132 @@ void Node::HandleGetDataReceived(const std::string& peer_id, const p2p::GetDataM
             // }
         }
     }
+}
+
+// Mining functions
+void Node::StartMining(const std::vector<uint8_t>& coinbase_pubkey, size_t num_threads) {
+    if (is_mining_) {
+        std::cout << "Mining already active" << std::endl;
+        return;
+    }
+    
+    if (!chain_) {
+        std::cerr << "Cannot start mining: chain not initialized" << std::endl;
+        return;
+    }
+    
+    coinbase_pubkey_ = coinbase_pubkey;
+    
+    // Auto-detect thread count
+    if (num_threads == 0) {
+        num_threads = std::thread::hardware_concurrency();
+        if (num_threads == 0) num_threads = 1;
+    }
+    
+    // Initialize miner
+    auto& chainstate = chain_->GetChainState();
+    miner_ = std::make_unique<mining::Miner>(chainstate, coinbase_pubkey_);
+    
+    is_mining_ = true;
+    total_hashes_ = 0;
+    
+    std::cout << "Starting mining with " << num_threads << " threads" << std::endl;
+    
+    // Start mining threads
+    for (size_t i = 0; i < num_threads; ++i) {
+        mining_threads_.emplace_back(&Node::MiningLoop, this, i);
+    }
+}
+
+void Node::StopMining() {
+    if (!is_mining_) {
+        return;
+    }
+    
+    std::cout << "Stopping mining..." << std::endl;
+    is_mining_ = false;
+    
+    // Wait for mining threads to finish
+    for (auto& thread : mining_threads_) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+    
+    mining_threads_.clear();
+    miner_.reset();
+    
+    std::cout << "Mining stopped. Total blocks mined: " << blocks_mined_.load() << std::endl;
+}
+
+void Node::MiningLoop(size_t thread_id) {
+    std::cout << "Mining thread " << thread_id << " started" << std::endl;
+    
+    const uint64_t ITERATIONS_PER_ROUND = 100000; // Check for new blocks periodically
+    
+    while (is_mining_) {
+        // Create block template
+        auto template_opt = miner_->CreateBlockTemplate(1000);
+        if (!template_opt) {
+            // Failed to create template, wait and retry
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            continue;
+        }
+        
+        auto& block_template = *template_opt;
+        
+        // Mine the block
+        auto block_opt = miner_->MineBlock(block_template, ITERATIONS_PER_ROUND);
+        total_hashes_ += ITERATIONS_PER_ROUND;
+        
+        if (block_opt) {
+            // Successfully mined a block!
+            auto& block = *block_opt;
+            
+            std::cout << "Thread " << thread_id << " mined block at height " 
+                      << block_template.height << std::endl;
+            
+            // Validate and apply the block
+            if (ValidateAndApplyBlock(block)) {
+                blocks_mined_++;
+                
+                // Broadcast to network
+                BroadcastBlock(block);
+                
+                // Trigger callbacks
+                for (const auto& callback : block_callbacks_) {
+                    callback(block);
+                }
+                
+                std::cout << "Block accepted! Total blocks mined: " << blocks_mined_.load() << std::endl;
+            } else {
+                std::cerr << "Mined block failed validation!" << std::endl;
+            }
+            
+            // Short pause before mining next block
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+    
+    std::cout << "Mining thread " << thread_id << " stopped" << std::endl;
+}
+
+Node::MiningStats Node::GetMiningStats() const {
+    MiningStats stats;
+    stats.is_mining = is_mining_;
+    stats.blocks_mined = blocks_mined_;
+    stats.total_hashes = total_hashes_;
+    stats.current_height = GetHeight();
+    
+    // Calculate hashrate (approximate)
+    if (miner_) {
+        auto status = miner_->GetStatus();
+        stats.hashrate = status.hashrate;
+    } else {
+        stats.hashrate = 0;
+    }
+    
+    return stats;
 }
 
 } // namespace node

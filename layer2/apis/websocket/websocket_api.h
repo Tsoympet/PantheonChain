@@ -31,6 +31,11 @@ public:
     void Stop();
     
     /**
+     * Check if server is running
+     */
+    bool IsRunning() const;
+    
+    /**
      * Broadcast message to all connected clients
      */
     void Broadcast(const std::string& message);
@@ -45,13 +50,39 @@ public:
      */
     void OnNewTransaction(std::function<void(const std::string&)> callback);
     
-private:
-    uint16_t port_;
-    bool running_;
+    /**
+     * Subscribe client to a topic
+     */
+    void Subscribe(uint64_t client_id, const std::string& topic);
     
-    // TODO: Implement WebSocket server (using libwebsockets or similar)
-    // TODO: Add authentication/rate limiting
-    // TODO: Implement subscription management
+    /**
+     * Unsubscribe client from a topic
+     */
+    void Unsubscribe(uint64_t client_id, const std::string& topic);
+    
+    /**
+     * Publish message to specific topic
+     */
+    void PublishToTopic(const std::string& topic, const std::string& message);
+    
+    /**
+     * Get number of connected clients
+     */
+    size_t GetConnectedClients() const;
+    
+    /**
+     * Notify about new block
+     */
+    void NotifyNewBlock(const std::string& block_data);
+    
+    /**
+     * Notify about new transaction
+     */
+    void NotifyNewTransaction(const std::string& tx_data);
+    
+private:
+    class Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 } // namespace apis

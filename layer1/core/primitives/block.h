@@ -22,9 +22,14 @@ struct BlockHeader {
     uint32_t timestamp;                      // Block timestamp (Unix epoch)
     uint32_t bits;                           // Difficulty target (compact format)
     uint32_t nonce;                          // Proof-of-work nonce
+    uint64_t base_fee_per_gas;               // EIP-1559 base fee (for EVM transactions)
+    uint64_t gas_used;                       // Total gas used by EVM transactions
+    uint64_t gas_limit;                      // Gas limit for EVM transactions
     
     BlockHeader() : version(1), prev_block_hash{}, merkle_root{}, 
-                    timestamp(0), bits(0), nonce(0) {}
+                    timestamp(0), bits(0), nonce(0),
+                    base_fee_per_gas(1000000000), // 1 Gwei initial base fee
+                    gas_used(0), gas_limit(30000000) {} // 30M gas limit
     
     /**
      * Get block hash (SHA-256d of serialized header)

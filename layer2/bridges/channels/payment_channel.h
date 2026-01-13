@@ -1,5 +1,5 @@
-#ifndef PANTHEON_LAYER2_CHANNELS_PAYMENT_CHANNEL_H
-#define PANTHEON_LAYER2_CHANNELS_PAYMENT_CHANNEL_H
+#ifndef PANTHEON_LAYER2_BRIDGES_CHANNELS_PAYMENT_CHANNEL_H
+#define PANTHEON_LAYER2_BRIDGES_CHANNELS_PAYMENT_CHANNEL_H
 
 #include "layer1/core/primitives/transaction.h"
 #include "layer1/core/crypto/sha256.h"
@@ -73,4 +73,4 @@ private:
 } // namespace layer2
 } // namespace parthenon
 
-#endif // PANTHEON_LAYER2_CHANNELS_PAYMENT_CHANNEL_H
+#endif // PANTHEON_LAYER2_BRIDGES_CHANNELS_PAYMENT_CHANNEL_H

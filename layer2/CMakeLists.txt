@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
 add_library(layer2
-    payment_channels/payment_channel.cpp
+    bridges/channels/payment_channel.cpp
     bridges/htlc/htlc.cpp
     bridges/spv/spv_bridge.cpp
+    indexers/tx_indexer/tx_indexer.cpp
+    indexers/contract_indexer/contract_indexer.cpp
+    apis/graphql/graphql_api.cpp
+    apis/websocket/websocket_api.cpp
 )
 
 target_include_directories(layer2 PUBLIC
@@ -16,5 +20,9 @@ target_link_libraries(layer2
     parthenon_primitives
 )
 
-# Note: Legacy paths (channels/, htlc/, spv/) maintained for backward compatibility
-# New code should use payment_channels/, bridges/htlc/, bridges/spv/
+# All layer2 code now organized under proper subdirectories:
+# - bridges/channels/ for payment channels
+# - bridges/htlc/ for hash time-locked contracts
+# - bridges/spv/ for simplified payment verification
+# - indexers/ for transaction and contract indexing
+# - apis/ for GraphQL and WebSocket APIs

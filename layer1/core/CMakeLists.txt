@@ -112,6 +112,8 @@ target_compile_options(parthenon_validation PRIVATE
 add_library(parthenon_p2p STATIC
     p2p/protocol.cpp
     p2p/message.cpp
+    p2p/peer_database.cpp
+    p2p/peer_discovery.cpp
 )
 
 target_include_directories(parthenon_p2p PUBLIC
