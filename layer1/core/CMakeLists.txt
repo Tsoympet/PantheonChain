@@ -4,6 +4,7 @@
 add_library(parthenon_crypto STATIC
     crypto/sha256.cpp
     crypto/schnorr.cpp
+    crypto/hardware_crypto.cpp
 )
 
 target_include_directories(parthenon_crypto PUBLIC
@@ -151,6 +152,9 @@ target_compile_options(parthenon_mempool PRIVATE
 
 # Mining library
 add_subdirectory(mining)
+
+# Storage library
+add_subdirectory(storage)
 
 # Node library
 add_subdirectory(node)

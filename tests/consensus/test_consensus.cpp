@@ -30,26 +30,30 @@ void TestSupplyCapEnforcement() {
     
     // Sum all block rewards until they become zero
     for (uint32_t height = 0; height < 10000000; height++) {
-        tal_total += IssuanceSchedule::GetBlockReward(AssetID::TALANTON, height);
-        dra_total += IssuanceSchedule::GetBlockReward(AssetID::DRACHMA, height);
-        obl_total += IssuanceSchedule::GetBlockReward(AssetID::OBOLOS, height);
+        tal_total += Issuance::GetBlockReward(height, AssetID::TALANTON);
+        dra_total += Issuance::GetBlockReward(height, AssetID::DRACHMA);
+        obl_total += Issuance::GetBlockReward(height, AssetID::OBOLOS);
         
         // Early exit if all rewards are zero
-        if (IssuanceSchedule::GetBlockReward(AssetID::TALANTON, height) == 0 &&
-            IssuanceSchedule::GetBlockReward(AssetID::DRACHMA, height) == 0 &&
-            IssuanceSchedule::GetBlockReward(AssetID::OBOLOS, height) == 0) {
+        if (Issuance::GetBlockReward(height, AssetID::TALANTON) == 0 &&
+            Issuance::GetBlockReward(height, AssetID::DRACHMA) == 0 &&
+            Issuance::GetBlockReward(height, AssetID::OBOLOS) == 0) {
             break;
         }
     }
     
-    // Verify caps
-    assert(tal_total <= IssuanceSchedule::MAX_SUPPLY_TALANTON);
-    assert(dra_total <= IssuanceSchedule::MAX_SUPPLY_DRACHMA);
-    assert(obl_total <= IssuanceSchedule::MAX_SUPPLY_OBOLOS);
+    // Verify caps (use AssetSupply max values)
+    uint64_t tal_max = AssetSupply::GetMaxSupply(AssetID::TALANTON);
+    uint64_t dra_max = AssetSupply::GetMaxSupply(AssetID::DRACHMA);
+    uint64_t obl_max = AssetSupply::GetMaxSupply(AssetID::OBOLOS);
     
-    std::cout << "  ✅ TALANTON: " << tal_total << " <= " << IssuanceSchedule::MAX_SUPPLY_TALANTON << std::endl;
-    std::cout << "  ✅ DRACHMA: " << dra_total << " <= " << IssuanceSchedule::MAX_SUPPLY_DRACHMA << std::endl;
-    std::cout << "  ✅ OBOLOS: " << obl_total << " <= " << IssuanceSchedule::MAX_SUPPLY_OBOLOS << std::endl;
+    assert(tal_total <= tal_max);
+    assert(dra_total <= dra_max);
+    assert(obl_total <= obl_max);
+    
+    std::cout << "  ✅ TALANTON: " << tal_total / AssetSupply::BASE_UNIT << " <= " << tal_max / AssetSupply::BASE_UNIT << std::endl;
+    std::cout << "  ✅ DRACHMA: " << dra_total / AssetSupply::BASE_UNIT << " <= " << dra_max / AssetSupply::BASE_UNIT << std::endl;
+    std::cout << "  ✅ OBOLOS: " << obl_total / AssetSupply::BASE_UNIT << " <= " << obl_max / AssetSupply::BASE_UNIT << std::endl;
 }
 
 /**
@@ -61,8 +65,8 @@ void TestHalvingSchedule() {
     std::cout << "Consensus Test: Halving Schedule" << std::endl;
     
     // Test TALANTON halving (Bitcoin-like)
-    uint64_t reward_before = IssuanceSchedule::GetBlockReward(AssetID::TALANTON, 0);
-    uint64_t reward_after = IssuanceSchedule::GetBlockReward(AssetID::TALANTON, 210000);
+    uint64_t reward_before = Issuance::GetBlockReward(0, AssetID::TALANTON);
+    uint64_t reward_after = Issuance::GetBlockReward(210000, AssetID::TALANTON);
     
     assert(reward_after == reward_before / 2);
     std::cout << "  ✅ TALANTON halving verified" << std::endl;

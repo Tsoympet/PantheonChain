@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Compiler flags for security and performance
+# Compiler flags for security and performance (save original)
+set(ORIGINAL_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
@@ -20,6 +21,18 @@ set(SECP256K1_BUILD_EXHAUSTIVE_TESTS OFF CACHE BOOL "Build exhaustive tests")
 set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON CACHE BOOL "Enable Schnorr signature module")
 set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON CACHE BOOL "Enable extra keys module")
 add_subdirectory(third_party/secp256k1 EXCLUDE_FROM_ALL)
+
+# Build LevelDB for blockchain storage (without -Werror)
+set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} -Wall -Wextra")
+set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build LevelDB tests")
+set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build LevelDB benchmarks")
+add_subdirectory(third_party/leveldb EXCLUDE_FROM_ALL)
+# Restore flags
+set(CMAKE_CXX_FLAGS "${ORIGINAL_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror")
+
+# Include directories for header-only libraries
+include_directories(${CMAKE_SOURCE_DIR}/third_party/cpp-httplib)
+include_directories(${CMAKE_SOURCE_DIR}/third_party/json/include)
 
 # Layer 1 Core - Consensus Critical
 add_subdirectory(layer1)

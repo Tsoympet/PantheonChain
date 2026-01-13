@@ -332,7 +332,7 @@ std::optional<ValidationError> BlockValidator::ValidateBlock(
             );
         }
         
-        // Signatures (TODO)
+        // Validate signatures
         error = TransactionValidator::ValidateSignatures(tx, utxo_set);
         if (error) {
             return ValidationError(

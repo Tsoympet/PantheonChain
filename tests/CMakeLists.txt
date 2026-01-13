@@ -1,3 +1,38 @@
 # Tests directory
 
 add_subdirectory(unit)
+
+# Integration tests
+add_executable(test_integration integration/test_integration.cpp)
+target_link_libraries(test_integration
+    parthenon_consensus
+    parthenon_primitives
+    parthenon_chainstate
+    parthenon_mempool
+    parthenon_mining
+    parthenon_wallet
+)
+add_test(NAME integration COMMAND test_integration)
+
+# Automated integration tests (comprehensive)
+add_executable(test_integration_automated integration/test_integration_automated.cpp)
+target_link_libraries(test_integration_automated
+    parthenon_node
+    parthenon_consensus
+    parthenon_primitives
+    parthenon_chainstate
+    parthenon_mempool
+    parthenon_mining
+    parthenon_wallet
+    parthenon_p2p
+    parthenon_storage
+)
+add_test(NAME integration_automated COMMAND test_integration_automated)
+
+# Consensus tests
+add_executable(test_consensus consensus/test_consensus.cpp)
+target_link_libraries(test_consensus
+    parthenon_consensus
+    parthenon_primitives
+)
+add_test(NAME consensus COMMAND test_consensus)

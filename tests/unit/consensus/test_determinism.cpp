@@ -89,9 +89,8 @@ void TestTransactionSerializationDeterminism() {
     
     // Add a deterministic output
     TxOutput output;
-    output.value = Amount(1000000);
-    output.asset_id = AssetID::TALANTON;
-    output.script_pubkey = {0x04, 0x05, 0x06};
+    output.value = AssetAmount(AssetID::TALANTON, 1000000);
+    output.pubkey_script = {0x04, 0x05, 0x06};
     tx.outputs.push_back(output);
     
     // Serialize multiple times
@@ -206,8 +205,8 @@ void TestDeterministicOrdering() {
         tx.inputs.push_back(input);
         
         TxOutput output;
-        output.value = Amount(1000);
-        output.asset_id = AssetID::TALANTON;
+        output.value = AssetAmount(AssetID::TALANTON, 1000);
+        output.pubkey_script = {0x01};
         tx.outputs.push_back(output);
         
         txs.push_back(tx);

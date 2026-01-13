@@ -3,6 +3,7 @@
 #include "wallet.h"
 #include "crypto/sha256.h"
 #include <algorithm>
+#include <stdexcept>
 
 namespace parthenon {
 namespace wallet {
@@ -165,7 +166,7 @@ std::optional<primitives::Transaction> Wallet::CreateTransaction(
         auto sighash = tx.GetSignatureHash(i);
         
         // Sign with Schnorr
-        auto signature_opt = crypto::Schnorr::Sign(sighash, privkey);
+        auto signature_opt = crypto::Schnorr::Sign(privkey, sighash.data());
         if (!signature_opt) {
             return std::nullopt; // Signature generation failed
         }
@@ -200,7 +201,7 @@ void Wallet::MarkSpent(const primitives::OutPoint& outpoint) {
     }
 }
 
-void Wallet::SyncWithChain(const chainstate::UTXOSet& utxo_set) {
+void Wallet::SyncWithChain(const chainstate::UTXOSet& /* utxo_set */) {
     // TODO: Implement chain sync
     // For each wallet address:
     // 1. Query chainstate for UTXOs to that address
@@ -247,6 +248,38 @@ std::vector<WalletUTXO> Wallet::SelectCoins(primitives::AssetID asset, uint64_t 
     
     // Insufficient funds
     return {};
+}
+
+void Wallet::ProcessBlock(const primitives::Block& block, uint32_t height) {
+    // Process all transactions in the block
+    for (const auto& tx : block.transactions) {
+        auto txid = tx.GetTxID();
+        
+        // Mark inputs as spent
+        for (const auto& input : tx.inputs) {
+            MarkSpent(input.prevout);
+        }
+        
+        // Add new outputs that belong to us
+        for (uint32_t vout = 0; vout < tx.outputs.size(); vout++) {
+            const auto& output = tx.outputs[vout];
+            
+            if (IsOurPubkey(output.pubkey_script)) {
+                primitives::OutPoint outpoint{txid, vout};
+                AddUTXO(outpoint, output, height);
+            }
+        }
+    }
+}
+
+bool Wallet::IsOurPubkey(const std::vector<uint8_t>& pubkey) const {
+    // Check if this pubkey matches any of our addresses
+    for (const auto& addr : addresses_) {
+        if (addr.pubkey == pubkey) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace wallet
