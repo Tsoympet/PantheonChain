@@ -1,5 +1,8 @@
 # ParthenonChain
 
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/0a021ab2-f1a3-4b14-a924-fac45821cce2" />
+
+
 [![Build](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml)
 [![Tests](https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml)
 [![License](https://img.shields.io/github/license/Tsoympet/PantheonChain)](LICENSE)
