@@ -19,6 +19,9 @@ Node::Node(const std::string& data_dir, uint16_t port)
     mempool_ = std::make_unique<mempool::Mempool>();
     block_storage_ = std::make_unique<storage::BlockStorage>();
     utxo_storage_ = std::make_unique<storage::UTXOStorage>();
+    
+    // Initialize P2P network manager
+    network_ = std::make_unique<p2p::NetworkManager>(port, p2p::NetworkMagic::MAINNET);
 }
 
 Node::~Node() {
@@ -182,8 +185,13 @@ void Node::AddPeer(const std::string& address, uint16_t port) {
     
     peers_[peer_id] = info;
     
-    // TODO: Initiate connection to peer
-    std::cout << "Added peer: " << peer_id << std::endl;
+    // Initiate connection to peer via network manager
+    if (network_ && running_) {
+        network_->AddPeer(address, port);
+        std::cout << "Connecting to peer: " << peer_id << std::endl;
+    } else {
+        std::cout << "Added peer (will connect when node starts): " << peer_id << std::endl;
+    }
 }
 
 bool Node::ProcessBlock(const primitives::Block& block, const std::string& peer_id) {
@@ -197,6 +205,14 @@ bool Node::ProcessBlock(const primitives::Block& block, const std::string& peer_
     uint32_t block_height = GetHeight();
     if (block_height >= sync_target_height_) {
         is_syncing_ = false;
+    }
+    
+    // Update wallet if attached
+    {
+        std::lock_guard<std::mutex> lock(wallet_mutex_);
+        if (wallet_) {
+            wallet_->ProcessBlock(block, block_height);
+        }
     }
     
     // Notify callbacks
@@ -606,6 +622,60 @@ Node::MiningStats Node::GetMiningStats() const {
     }
     
     return stats;
+}
+
+void Node::AttachWallet(std::shared_ptr<wallet::Wallet> wallet) {
+    std::lock_guard<std::mutex> lock(wallet_mutex_);
+    wallet_ = wallet;
+    std::cout << "Wallet attached to node" << std::endl;
+    
+    // Sync wallet with current chain state if node is running
+    if (running_ && wallet_) {
+        std::cout << "Syncing wallet with blockchain..." << std::endl;
+        SyncWalletWithChain();
+    }
+}
+
+void Node::DetachWallet() {
+    std::lock_guard<std::mutex> lock(wallet_mutex_);
+    wallet_ = nullptr;
+    std::cout << "Wallet detached from node" << std::endl;
+}
+
+void Node::SyncWalletWithChain() {
+    std::lock_guard<std::mutex> lock(wallet_mutex_);
+    
+    if (!wallet_) {
+        std::cout << "No wallet attached" << std::endl;
+        return;
+    }
+    
+    std::cout << "Syncing wallet with chain..." << std::endl;
+    
+    uint32_t current_height = GetHeight();
+    std::cout << "Processing " << current_height + 1 << " blocks..." << std::endl;
+    
+    // Process all blocks from genesis to current height
+    for (uint32_t height = 0; height <= current_height; height++) {
+        auto block_opt = GetBlockByHeight(height);
+        if (block_opt) {
+            wallet_->ProcessBlock(*block_opt, height);
+        }
+        
+        // Show progress every 100 blocks
+        if (height % 100 == 0 && height > 0) {
+            std::cout << "  Processed " << height << " / " << current_height + 1 << " blocks" << std::endl;
+        }
+    }
+    
+    std::cout << "Wallet sync complete!" << std::endl;
+    
+    // Display wallet balances
+    auto balances = wallet_->GetBalances();
+    std::cout << "Wallet balances:" << std::endl;
+    std::cout << "  TALANTON: " << balances[primitives::AssetID::TALANTON] / 100000000.0 << std::endl;
+    std::cout << "  DRACHMA:  " << balances[primitives::AssetID::DRACHMA] / 100000000.0 << std::endl;
+    std::cout << "  OBOLOS:   " << balances[primitives::AssetID::OBOLOS] / 100000000.0 << std::endl;
 }
 
 } // namespace node

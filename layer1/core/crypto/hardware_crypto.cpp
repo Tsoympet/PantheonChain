@@ -148,13 +148,14 @@ std::string GPUSignatureVerifier::GetDeviceInfo() {
 }
 
 bool GPUSignatureVerifier::IsAvailable() {
-    // TODO: Check for CUDA runtime
+    // SECURITY: GPU batch verification is not implemented (line 126 returns all valid)
+    // Returning false to force use of secure CPU verification until CUDA is implemented
+    // TODO: Implement proper CUDA batch verification, then enable GPU path
     // int device_count = 0;
     // cudaError_t error = cudaGetDeviceCount(&device_count);
     // return (error == cudaSuccess && device_count > 0);
     
-    // For now, report available (will use CPU fallback)
-    return true;
+    return false;  // Disabled - use secure CPU verification
 }
 
 size_t GPUSignatureVerifier::GetOptimalBatchSize() {

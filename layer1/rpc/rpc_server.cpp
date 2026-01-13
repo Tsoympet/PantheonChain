@@ -187,9 +187,24 @@ RPCResponse RPCServer::HandleGetBalance(const RPCRequest& req) {
             asset = params[0].get<std::string>();
         }
         
-        // Get balance (stub - wallet needs UTXO sync)
+        // Get balance from wallet
+        if (!wallet_) {
+            response.error = "Wallet not attached";
+            return response;
+        }
+        
+        // Map asset name to AssetID
+        primitives::AssetID asset_id = primitives::AssetID::TALANTON;
+        if (asset == "DRACHMA") {
+            asset_id = primitives::AssetID::DRACHMA;
+        } else if (asset == "OBOLOS") {
+            asset_id = primitives::AssetID::OBOLOS;
+        }
+        
+        uint64_t balance = wallet_->GetBalance(asset_id);
+        
         json result;
-        result["balance"] = 0;
+        result["balance"] = balance;
         result["asset"] = asset;
         
         response.result = result.dump();
@@ -237,13 +252,62 @@ RPCResponse RPCServer::HandleGetBlock(const RPCRequest& req) {
             height = std::stoull(params[0].get<std::string>());
         }
         
-        // Get block from node's chain (stub implementation)
+        // Get block from node's chain
+        auto block_opt = node_->GetBlockByHeight(height);
+        
+        if (!block_opt) {
+            response.error = "Block not found at height " + std::to_string(height);
+            return response;
+        }
+        
+        const auto& block = *block_opt;
+        
+        // Build block info JSON
         json block_info;
-        block_info["hash"] = "0000000000000000000000000000000000000000000000000000000000000000";
+        
+        // Convert block hash to hex
+        auto block_hash = block.GetBlockHash();
+        std::ostringstream hash_hex;
+        hash_hex << std::hex << std::setfill('0');
+        for (uint8_t byte : block_hash) {
+            hash_hex << std::setw(2) << static_cast<int>(byte);
+        }
+        block_info["hash"] = hash_hex.str();
+        
         block_info["height"] = height;
-        block_info["version"] = 1;
-        block_info["size"] = 0;
-        block_info["tx"] = json::array();
+        block_info["version"] = block.version;
+        block_info["timestamp"] = block.timestamp;
+        block_info["nonce"] = block.nonce;
+        
+        // Convert previous hash to hex
+        std::ostringstream prev_hex;
+        prev_hex << std::hex << std::setfill('0');
+        for (uint8_t byte : block.prev_block_hash) {
+            prev_hex << std::setw(2) << static_cast<int>(byte);
+        }
+        block_info["previousblockhash"] = prev_hex.str();
+        
+        // Convert merkle root to hex
+        std::ostringstream merkle_hex;
+        merkle_hex << std::hex << std::setfill('0');
+        for (uint8_t byte : block.merkle_root) {
+            merkle_hex << std::setw(2) << static_cast<int>(byte);
+        }
+        block_info["merkleroot"] = merkle_hex.str();
+        
+        // Add transactions
+        json tx_array = json::array();
+        for (const auto& tx : block.transactions) {
+            auto tx_hash = tx.GetTxID();
+            std::ostringstream tx_hex;
+            tx_hex << std::hex << std::setfill('0');
+            for (uint8_t byte : tx_hash) {
+                tx_hex << std::setw(2) << static_cast<int>(byte);
+            }
+            tx_array.push_back(tx_hex.str());
+        }
+        block_info["tx"] = tx_array;
+        block_info["size"] = block.transactions.size();
         
         response.result = block_info.dump();
         
@@ -273,8 +337,41 @@ RPCResponse RPCServer::HandleSendTransaction(const RPCRequest& req) {
         
         std::string tx_hex = params[0].get<std::string>();
         
-        // Deserialize transaction from hex (stub implementation)
-        primitives::Transaction tx;
+        // Deserialize transaction from hex
+        // Remove "0x" prefix if present
+        if (tx_hex.substr(0, 2) == "0x" || tx_hex.substr(0, 2) == "0X") {
+            tx_hex = tx_hex.substr(2);
+        }
+        
+        // Convert hex string to bytes
+        if (tx_hex.length() % 2 != 0) {
+            response.error = "Invalid hex string (odd length)";
+            return response;
+        }
+        
+        std::vector<uint8_t> tx_bytes;
+        tx_bytes.reserve(tx_hex.length() / 2);
+        
+        for (size_t i = 0; i < tx_hex.length(); i += 2) {
+            std::string byte_str = tx_hex.substr(i, 2);
+            try {
+                uint8_t byte = static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16));
+                tx_bytes.push_back(byte);
+            } catch (...) {
+                response.error = "Invalid hex character in transaction";
+                return response;
+            }
+        }
+        
+        // Deserialize transaction from bytes
+        auto tx_opt = primitives::Transaction::Deserialize(tx_bytes.data(), tx_bytes.size());
+        
+        if (!tx_opt) {
+            response.error = "Failed to deserialize transaction";
+            return response;
+        }
+        
+        primitives::Transaction tx = *tx_opt;
         
         // Submit transaction to node
         bool success = node_->SubmitTransaction(tx);

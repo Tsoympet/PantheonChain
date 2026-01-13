@@ -115,6 +115,7 @@ For detailed installation instructions (when available), see [INSTALLATION.md](d
 
 ## Documentation
 
+### Core Documentation
 - **[Whitepaper](WHITEPAPER.md)** - Technical whitepaper and system overview
 - [Architecture Overview](docs/ARCHITECTURE.md) - System design and layer separation
 - [Layer 1 Core](docs/LAYER1_CORE.md) - Consensus implementation details
@@ -124,6 +125,13 @@ For detailed installation instructions (when available), see [INSTALLATION.md](d
 - [Genesis Block](docs/GENESIS.md) - Genesis configuration
 - [Release Process](docs/RELEASES.md) - How releases are created
 - [End-User License Agreement](EULA.md) - Software license terms
+
+### Implementation Status
+- **[TODOs Quick Reference](TODOS_QUICK_REFERENCE.md)** - At-a-glance list of all TODOs and unimplemented features
+- **[Complete TODO Inventory](TODOS_AND_UNIMPLEMENTED.md)** - Detailed analysis of all 16 TODO comments and stub implementations
+- [TODO Summary](TODO_SUMMARY.md) - Comprehensive roadmap with 26 documented tasks
+- [Implementation Status](IMPLEMENTATION_STATUS.md) - Status by component
+- [Audit Report](AUDIT_REPORT.md) - Security audit findings and recommendations
 
 ## Project Structure
 
