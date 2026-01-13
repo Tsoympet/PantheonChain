@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- SETTINGS Icon - Configuration/Settings -->
+  <!-- Design: Gear/cog with Greek symmetry -->
+  
+  <style>
+    .gear { fill: none; stroke: #1F3A5F; stroke-width: 12; stroke-linejoin: miter; }
+    .center { fill: #B08D57; }
+  </style>
+  
+  <!-- Outer gear teeth (8 teeth for symmetry) -->
+  <path class="gear" d="
+    M 128 40
+    L 140 52 L 140 72 L 156 72 L 168 52 L 184 52
+    L 184 68 L 204 68 L 216 80 L 216 92
+    L 204 104 L 204 120 L 216 132 L 216 144
+    L 204 156 L 204 172 L 184 184 L 168 184
+    L 156 164 L 140 164 L 140 184 L 128 196
+    L 116 184 L 116 164 L 100 164 L 88 184 L 72 184
+    L 72 168 L 52 168 L 40 156 L 40 144
+    L 52 132 L 52 116 L 40 104 L 40 92
+    L 52 80 L 52 64 L 72 52 L 88 52
+    L 100 72 L 116 72 L 116 52 L 128 40
+    Z"/>
+  
+  <!-- Center circle -->
+  <circle cx="128" cy="128" r="32" class="center"/>
+</svg>

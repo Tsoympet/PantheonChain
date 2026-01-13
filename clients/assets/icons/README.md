@@ -24,6 +24,17 @@ icons/
 │   ├── logo.svg                 # Main logo
 │   └── favicon.svg              # Favicon
 │
+├── gui/           # GUI action icons (wallet operations)
+│   ├── send.svg                 # Send transaction
+│   ├── receive.svg              # Receive transaction
+│   ├── transactions.svg         # Transaction history/list
+│   ├── wallet.svg               # Wallet overview
+│   ├── qr-code.svg              # QR code scanner/display
+│   ├── mining.svg               # Mining operations
+│   ├── settings.svg             # Settings/configuration
+│   ├── network.svg              # Network/connection status
+│   └── history.svg              # History/time-based view
+│
 └── tokens/        # Token icons
     ├── token-drachma.svg        # Drachma token
     ├── token-obolos.svg         # Obolos token
@@ -138,6 +149,17 @@ All filenames follow deterministic naming:
 - `icon.svg` - Main icon
 - `logo.svg` - Main logo
 - `favicon.svg` - Favicon
+
+**GUI Action Icons:**
+- `send.svg` - Send transaction
+- `receive.svg` - Receive transaction
+- `transactions.svg` - Transaction history/list
+- `wallet.svg` - Wallet overview
+- `qr-code.svg` - QR code scanner/display
+- `mining.svg` - Mining operations
+- `settings.svg` - Settings/configuration
+- `network.svg` - Network/connection status
+- `history.svg` - History/time-based view
 
 **Token Icons:**
 - `token-drachma.svg` - Drachma token

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- SEND Icon - Outgoing Transaction -->
+  <!-- Design: Arrow pointing up and right (outgoing/sending) -->
+  
+  <style>
+    .arrow { fill: none; stroke: #1F3A5F; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
+    .circle { fill: none; stroke: #B08D57; stroke-width: 12; }
+  </style>
+  
+  <!-- Outer circle -->
+  <circle cx="128" cy="128" r="100" class="circle"/>
+  
+  <!-- Arrow pointing up-right (sending) -->
+  <path d="M 80 176 L 176 80" class="arrow"/>
+  <path d="M 144 80 L 176 80 L 176 112" class="arrow"/>
+</svg>

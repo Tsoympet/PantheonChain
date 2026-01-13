@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- WALLET Icon - Wallet/Balance Overview -->
+  <!-- Design: Temple-inspired wallet with Greek columns -->
+  
+  <style>
+    .outline { fill: none; stroke: #1F3A5F; stroke-width: 12; stroke-linejoin: round; }
+    .detail { fill: #B08D57; }
+  </style>
+  
+  <!-- Wallet body -->
+  <rect x="56" y="80" width="144" height="120" rx="8" class="outline"/>
+  
+  <!-- Clasp/lock (temple pediment inspired) -->
+  <path d="M 100 80 L 128 56 L 156 80" class="outline"/>
+  
+  <!-- Coin slots (column-like) -->
+  <rect x="80" y="120" width="12" height="40" class="detail"/>
+  <rect x="122" y="120" width="12" height="40" class="detail"/>
+  <rect x="164" y="120" width="12" height="40" class="detail"/>
+</svg>
