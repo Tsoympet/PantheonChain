@@ -38,7 +38,7 @@ struct BlockHeader {
     std::array<uint8_t, 32> GetHash() const;
     
     /**
-     * Serialize block header (80 bytes fixed)
+     * Serialize block header (104 bytes: 80 bytes Bitcoin-like + 24 bytes EVM fields)
      */
     std::vector<uint8_t> Serialize() const;
     

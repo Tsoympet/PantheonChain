@@ -11,11 +11,14 @@ using namespace parthenon::primitives;
 void TestInitialRewards() {
     std::cout << "Test: Initial block rewards" << std::endl;
     
+    // TALANTON starts at block 0
     uint64_t taln_reward = Issuance::GetBlockReward(0, AssetID::TALANTON);
-    uint64_t drm_reward = Issuance::GetBlockReward(0, AssetID::DRACHMA);
-    uint64_t obl_reward = Issuance::GetBlockReward(0, AssetID::OBOLOS);
+    // DRACHMA starts at block 210000
+    uint64_t drm_reward = Issuance::GetBlockReward(210000, AssetID::DRACHMA);
+    // OBOLOS starts at block 420000
+    uint64_t obl_reward = Issuance::GetBlockReward(420000, AssetID::OBOLOS);
     
-    // Check initial rewards
+    // Check initial rewards at their respective launch heights
     assert(taln_reward == 50ULL * AssetSupply::BASE_UNIT);
     assert(drm_reward == 97ULL * AssetSupply::BASE_UNIT);
     assert(obl_reward == 145ULL * AssetSupply::BASE_UNIT);
