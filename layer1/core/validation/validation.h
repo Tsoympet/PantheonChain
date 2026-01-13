@@ -81,7 +81,11 @@ public:
     
     /**
      * Validate transaction signatures
-     * TODO: Implement once signature validation is ready
+     * Verifies Schnorr signatures (BIP-340) for all transaction inputs
+     * 
+     * @param tx Transaction to validate
+     * @param utxo_set UTXO set containing outputs being spent (to get public keys)
+     * @return ValidationError if any signature is invalid, std::nullopt if all valid
      */
     static std::optional<ValidationError> ValidateSignatures(
         const primitives::Transaction& tx,

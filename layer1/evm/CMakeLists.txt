@@ -4,6 +4,7 @@ add_library(parthenon_evm STATIC
     opcodes.cpp
     state.cpp
     vm.cpp
+    mpt.cpp
 )
 
 target_include_directories(parthenon_evm PUBLIC

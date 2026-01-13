@@ -24,33 +24,36 @@ ParthenonChain is a **Layer-1 blockchain** implementing a secure, deterministic 
 
 ## Features
 
-### Layer 1 (Consensus Critical)
-- Deterministic block validation and state transitions
-- Multi-asset issuance with fixed supply schedules
-- Tagged SHA-256 for domain separation
-- Full UTXO tracking and validation
-- Integrated mempool with transaction prioritization
-- P2P network with peer discovery and block propagation
+### Layer 1 (Consensus Critical) - Partially Implemented
+- ✅ Deterministic block validation and state transitions
+- ✅ Multi-asset issuance with fixed supply schedules
+- ✅ Tagged SHA-256 for domain separation
+- ✅ Schnorr signatures (BIP-340, secp256k1)
+- ✅ Full UTXO tracking and validation
+- ⚠️ Mempool with transaction prioritization (basic structure)
+- ⚠️ P2P network (basic protocol, peer discovery incomplete)
+- ⚠️ Block mining (interface defined, needs integration)
 
-### Smart Contracts (OBOLOS)
-- EVM-compatible execution engine
-- Gas economics with EIP-1559 style fee market
-- Deterministic opcode execution
-- State root computation
-- Contract deployment and interaction
+### Smart Contracts (OBOLOS) - Core Complete
+- ✅ EVM-compatible execution engine with full 256-bit arithmetic
+- ✅ Merkle Patricia Trie for state roots
+- ⚠️ Gas economics with EIP-1559 style fee market (partial)
+- ✅ Deterministic opcode execution
+- ✅ State root computation
+- ⚠️ Contract deployment and interaction (needs RPC/wallet)
 
-### DRM Settlement
-- Multi-signature escrow
-- Time-locked transfers
-- Destination tags for payment routing
-- Rights transfer primitives
+### DRM Settlement - Complete
+- ✅ Multi-signature escrow
+- ✅ Time-locked transfers
+- ✅ Destination tags for payment routing
+- ✅ Rights transfer primitives
 
-### Layer 2
-- Payment channels for instant micropayments
-- HTLC bridges for cross-chain interoperability
-- SPV verification
-- Transaction and contract indexers
-- GraphQL and WebSocket APIs
+### Layer 2 - Basic Structure Only
+- ⚠️ Payment channels (basic structure at wrong path)
+- ⚠️ HTLC bridges (basic structure at wrong path)
+- ⚠️ SPV verification (basic structure)
+- ❌ Transaction and contract indexers (not implemented)
+- ❌ GraphQL and WebSocket APIs (not implemented)
 
 ## Quick Start
 
@@ -82,36 +85,33 @@ ctest
 
 ### Running a Full Node
 
-```bash
-# Start the daemon
-./build/clients/core-daemon/parthenond
+**Note**: Full node functionality is currently in development. The daemon can be built but lacks RPC server and wallet integration.
 
-# Or with a custom config
-./build/clients/core-daemon/parthenond /path/to/parthenond.conf
+```bash
+# Build the daemon
+cd build
+cmake --build . --target parthenond
+
+# The daemon binary will be available but requires additional implementation for full functionality
 ```
 
 ### Using the CLI
 
+**Note**: CLI functionality requires RPC server implementation (not yet complete).
+
 ```bash
-# Get blockchain info
-./build/clients/cli/parthenon-cli getinfo
-
-# Get wallet balance
-./build/clients/cli/parthenon-cli getbalance
-
-# Send TALANTON
-./build/clients/cli/parthenon-cli send <address> <amount>
+# CLI tool is built but needs RPC backend
+cd build
+cmake --build . --target parthenon-cli
 ```
 
 ## Installation
 
-Pre-built installers are available for all major platforms:
+**Note**: Pre-built installers are in development. Build scripts exist but require full implementation of daemon/wallet functionality.
 
-- **Windows**: [Download Installer](../../releases) (.exe)
-- **macOS**: [Download DMG](../../releases) (.dmg)
-- **Linux**: [Download DEB/RPM](../../releases) (.deb, .rpm)
+For building from source, see the "Building from Source" section above.
 
-For detailed installation instructions, see [INSTALLATION.md](docs/INSTALLATION.md).
+For detailed installation instructions (when available), see [INSTALLATION.md](docs/INSTALLATION.md).
 
 ## Documentation
 
@@ -210,6 +210,33 @@ See [LICENSE](LICENSE) file for details.
 
 ---
 
-**Status**: Production Ready ✅
+**Status**: Development - Testnet Ready ⚠️
 
-All 10 development phases complete. Ready for mainnet deployment.
+**Production Readiness**: ~58% Complete
+
+**What Works:**
+- ✅ Cryptographic primitives (SHA-256, Schnorr signatures)
+- ✅ Transaction signature validation (Schnorr BIP-340)
+- ✅ Full 256-bit EVM arithmetic
+- ✅ Merkle Patricia Trie for state roots
+- ✅ Multi-asset primitives and issuance schedules
+- ✅ Basic transaction/block structures
+- ✅ DRM settlement features
+
+**In Progress:**
+- ⚠️ Mining module (70% complete)
+- ⚠️ P2P networking (basic protocol only)
+- ⚠️ Mempool (basic structure)
+
+**Not Yet Implemented:**
+- ❌ Full node synchronization
+- ❌ RPC server for daemon/CLI communication
+- ❌ Wallet module (HD wallet, UTXO management)
+- ❌ Desktop GUI (Qt implementation)
+- ❌ Mobile applications (Android/iOS)
+- ❌ Layer 2 indexers and APIs
+- ❌ Integration and consensus test suites
+
+**Recommendation**: Suitable for testnet deployment and development. Not recommended for mainnet until remaining components are implemented and audited.
+
+For current development status, see [AUDIT_REPORT.md](AUDIT_REPORT.md) and [AUDIT_EXECUTIVE_SUMMARY.md](AUDIT_EXECUTIVE_SUMMARY.md).

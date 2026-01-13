@@ -148,3 +148,9 @@ target_compile_options(parthenon_mempool PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
 )
+
+# Mining library
+add_subdirectory(mining)
+
+# Node library
+add_subdirectory(node)

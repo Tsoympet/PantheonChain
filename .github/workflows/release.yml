@@ -31,7 +31,7 @@ jobs:
     - name: Build NSIS Installer
       run: |
         cd installers/windows
-        makensis parthenon-installer.nsi
+        powershell -ExecutionPolicy Bypass -File build.ps1
     
     - name: Upload Windows Installer
       uses: actions/upload-artifact@v3
@@ -61,8 +61,8 @@ jobs:
     - name: Create DMG
       run: |
         cd installers/macos
-        chmod +x create-dmg.sh
-        ./create-dmg.sh
+        chmod +x build.sh
+        ./build.sh
     
     - name: Upload macOS DMG
       uses: actions/upload-artifact@v3
@@ -100,8 +100,8 @@ jobs:
     - name: Build Package
       run: |
         cd installers/linux
-        chmod +x build-${{ matrix.package }}.sh
-        ./build-${{ matrix.package }}.sh
+        chmod +x build.sh
+        ./build.sh ${{ matrix.package }}
     
     - name: Upload Linux Package
       uses: actions/upload-artifact@v3

@@ -1,0 +1,27 @@
+# Integration tests
+
+add_executable(test_integration
+    test_integration.cpp
+)
+
+target_link_libraries(test_integration
+    parthenon_crypto
+    parthenon_primitives
+    parthenon_chainstate
+    parthenon_consensus
+)
+
+# Consensus tests
+
+add_executable(test_consensus_suite
+    test_consensus.cpp
+)
+
+target_link_libraries(test_consensus_suite
+    parthenon_consensus
+    parthenon_primitives
+)
+
+# Add to ctest
+add_test(NAME integration_tests COMMAND test_integration)
+add_test(NAME consensus_tests COMMAND test_consensus_suite)

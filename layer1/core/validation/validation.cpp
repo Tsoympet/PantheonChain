@@ -4,7 +4,9 @@
 #include "validation.h"
 #include "consensus/issuance.h"
 #include "consensus/difficulty.h"
+#include "crypto/schnorr.h"
 #include <set>
+#include <algorithm>
 
 namespace parthenon {
 namespace validation {
@@ -117,12 +119,73 @@ std::optional<ValidationError> TransactionValidator::ValidateSignatures(
     const primitives::Transaction& tx,
     const chainstate::UTXOSet& utxo_set
 ) {
-    // TODO: Implement signature validation
-    // For now, accept all transactions
-    // Will be implemented when full cryptographic validation is added
-    (void)tx;
-    (void)utxo_set;
-    return std::nullopt;
+    // Coinbase transactions don't have signatures to validate
+    if (tx.IsCoinbase()) {
+        return std::nullopt;
+    }
+    
+    // Validate each input's signature
+    for (size_t i = 0; i < tx.inputs.size(); i++) {
+        const auto& input = tx.inputs[i];
+        
+        // Get the output being spent
+        auto coin = utxo_set.GetCoin(input.prevout);
+        if (!coin) {
+            return ValidationError(
+                ValidationError::Type::TX_MISSING_INPUT,
+                "Cannot validate signature: input not found in UTXO set"
+            );
+        }
+        
+        // Extract public key from the previous output's pubkey_script
+        // Format: 32-byte x-only public key (BIP-340)
+        if (coin->output.pubkey_script.size() != crypto::Schnorr::PUBLIC_KEY_SIZE) {
+            return ValidationError(
+                ValidationError::Type::TX_INVALID_SIGNATURE,
+                "Invalid pubkey script size in output being spent"
+            );
+        }
+        
+        crypto::Schnorr::PublicKey pubkey;
+        std::copy(coin->output.pubkey_script.begin(), 
+                  coin->output.pubkey_script.end(), 
+                  pubkey.begin());
+        
+        // Validate public key
+        if (!crypto::Schnorr::ValidatePublicKey(pubkey)) {
+            return ValidationError(
+                ValidationError::Type::TX_INVALID_SIGNATURE,
+                "Invalid public key in output being spent"
+            );
+        }
+        
+        // Extract signature from signature_script
+        // Format: 64-byte Schnorr signature (BIP-340)
+        if (input.signature_script.size() != crypto::Schnorr::SIGNATURE_SIZE) {
+            return ValidationError(
+                ValidationError::Type::TX_INVALID_SIGNATURE,
+                "Invalid signature size in transaction input"
+            );
+        }
+        
+        crypto::Schnorr::Signature signature;
+        std::copy(input.signature_script.begin(),
+                  input.signature_script.end(),
+                  signature.begin());
+        
+        // Get the signature hash for this input
+        auto sighash = tx.GetSignatureHash(i);
+        
+        // Verify the Schnorr signature
+        if (!crypto::Schnorr::Verify(pubkey, sighash.data(), signature)) {
+            return ValidationError(
+                ValidationError::Type::TX_INVALID_SIGNATURE,
+                "Schnorr signature verification failed for input"
+            );
+        }
+    }
+    
+    return std::nullopt; // All signatures valid
 }
 
 // Block Validation

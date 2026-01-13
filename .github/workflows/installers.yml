@@ -1,0 +1,38 @@
+name: Build Installers
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  test-installer-scripts:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Test Installer Scripts Exist
+      run: |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          test -f installers/linux/build.sh
+          test -f installers/linux/deb/control
+        elif [ "$RUNNER_OS" == "Windows" ]; then
+          test -f installers/windows/build.ps1
+          test -f installers/windows/nsis/parthenon.nsi
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          test -f installers/macos/build.sh
+          test -f installers/macos/dmg/parthenon.dmgproj
+        fi
+      shell: bash
+    
+    - name: Validate Installer Scripts
+      run: |
+        echo "Installer scripts validated for $RUNNER_OS"

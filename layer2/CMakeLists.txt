@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 
 add_library(layer2
-    channels/payment_channel.cpp
-    htlc/htlc.cpp
-    spv/spv_bridge.cpp
+    payment_channels/payment_channel.cpp
+    bridges/htlc/htlc.cpp
+    bridges/spv/spv_bridge.cpp
 )
 
 target_include_directories(layer2 PUBLIC
@@ -15,3 +15,6 @@ target_link_libraries(layer2
     parthenon_crypto
     parthenon_primitives
 )
+
+# Note: Legacy paths (channels/, htlc/, spv/) maintained for backward compatibility
+# New code should use payment_channels/, bridges/htlc/, bridges/spv/
