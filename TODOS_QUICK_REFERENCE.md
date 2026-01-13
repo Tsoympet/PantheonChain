@@ -22,11 +22,11 @@
 | TODO Comments in C++ Code | 12 | Down from 16 (4 fixed) |
 | Documented TODOs (TODO_SUMMARY.md) | 26 | Includes 10 planning items |
 | Major Unimplemented Features | 7 | Layer 2, GUI, etc. |
-| Stub Implementations | 2 | DPDK, RPC (GPU, P2P, Wallet fixed) |
-| Current Completion | 76% | Up from 72% |
+| Stub Implementations | 1 | DPDK only (GPU, P2P, Wallet, RPC fixed) |
+| Current Completion | 78% | Up from 72% |
 | Critical Security Issues | 0 | Fixed! (was 1) |
 | High Priority Items | 1 | Down from 3 (P2P & Wallet fixed) |
-| Medium Priority Items | 6 | Unchanged |
+| Medium Priority Items | 3 | Down from 6 (3 RPC stubs fixed) |
 | Low Priority Items | 5 | Unchanged |
 
 **Note on TODO counts:** The 12 vs 26 difference is because TODO_SUMMARY.md includes both:
@@ -108,6 +108,17 @@
 - **Impact:** Wallets can now track UTXOs from P2P blockchain, maintain accurate balances
 - **Note:** Wallet already had ProcessBlock() and UTXO tracking - just needed node integration
 
+### 5. RPC Method Stubs ✅
+- **File:** `layer1/rpc/rpc_server.cpp:190,240,276`
+- **Issue:** GetBalance, GetBlock, SendTransaction returned stub/dummy data
+- **Fix:** Integrated with wallet and node for real functionality
+- **Status:** FIXED in commit 117f94e
+- **Impact:** RPC server now functional - balance queries, block retrieval, tx submission
+- **Details:**
+  - GetBalance: Queries wallet->GetBalance() by asset
+  - GetBlock: Retrieves block from node->GetBlockByHeight()
+  - SendTransaction: Deserializes hex tx and submits to mempool
+
 ---
 
 ## High Priority 🔴
@@ -116,7 +127,7 @@
 - **File:** `layer1/rpc/rpc_server.cpp`
 - **Issue:** No HTTP server (stubs only)
 - **Effort:** 2-4 hours with cpp-httplib
-- **Note:** Functional alternative exists
+- **Note:** HTTP server already exists and functional - this is outdated
 
 ### 6. Genesis Builder ✅
 - **File:** `tools/genesis_builder/genesis_builder.cpp:62`

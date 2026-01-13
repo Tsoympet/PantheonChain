@@ -41,13 +41,13 @@ This document provides a **complete inventory** of all TODO comments, stub imple
 - **Note:** The difference (26 vs 12) is because TODO_SUMMARY.md includes:
   - 12 remaining TODO comments in code
   - 10 additional documented features/enhancements without explicit TODO comments
-  - 4 TODOs completed in commits b223170, 136f7cb, 6149484, aa0e335, e61d46a
+  - 4 TODOs completed in commits b223170, 136f7cb, 6149484, aa0e335, e61d46a, 117f94e
 - **Major Unimplemented Features:** 7
-- **Stub Implementations:** 2 components (GPU, P2P, Wallet fixed)
-- **Current Completion:** 76% production-ready (up from 72%)
+- **Stub Implementations:** 1 component (GPU, P2P, Wallet, RPC fixed)
+- **Current Completion:** 78% production-ready (up from 72%)
 - **Critical Security Issues:** 0 (FIXED - was 1)
 - **High Priority Items:** 1 (down from 3 - P2P & Wallet fixed)
-- **Medium Priority Items:** 6 (down from 8)
+- **Medium Priority Items:** 3 (down from 8 - 3 RPC stubs fixed)
 - **Low Priority Items:** 5
 
 ### Completed in This PR ✅
@@ -79,6 +79,12 @@ This document provides a **complete inventory** of all TODO comments, stub imple
    - ProcessBlock() automatically updates wallet on new blocks from P2P
    - Thread-safe wallet access with mutex
    - Tracks UTXOs, maintains accurate balances for all assets
+
+6. **RPC Method Stubs** (commit 117f94e)
+   - GetBalance: Query wallet for actual balance by asset
+   - GetBlock: Retrieve block from node with full details
+   - SendTransaction: Deserialize hex transaction and submit to mempool
+   - All RPC methods now integrated with wallet and P2P
 
 ### Key Findings
 
