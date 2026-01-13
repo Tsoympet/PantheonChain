@@ -19,6 +19,9 @@ Node::Node(const std::string& data_dir, uint16_t port)
     mempool_ = std::make_unique<mempool::Mempool>();
     block_storage_ = std::make_unique<storage::BlockStorage>();
     utxo_storage_ = std::make_unique<storage::UTXOStorage>();
+    
+    // Initialize P2P network manager
+    network_ = std::make_unique<p2p::NetworkManager>(port, p2p::NetworkMagic::MAINNET);
 }
 
 Node::~Node() {
@@ -182,8 +185,13 @@ void Node::AddPeer(const std::string& address, uint16_t port) {
     
     peers_[peer_id] = info;
     
-    // TODO: Initiate connection to peer
-    std::cout << "Added peer: " << peer_id << std::endl;
+    // Initiate connection to peer via network manager
+    if (network_ && running_) {
+        network_->AddPeer(address, port);
+        std::cout << "Connecting to peer: " << peer_id << std::endl;
+    } else {
+        std::cout << "Added peer (will connect when node starts): " << peer_id << std::endl;
+    }
 }
 
 bool Node::ProcessBlock(const primitives::Block& block, const std::string& peer_id) {
