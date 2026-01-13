@@ -2,7 +2,6 @@
 
 [![Build](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml)
 [![Tests](https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/Tsoympet/PantheonChain/branch/main/graph/badge.svg)](https://codecov.io/gh/Tsoympet/PantheonChain)
 [![License](https://img.shields.io/github/license/Tsoympet/PantheonChain)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/Tsoympet/PantheonChain)](https://github.com/Tsoympet/PantheonChain/releases/latest)
 
