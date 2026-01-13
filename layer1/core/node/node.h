@@ -9,12 +9,15 @@
 #include "p2p/protocol.h"
 #include "p2p/network_manager.h"
 #include "mempool/mempool.h"
+#include "mining/miner.h"
 #include "storage/block_storage.h"
 #include "storage/utxo_storage.h"
 #include <vector>
 #include <map>
 #include <memory>
 #include <functional>
+#include <thread>
+#include <atomic>
 
 namespace parthenon {
 namespace node {
@@ -130,6 +133,35 @@ public:
      */
     void OnNewTransaction(std::function<void(const primitives::Transaction&)> callback);
     
+    /**
+     * Start mining blocks
+     * @param coinbase_pubkey Public key for receiving mining rewards
+     * @param num_threads Number of mining threads (0 = auto-detect)
+     */
+    void StartMining(const std::vector<uint8_t>& coinbase_pubkey, size_t num_threads = 0);
+    
+    /**
+     * Stop mining
+     */
+    void StopMining();
+    
+    /**
+     * Check if mining is active
+     */
+    bool IsMining() const { return is_mining_; }
+    
+    /**
+     * Get mining statistics
+     */
+    struct MiningStats {
+        bool is_mining;
+        uint64_t hashrate;
+        uint32_t blocks_mined;
+        uint32_t current_height;
+        uint64_t total_hashes;
+    };
+    MiningStats GetMiningStats() const;
+    
 private:
     std::string data_dir_;
     uint16_t port_;
@@ -156,8 +188,17 @@ private:
     std::unique_ptr<storage::BlockStorage> block_storage_;
     std::unique_ptr<storage::UTXOStorage> utxo_storage_;
     
+    // Mining
+    std::unique_ptr<mining::Miner> miner_;
+    std::atomic<bool> is_mining_;
+    std::vector<std::thread> mining_threads_;
+    std::atomic<uint64_t> total_hashes_;
+    std::atomic<uint32_t> blocks_mined_;
+    std::vector<uint8_t> coinbase_pubkey_;
+    
     // Internal methods
     void SyncLoop();
+    void MiningLoop(size_t thread_id);
     void RequestBlocks(const std::string& peer_id, uint32_t start_height, uint32_t count);
     bool ValidateAndApplyBlock(const primitives::Block& block);
     void BroadcastBlock(const primitives::Block& block);
