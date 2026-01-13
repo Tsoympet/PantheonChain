@@ -204,7 +204,8 @@ bool Chain::DisconnectBlock(const primitives::Block& block, const BlockUndo& und
     
     // Process transactions in reverse order
     size_t undo_index = undo.tx_undo.size();
-    for (int i = static_cast<int>(block.transactions.size()) - 1; i >= 0; i--) {
+    for (size_t idx = 0; idx < block.transactions.size(); idx++) {
+        size_t i = block.transactions.size() - 1 - idx;
         const auto& tx = block.transactions[i];
         auto txid = tx.GetTxID();
         
