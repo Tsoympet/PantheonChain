@@ -4,7 +4,7 @@
 #include "rpc_client.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGroupBox>
+<parameter name="QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QFont>
+#include <QDateTime>
 
 ReceivePage::ReceivePage(RPCClient *rpc, QWidget *parent)
     : QWidget(parent),

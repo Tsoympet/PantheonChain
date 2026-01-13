@@ -43,6 +43,10 @@ MainWindow::MainWindow(QWidget *parent)
     receivePage = new ReceivePage(rpcClient, this);
     transactionPage = new TransactionPage(rpcClient, this);
     
+    // Connect overview page signals
+    connect(overviewPage, &OverviewPage::sendRequested, this, &MainWindow::showSend);
+    connect(overviewPage, &OverviewPage::receiveRequested, this, &MainWindow::showReceive);
+    
     centralStack->addWidget(overviewPage);
     centralStack->addWidget(sendPage);
     centralStack->addWidget(receivePage);

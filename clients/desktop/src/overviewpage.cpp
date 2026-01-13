@@ -126,11 +126,9 @@ void OverviewPage::onAssetChanged(int index) {
 }
 
 void OverviewPage::onQuickSend() {
-    // Emit signal to switch to send page (handled by parent)
-    emit parentWidget()->findChild<QAction*>("sendAction")->trigger();
+    emit sendRequested();
 }
 
 void OverviewPage::onQuickReceive() {
-    // Emit signal to switch to receive page (handled by parent)
-    emit parentWidget()->findChild<QAction*>("receiveAction")->trigger();
+    emit receiveRequested();
 }

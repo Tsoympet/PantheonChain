@@ -17,6 +17,10 @@ public:
     explicit OverviewPage(RPCClient *rpc, QWidget *parent = nullptr);
     void updateBalances();
 
+signals:
+    void sendRequested();
+    void receiveRequested();
+
 private slots:
     void onAssetChanged(int index);
     void onQuickSend();
