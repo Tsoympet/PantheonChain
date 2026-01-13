@@ -408,11 +408,11 @@ void Mempool::UpdateRelationships(const std::array<uint8_t, 32>& txid) {
     
     // Find parent transactions (those whose outputs this tx spends)
     for (const auto& input : tx.inputs) {
-        auto parent_it = transactions_.find(input.prevout.hash);
+        auto parent_it = transactions_.find(input.prevout.txid);
         if (parent_it != transactions_.end()) {
             // This is a child of parent_it
-            children_[input.prevout.hash].push_back(txid);
-            parents_[txid].push_back(input.prevout.hash);
+            children_[input.prevout.txid].push_back(txid);
+            parents_[txid].push_back(input.prevout.txid);
         }
     }
 }
@@ -573,7 +573,6 @@ std::vector<std::vector<primitives::Transaction>> Mempool::GetTransactionPackage
     }
     
     return packages;
-}
 }
 
 } // namespace mempool
