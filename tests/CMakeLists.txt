@@ -1,5 +1,8 @@
 # Tests directory
 
+# Suppress unused variable warnings in test files
+add_compile_options(-Wno-unused-variable -Wno-unused-but-set-variable)
+
 add_subdirectory(unit)
 
 # Integration tests
