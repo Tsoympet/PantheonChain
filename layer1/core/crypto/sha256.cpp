@@ -44,10 +44,10 @@ static const uint32_t H0[8] = {
 #define sigma1(x) (ROTR(x, 17) ^ ROTR(x, 19) ^ ((x) >> 10))
 
 static inline uint32_t ReadBE32(const uint8_t* ptr) {
-    return ((uint32_t)ptr[0] << 24) |
-           ((uint32_t)ptr[1] << 16) |
-           ((uint32_t)ptr[2] << 8) |
-           ((uint32_t)ptr[3]);
+    return (static_cast<uint32_t>(ptr[0]) << 24) |
+           (static_cast<uint32_t>(ptr[1]) << 16) |
+           (static_cast<uint32_t>(ptr[2]) << 8) |
+           (static_cast<uint32_t>(ptr[3]));
 }
 
 static inline void WriteBE32(uint8_t* ptr, uint32_t val) {

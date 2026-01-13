@@ -1,0 +1,9 @@
+# ninja log v7
+4	1193	1768324591673906343	third_party/secp256k1/src/CMakeFiles/secp256k1_precomputed.dir/precomputed_ecmult.c.o	eca0cc2b7451b413
+1193	1293	1768324592862888738	third_party/secp256k1/src/CMakeFiles/secp256k1_precomputed.dir/precomputed_ecmult_gen.c.o	3e8605148e149755
+3	1934	1768324591673906343	third_party/secp256k1/src/CMakeFiles/secp256k1.dir/secp256k1.c.o	4ccadd586f956211
+4	88	1768324642726118481	third_party/secp256k1/lib/libsecp256k1.a	f40f9c31a6f851ec
+88	372	1768324642810117361	layer1/core/CMakeFiles/parthenon_crypto.dir/crypto/schnorr.cpp.o	32e2e028e0aad3da
+4	380	1768324642726118481	layer1/core/CMakeFiles/parthenon_crypto.dir/crypto/sha256.cpp.o	d635f95011be98c3
+372	851	1768324643094113577	layer1/core/CMakeFiles/parthenon_crypto.dir/crypto/hardware_crypto.cpp.o	50d79900a15c76d2
+852	929	1768324643574107181	layer1/core/libparthenon_crypto.a	763f493c31c43e90
