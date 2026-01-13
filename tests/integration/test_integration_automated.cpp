@@ -229,11 +229,37 @@ bool test_smart_contract_flow() {
     };
     
     // Create contract deployment transaction
-    // (Simplified - full implementation would use wallet.DeployContract())
+    // In a UTXO model, contract deployment is done via a special output
     primitives::Transaction deploy_tx;
     deploy_tx.version = 1;
-    deploy_tx.asset_id = AssetID::TALANTON;
-    // TODO: Add contract deployment fields
+    deploy_tx.locktime = 0;
+    
+    // Input: Spend from wallet (simplified - would use actual UTXO)
+    primitives::TxInput input;
+    input.prevout.txid = block1->transactions[0].GetTxID();
+    input.prevout.vout = 0;
+    input.sequence = 0xFFFFFFFF;
+    // Signature would be added here in real implementation
+    deploy_tx.inputs.push_back(input);
+    
+    // Output 1: Contract deployment (OBOLOS asset with contract code in pubkey_script)
+    primitives::TxOutput contract_output;
+    contract_output.value = primitives::AssetAmount(
+        primitives::AssetID::OBOLOS,
+        1000000  // Gas for deployment
+    );
+    // Contract deployment uses bytecode as the pubkey_script
+    contract_output.pubkey_script = contract_code;
+    deploy_tx.outputs.push_back(contract_output);
+    
+    // Output 2: Change output (return remaining funds)
+    primitives::TxOutput change_output;
+    change_output.value = primitives::AssetAmount(
+        primitives::AssetID::TALANTON,
+        99000000  // Simplified change amount
+    );
+    change_output.pubkey_script = addr.pubkey;  // Return to wallet
+    deploy_tx.outputs.push_back(change_output);
     
     // Note: Contract execution would be tested here
     // Framework is in place in EVM module
