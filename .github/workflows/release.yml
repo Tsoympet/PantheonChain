@@ -34,7 +34,7 @@ jobs:
         powershell -ExecutionPolicy Bypass -File build.ps1
     
     - name: Upload Windows Installer
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: windows-installer
         path: installers/windows/*.exe
@@ -65,7 +65,7 @@ jobs:
         ./build.sh
     
     - name: Upload macOS DMG
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: macos-dmg
         path: installers/macos/*.dmg
@@ -104,7 +104,7 @@ jobs:
         ./build.sh ${{ matrix.package }}
     
     - name: Upload Linux Package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: linux-${{ matrix.package }}
         path: installers/linux/*.${{ matrix.package }}

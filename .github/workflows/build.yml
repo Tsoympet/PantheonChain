@@ -40,7 +40,7 @@ jobs:
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ubuntu-build
         path: build/
@@ -70,7 +70,7 @@ jobs:
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: macos-build
         path: build/
@@ -103,7 +103,7 @@ jobs:
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: windows-build
         path: build/
