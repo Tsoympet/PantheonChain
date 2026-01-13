@@ -51,10 +51,8 @@ std::string BlockStorage::SerializeBlock(const primitives::Block& block) {
     oss.write(reinterpret_cast<const char*>(&block.header.version), sizeof(block.header.version));
     oss.write(reinterpret_cast<const char*>(block.header.prev_block_hash.data()), 32);
     oss.write(reinterpret_cast<const char*>(block.header.merkle_root.data()), 32);
-    oss.write(reinterpret_cast<const char*>(block.header.state_root.data()), 32);
     oss.write(reinterpret_cast<const char*>(&block.header.timestamp), sizeof(block.header.timestamp));
-    oss.write(reinterpret_cast<const char*>(&block.header.height), sizeof(block.header.height));
-    oss.write(reinterpret_cast<const char*>(block.header.target.data()), 32);
+    oss.write(reinterpret_cast<const char*>(&block.header.bits), sizeof(block.header.bits));
     oss.write(reinterpret_cast<const char*>(&block.header.nonce), sizeof(block.header.nonce));
     
     // Serialize transaction count
@@ -79,10 +77,8 @@ std::optional<primitives::Block> BlockStorage::DeserializeBlock(const std::strin
     iss.read(reinterpret_cast<char*>(&block.header.version), sizeof(block.header.version));
     iss.read(reinterpret_cast<char*>(block.header.prev_block_hash.data()), 32);
     iss.read(reinterpret_cast<char*>(block.header.merkle_root.data()), 32);
-    iss.read(reinterpret_cast<char*>(block.header.state_root.data()), 32);
     iss.read(reinterpret_cast<char*>(&block.header.timestamp), sizeof(block.header.timestamp));
-    iss.read(reinterpret_cast<char*>(&block.header.height), sizeof(block.header.height));
-    iss.read(reinterpret_cast<char*>(block.header.target.data()), 32);
+    iss.read(reinterpret_cast<char*>(&block.header.bits), sizeof(block.header.bits));
     iss.read(reinterpret_cast<char*>(&block.header.nonce), sizeof(block.header.nonce));
     
     // Deserialize transaction count

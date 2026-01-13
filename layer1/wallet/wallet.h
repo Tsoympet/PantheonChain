@@ -4,6 +4,7 @@
 #pragma once
 
 #include "primitives/transaction.h"
+#include "primitives/block.h"
 #include "primitives/asset.h"
 #include "crypto/schnorr.h"
 #include "chainstate/utxo.h"
@@ -115,6 +116,20 @@ public:
      * @param utxo_set Current UTXO set
      */
     void SyncWithChain(const chainstate::UTXOSet& utxo_set);
+    
+    /**
+     * Process a new block and update wallet state
+     * @param block Block to process
+     * @param height Block height
+     */
+    void ProcessBlock(const primitives::Block& block, uint32_t height);
+    
+    /**
+     * Check if a pubkey belongs to this wallet
+     * @param pubkey Public key to check
+     * @return true if pubkey is owned by wallet
+     */
+    bool IsOurPubkey(const std::vector<uint8_t>& pubkey) const;
     
 private:
     std::array<uint8_t, 32> seed_;

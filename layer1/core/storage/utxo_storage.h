@@ -4,7 +4,7 @@
 #pragma once
 
 #include "primitives/transaction.h"
-#include "chainstate/utxo_set.h"
+#include "chainstate/utxo.h"
 #include <leveldb/db.h>
 #include <memory>
 #include <optional>
