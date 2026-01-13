@@ -7,6 +7,7 @@
 #include "chainstate/chainstate.h"
 #include "chainstate/chain.h"
 #include "p2p/protocol.h"
+#include "p2p/network_manager.h"
 #include "mempool/mempool.h"
 #include "storage/block_storage.h"
 #include "storage/utxo_storage.h"
@@ -139,11 +140,13 @@ private:
     std::unique_ptr<mempool::Mempool> mempool_;
     
     // Peer management
+    std::unique_ptr<p2p::NetworkManager> network_;
     std::map<std::string, PeerInfo> peers_;
     
     // Synchronization state
     bool is_syncing_;
     uint32_t sync_target_height_;
+    std::thread sync_thread_;
     
     // Callbacks
     std::vector<std::function<void(const primitives::Block&)>> block_callbacks_;
@@ -159,6 +162,11 @@ private:
     bool ValidateAndApplyBlock(const primitives::Block& block);
     void BroadcastBlock(const primitives::Block& block);
     void BroadcastTransaction(const primitives::Transaction& tx);
+    void HandleNewPeer(const std::string& peer_id);
+    void HandleBlockReceived(const std::string& peer_id, const primitives::Block& block);
+    void HandleTxReceived(const std::string& peer_id, const primitives::Transaction& tx);
+    void HandleInvReceived(const std::string& peer_id, const p2p::InvMessage& inv);
+    void HandleGetDataReceived(const std::string& peer_id, const p2p::GetDataMessage& msg);
 };
 
 } // namespace node

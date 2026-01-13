@@ -52,13 +52,47 @@ bool Node::Start() {
     uint32_t stored_height = block_storage_->GetHeight();
     std::cout << "Loaded blockchain height: " << stored_height << std::endl;
     
-    // Initialize P2P network listener (stub implementation)
-    std::cout << "Initializing P2P network on port " << port_ << std::endl;
-    // In production: Create TCP listener socket, start accept loop
+    // Set up network callbacks
+    network_->SetOnNewPeer([this](const std::string& peer_id) {
+        HandleNewPeer(peer_id);
+    });
     
-    // Start sync loop in background thread (stub implementation)
+    network_->SetOnBlock([this](const std::string& peer_id, const primitives::Block& block) {
+        HandleBlockReceived(peer_id, block);
+    });
+    
+    network_->SetOnTransaction([this](const std::string& peer_id, const primitives::Transaction& tx) {
+        HandleTxReceived(peer_id, tx);
+    });
+    
+    network_->SetOnInv([this](const std::string& peer_id, const p2p::InvMessage& inv) {
+        HandleInvReceived(peer_id, inv);
+    });
+    
+    network_->SetOnGetData([this](const std::string& peer_id, const p2p::GetDataMessage& msg) {
+        HandleGetDataReceived(peer_id, msg);
+    });
+    
+    // Start network manager
+    if (!network_->Start()) {
+        std::cerr << "Failed to start P2P network" << std::endl;
+        block_storage_->Close();
+        utxo_storage_->Close();
+        return false;
+    }
+    std::cout << "P2P network started on port " << port_ << std::endl;
+    
+    // Add DNS seeds for peer discovery
+    network_->AddDNSSeed("seed.pantheonchain.io", 8333);
+    network_->AddDNSSeed("seed2.pantheonchain.io", 8333);
+    
+    // Query DNS seeds for initial peers
+    std::cout << "Querying DNS seeds for peers..." << std::endl;
+    network_->QueryDNSSeeds();
+    
+    // Start sync loop in background thread
     std::cout << "Starting background sync thread" << std::endl;
-    // In production: std::thread(&Node::SyncLoop, this).detach();
+    sync_thread_ = std::thread(&Node::SyncLoop, this);
     
     running_ = true;
     is_syncing_ = true;
@@ -74,9 +108,15 @@ void Node::Stop() {
     
     std::cout << "Stopping node..." << std::endl;
     
-    // Stop P2P network (stub implementation)
+    // Stop sync thread
+    is_syncing_ = false;
+    if (sync_thread_.joinable()) {
+        sync_thread_.join();
+    }
+    
+    // Stop P2P network
     std::cout << "Stopping P2P network..." << std::endl;
-    // In production: Close all peer connections, stop listener
+    network_->Stop();
     
     // Save UTXO set to disk
     std::cout << "Saving UTXO set to disk..." << std::endl;
@@ -87,10 +127,6 @@ void Node::Stop() {
     std::cout << "Closing storage databases..." << std::endl;
     block_storage_->Close();
     utxo_storage_->Close();
-    
-    // Stop sync thread (stub implementation)
-    is_syncing_ = false;
-    // In production: Join sync thread
     
     running_ = false;
     
@@ -234,43 +270,53 @@ void Node::OnNewTransaction(std::function<void(const primitives::Transaction&)> 
 }
 
 void Node::SyncLoop() {
-    // Implement basic block synchronization loop
     std::cout << "Starting sync loop..." << std::endl;
     
-    while (is_syncing_) {
+    while (is_syncing_ && running_) {
         uint32_t current_height = GetHeight();
+        
+        // Get connected peers
+        auto peers = GetPeers();
+        
+        if (peers.empty()) {
+            std::cout << "No peers connected, waiting..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            continue;
+        }
         
         // If we haven't reached the target, request more blocks
         if (current_height < sync_target_height_) {
-            // In a real implementation, this would:
-            // 1. Find peers with higher blocks
-            // 2. Request blocks in batches
-            // 3. Validate and apply blocks
-            // 4. Update sync progress
-            
             std::cout << "Syncing: " << current_height << "/" << sync_target_height_ << std::endl;
             
-            // Simulate sync delay
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // Request blocks from first available peer
+            if (!peers.empty()) {
+                std::string peer_id = peers[0].address + ":" + std::to_string(peers[0].port);
+                RequestBlocks(peer_id, current_height + 1, 500);
+            }
+            
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         } else {
-            // Caught up
-            is_syncing_ = false;
-            std::cout << "Sync complete at height " << current_height << std::endl;
+            // Caught up or no target set
+            if (sync_target_height_ > 0) {
+                is_syncing_ = false;
+                std::cout << "Sync complete at height " << current_height << std::endl;
+            } else {
+                // No target yet, query peers for their heights
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+            }
         }
     }
+    
+    std::cout << "Sync loop exited" << std::endl;
 }
 
 void Node::RequestBlocks(const std::string& peer_id, uint32_t start_height, uint32_t count) {
-    // Implement P2P block request
     std::cout << "Requesting " << count << " blocks starting at " << start_height
               << " from peer " << peer_id << std::endl;
     
-    // In a real implementation:
-    // 1. Create getblocks P2P message
-    // 2. Send to specified peer
-    // 3. Wait for block messages in response
-    // 4. Validate each block
-    // 5. Apply to chain if valid
+    if (network_) {
+        network_->RequestBlocks(peer_id, start_height, count);
+    }
 }
 
 bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
@@ -333,14 +379,101 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     return true;
 }
 
-void Node::BroadcastBlock(const primitives::Block& /* block */) {
-    // TODO: Send block to all connected peers
-    std::cout << "Broadcasting block at height " << GetHeight() << std::endl;
+void Node::BroadcastBlock(const primitives::Block& block) {
+    if (network_) {
+        network_->BroadcastBlock(block);
+    }
 }
 
-void Node::BroadcastTransaction(const primitives::Transaction& /* tx */) {
-    // TODO: Send transaction to all connected peers
-    std::cout << "Broadcasting transaction" << std::endl;
+void Node::BroadcastTransaction(const primitives::Transaction& tx) {
+    if (network_) {
+        network_->BroadcastTransaction(tx);
+    }
+}
+
+void Node::HandleNewPeer(const std::string& peer_id) {
+    std::cout << "New peer connected: " << peer_id << std::endl;
+    // Update sync target based on peer height
+    // In production: Query peer for their best block height
+}
+
+void Node::HandleBlockReceived(const std::string& peer_id, const primitives::Block& block) {
+    std::cout << "Received block from " << peer_id << std::endl;
+    
+    // Process the block
+    if (ProcessBlock(block, peer_id)) {
+        // Notify callbacks
+        for (const auto& callback : block_callbacks_) {
+            callback(block);
+        }
+    }
+}
+
+void Node::HandleTxReceived(const std::string& peer_id, const primitives::Transaction& tx) {
+    std::cout << "Received transaction from " << peer_id << std::endl;
+    
+    // Submit to mempool
+    if (SubmitTransaction(tx)) {
+        // Notify callbacks
+        for (const auto& callback : tx_callbacks_) {
+            callback(tx);
+        }
+    }
+}
+
+void Node::HandleInvReceived(const std::string& peer_id, const p2p::InvMessage& inv) {
+    std::cout << "Received inventory from " << peer_id << ": " << inv.inventory.size() << " items" << std::endl;
+    
+    // Request data for items we don't have
+    p2p::GetDataMessage getdata;
+    for (const auto& item : inv.inventory) {
+        // Check if we already have this item
+        bool have_item = false;
+        
+        if (item.type == p2p::InvType::MSG_BLOCK) {
+            have_item = block_storage_ && block_storage_->GetBlockByHash(item.hash).has_value();
+        } else if (item.type == p2p::InvType::MSG_TX) {
+            // Check mempool or recent blocks
+            // have_item = mempool_->HasTransaction(item.hash);
+        }
+        
+        if (!have_item) {
+            getdata.inventory.push_back(item);
+        }
+    }
+    
+    // Request items we don't have
+    if (!getdata.inventory.empty() && network_) {
+        // Send getdata to the peer
+        // network_->SendGetData(peer_id, getdata);
+    }
+}
+
+void Node::HandleGetDataReceived(const std::string& peer_id, const p2p::GetDataMessage& msg) {
+    std::cout << "Received getdata from " << peer_id << ": " << msg.inventory.size() << " items" << std::endl;
+    
+    if (!network_) {
+        return;
+    }
+    
+    // Respond with requested items
+    for (const auto& item : msg.inventory) {
+        if (item.type == p2p::InvType::MSG_BLOCK) {
+            if (block_storage_) {
+                auto block = block_storage_->GetBlockByHash(item.hash);
+                if (block) {
+                    // Send block to peer
+                    // network_->SendBlock(peer_id, *block);
+                }
+            }
+        } else if (item.type == p2p::InvType::MSG_TX) {
+            // Get transaction from mempool
+            // if (mempool_->HasTransaction(item.hash)) {
+            //     auto tx = mempool_->GetTransaction(item.hash);
+            //     network_->SendTx(peer_id, tx);
+            // }
+        }
+    }
 }
 
 } // namespace node
