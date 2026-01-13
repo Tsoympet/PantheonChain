@@ -6,6 +6,7 @@
 #include "primitives/transaction.h"
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 namespace parthenon {
 namespace rpc {
@@ -177,10 +178,16 @@ RPCResponse RPCServer::HandleGetBlock(const RPCRequest& req) {
         return response;
     }
     
-    // For now, treat param as height
+    // For now, treat param as height (simple parse of JSON array: "[height]")
     uint64_t height = 0;
     try {
-        height = std::stoull(req.params[0]);
+        // Simple JSON array parsing - extract first number
+        std::string params_clean = req.params;
+        // Remove brackets and quotes
+        params_clean.erase(std::remove(params_clean.begin(), params_clean.end(), '['), params_clean.end());
+        params_clean.erase(std::remove(params_clean.begin(), params_clean.end(), ']'), params_clean.end());
+        params_clean.erase(std::remove(params_clean.begin(), params_clean.end(), '"'), params_clean.end());
+        height = std::stoull(params_clean);
     } catch (...) {
         response.error = "Invalid height parameter";
         return response;
@@ -220,7 +227,12 @@ RPCResponse RPCServer::HandleSendTransaction(const RPCRequest& req) {
         return response;
     }
     
-    std::string tx_hex = req.params[0];
+    // Simple JSON parsing - extract hex string from params
+    std::string tx_hex = req.params;
+    // Remove brackets and quotes
+    tx_hex.erase(std::remove(tx_hex.begin(), tx_hex.end(), '['), tx_hex.end());
+    tx_hex.erase(std::remove(tx_hex.begin(), tx_hex.end(), ']'), tx_hex.end());
+    tx_hex.erase(std::remove(tx_hex.begin(), tx_hex.end(), '"'), tx_hex.end());
     
     // Deserialize transaction from hex
     std::vector<uint8_t> tx_data;
@@ -239,7 +251,7 @@ RPCResponse RPCServer::HandleSendTransaction(const RPCRequest& req) {
     
     if (success) {
         // Return transaction ID (hash)
-        auto tx_hash = tx.GetHash();
+        auto tx_hash = tx.GetTxID();
         std::ostringstream hex;
         hex << std::hex << std::setfill('0');
         for (uint8_t byte : tx_hash) {
@@ -294,15 +306,36 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
     }
     
     // Parse parameters: address, amount, asset_id (optional)
-    if (req.params.size() < 2) {
+    // Simple JSON array parsing
+    if (req.params.size() < 10) { // Minimum length for valid params
         response.error = "Missing required parameters: address, amount";
         return response;
     }
     
-    std::string address_hex = req.params[0];
+    // Very simple JSON array parsing - split by comma
+    std::vector<std::string> params_array;
+    std::string params_clean = req.params;
+    params_clean.erase(std::remove(params_clean.begin(), params_clean.end(), '['), params_clean.end());
+    params_clean.erase(std::remove(params_clean.begin(), params_clean.end(), ']'), params_clean.end());
+    params_clean.erase(std::remove(params_clean.begin(), params_clean.end(), '"'), params_clean.end());
+    params_clean.erase(std::remove(params_clean.begin(), params_clean.end(), ' '), params_clean.end());
+    
+    // Split by comma
+    std::istringstream ss(params_clean);
+    std::string param;
+    while (std::getline(ss, param, ',')) {
+        params_array.push_back(param);
+    }
+    
+    if (params_array.size() < 2) {
+        response.error = "Missing required parameters: address, amount";
+        return response;
+    }
+    
+    std::string address_hex = params_array[0];
     uint64_t amount = 0;
     try {
-        amount = std::stoull(req.params[1]);
+        amount = std::stoull(params_array[1]);
     } catch (...) {
         response.error = "Invalid amount parameter";
         return response;
@@ -310,8 +343,8 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
     
     // Parse asset ID (default to TALANTON)
     primitives::AssetID asset_id = primitives::AssetID::TALANTON;
-    if (req.params.size() >= 3) {
-        int asset_int = std::stoi(req.params[2]);
+    if (params_array.size() >= 3) {
+        int asset_int = std::stoi(params_array[2]);
         asset_id = static_cast<primitives::AssetID>(asset_int);
     }
     
@@ -325,7 +358,7 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
     // Create output
     primitives::TxOutput output;
     output.value = primitives::AssetAmount(asset_id, amount);
-    output.pubkey_script = recipient_pubkey;
+    output.pubkey_script = std::vector<uint8_t>(recipient_pubkey.begin(), recipient_pubkey.end());
     
     // Create transaction using wallet
     auto tx_result = wallet_->CreateTransaction({output}, asset_id, 1000); // 1000 sat fee
