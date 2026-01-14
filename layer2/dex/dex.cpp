@@ -23,10 +23,15 @@ std::vector<uint8_t> OrderBook::PlaceOrder(const Order& order) {
     }
     
     Order new_order = order;
-    auto hash = crypto::SHA256::Hash256(
-        std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(&order),
-                            reinterpret_cast<const uint8_t*>(&order) + sizeof(Order))
-    );
+    // Serialize order data safely instead of using reinterpret_cast on struct
+    std::vector<uint8_t> order_data;
+    order_data.reserve(sizeof(uint64_t) * 3);
+    for (int i = 0; i < 8; i++) order_data.push_back(static_cast<uint8_t>(order.amount >> (i * 8)));
+    for (int i = 0; i < 8; i++) order_data.push_back(static_cast<uint8_t>(order.price >> (i * 8)));
+    for (int i = 0; i < 8; i++) order_data.push_back(static_cast<uint8_t>(order.timestamp >> (i * 8)));
+    order_data.insert(order_data.end(), order.trader_pubkey.begin(), order.trader_pubkey.end());
+    
+    auto hash = crypto::SHA256::Hash256(order_data);
     new_order.order_id = std::vector<uint8_t>(hash.begin(), hash.end());
     new_order.status = OrderStatus::PENDING;
     new_order.filled_amount = 0;
@@ -81,10 +86,13 @@ std::vector<Trade> OrderBook::MatchOrders() {
         uint64_t trade_price = sell_order.price;
         
         Trade trade;
-        auto hash = crypto::SHA256::Hash256(
-            std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(&trade_amount),
-                                reinterpret_cast<const uint8_t*>(&trade_amount) + sizeof(uint64_t))
-        );
+        // Serialize trade data safely instead of using reinterpret_cast on primitive
+        std::vector<uint8_t> trade_data;
+        trade_data.reserve(sizeof(uint64_t) * 2);
+        for (int i = 0; i < 8; i++) trade_data.push_back(static_cast<uint8_t>(trade_amount >> (i * 8)));
+        for (int i = 0; i < 8; i++) trade_data.push_back(static_cast<uint8_t>(trade_price >> (i * 8)));
+        
+        auto hash = crypto::SHA256::Hash256(trade_data);
         trade.trade_id = std::vector<uint8_t>(hash.begin(), hash.end());
         trade.buy_order_id = buy_order.order_id;
         trade.sell_order_id = sell_order.order_id;
@@ -142,7 +150,13 @@ OrderBook::MarketDepth OrderBook::GetDepth(size_t levels) const {
     for (auto it = buy_orders_.rbegin(); it != buy_orders_.rend() && count < levels; ++it, ++count) {
         uint64_t total_amount = 0;
         for (const auto& order : it->second) {
-            total_amount += order.amount - order.filled_amount;
+            uint64_t unfilled = order.amount - order.filled_amount;
+            // Check for overflow before adding
+            if (total_amount > UINT64_MAX - unfilled) {
+                total_amount = UINT64_MAX;  // Cap at maximum
+                break;
+            }
+            total_amount += unfilled;
         }
         depth.bids.push_back({it->first, total_amount});
     }
@@ -151,7 +165,13 @@ OrderBook::MarketDepth OrderBook::GetDepth(size_t levels) const {
     for (auto it = sell_orders_.begin(); it != sell_orders_.end() && count < levels; ++it, ++count) {
         uint64_t total_amount = 0;
         for (const auto& order : it->second) {
-            total_amount += order.amount - order.filled_amount;
+            uint64_t unfilled = order.amount - order.filled_amount;
+            // Check for overflow before adding
+            if (total_amount > UINT64_MAX - unfilled) {
+                total_amount = UINT64_MAX;  // Cap at maximum
+                break;
+            }
+            total_amount += unfilled;
         }
         depth.asks.push_back({it->first, total_amount});
     }
@@ -188,7 +208,15 @@ std::vector<uint8_t> AutomatedMarketMaker::CreatePool(
     pool.asset_b = asset_b;
     pool.reserve_a = initial_a;
     pool.reserve_b = initial_b;
-    pool.total_shares = initial_a * initial_b;  // Simplified
+    
+    // Check for integer overflow in multiplication
+    if (initial_a > 0 && initial_b > UINT64_MAX / initial_a) {
+        // Overflow would occur, use safe alternative
+        pool.total_shares = UINT64_MAX;
+    } else {
+        pool.total_shares = initial_a * initial_b;
+    }
+    
     pool.fee_rate = fee_rate;
     
     std::vector<uint8_t> pool_data;
@@ -217,18 +245,56 @@ uint64_t AutomatedMarketMaker::AddLiquidity(
     // Calculate proportional shares
     uint64_t shares = 0;
     if (pool.total_shares == 0) {
-        shares = amount_a * amount_b;
+        // Check for overflow in multiplication
+        if (amount_a > 0 && amount_b > UINT64_MAX / amount_a) {
+            shares = UINT64_MAX;
+        } else {
+            shares = amount_a * amount_b;
+        }
     } else {
-        shares = std::min(
-            (amount_a * pool.total_shares) / pool.reserve_a,
-            (amount_b * pool.total_shares) / pool.reserve_b
-        );
+        // Check for division by zero and overflow
+        if (pool.reserve_a == 0 || pool.reserve_b == 0) {
+            return 0;
+        }
+        
+        uint64_t shares_a = 0;
+        uint64_t shares_b = 0;
+        
+        // Safe calculation of shares_a
+        if (amount_a > UINT64_MAX / pool.total_shares) {
+            shares_a = UINT64_MAX;
+        } else {
+            shares_a = (amount_a * pool.total_shares) / pool.reserve_a;
+        }
+        
+        // Safe calculation of shares_b
+        if (amount_b > UINT64_MAX / pool.total_shares) {
+            shares_b = UINT64_MAX;
+        } else {
+            shares_b = (amount_b * pool.total_shares) / pool.reserve_b;
+        }
+        
+        shares = std::min(shares_a, shares_b);
+    }
+    
+    // Check for overflow before adding to reserves and shares
+    if (pool.reserve_a > UINT64_MAX - amount_a || 
+        pool.reserve_b > UINT64_MAX - amount_b ||
+        pool.total_shares > UINT64_MAX - shares) {
+        return 0;  // Would overflow
     }
     
     pool.reserve_a += amount_a;
     pool.reserve_b += amount_b;
     pool.total_shares += shares;
-    pool.shares[provider_pubkey] += shares;
+    
+    // Check for overflow in provider shares
+    uint64_t current_shares = pool.shares[provider_pubkey];
+    if (current_shares > UINT64_MAX - shares) {
+        pool.shares[provider_pubkey] = UINT64_MAX;
+    } else {
+        pool.shares[provider_pubkey] += shares;
+    }
     
     return shares;
 }
@@ -246,6 +312,11 @@ std::pair<uint64_t, uint64_t> AutomatedMarketMaker::RemoveLiquidity(
     auto& pool = it->second;
     
     if (pool.shares[provider_pubkey] < shares) {
+        return {0, 0};
+    }
+    
+    // Check for division by zero
+    if (pool.total_shares == 0) {
         return {0, 0};
     }
     
@@ -313,10 +384,39 @@ uint64_t AutomatedMarketMaker::GetOutputAmount(
     uint64_t output_reserve,
     uint64_t fee_rate) {
     
-    // Apply fee
-    uint64_t input_with_fee = input_amount * (10000 - fee_rate);
+    // Validate fee_rate is reasonable (< 10000 = 100%)
+    if (fee_rate >= 10000) {
+        return 0;
+    }
+    
+    // Check for zero reserves
+    if (input_reserve == 0 || output_reserve == 0) {
+        return 0;
+    }
+    
+    // Apply fee with overflow check
+    uint64_t fee_multiplier = 10000 - fee_rate;
+    if (input_amount > UINT64_MAX / fee_multiplier) {
+        return 0;  // Would overflow
+    }
+    uint64_t input_with_fee = input_amount * fee_multiplier;
+    
+    // Check numerator overflow
+    if (input_with_fee > UINT64_MAX / output_reserve) {
+        return 0;  // Would overflow
+    }
     uint64_t numerator = input_with_fee * output_reserve;
+    
+    // Calculate denominator with overflow check
+    if (input_reserve > UINT64_MAX / 10000) {
+        return 0;  // Would overflow
+    }
     uint64_t denominator = (input_reserve * 10000) + input_with_fee;
+    
+    // Check for division by zero
+    if (denominator == 0) {
+        return 0;
+    }
     
     return numerator / denominator;
 }
@@ -332,9 +432,16 @@ double AutomatedMarketMaker::GetPrice(
     
     auto& pool = *pool_opt;
     
+    // Check for division by zero
     if (asset == pool.asset_a) {
+        if (pool.reserve_a == 0) {
+            return 0.0;
+        }
         return static_cast<double>(pool.reserve_b) / static_cast<double>(pool.reserve_a);
     } else {
+        if (pool.reserve_b == 0) {
+            return 0.0;
+        }
         return static_cast<double>(pool.reserve_a) / static_cast<double>(pool.reserve_b);
     }
 }
@@ -403,12 +510,19 @@ uint64_t DEXManager::Get24HVolume(
     primitives::AssetID quote) const {
     
     uint64_t now = static_cast<uint64_t>(std::time(nullptr));
-    uint64_t day_ago = now - 86400;
+    
+    // Check for underflow
+    uint64_t day_ago = (now >= 86400) ? (now - 86400) : 0;
     
     uint64_t volume = 0;
     for (const auto& trade : trade_history_) {
         if (trade.base_asset == base && trade.quote_asset == quote &&
             trade.timestamp >= day_ago) {
+            // Check for overflow before adding
+            if (volume > UINT64_MAX - trade.amount) {
+                volume = UINT64_MAX;  // Cap at maximum
+                break;
+            }
             volume += trade.amount;
         }
     }

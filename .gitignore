@@ -116,6 +116,7 @@ dist
 # C++ Build artifacts
 build/
 build-debug/
+_codeql_build_dir/
 *.o
 *.a
 *.so

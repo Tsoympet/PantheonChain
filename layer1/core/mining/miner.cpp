@@ -270,6 +270,8 @@ std::array<uint8_t, 32> Miner::ComputeMerkleRoot(
             
             auto combined_hash = hasher.Finalize();
             std::array<uint8_t, 32> result;
+            // Safe memcpy - both are 32 bytes
+            static_assert(sizeof(result) == sizeof(combined_hash), "Hash sizes must match");
             std::memcpy(result.data(), combined_hash.data(), 32);
             next_level.push_back(result);
         }
