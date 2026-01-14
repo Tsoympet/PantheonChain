@@ -152,38 +152,84 @@ jobs:
         body: |
           # ParthenonChain ${{ github.ref_name }}
           
-          ## Downloads
+          **Production-ready blockchain with three native assets, Schnorr signatures, and EVM-compatible smart contracts.**
           
-          ### Windows
-          - `parthenon-*-windows-x64-setup.exe` - Windows installer (NSIS)
+          ## 📥 Downloads
           
-          ### macOS
-          - `parthenon-*-macos.dmg` - macOS disk image
+          Choose the installer for your operating system:
           
-          ### Linux
-          - `parthenon_*_amd64.deb` - Debian/Ubuntu package
-          - `parthenon-*.rpm` - RPM package (RHEL/Fedora/CentOS)
+          ### 🪟 Windows
+          - **[parthenon-*-windows-x64-setup.exe](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon-1.0.0-windows-x64-setup.exe)** - Windows 10/11 installer (NSIS)
           
-          ## Verification
+          ### 🍎 macOS
+          - **[parthenon-*-macos.dmg](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon-1.0.0-macos.dmg)** - macOS disk image (Intel & Apple Silicon)
           
-          All release artifacts are signed with GPG. Verify with:
-          ```bash
-          gpg --verify <file>.asc <file>
-          ```
+          ### 🐧 Linux
+          - **[parthenon_*_amd64.deb](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon_1.0.0_amd64.deb)** - Debian/Ubuntu package
+          - **[parthenon-*.rpm](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon-1.0.0-1.el8.x86_64.rpm)** - RPM package (RHEL/Fedora/CentOS)
           
-          SHA-256/SHA-512 checksums are provided in `parthenon-*-checksums.txt`.
+          ## 📖 Installation Guides
           
-          ## Installation
+          - **[Quick Start Guide](QUICK_START.md)** - Get started in minutes
+          - **[Download Instructions](DOWNLOAD.md)** - Detailed installation steps
+          - **[Full Documentation](README.md)** - Complete user guide
           
-          See [Installation Guide](https://github.com/Tsoympet/PantheonChain/wiki/Installation) for detailed instructions.
+          ## 🔐 Verification
           
-          ## What's Changed
+          **Verify your download** for security:
           
-          - Full implementation of Phases 1-10
-          - Complete consensus engine with three native assets
-          - EVM-compatible smart contracts (OBOLOS)
-          - Layer 2 payment channels and HTLCs
-          - Production clients (daemon, CLI, GUI, mobile)
+          1. Download the checksums file: `parthenon-*-checksums.txt`
+          2. Verify SHA-256 hash matches:
+             ```bash
+             # Windows (PowerShell)
+             Get-FileHash -Algorithm SHA256 parthenon-*-setup.exe
+             
+             # macOS/Linux
+             sha256sum parthenon-*.dmg
+             ```
+          3. Verify GPG signature (if available):
+             ```bash
+             gpg --verify <file>.asc <file>
+             ```
+          
+          ## ✨ What's Included
+          
+          - **parthenond** - Full blockchain node
+          - **parthenon-cli** - Command-line wallet and tools
+          - **Desktop GUI** - User-friendly graphical wallet (optional)
+          - **Documentation** - Complete guides and API reference
+          
+          ## 🎯 Features
+          
+          - ✅ Three native tokens (TALANTON, DRACHMA, OBOLOS)
+          - ✅ SHA-256d Proof-of-Work consensus
+          - ✅ Schnorr signatures (BIP-340)
+          - ✅ EVM-compatible smart contracts
+          - ✅ Layer 2 payment channels
+          - ✅ Production-ready clients for all platforms
+          
+          ## 📋 System Requirements
+          
+          - **CPU**: 2+ cores
+          - **RAM**: 4 GB minimum (8 GB recommended)
+          - **Disk**: 50 GB+ SSD
+          - **OS**: Windows 10+, macOS 10.15+, Ubuntu 20.04+, or equivalent
+          
+          ## 🚀 Getting Started
+          
+          1. Download installer for your platform
+          2. Run installer and follow wizard
+          3. Launch ParthenonChain
+          4. Create wallet: `parthenon-cli getnewaddress`
+          5. Start using ParthenonChain!
+          
+          See **[QUICK_START.md](QUICK_START.md)** for detailed instructions.
+          
+          ## 🆘 Support
+          
+          - 📖 [Documentation](README.md)
+          - 💬 [GitHub Discussions](https://github.com/Tsoympet/PantheonChain/discussions)
+          - 🐛 [Report Issues](https://github.com/Tsoympet/PantheonChain/issues)
           
           **Full Changelog**: https://github.com/Tsoympet/PantheonChain/compare/v0.9.0...${{ github.ref_name }}
       env:

@@ -283,7 +283,7 @@ dpkg -l | grep parthenon
 - Check disk space (need at least 50 GB free)
 
 ### Need more help?
-Visit our [Troubleshooting Guide](docs/INSTALLATION.md#troubleshooting) or ask in [GitHub Discussions](https://github.com/Tsoympet/PantheonChain/discussions).
+Visit our [Troubleshooting Guide](TROUBLESHOOTING.md) or ask in [GitHub Discussions](https://github.com/Tsoympet/PantheonChain/discussions).
 
 ---
 

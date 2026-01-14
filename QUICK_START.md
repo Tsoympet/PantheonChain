@@ -286,7 +286,7 @@ parthenon-cli addnode <ip:port> add
 - Make sure you have OBOLOS for transaction fees
 
 ### Need More Help?
-See the [Troubleshooting Section](docs/INSTALLATION.md#troubleshooting) in our documentation.
+See the [Troubleshooting Section](TROUBLESHOOTING.md) in our documentation.
 
 ---
 

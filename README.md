@@ -525,6 +525,36 @@ Stay connected with the ParthenonChain community:
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and [docs/RELEASES.md](docs/RELEASES.md) for the full roadmap.
 
+## Releases
+
+### Latest Release
+
+**Version 1.0.0** is available for download!
+
+👉 **[Download ParthenonChain](https://github.com/Tsoympet/PantheonChain/releases/latest)** - Get installers for Windows, macOS, and Linux
+
+### All Releases
+
+View all releases: [GitHub Releases](https://github.com/Tsoympet/PantheonChain/releases)
+
+Each release includes:
+- 📦 **Windows installer** (.exe) - NSIS setup for Windows 10/11
+- 📦 **macOS disk image** (.dmg) - Universal binary for Intel & Apple Silicon
+- 📦 **Linux packages** (.deb, .rpm) - For Debian/Ubuntu and RHEL/Fedora
+- 🔐 **Checksums** - SHA-256/SHA-512 verification
+- ✍️ **GPG signatures** - Authenticity verification (when available)
+
+### Installation
+
+See our comprehensive guides:
+- 🚀 [Quick Start Guide](QUICK_START.md) - Get started in minutes
+- 📥 [Download Instructions](DOWNLOAD.md) - Detailed installation steps
+- 📖 [Installation Guide](docs/INSTALLATION.md) - Complete documentation
+
+### Building from Source
+
+Prefer to build yourself? See the [Building from Source](#building-from-source) section above or [installers/README.md](installers/README.md) for creating installers.
+
 ## Security
 
 Security is our top priority. ParthenonChain implements defense-in-depth security with deterministic consensus, cryptographic rigor, and comprehensive validation.
