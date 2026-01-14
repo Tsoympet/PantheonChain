@@ -6,6 +6,7 @@ add_library(parthenon_crypto STATIC
     crypto/schnorr.cpp
     crypto/hardware_crypto.cpp
     crypto/post_quantum/pq_crypto.cpp
+    crypto/homomorphic/homomorphic.cpp
 )
 
 target_include_directories(parthenon_crypto PUBLIC
@@ -27,10 +28,11 @@ else()
   )
 endif()
 
-# Privacy library (zkSNARK and ring signatures)
+# Privacy library (zkSNARK, ring signatures, STARK)
 add_library(parthenon_privacy STATIC
     privacy/zk_snark.cpp
     privacy/ring_signature.cpp
+    privacy/zk_stark.cpp
 )
 
 target_include_directories(parthenon_privacy PUBLIC

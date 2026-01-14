@@ -55,8 +55,8 @@ VerificationResult ContractVerifier::VerifyContract(
 }
 
 VerificationResult ContractVerifier::VerifySource(
-    const std::string& source_code,
-    const std::vector<Property>& properties)
+    [[maybe_unused]] const std::string& source_code,
+    [[maybe_unused]] const std::vector<Property>& properties)
 {
     // In production, would compile source to bytecode first
     // For now, return simplified result
@@ -166,7 +166,7 @@ bool ContractVerifier::CheckAccessControl(const std::vector<uint8_t>& bytecode)
 
 // SymbolicExecutor Implementation
 std::vector<SymbolicExecutor::ExecutionPath> SymbolicExecutor::Execute(
-    const std::vector<uint8_t>& bytecode)
+    [[maybe_unused]] const std::vector<uint8_t>& bytecode)
 {
     std::vector<ExecutionPath> paths;
     
@@ -196,7 +196,7 @@ std::vector<std::string> SymbolicExecutor::FindAssertionViolations(
 }
 
 std::vector<std::vector<uint8_t>> SymbolicExecutor::GenerateTestCases(
-    const std::vector<uint8_t>& bytecode)
+    [[maybe_unused]] const std::vector<uint8_t>& bytecode)
 {
     std::vector<std::vector<uint8_t>> test_cases;
     
