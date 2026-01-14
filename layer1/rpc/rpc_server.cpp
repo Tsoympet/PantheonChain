@@ -140,7 +140,7 @@ void RPCServer::ConfigureRateLimit(uint32_t requests_per_window, uint32_t window
     rate_limiter_ = std::make_unique<RateLimiter>(requests_per_window, window_seconds);
 }
 
-RPCResponse RPCServer::HandleRequest(const RPCRequest& request, const std::string& client_ip) {
+RPCResponse RPCServer::HandleRequest(const RPCRequest& request, const std::string& /* client_ip */) {
     RPCResponse response;
     response.id = request.id;
 
