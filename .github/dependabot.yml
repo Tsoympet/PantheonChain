@@ -67,8 +67,7 @@ updates:
           - "cpp-httplib"
       json-libraries:
         patterns:
-          - "json"
-          - "nlohmann*"
+          - "third_party/json"
   
   # npm - React Native Mobile App dependencies
   - package-ecosystem: "npm"
