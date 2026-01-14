@@ -433,14 +433,18 @@ Stay connected with the ParthenonChain community:
 ✅ Cross-chain atomic swaps (HTLC)  
 ✅ Desktop wallet application (Qt-based)  
 ✅ Mobile wallet application (React Native)  
+✅ Multi-signature wallet support  
+✅ Enhanced privacy features (Ring signatures, Stealth addresses)  
+✅ Advanced smart contract debugging tools  
+✅ Blockchain explorer web interface  
 
 ### Upcoming Features
-- 🔜 Multi-signature wallet support
-- 🔜 Enhanced privacy features (CoinJoin)
-- 🔜 Decentralized exchange integration
-- 🔜 Advanced smart contract debugging tools
-- 🔜 Blockchain explorer web interface
+- 🔜 Decentralized exchange (DEX) integration
 - 🔜 Hardware wallet firmware verification
+- 🔜 zkSNARK privacy enhancements
+- 🔜 Cross-shard transactions
+- 🔜 Mobile SDK libraries
+- 🔜 IDE plugins for smart contract development
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and [docs/RELEASES.md](docs/RELEASES.md) for the full roadmap.
 
