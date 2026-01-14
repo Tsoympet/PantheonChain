@@ -1,0 +1,167 @@
+# ParthenonChain Configuration File
+# Copy this file to parthenond.conf and customize for your setup
+
+##
+## Network Settings
+##
+
+# Listen for connections on <port> (default: 8333 for mainnet)
+#port=8333
+
+# Maximum number of inbound+outbound connections
+#maxconnections=125
+
+# Connect via a SOCKS5 proxy
+#proxy=127.0.0.1:9050
+
+##
+## RPC Server Settings
+##
+
+# Accept command line and JSON-RPC commands
+server=1
+
+# Listen for RPC connections on this TCP port
+rpcport=8332
+
+# Username and hashed password for JSON-RPC connections
+# Generate with: python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+rpcuser=parthenon
+rpcpassword=CHANGE_THIS_TO_A_SECURE_PASSWORD
+
+# Allow RPC connections from specified source. 
+# Valid for <ip> are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0)
+# or a network/CIDR (e.g. 1.2.3.4/24). 
+# This option can be specified multiple times.
+rpcallowip=127.0.0.1
+
+# Listen for RPC connections on this TCP port (default: 8332)
+# rpclisten=0.0.0.0
+
+##
+## Data Directory
+##
+
+# Specify data directory
+# datadir=/home/parthenon/.parthenon/data
+
+##
+## Logging
+##
+
+# Log level (debug, info, warning, error)
+loglevel=info
+
+# Reduce storage requirements by only storing most recent N MiB of block.
+# This mode is incompatible with -txindex and -rescan.
+# prune=550
+
+##
+## Mining
+##
+
+# Generate coins (default: 0)
+gen=0
+
+# Set the number of threads to service RPC calls (default: 4)
+# rpcthreads=4
+
+# How many blocks to generate when gen=1
+# genproclimit=1
+
+##
+## Wallet
+##
+
+# Do not load the wallet and disable wallet RPC calls
+# disablewallet=1
+
+# Enable pruning to reduce storage (in MiB)
+# prune=550
+
+##
+## Transaction Fee
+##
+
+# Set the transaction fee rate in TALN/kB (default: 0.0001)
+# paytxfee=0.0001
+
+# Set the minimum relay fee rate in TALN/kB
+# minrelaytxfee=0.00001
+
+##
+## Network Type
+##
+
+# Run on the test network instead of the real parthenon network
+# testnet=1
+
+# Run a regression test network
+# regtest=1
+
+##
+## Node Relay Options
+##
+
+# Relay non-P2SH multisig (default: 1)
+# permitbaremultisig=1
+
+# Fees (in TALN/kB) smaller than this are considered zero fee for relaying (default: 0.00001)
+# minrelaytxfee=0.00001
+
+##
+## Performance Options
+##
+
+# Set database cache size in megabytes (default: 450)
+# dbcache=450
+
+# Maximum total size of all orphan transactions in megabytes (default: 100)
+# maxorphantx=100
+
+# Maximum number of orphan blocks kept in memory (default: 750)
+# maxorphanblocks=750
+
+##
+## Debug/Testing Options
+##
+
+# Output debugging information (default: 0)
+# debug=1
+
+# Enable all debugging
+# debug=all
+
+# Limit debug category (can use multiple times)
+# debug=net
+# debug=rpc
+# debug=db
+
+##
+## Block and Tx Broadcasting
+##
+
+# Do not accept transactions from remote peers
+# blocksonly=1
+
+# Relay and mine data carrier transactions (default: 1)
+# datacarrier=1
+
+# Maximum size of data in data carrier transactions we relay and mine (default: 83)
+# datacarriersize=83
+
+##
+## Optional Features
+##
+
+# Enable transaction index
+# txindex=1
+
+# Enable address index
+# addressindex=1
+
+# Enable timestamp index
+# timestampindex=1
+
+# Enable spent index
+# spentindex=1
