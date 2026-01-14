@@ -27,6 +27,16 @@ set(SECP256K1_BUILD_EXHAUSTIVE_TESTS OFF CACHE BOOL "Build exhaustive tests")
 set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON CACHE BOOL "Enable Schnorr signature module")
 set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON CACHE BOOL "Enable extra keys module")
 add_subdirectory(third_party/secp256k1 EXCLUDE_FROM_ALL)
+# Remove strict warning flags from secp256k1 target to avoid errors in third-party code
+if(TARGET secp256k1)
+  if(MSVC)
+    # MSVC: Disable warnings as errors
+    target_compile_options(secp256k1 PRIVATE /WX-)
+  else()
+    # GCC/Clang: Disable warnings as errors
+    target_compile_options(secp256k1 PRIVATE -Wno-error)
+  endif()
+endif()
 
 # Build LevelDB for blockchain storage (without strict warnings)
 set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build LevelDB tests")
