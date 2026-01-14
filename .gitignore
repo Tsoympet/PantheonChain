@@ -41,10 +41,9 @@ build/Release
 node_modules/
 jspm_packages/
 
-# Docker
-.dockerignore
-docker-compose*.yml
-Dockerfile*
+# Docker (exclude override files but keep main configs)
+docker-compose.override.yml
+Dockerfile.local
 
 # Runtime data
 parthenond.conf
@@ -123,6 +122,18 @@ _codeql_build_dir/
 *.dylib
 *.dll
 *.exe
+
+# Package build artifacts
+installers/windows/*.exe
+installers/macos/*.dmg
+installers/linux/*.deb
+installers/linux/*.rpm
+installers/checksums/*.txt
+installers/checksums/*.asc
+*.tar.gz
+*.zip
+_packages/
+rpmbuild/
 
 # CMake
 CMakeCache.txt
