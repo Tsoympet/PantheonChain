@@ -1,4 +1,5 @@
 // ParthenonChain - Network Messages Implementation
+// Security Review: Checking for buffer overflow and input validation issues
 
 #include "message.h"
 #include "crypto/sha256.h"
