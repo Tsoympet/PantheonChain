@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparthenon_mempool.a CMakeFiles/parthenon_mempool.dir/mempool/mempool.cpp.o
-/usr/bin/ranlib libparthenon_mempool.a

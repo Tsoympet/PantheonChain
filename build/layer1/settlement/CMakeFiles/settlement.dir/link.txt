@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsettlement.a CMakeFiles/settlement.dir/destination_tag.cpp.o CMakeFiles/settlement.dir/escrow.cpp.o CMakeFiles/settlement.dir/multisig.cpp.o
-/usr/bin/ranlib libsettlement.a

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparthenon_evm.a CMakeFiles/parthenon_evm.dir/opcodes.cpp.o CMakeFiles/parthenon_evm.dir/state.cpp.o CMakeFiles/parthenon_evm.dir/vm.cpp.o CMakeFiles/parthenon_evm.dir/mpt.cpp.o
-/usr/bin/ranlib libparthenon_evm.a

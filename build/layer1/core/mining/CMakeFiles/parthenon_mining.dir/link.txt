@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparthenon_mining.a CMakeFiles/parthenon_mining.dir/miner.cpp.o
-/usr/bin/ranlib libparthenon_mining.a

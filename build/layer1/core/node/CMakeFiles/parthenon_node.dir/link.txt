@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparthenon_node.a CMakeFiles/parthenon_node.dir/node.cpp.o
-/usr/bin/ranlib libparthenon_node.a

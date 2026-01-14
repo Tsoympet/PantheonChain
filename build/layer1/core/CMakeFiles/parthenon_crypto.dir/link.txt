@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparthenon_crypto.a CMakeFiles/parthenon_crypto.dir/crypto/sha256.cpp.o CMakeFiles/parthenon_crypto.dir/crypto/schnorr.cpp.o CMakeFiles/parthenon_crypto.dir/crypto/hardware_crypto.cpp.o
-/usr/bin/ranlib libparthenon_crypto.a

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparthenon_chainstate.a CMakeFiles/parthenon_chainstate.dir/chainstate/chainstate.cpp.o CMakeFiles/parthenon_chainstate.dir/chainstate/utxo.cpp.o CMakeFiles/parthenon_chainstate.dir/chainstate/chain.cpp.o
-/usr/bin/ranlib libparthenon_chainstate.a

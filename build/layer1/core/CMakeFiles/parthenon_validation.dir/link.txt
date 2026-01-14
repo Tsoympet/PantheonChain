@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparthenon_validation.a CMakeFiles/parthenon_validation.dir/validation/validation.cpp.o
-/usr/bin/ranlib libparthenon_validation.a
