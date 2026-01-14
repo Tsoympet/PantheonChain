@@ -23,6 +23,9 @@ jobs:
       with:
         submodules: recursive
     
+    - name: Initialize submodules
+      run: git submodule update --init --recursive
+    
     - name: Run dependency vulnerability scan
       uses: aquasecurity/trivy-action@master
       with:
