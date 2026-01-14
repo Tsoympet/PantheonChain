@@ -1,4 +1,5 @@
 // ParthenonChain - Network Messages Implementation
+// Security Review: Checking for buffer overflow and input validation issues
 
 #include "message.h"
 #include "crypto/sha256.h"
@@ -97,6 +98,7 @@ std::optional<MessageHeader> MessageHeader::Deserialize(const uint8_t* data) {
     
     // Command
     std::memcpy(header.command, data, 12);
+    header.command[11] = '\0';  // Ensure null termination
     data += 12;
     
     // Length
@@ -347,12 +349,10 @@ std::vector<uint8_t> CreateNetworkMessage(
     MessageHeader header;
     header.magic = magic;
     // Safe string copy with null termination
+    std::memset(header.command, 0, 12);  // Zero the entire buffer (ensures null termination)
     size_t len = std::strlen(command);
     if (len >= 12) len = 11; // Leave room for null terminator
     std::memcpy(header.command, command, len);
-    header.command[len] = '\0';
-    // Fill remaining with zeros
-    std::memset(header.command + len + 1, 0, 12 - len - 1);
     header.length = static_cast<uint32_t>(payload.size());
     header.checksum = CalculateChecksum(payload);
     
