@@ -349,11 +349,10 @@ std::vector<uint8_t> CreateNetworkMessage(
     MessageHeader header;
     header.magic = magic;
     // Safe string copy with null termination
-    std::memset(header.command, 0, 12);  // Zero the entire buffer first
+    std::memset(header.command, 0, 12);  // Zero the entire buffer (ensures null termination)
     size_t len = std::strlen(command);
     if (len >= 12) len = 11; // Leave room for null terminator
     std::memcpy(header.command, command, len);
-    header.command[len] = '\0';  // Explicit null termination
     header.length = static_cast<uint32_t>(payload.size());
     header.checksum = CalculateChecksum(payload);
     

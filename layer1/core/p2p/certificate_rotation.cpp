@@ -132,7 +132,36 @@ bool CertificateRotation::GenerateSelfSigned(const std::string& cert_path,
                                              uint32_t days) {
     std::cout << "Generating self-signed certificate...\n";
     
-    // Generate using OpenSSL command line (simpler than programmatic)
+    // Validate paths to prevent command injection
+    // Only allow alphanumeric, dash, underscore, dot, and forward slash
+    auto is_safe_path = [](const std::string& path) -> bool {
+        if (path.empty() || path.length() > 4096) {
+            return false;
+        }
+        for (char c : path) {
+            if (!std::isalnum(c) && c != '-' && c != '_' && c != '.' && c != '/') {
+                return false;
+            }
+        }
+        // Prevent path traversal
+        if (path.find("..") != std::string::npos) {
+            return false;
+        }
+        return true;
+    };
+    
+    if (!is_safe_path(cert_path) || !is_safe_path(key_path)) {
+        std::cerr << "Invalid certificate or key path (contains unsafe characters)\n";
+        return false;
+    }
+    
+    // Validate days parameter
+    if (days == 0 || days > 36500) {  // Max ~100 years
+        std::cerr << "Invalid certificate validity period\n";
+        return false;
+    }
+    
+    // Use system() with validated inputs - paths are now safe
     std::string cmd = "openssl req -x509 -newkey rsa:2048 -nodes"
                      " -keyout " + key_path +
                      " -out " + cert_path +

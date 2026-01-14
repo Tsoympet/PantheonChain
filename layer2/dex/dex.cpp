@@ -25,7 +25,7 @@ std::vector<uint8_t> OrderBook::PlaceOrder(const Order& order) {
     Order new_order = order;
     // Serialize order data safely instead of using reinterpret_cast on struct
     std::vector<uint8_t> order_data;
-    order_data.reserve(sizeof(uint64_t) * 3);
+    order_data.reserve(sizeof(uint64_t) * 3 + order.trader_pubkey.size());
     for (int i = 0; i < 8; i++) order_data.push_back(static_cast<uint8_t>(order.amount >> (i * 8)));
     for (int i = 0; i < 8; i++) order_data.push_back(static_cast<uint8_t>(order.price >> (i * 8)));
     for (int i = 0; i < 8; i++) order_data.push_back(static_cast<uint8_t>(order.timestamp >> (i * 8)));
