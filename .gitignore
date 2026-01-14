@@ -115,6 +115,8 @@ dist
 # C++ Build artifacts
 build/
 build-debug/
+build_test/
+build*/
 _codeql_build_dir/
 *.o
 *.a

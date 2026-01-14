@@ -393,11 +393,6 @@ std::optional<LiquidityPool> AutomatedMarketMaker::GetPool(const std::vector<uin
     return it->second;
 }
 
-uint64_t AutomatedMarketMaker::GetOutputAmount(
-    uint64_t input_amount,
-    uint64_t input_reserve,
-    uint64_t output_reserve,
-    uint64_t fee_rate) {
 uint64_t AutomatedMarketMaker::GetOutputAmount(uint64_t input_amount, uint64_t input_reserve,
                                                uint64_t output_reserve, uint64_t fee_rate) {
     
