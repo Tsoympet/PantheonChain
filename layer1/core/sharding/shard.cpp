@@ -1,5 +1,5 @@
 #include "shard.h"
-#include "layer1/core/crypto/sha256.h"
+#include "crypto/sha256.h"
 #include <cstring>
 #include <algorithm>
 
@@ -19,7 +19,7 @@ uint32_t ShardIdentifier::GetShardForAddress(
     std::array<uint8_t, 32> hash;
     crypto::SHA256 hasher;
     hasher.Write(address.data(), address.size());
-    hasher.Finalize(hash.data());
+    hash = hasher.Finalize();
     
     // Use first 4 bytes as uint32
     uint32_t value;

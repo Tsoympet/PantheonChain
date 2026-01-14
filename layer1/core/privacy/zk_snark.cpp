@@ -1,5 +1,5 @@
 #include "zk_snark.h"
-#include "layer1/core/crypto/sha256.h"
+#include "crypto/sha256.h"
 #include <cstring>
 
 namespace parthenon {
@@ -84,7 +84,7 @@ std::optional<ZKProof> ZKProver::GenerateProof(
     hasher.Write(params_.proving_key.data(), params_.proving_key.size());
     
     std::array<uint8_t, 32> hash;
-    hasher.Finalize(hash.data());
+    hash = hasher.Finalize();
     
     std::memcpy(proof.proof_data.data(), hash.data(), 32);
     
@@ -177,7 +177,7 @@ std::array<uint8_t, 32> PedersenCommitment::Commit(
     crypto::SHA256 hasher;
     hasher.Write(reinterpret_cast<const uint8_t*>(&value), sizeof(uint64_t));
     hasher.Write(randomness.data(), randomness.size());
-    hasher.Finalize(commitment.data());
+    commitment = hasher.Finalize();
     
     return commitment;
 }
@@ -203,7 +203,7 @@ std::array<uint8_t, 32> Nullifier::Generate(
     hasher.Write(secret.data(), secret.size());
     hasher.Write(reinterpret_cast<const uint8_t*>(&serial_number), 
                 sizeof(uint64_t));
-    hasher.Finalize(nullifier.data());
+    nullifier = hasher.Finalize();
     
     return nullifier;
 }
