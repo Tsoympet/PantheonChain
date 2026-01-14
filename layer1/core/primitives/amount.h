@@ -6,6 +6,7 @@
 #define PARTHENON_PRIMITIVES_AMOUNT_H
 
 #include <cstdint>
+#include <cstddef>  // Workaround for macOS Xcode 16.4 ptrdiff_t issue
 #include <optional>
 #include <string>
 
