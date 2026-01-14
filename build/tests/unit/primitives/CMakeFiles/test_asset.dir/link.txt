@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -Wextra -Wpedantic -Werror -O3 -DNDEBUG -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_asset.dir/link.d CMakeFiles/test_asset.dir/test_asset.cpp.o -o test_asset  ../../../layer1/core/libparthenon_primitives.a ../../../layer1/core/libparthenon_consensus.a ../../../layer1/core/libparthenon_crypto.a ../../../third_party/secp256k1/lib/libsecp256k1.a

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libparthenon_storage.a CMakeFiles/parthenon_storage.dir/block_storage.cpp.o CMakeFiles/parthenon_storage.dir/utxo_storage.cpp.o
+/usr/bin/ranlib libparthenon_storage.a

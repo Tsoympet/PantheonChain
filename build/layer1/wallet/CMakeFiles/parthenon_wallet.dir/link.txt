@@ -1,0 +1,2 @@
+/usr/bin/ar qc libparthenon_wallet.a CMakeFiles/parthenon_wallet.dir/wallet.cpp.o CMakeFiles/parthenon_wallet.dir/hardware/hardware_wallet.cpp.o
+/usr/bin/ranlib libparthenon_wallet.a

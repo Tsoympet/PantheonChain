@@ -1,0 +1,2 @@
+/usr/bin/ar qc libparthenon_primitives.a CMakeFiles/parthenon_primitives.dir/primitives/amount.cpp.o CMakeFiles/parthenon_primitives.dir/primitives/asset.cpp.o CMakeFiles/parthenon_primitives.dir/primitives/transaction.cpp.o CMakeFiles/parthenon_primitives.dir/primitives/block.cpp.o
+/usr/bin/ranlib libparthenon_primitives.a

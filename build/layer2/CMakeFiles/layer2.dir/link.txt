@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblayer2.a CMakeFiles/layer2.dir/bridges/channels/payment_channel.cpp.o CMakeFiles/layer2.dir/bridges/htlc/htlc.cpp.o CMakeFiles/layer2.dir/bridges/spv/spv_bridge.cpp.o CMakeFiles/layer2.dir/indexers/tx_indexer/tx_indexer.cpp.o CMakeFiles/layer2.dir/indexers/contract_indexer/contract_indexer.cpp.o CMakeFiles/layer2.dir/apis/graphql/graphql_api.cpp.o CMakeFiles/layer2.dir/apis/websocket/websocket_api.cpp.o
+/usr/bin/ranlib liblayer2.a

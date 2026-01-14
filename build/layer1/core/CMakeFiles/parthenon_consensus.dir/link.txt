@@ -1,0 +1,2 @@
+/usr/bin/ar qc libparthenon_consensus.a CMakeFiles/parthenon_consensus.dir/consensus/difficulty.cpp.o CMakeFiles/parthenon_consensus.dir/consensus/issuance.cpp.o
+/usr/bin/ranlib libparthenon_consensus.a

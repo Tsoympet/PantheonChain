@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -Wextra -Wpedantic -Werror -O3 -DNDEBUG -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/parthenon-qt.dir/link.d "CMakeFiles/parthenon-qt.dir/gui/main.cpp.o" -o parthenon-qt

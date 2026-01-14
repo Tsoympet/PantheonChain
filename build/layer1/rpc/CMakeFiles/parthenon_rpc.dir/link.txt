@@ -1,0 +1,2 @@
+/usr/bin/ar qc libparthenon_rpc.a CMakeFiles/parthenon_rpc.dir/rpc_server.cpp.o
+/usr/bin/ranlib libparthenon_rpc.a

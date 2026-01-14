@@ -426,14 +426,21 @@ Stay connected with the ParthenonChain community:
 ✅ EVM-compatible smart contracts  
 ✅ P2P networking and mining  
 ✅ RPC server and CLI wallet  
+✅ Hardware wallet integration (Ledger, Trezor, KeepKey)  
+✅ GraphQL and WebSocket APIs  
+✅ SPV light client support  
+✅ Lightning-style payment channels  
+✅ Cross-chain atomic swaps (HTLC)  
+✅ Desktop wallet application (Qt-based)  
+✅ Mobile wallet application (React Native)  
 
 ### Upcoming Features
-- 🔜 Hardware wallet integration
-- 🔜 GraphQL and WebSocket APIs
-- 🔜 SPV light client support
-- 🔜 Lightning-style payment channels
-- 🔜 Cross-chain atomic swaps
-- 🔜 Desktop and mobile wallet applications
+- 🔜 Multi-signature wallet support
+- 🔜 Enhanced privacy features (CoinJoin)
+- 🔜 Decentralized exchange integration
+- 🔜 Advanced smart contract debugging tools
+- 🔜 Blockchain explorer web interface
+- 🔜 Hardware wallet firmware verification
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and [docs/RELEASES.md](docs/RELEASES.md) for the full roadmap.
 

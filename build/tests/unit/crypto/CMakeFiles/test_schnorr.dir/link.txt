@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -Wextra -Wpedantic -Werror -O3 -DNDEBUG -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_schnorr.dir/link.d CMakeFiles/test_schnorr.dir/test_schnorr.cpp.o -o test_schnorr  ../../../layer1/core/libparthenon_crypto.a ../../../third_party/secp256k1/lib/libsecp256k1.a

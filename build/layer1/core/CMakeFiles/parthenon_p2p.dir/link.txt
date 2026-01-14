@@ -1,0 +1,2 @@
+/usr/bin/ar qc libparthenon_p2p.a CMakeFiles/parthenon_p2p.dir/p2p/protocol.cpp.o CMakeFiles/parthenon_p2p.dir/p2p/message.cpp.o CMakeFiles/parthenon_p2p.dir/p2p/peer_database.cpp.o CMakeFiles/parthenon_p2p.dir/p2p/peer_discovery.cpp.o
+/usr/bin/ranlib libparthenon_p2p.a
