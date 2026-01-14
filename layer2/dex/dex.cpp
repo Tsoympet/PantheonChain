@@ -27,9 +27,6 @@ std::vector<uint8_t> OrderBook::PlaceOrder(const Order& order) {
     }
 
     Order new_order = order;
-    auto hash = crypto::SHA256::Hash256(
-        std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(&order),
-                             reinterpret_cast<const uint8_t*>(&order) + sizeof(Order)));
     // Serialize order data safely instead of using reinterpret_cast on struct
     std::vector<uint8_t> order_data;
     order_data.reserve(sizeof(uint64_t) * 3 + order.trader_pubkey.size());
@@ -91,9 +88,6 @@ std::vector<Trade> OrderBook::MatchOrders() {
         uint64_t trade_price = sell_order.price;
 
         Trade trade;
-        auto hash = crypto::SHA256::Hash256(std::vector<uint8_t>(
-            reinterpret_cast<const uint8_t*>(&trade_amount),
-            reinterpret_cast<const uint8_t*>(&trade_amount) + sizeof(uint64_t)));
         // Serialize trade data safely instead of using reinterpret_cast on primitive
         std::vector<uint8_t> trade_data;
         trade_data.reserve(sizeof(uint64_t) * 2);
@@ -198,7 +192,23 @@ std::optional<Order> OrderBook::GetOrder(const std::vector<uint8_t>& order_id) c
 }
 
 bool OrderBook::ValidateOrder(const Order& order) const {
-    return order.amount > 0 && order.price > 0;
+    // Basic validation
+    if (order.amount == 0 || order.price == 0) {
+        return false;
+    }
+    
+    // Validate assets match this order book
+    if (order.base_asset != base_asset_ || order.quote_asset != quote_asset_) {
+        return false;
+    }
+    
+    // Validate order type
+    if (order.type != OrderType::LIMIT_BUY && order.type != OrderType::LIMIT_SELL &&
+        order.type != OrderType::MARKET_BUY && order.type != OrderType::MARKET_SELL) {
+        return false;
+    }
+    
+    return true;
 }
 
 void OrderBook::RemoveOrder(const std::vector<uint8_t>& order_id) {
@@ -516,11 +526,6 @@ std::vector<Trade> DEXManager::GetRecentTrades(primitives::AssetID base, primiti
 
 uint64_t DEXManager::Get24HVolume(primitives::AssetID base, primitives::AssetID quote) const {
     uint64_t now = static_cast<uint64_t>(std::time(nullptr));
-    uint64_t day_ago = now - 86400;
-
-    uint64_t volume = 0;
-    for (const auto& trade : trade_history_) {
-        if (trade.base_asset == base && trade.quote_asset == quote && trade.timestamp >= day_ago) {
     
     // Check for underflow
     uint64_t day_ago = (now >= 86400) ? (now - 86400) : 0;
