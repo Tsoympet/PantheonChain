@@ -42,7 +42,10 @@ PeerDiscovery::PeerDiscovery(PeerDatabase& peer_db)
 #ifdef _WIN32
     // Initialize WinSock for Windows networking
     WSADATA wsa_data;
-    WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    int result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    // WSAStartup returns 0 on success, non-zero on failure
+    // If initialization fails, networking operations will fail gracefully later
+    (void)result;  // Suppress unused variable warning in release builds
 #endif
 }
 
