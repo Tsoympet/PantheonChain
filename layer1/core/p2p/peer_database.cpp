@@ -1,10 +1,11 @@
 // ParthenonChain - Peer Address Database Implementation
 
 #include "peer_database.h"
-#include <fstream>
-#include <sstream>
+
 #include <algorithm>
 #include <cstring>
+#include <fstream>
+#include <sstream>
 
 namespace parthenon {
 namespace p2p {
@@ -17,71 +18,63 @@ PeerDatabase::~PeerDatabase() {
 
 bool PeerDatabase::Open(const std::string& db_path) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     db_path_ = db_path;
-    
+
     // Load existing peers from file
     std::ifstream file(db_path_, std::ios::binary);
     if (file.is_open()) {
         std::string line;
         while (std::getline(file, line)) {
-            if (line.empty() || line[0] == '#') continue;
-            
+            if (line.empty() || line[0] == '#')
+                continue;
+
             std::istringstream iss(line);
             PeerInfo info;
             std::string key;
-            
-            if (iss >> key >> info.address >> info.port >> info.services >>
-                info.last_seen >> info.first_seen >> info.connection_attempts >>
-                info.successful_connections >> info.failed_connections >>
-                info.is_banned >> info.ban_until >> info.score >>
-                info.blocks_received >> info.txs_received >>
-                info.invalid_messages >> info.protocol_violations) {
+
+            if (iss >> key >> info.address >> info.port >> info.services >> info.last_seen >>
+                info.first_seen >> info.connection_attempts >> info.successful_connections >>
+                info.failed_connections >> info.is_banned >> info.ban_until >> info.score >>
+                info.blocks_received >> info.txs_received >> info.invalid_messages >>
+                info.protocol_violations) {
                 peers_[key] = info;
             }
         }
         file.close();
     }
-    
+
     is_open_ = true;
     return true;
 }
 
 void PeerDatabase::Close() {
     std::lock_guard<std::mutex> lock(mutex_);
-    
-    if (!is_open_) return;
-    
+
+    if (!is_open_)
+        return;
+
     // Save all peers to file
     std::ofstream file(db_path_, std::ios::binary | std::ios::trunc);
     if (file.is_open()) {
         file << "# PantheonChain Peer Database\n";
-        file << "# Format: key address port services last_seen first_seen attempts success fails banned ban_until score blocks txs invalid violations\n";
-        
+        file << "# Format: key address port services last_seen first_seen attempts success fails "
+                "banned ban_until score blocks txs invalid violations\n";
+
         for (const auto& pair : peers_) {
             const auto& key = pair.first;
             const auto& info = pair.second;
-            
-            file << key << " "
-                 << info.address << " "
-                 << info.port << " "
-                 << info.services << " "
-                 << info.last_seen << " "
-                 << info.first_seen << " "
-                 << info.connection_attempts << " "
-                 << info.successful_connections << " "
-                 << info.failed_connections << " "
-                 << info.is_banned << " "
-                 << info.ban_until << " "
-                 << info.score << " "
-                 << info.blocks_received << " "
-                 << info.txs_received << " "
-                 << info.invalid_messages << " "
-                 << info.protocol_violations << "\n";
+
+            file << key << " " << info.address << " " << info.port << " " << info.services << " "
+                 << info.last_seen << " " << info.first_seen << " " << info.connection_attempts
+                 << " " << info.successful_connections << " " << info.failed_connections << " "
+                 << info.is_banned << " " << info.ban_until << " " << info.score << " "
+                 << info.blocks_received << " " << info.txs_received << " " << info.invalid_messages
+                 << " " << info.protocol_violations << "\n";
         }
         file.close();
     }
-    
+
     is_open_ = false;
 }
 
@@ -91,7 +84,7 @@ std::string PeerDatabase::MakeKey(const std::string& address, uint16_t port) {
 
 void PeerDatabase::AddPeer(const std::string& address, uint16_t port, uint64_t services) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     std::string key = MakeKey(address, port);
     if (peers_.find(key) == peers_.end()) {
         PeerInfo info;
@@ -100,7 +93,7 @@ void PeerDatabase::AddPeer(const std::string& address, uint16_t port, uint64_t s
         info.services = services;
         info.first_seen = std::time(nullptr);
         info.last_seen = info.first_seen;
-        info.score = 50.0; // Start with neutral score
+        info.score = 50.0;  // Start with neutral score
         peers_[key] = info;
     }
 }
@@ -124,44 +117,42 @@ bool PeerDatabase::GetPeer(const std::string& address, uint16_t port, PeerInfo& 
 
 std::vector<PeerInfo> PeerDatabase::GetPeers(size_t max_count) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     std::vector<PeerInfo> result;
     result.reserve(std::min(max_count, peers_.size()));
-    
+
     for (const auto& pair : peers_) {
-        if (result.size() >= max_count) break;
+        if (result.size() >= max_count)
+            break;
         result.push_back(pair.second);
     }
-    
+
     return result;
 }
 
 std::vector<PeerInfo> PeerDatabase::GetGoodPeers(size_t max_count) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     std::vector<PeerInfo> all_peers;
     time_t now = std::time(nullptr);
-    
+
     for (const auto& pair : peers_) {
         const auto& info = pair.second;
         // Filter out banned peers and peers with bad scores
-        if (!info.is_banned && info.score > 25.0 &&
-            (info.ban_until == 0 || info.ban_until < now)) {
+        if (!info.is_banned && info.score > 25.0 && (info.ban_until == 0 || info.ban_until < now)) {
             all_peers.push_back(info);
         }
     }
-    
+
     // Sort by score (highest first)
     std::sort(all_peers.begin(), all_peers.end(),
-              [](const PeerInfo& a, const PeerInfo& b) {
-                  return a.score > b.score;
-              });
-    
+              [](const PeerInfo& a, const PeerInfo& b) { return a.score > b.score; });
+
     // Return top peers
     if (all_peers.size() > max_count) {
         all_peers.resize(max_count);
     }
-    
+
     return all_peers;
 }
 
@@ -180,7 +171,8 @@ void PeerDatabase::RecordSuccessfulConnection(const std::string& address, uint16
     info.last_seen = std::time(nullptr);
     // Reward successful connections
     info.score += 5.0;
-    if (info.score > 100.0) info.score = 100.0;
+    if (info.score > 100.0)
+        info.score = 100.0;
 }
 
 void PeerDatabase::RecordFailedConnection(const std::string& address, uint16_t port) {
@@ -190,7 +182,8 @@ void PeerDatabase::RecordFailedConnection(const std::string& address, uint16_t p
     info.failed_connections++;
     // Penalize failed connections
     info.score -= 2.0;
-    if (info.score < 0.0) info.score = 0.0;
+    if (info.score < 0.0)
+        info.score = 0.0;
 }
 
 void PeerDatabase::UpdateLastSeen(const std::string& address, uint16_t port) {
@@ -206,7 +199,7 @@ void PeerDatabase::BanPeer(const std::string& address, uint16_t port, time_t dur
     auto& info = peers_[key];
     info.is_banned = true;
     info.ban_until = std::time(nullptr) + duration_seconds;
-    info.score = 0.0; // Reset score to minimum
+    info.score = 0.0;  // Reset score to minimum
 }
 
 void PeerDatabase::UnbanPeer(const std::string& address, uint16_t port) {
@@ -215,7 +208,7 @@ void PeerDatabase::UnbanPeer(const std::string& address, uint16_t port) {
     auto& info = peers_[key];
     info.is_banned = false;
     info.ban_until = 0;
-    info.score = 25.0; // Reset to low but non-zero score
+    info.score = 25.0;  // Reset to low but non-zero score
 }
 
 bool PeerDatabase::IsBanned(const std::string& address, uint16_t port) {
@@ -240,8 +233,10 @@ void PeerDatabase::UpdateScore(const std::string& address, uint16_t port, double
     std::string key = MakeKey(address, port);
     auto& info = peers_[key];
     info.score += delta;
-    if (info.score < 0.0) info.score = 0.0;
-    if (info.score > 100.0) info.score = 100.0;
+    if (info.score < 0.0)
+        info.score = 0.0;
+    if (info.score > 100.0)
+        info.score = 100.0;
 }
 
 void PeerDatabase::RecordBlockReceived(const std::string& address, uint16_t port) {
@@ -249,8 +244,9 @@ void PeerDatabase::RecordBlockReceived(const std::string& address, uint16_t port
     std::string key = MakeKey(address, port);
     auto& info = peers_[key];
     info.blocks_received++;
-    info.score += 1.0; // Reward block sharing
-    if (info.score > 100.0) info.score = 100.0;
+    info.score += 1.0;  // Reward block sharing
+    if (info.score > 100.0)
+        info.score = 100.0;
 }
 
 void PeerDatabase::RecordTxReceived(const std::string& address, uint16_t port) {
@@ -258,8 +254,9 @@ void PeerDatabase::RecordTxReceived(const std::string& address, uint16_t port) {
     std::string key = MakeKey(address, port);
     auto& info = peers_[key];
     info.txs_received++;
-    info.score += 0.1; // Small reward for tx sharing
-    if (info.score > 100.0) info.score = 100.0;
+    info.score += 0.1;  // Small reward for tx sharing
+    if (info.score > 100.0)
+        info.score = 100.0;
 }
 
 void PeerDatabase::RecordInvalidMessage(const std::string& address, uint16_t port) {
@@ -267,8 +264,9 @@ void PeerDatabase::RecordInvalidMessage(const std::string& address, uint16_t por
     std::string key = MakeKey(address, port);
     auto& info = peers_[key];
     info.invalid_messages++;
-    info.score -= 5.0; // Penalty for invalid messages
-    if (info.score < 0.0) info.score = 0.0;
+    info.score -= 5.0;  // Penalty for invalid messages
+    if (info.score < 0.0)
+        info.score = 0.0;
 }
 
 void PeerDatabase::RecordProtocolViolation(const std::string& address, uint16_t port) {
@@ -276,13 +274,14 @@ void PeerDatabase::RecordProtocolViolation(const std::string& address, uint16_t 
     std::string key = MakeKey(address, port);
     auto& info = peers_[key];
     info.protocol_violations++;
-    info.score -= 10.0; // Heavy penalty for protocol violations
-    if (info.score < 0.0) info.score = 0.0;
-    
+    info.score -= 10.0;  // Heavy penalty for protocol violations
+    if (info.score < 0.0)
+        info.score = 0.0;
+
     // Auto-ban peers with too many violations
     if (info.protocol_violations >= 5) {
         info.is_banned = true;
-        info.ban_until = std::time(nullptr) + 86400; // Ban for 24 hours
+        info.ban_until = std::time(nullptr) + 86400;  // Ban for 24 hours
     }
 }
 
@@ -296,8 +295,7 @@ size_t PeerDatabase::GetBannedCount() {
     size_t count = 0;
     time_t now = std::time(nullptr);
     for (const auto& pair : peers_) {
-        if (pair.second.is_banned && 
-            (pair.second.ban_until == 0 || pair.second.ban_until >= now)) {
+        if (pair.second.is_banned && (pair.second.ban_until == 0 || pair.second.ban_until >= now)) {
             count++;
         }
     }
@@ -305,10 +303,8 @@ size_t PeerDatabase::GetBannedCount() {
 }
 
 void PeerDatabase::SetPeerGeolocation(const std::string& address, uint16_t port,
-                                       const std::string& country_code,
-                                       const std::string& asn,
-                                       double latitude, double longitude,
-                                       const std::string& isp) {
+                                      const std::string& country_code, const std::string& asn,
+                                      double latitude, double longitude, const std::string& isp) {
     std::lock_guard<std::mutex> lock(mutex_);
     std::string key = MakeKey(address, port);
     auto& info = peers_[key];
@@ -322,94 +318,90 @@ void PeerDatabase::SetPeerGeolocation(const std::string& address, uint16_t port,
 std::map<std::string, size_t> PeerDatabase::GetCountryDistribution() {
     std::lock_guard<std::mutex> lock(mutex_);
     std::map<std::string, size_t> distribution;
-    
+
     for (const auto& pair : peers_) {
         if (!pair.second.country_code.empty()) {
             distribution[pair.second.country_code]++;
         }
     }
-    
+
     return distribution;
 }
 
 std::map<std::string, size_t> PeerDatabase::GetASNDistribution() {
     std::lock_guard<std::mutex> lock(mutex_);
     std::map<std::string, size_t> distribution;
-    
+
     for (const auto& pair : peers_) {
         if (!pair.second.asn.empty()) {
             distribution[pair.second.asn]++;
         }
     }
-    
+
     return distribution;
 }
 
 std::vector<PeerInfo> PeerDatabase::GetGeographicallyDiversePeers(size_t max_count) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     std::vector<PeerInfo> candidates;
     time_t now = std::time(nullptr);
-    
+
     // Filter: not banned, good score, has geolocation
     for (const auto& pair : peers_) {
         const auto& info = pair.second;
-        if (!info.is_banned && 
-            (info.ban_until == 0 || info.ban_until < now) &&
-            info.score >= 25.0 &&
-            !info.country_code.empty()) {
+        if (!info.is_banned && (info.ban_until == 0 || info.ban_until < now) &&
+            info.score >= 25.0 && !info.country_code.empty()) {
             candidates.push_back(info);
         }
     }
-    
+
     if (candidates.size() <= max_count) {
         return candidates;
     }
-    
+
     // Diversity selection algorithm:
     // 1. Group by country
     // 2. Select peers evenly from different countries
     // 3. Within each country, select by highest score
-    
+
     std::map<std::string, std::vector<PeerInfo>> by_country;
     for (const auto& peer : candidates) {
         by_country[peer.country_code].push_back(peer);
     }
-    
+
     // Sort each country's peers by score
     for (auto& pair : by_country) {
         std::sort(pair.second.begin(), pair.second.end(),
-                  [](const PeerInfo& a, const PeerInfo& b) {
-                      return a.score > b.score;
-                  });
+                  [](const PeerInfo& a, const PeerInfo& b) { return a.score > b.score; });
     }
-    
+
     // Round-robin selection from countries
     std::vector<PeerInfo> result;
     size_t index = 0;
-    
+
     while (result.size() < max_count) {
         bool added = false;
-        
+
         for (auto& pair : by_country) {
             if (index < pair.second.size()) {
                 result.push_back(pair.second[index]);
                 added = true;
-                
+
                 if (result.size() >= max_count) {
                     break;
                 }
             }
         }
-        
+
         if (!added) {
-            break; // No more peers available
+            break;  // No more peers available
         }
         index++;
     }
-    
+
     return result;
 }
 
-} // namespace p2p
-} // namespace parthenon
+}  // namespace p2p
+}  // namespace parthenon

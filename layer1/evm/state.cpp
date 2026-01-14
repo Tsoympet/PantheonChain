@@ -1,8 +1,11 @@
 // ParthenonChain - EVM State Implementation
 
 #include "state.h"
-#include "mpt.h"
+
 #include "crypto/sha256.h"
+
+#include "mpt.h"
+
 #include <algorithm>
 #include <cstring>
 
@@ -29,14 +32,14 @@ uint256_t WorldState::GetStorage(const Address& addr, const uint256_t& key) cons
     auto storage_key = std::make_pair(addr, key);
     auto it = storage_.find(storage_key);
     if (it == storage_.end()) {
-        return uint256_t{}; // Return zero if not set
+        return uint256_t{};  // Return zero if not set
     }
     return it->second;
 }
 
 void WorldState::SetStorage(const Address& addr, const uint256_t& key, const uint256_t& value) {
     auto storage_key = std::make_pair(addr, key);
-    
+
     // Check if value is zero - if so, delete the entry
     bool is_zero = true;
     for (uint8_t byte : value) {
@@ -45,7 +48,7 @@ void WorldState::SetStorage(const Address& addr, const uint256_t& key, const uin
             break;
         }
     }
-    
+
     if (is_zero) {
         storage_.erase(storage_key);
     } else {
@@ -64,7 +67,7 @@ std::vector<uint8_t> WorldState::GetCode(const Address& addr) const {
 void WorldState::SetCode(const Address& addr, const std::vector<uint8_t>& code) {
     auto& account = accounts_[addr];
     account.code = code;
-    
+
     // Update code hash
     if (code.empty()) {
         account.code_hash = std::array<uint8_t, 32>{};
@@ -103,7 +106,7 @@ void WorldState::SetNonce(const Address& addr, uint64_t nonce) {
 void WorldState::DeleteAccount(const Address& addr) {
     // Remove account
     accounts_.erase(addr);
-    
+
     // Remove all storage entries for this account
     auto it = storage_.begin();
     while (it != storage_.end()) {
@@ -118,28 +121,29 @@ void WorldState::DeleteAccount(const Address& addr) {
 std::array<uint8_t, 32> WorldState::CalculateStateRoot() const {
     // Production-grade Merkle Patricia Trie state root calculation
     // Implements Ethereum-compatible MPT structure
-    
+
     MerklePatriciaTrie trie;
-    
+
     // Insert all accounts into the MPT
     for (const auto& [addr, account] : accounts_) {
         // Create account key (address as bytes)
         std::vector<uint8_t> account_key(addr.begin(), addr.end());
-        
+
         // Build account value (nonce + balance + code_hash + storage_root)
         std::vector<uint8_t> account_value;
-        
+
         // Nonce (8 bytes, little-endian)
         for (int i = 0; i < 8; i++) {
             account_value.push_back(static_cast<uint8_t>((account.nonce >> (i * 8)) & 0xFF));
         }
-        
+
         // Balance (32 bytes)
         account_value.insert(account_value.end(), account.balance.begin(), account.balance.end());
-        
+
         // Code hash (32 bytes)
-        account_value.insert(account_value.end(), account.code_hash.begin(), account.code_hash.end());
-        
+        account_value.insert(account_value.end(), account.code_hash.begin(),
+                             account.code_hash.end());
+
         // Storage root - build MPT for account's storage
         MerklePatriciaTrie storage_trie;
         for (const auto& [key_pair, value] : storage_) {
@@ -151,11 +155,11 @@ std::array<uint8_t, 32> WorldState::CalculateStateRoot() const {
         }
         auto storage_root = storage_trie.GetRootHash();
         account_value.insert(account_value.end(), storage_root.begin(), storage_root.end());
-        
+
         // Insert account into main trie
         trie.Put(account_key, account_value);
     }
-    
+
     // Return the root hash of the account trie
     return trie.GetRootHash();
 }
@@ -172,5 +176,5 @@ void WorldState::RestoreSnapshot(const Snapshot& snapshot) {
     storage_ = snapshot.storage;
 }
 
-} // namespace evm
-} // namespace parthenon
+}  // namespace evm
+}  // namespace parthenon

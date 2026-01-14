@@ -5,10 +5,10 @@
 #ifndef PARTHENON_CRYPTO_SCHNORR_H
 #define PARTHENON_CRYPTO_SCHNORR_H
 
-#include <cstdint>
 #include <array>
-#include <vector>
+#include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace parthenon {
 namespace crypto {
@@ -19,11 +19,11 @@ namespace crypto {
  * All operations are deterministic and consensus-critical
  */
 class Schnorr {
-public:
+  public:
     static constexpr size_t PRIVATE_KEY_SIZE = 32;
-    static constexpr size_t PUBLIC_KEY_SIZE = 32;  // x-only public key
-    static constexpr size_t SIGNATURE_SIZE = 64;   // (r, s) where r and s are 32 bytes each
-    static constexpr size_t FULL_PUBLIC_KEY_SIZE = 33; // Compressed public key (with prefix)
+    static constexpr size_t PUBLIC_KEY_SIZE = 32;       // x-only public key
+    static constexpr size_t SIGNATURE_SIZE = 64;        // (r, s) where r and s are 32 bytes each
+    static constexpr size_t FULL_PUBLIC_KEY_SIZE = 33;  // Compressed public key (with prefix)
 
     using PrivateKey = std::array<uint8_t, PRIVATE_KEY_SIZE>;
     using PublicKey = std::array<uint8_t, PUBLIC_KEY_SIZE>;
@@ -40,21 +40,17 @@ public:
      * msg_hash must be exactly 32 bytes
      * Returns signature (r || s) where r and s are 32 bytes each
      */
-    static std::optional<Signature> Sign(
-        const PrivateKey& privkey,
-        const uint8_t* msg_hash,
-        const uint8_t* aux_rand = nullptr  // Optional 32-byte auxiliary randomness
+    static std::optional<Signature>
+    Sign(const PrivateKey& privkey, const uint8_t* msg_hash,
+         const uint8_t* aux_rand = nullptr  // Optional 32-byte auxiliary randomness
     );
 
     /**
      * Verify a Schnorr signature
      * msg_hash must be exactly 32 bytes
      */
-    static bool Verify(
-        const PublicKey& pubkey,
-        const uint8_t* msg_hash,
-        const Signature& signature
-    );
+    static bool Verify(const PublicKey& pubkey, const uint8_t* msg_hash,
+                       const Signature& signature);
 
     /**
      * Validate a private key
@@ -68,13 +64,13 @@ public:
      */
     static bool ValidatePublicKey(const PublicKey& pubkey);
 
-private:
+  private:
     // Internal secp256k1 context management
     static void* GetContext();
     static void CleanupContext();
 };
 
-} // namespace crypto
-} // namespace parthenon
+}  // namespace crypto
+}  // namespace parthenon
 
-#endif // PARTHENON_CRYPTO_SCHNORR_H
+#endif  // PARTHENON_CRYPTO_SCHNORR_H

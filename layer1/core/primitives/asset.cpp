@@ -9,7 +9,7 @@ namespace primitives {
 void AssetAmount::Serialize(uint8_t* output) const {
     // Byte 0: Asset ID
     output[0] = static_cast<uint8_t>(asset);
-    
+
     // Bytes 1-8: Amount (little-endian)
     output[1] = static_cast<uint8_t>(amount);
     output[2] = static_cast<uint8_t>(amount >> 8);
@@ -23,10 +23,10 @@ void AssetAmount::Serialize(uint8_t* output) const {
 
 AssetAmount AssetAmount::Deserialize(const uint8_t* input) {
     AssetAmount result;
-    
+
     // Byte 0: Asset ID
     result.asset = static_cast<AssetID>(input[0]);
-    
+
     // Bytes 1-8: Amount (little-endian)
     result.amount = 0;
     result.amount |= static_cast<uint64_t>(input[1]);
@@ -37,9 +37,9 @@ AssetAmount AssetAmount::Deserialize(const uint8_t* input) {
     result.amount |= static_cast<uint64_t>(input[6]) << 40;
     result.amount |= static_cast<uint64_t>(input[7]) << 48;
     result.amount |= static_cast<uint64_t>(input[8]) << 56;
-    
+
     return result;
 }
 
-} // namespace primitives
-} // namespace parthenon
+}  // namespace primitives
+}  // namespace parthenon

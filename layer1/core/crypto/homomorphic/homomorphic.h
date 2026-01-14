@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <vector>
-#include <cstdint>
 #include <array>
+#include <cstdint>
+#include <vector>
 
 namespace parthenon {
 namespace crypto {
@@ -17,7 +17,7 @@ namespace homomorphic {
 struct Ciphertext {
     std::vector<uint64_t> coefficients;
     uint32_t noise_budget;
-    
+
     Ciphertext() : noise_budget(0) {}
 };
 
@@ -40,40 +40,40 @@ struct SecretKey {
  * Brakerski-Fan-Vercauteren scheme
  */
 class BFVEncryption {
-public:
+  public:
     BFVEncryption();
-    
+
     /**
      * Generate key pair
      */
     void GenerateKeys(PublicKey& public_key, SecretKey& secret_key);
-    
+
     /**
      * Encrypt plaintext
      */
     Ciphertext Encrypt(uint64_t plaintext, const PublicKey& public_key);
-    
+
     /**
      * Decrypt ciphertext
      */
     uint64_t Decrypt(const Ciphertext& ciphertext, const SecretKey& secret_key);
-    
+
     /**
      * Homomorphic addition
      */
     Ciphertext Add(const Ciphertext& a, const Ciphertext& b);
-    
+
     /**
      * Homomorphic multiplication
      */
     Ciphertext Multiply(const Ciphertext& a, const Ciphertext& b);
-    
+
     /**
      * Homomorphic subtraction
      */
     Ciphertext Subtract(const Ciphertext& a, const Ciphertext& b);
-    
-private:
+
+  private:
     uint64_t plain_modulus_;
     uint64_t coeff_modulus_;
 };
@@ -83,19 +83,19 @@ private:
  * Cheon-Kim-Kim-Song scheme for approximate arithmetic
  */
 class CKKSEncryption {
-public:
+  public:
     CKKSEncryption();
-    
+
     /**
      * Encrypt floating point number
      */
     Ciphertext Encrypt(double plaintext, const PublicKey& public_key);
-    
+
     /**
      * Decrypt to floating point
      */
     double Decrypt(const Ciphertext& ciphertext, const SecretKey& secret_key);
-    
+
     /**
      * Homomorphic operations on approximate numbers
      */
@@ -108,31 +108,28 @@ public:
  * Execute functions on encrypted data
  */
 class HomomorphicCompute {
-public:
+  public:
     /**
      * Compute sum of encrypted values
      */
     Ciphertext Sum(const std::vector<Ciphertext>& values);
-    
+
     /**
      * Compute average of encrypted values
      */
     Ciphertext Average(const std::vector<Ciphertext>& values);
-    
+
     /**
      * Compare encrypted values (returns encrypted result)
      */
     Ciphertext Compare(const Ciphertext& a, const Ciphertext& b);
-    
+
     /**
      * Polynomial evaluation on encrypted data
      */
-    Ciphertext EvaluatePolynomial(
-        const Ciphertext& x,
-        const std::vector<uint64_t>& coefficients
-    );
+    Ciphertext EvaluatePolynomial(const Ciphertext& x, const std::vector<uint64_t>& coefficients);
 };
 
-} // namespace homomorphic
-} // namespace crypto
-} // namespace parthenon
+}  // namespace homomorphic
+}  // namespace crypto
+}  // namespace parthenon

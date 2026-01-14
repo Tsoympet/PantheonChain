@@ -1,7 +1,9 @@
 // ParthenonChain - EVM Virtual Machine Implementation
 
 #include "vm.h"
+
 #include "crypto/sha256.h"
+
 #include <algorithm>
 #include <cstring>
 #include <stdexcept>
@@ -9,8 +11,7 @@
 namespace parthenon {
 namespace evm {
 
-VM::VM(WorldState& state, const ExecutionContext& ctx)
-    : state_(state), ctx_(ctx), gas_used_(0) {
+VM::VM(WorldState& state, const ExecutionContext& ctx) : state_(state), ctx_(ctx), gas_used_(0) {
     stack_.reserve(MAX_STACK_SIZE);
 }
 
@@ -59,11 +60,11 @@ void VM::ExpandMemory(uint64_t size) {
         uint64_t old_words = (memory_.size() + 31) / 32;
         uint64_t new_words = (size + 31) / 32;
         uint64_t expansion_cost = (new_words - old_words) * 3;
-        
+
         if (!UseGas(expansion_cost)) {
             throw std::runtime_error("Out of gas during memory expansion");
         }
-        
+
         memory_.resize(size, 0);
     }
 }
@@ -104,14 +105,14 @@ uint64_t VM::GetGasRemaining() const {
 uint256_t VM::Add(const uint256_t& a, const uint256_t& b) const {
     uint256_t result{};
     uint16_t carry = 0;
-    
+
     // Process bytes from least significant (index 31) to most significant (index 0)
     for (int i = 31; i >= 0; i--) {
         uint16_t sum = static_cast<uint16_t>(a[i]) + static_cast<uint16_t>(b[i]) + carry;
         result[i] = static_cast<uint8_t>(sum & 0xFF);
         carry = sum >> 8;
     }
-    
+
     // Note: Overflow is allowed in EVM (wraps around modulo 2^256)
     return result;
 }
@@ -119,7 +120,7 @@ uint256_t VM::Add(const uint256_t& a, const uint256_t& b) const {
 uint256_t VM::Sub(const uint256_t& a, const uint256_t& b) const {
     uint256_t result{};
     int16_t borrow = 0;
-    
+
     // Process bytes from least significant (index 31) to most significant (index 0)
     for (int i = 31; i >= 0; i--) {
         int16_t diff = static_cast<int16_t>(a[i]) - static_cast<int16_t>(b[i]) - borrow;
@@ -131,7 +132,7 @@ uint256_t VM::Sub(const uint256_t& a, const uint256_t& b) const {
         }
         result[i] = static_cast<uint8_t>(diff);
     }
-    
+
     // Note: Underflow wraps around modulo 2^256 (two's complement)
     return result;
 }
@@ -139,34 +140,37 @@ uint256_t VM::Sub(const uint256_t& a, const uint256_t& b) const {
 uint256_t VM::Mul(const uint256_t& a, const uint256_t& b) const {
     // Use long multiplication algorithm for 256-bit values
     uint256_t result{};
-    
+
     // For each byte in b (multiplier)
     for (int i = 31; i >= 0; i--) {
-        if (b[i] == 0) continue;
-        
+        if (b[i] == 0)
+            continue;
+
         uint16_t carry = 0;
         // Multiply each byte of a by b[i]
         for (int j = 31; j >= 0; j--) {
             int result_idx = j + (31 - i);
-            if (result_idx >= 32) continue; // Skip overflow
-            
-            uint32_t product = static_cast<uint32_t>(a[j]) * static_cast<uint32_t>(b[i]) + 
+            if (result_idx >= 32)
+                continue;  // Skip overflow
+
+            uint32_t product = static_cast<uint32_t>(a[j]) * static_cast<uint32_t>(b[i]) +
                                static_cast<uint32_t>(result[result_idx]) + carry;
             result[result_idx] = static_cast<uint8_t>(product & 0xFF);
             carry = static_cast<uint16_t>(product >> 8);
         }
     }
-    
+
     return result;
 }
 
 uint256_t VM::Div(const uint256_t& a, const uint256_t& b) const {
-    if (IsZero(b)) return uint256_t{}; // Division by zero returns 0 in EVM
-    
+    if (IsZero(b))
+        return uint256_t{};  // Division by zero returns 0 in EVM
+
     // Use long division algorithm for 256-bit values
     uint256_t quotient{};
     uint256_t remainder{};
-    
+
     // Process bits from most significant to least significant
     for (int i = 0; i < 256; i++) {
         // Shift remainder left by 1
@@ -176,36 +180,37 @@ uint256_t VM::Div(const uint256_t& a, const uint256_t& b) const {
             remainder[j] = static_cast<uint8_t>(shifted & 0xFF);
             carry = shifted >> 8;
         }
-        
+
         // Add current bit of dividend to remainder
         int byte_idx = i / 8;
         int bit_idx = 7 - (i % 8);
         if ((a[byte_idx] >> bit_idx) & 1) {
             remainder[31] |= 1;
         }
-        
+
         // Check if remainder >= divisor
         bool ge = !Lt(remainder, b);
         if (ge) {
             // Subtract divisor from remainder
             remainder = Sub(remainder, b);
-            
+
             // Set bit in quotient
             int quot_byte = i / 8;
             int quot_bit = 7 - (i % 8);
             quotient[quot_byte] |= (1 << quot_bit);
         }
     }
-    
+
     return quotient;
 }
 
 uint256_t VM::Mod(const uint256_t& a, const uint256_t& b) const {
-    if (IsZero(b)) return uint256_t{}; // Modulo by zero returns 0 in EVM
-    
+    if (IsZero(b))
+        return uint256_t{};  // Modulo by zero returns 0 in EVM
+
     // Use long division to get remainder
     uint256_t remainder{};
-    
+
     // Process bits from most significant to least significant
     for (int i = 0; i < 256; i++) {
         // Shift remainder left by 1
@@ -215,14 +220,14 @@ uint256_t VM::Mod(const uint256_t& a, const uint256_t& b) const {
             remainder[j] = static_cast<uint8_t>(shifted & 0xFF);
             carry = shifted >> 8;
         }
-        
+
         // Add current bit of dividend to remainder
         int byte_idx = i / 8;
         int bit_idx = 7 - (i % 8);
         if ((a[byte_idx] >> bit_idx) & 1) {
             remainder[31] |= 1;
         }
-        
+
         // Check if remainder >= divisor
         bool ge = !Lt(remainder, b);
         if (ge) {
@@ -230,19 +235,21 @@ uint256_t VM::Mod(const uint256_t& a, const uint256_t& b) const {
             remainder = Sub(remainder, b);
         }
     }
-    
+
     return remainder;
 }
 
 uint256_t VM::Exp(const uint256_t& base, const uint256_t& exponent) const {
     // Exponentiation by squaring (binary method)
-    if (IsZero(exponent)) return ToUint256(1);
-    if (IsZero(base)) return uint256_t{};
-    
+    if (IsZero(exponent))
+        return ToUint256(1);
+    if (IsZero(base))
+        return uint256_t{};
+
     uint256_t result = ToUint256(1);
     uint256_t current_base = base;
     uint256_t exp = exponent;
-    
+
     // Process exponent bits from least to most significant
     for (int i = 0; i < 256; i++) {
         // Check if current bit of exponent is set
@@ -251,23 +258,27 @@ uint256_t VM::Exp(const uint256_t& base, const uint256_t& exponent) const {
         if ((exp[byte_idx] >> bit_idx) & 1) {
             result = Mul(result, current_base);
         }
-        
+
         // Square the base for next iteration
         current_base = Mul(current_base, current_base);
-        
+
         // Early exit if base becomes 0 or 1
-        if (IsZero(current_base)) break;
+        if (IsZero(current_base))
+            break;
         uint256_t one = ToUint256(1);
-        if (Eq(current_base, one) && !Eq(result, one)) break;
+        if (Eq(current_base, one) && !Eq(result, one))
+            break;
     }
-    
+
     return result;
 }
 
 bool VM::Lt(const uint256_t& a, const uint256_t& b) const {
     for (int i = 0; i < 32; i++) {
-        if (a[i] < b[i]) return true;
-        if (a[i] > b[i]) return false;
+        if (a[i] < b[i])
+            return true;
+        if (a[i] > b[i])
+            return false;
     }
     return false;
 }
@@ -282,7 +293,8 @@ bool VM::Eq(const uint256_t& a, const uint256_t& b) const {
 
 bool VM::IsZero(const uint256_t& a) const {
     for (uint8_t byte : a) {
-        if (byte != 0) return false;
+        if (byte != 0)
+            return false;
     }
     return true;
 }
@@ -321,8 +333,9 @@ uint256_t VM::Not(const uint256_t& a) const {
 
 uint256_t VM::Shl(const uint256_t& shift, const uint256_t& value) const {
     uint64_t shift_amount = ToUint64(shift);
-    if (shift_amount >= 256) return uint256_t{};
-    
+    if (shift_amount >= 256)
+        return uint256_t{};
+
     // Simplified left shift
     uint256_t result = value;
     for (uint64_t i = 0; i < shift_amount; i++) {
@@ -339,8 +352,9 @@ uint256_t VM::Shl(const uint256_t& shift, const uint256_t& value) const {
 
 uint256_t VM::Shr(const uint256_t& shift, const uint256_t& value) const {
     uint64_t shift_amount = ToUint64(shift);
-    if (shift_amount >= 256) return uint256_t{};
-    
+    if (shift_amount >= 256)
+        return uint256_t{};
+
     // Simplified right shift
     uint256_t result = value;
     for (uint64_t i = 0; i < shift_amount; i++) {
@@ -356,9 +370,9 @@ uint256_t VM::Shr(const uint256_t& shift, const uint256_t& value) const {
 }
 
 std::pair<ExecResult, std::vector<uint8_t>> VM::Execute(const std::vector<uint8_t>& code) {
-    size_t pc = 0; // Program counter
+    size_t pc = 0;  // Program counter
     std::vector<bool> jump_dests(code.size(), false);
-    
+
     // Pre-scan for JUMPDEST
     for (size_t i = 0; i < code.size(); i++) {
         if (static_cast<Opcode>(code[i]) == Opcode::JUMPDEST) {
@@ -369,19 +383,19 @@ std::pair<ExecResult, std::vector<uint8_t>> VM::Execute(const std::vector<uint8_
             i += GetPushSize(static_cast<Opcode>(code[i]));
         }
     }
-    
+
     // Execute bytecode
     while (pc < code.size()) {
         Opcode op = static_cast<Opcode>(code[pc]);
-        
+
         // Charge gas for opcode
         if (!UseGas(GetOpcodeCost(op))) {
             return {ExecResult::OUT_OF_GAS, {}};
         }
-        
+
         try {
             ExecResult result = ExecuteOpcode(op, code, pc);
-            
+
             if (result == ExecResult::SUCCESS) {
                 // Continue execution
                 pc++;
@@ -393,7 +407,7 @@ std::pair<ExecResult, std::vector<uint8_t>> VM::Execute(const std::vector<uint8_
             return {ExecResult::INVALID_OPCODE, {}};
         }
     }
-    
+
     // Reached end of code without explicit return
     return {ExecResult::SUCCESS, {}};
 }
@@ -402,138 +416,138 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
     switch (op) {
         case Opcode::STOP:
             return ExecResult::SUCCESS;
-        
+
         case Opcode::ADD: {
             auto b = Pop();
             auto a = Pop();
             Push(Add(a, b));
             break;
         }
-        
+
         case Opcode::MUL: {
             auto b = Pop();
             auto a = Pop();
             Push(Mul(a, b));
             break;
         }
-        
+
         case Opcode::SUB: {
             auto b = Pop();
             auto a = Pop();
             Push(Sub(a, b));
             break;
         }
-        
+
         case Opcode::DIV: {
             auto b = Pop();
             auto a = Pop();
             Push(Div(a, b));
             break;
         }
-        
+
         case Opcode::MOD: {
             auto b = Pop();
             auto a = Pop();
             Push(Mod(a, b));
             break;
         }
-        
+
         case Opcode::EXP: {
             auto exponent = Pop();
             auto base = Pop();
             Push(Exp(base, exponent));
             break;
         }
-        
+
         case Opcode::LT: {
             auto b = Pop();
             auto a = Pop();
             Push(Lt(a, b) ? ToUint256(1) : ToUint256(0));
             break;
         }
-        
+
         case Opcode::GT: {
             auto b = Pop();
             auto a = Pop();
             Push(Gt(a, b) ? ToUint256(1) : ToUint256(0));
             break;
         }
-        
+
         case Opcode::EQ: {
             auto b = Pop();
             auto a = Pop();
             Push(Eq(a, b) ? ToUint256(1) : ToUint256(0));
             break;
         }
-        
+
         case Opcode::ISZERO: {
             auto a = Pop();
             Push(IsZero(a) ? ToUint256(1) : ToUint256(0));
             break;
         }
-        
+
         case Opcode::AND: {
             auto b = Pop();
             auto a = Pop();
             Push(And(a, b));
             break;
         }
-        
+
         case Opcode::OR: {
             auto b = Pop();
             auto a = Pop();
             Push(Or(a, b));
             break;
         }
-        
+
         case Opcode::XOR: {
             auto b = Pop();
             auto a = Pop();
             Push(Xor(a, b));
             break;
         }
-        
+
         case Opcode::NOT: {
             auto a = Pop();
             Push(Not(a));
             break;
         }
-        
+
         case Opcode::SHL: {
             auto value = Pop();
             auto shift = Pop();
             Push(Shl(shift, value));
             break;
         }
-        
+
         case Opcode::SHR: {
             auto value = Pop();
             auto shift = Pop();
             Push(Shr(shift, value));
             break;
         }
-        
+
         // Memory operations
         case Opcode::MLOAD: {
             auto offset = ToUint64(Pop());
             Push(MemoryLoad(offset));
             break;
         }
-        
+
         case Opcode::MSTORE: {
             auto offset = ToUint64(Pop());
             auto value = Pop();
             MemoryStore(offset, value);
             break;
         }
-        
+
         case Opcode::MSTORE8: {
             auto offset = ToUint64(Pop());
             auto value = Pop();
             MemoryStore8(offset, static_cast<uint8_t>(ToUint64(value) & 0xFF));
             break;
         }
-        
+
         // Storage operations
         case Opcode::SLOAD: {
             auto key = Pop();
@@ -541,7 +555,7 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
             Push(value);
             break;
         }
-        
+
         case Opcode::SSTORE: {
             if (ctx_.is_static) {
                 return ExecResult::STATIC_CALL_VIOLATION;
@@ -551,12 +565,12 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
             state_.SetStorage(ctx_.address, key, value);
             break;
         }
-        
+
         // Stack operations
         case Opcode::POP:
             Pop();
             break;
-        
+
         case Opcode::PUSH1:
         case Opcode::PUSH2:
         case Opcode::PUSH3:
@@ -595,10 +609,10 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
                 value[32 - size + i] = code[pc + 1 + i];
             }
             Push(value);
-            pc += size; // Skip pushed bytes
+            pc += size;  // Skip pushed bytes
             break;
         }
-        
+
         // DUP operations
         case Opcode::DUP1:
         case Opcode::DUP2:
@@ -618,7 +632,7 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
         case Opcode::DUP16:
             Dup(GetDupDepth(op));
             break;
-        
+
         // SWAP operations
         case Opcode::SWAP1:
         case Opcode::SWAP2:
@@ -638,52 +652,52 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
         case Opcode::SWAP16:
             Swap(GetSwapDepth(op));
             break;
-        
+
         // Context operations
         case Opcode::ADDRESS:
-            Push(ToUint256(0)); // Simplified - would need address conversion
+            Push(ToUint256(0));  // Simplified - would need address conversion
             break;
-        
+
         case Opcode::CALLER:
-            Push(ToUint256(0)); // Simplified
+            Push(ToUint256(0));  // Simplified
             break;
-        
+
         case Opcode::CALLVALUE:
             Push(ctx_.value);
             break;
-        
+
         case Opcode::GAS:
             Push(ToUint256(GetGasRemaining()));
             break;
-        
+
         case Opcode::GASPRICE:
             Push(ToUint256(ctx_.gas_price));
             break;
-        
+
         case Opcode::TIMESTAMP:
             Push(ToUint256(ctx_.timestamp));
             break;
-        
+
         case Opcode::NUMBER:
             Push(ToUint256(ctx_.block_number));
             break;
-        
+
         case Opcode::DIFFICULTY:
             Push(ToUint256(ctx_.difficulty));
             break;
-        
+
         case Opcode::GASLIMIT:
             Push(ToUint256(ctx_.gas_limit_block));
             break;
-        
+
         case Opcode::CHAINID:
             Push(ToUint256(ctx_.chain_id));
             break;
-        
+
         case Opcode::BASEFEE:
             Push(ToUint256(ctx_.base_fee));
             break;
-        
+
         // Return operations
         case Opcode::RETURN: {
             auto offset = ToUint64(Pop());
@@ -692,7 +706,7 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
             return_data_.assign(memory_.begin() + offset, memory_.begin() + offset + length);
             return ExecResult::RETURNED;
         }
-        
+
         case Opcode::REVERT: {
             auto offset = ToUint64(Pop());
             auto length = ToUint64(Pop());
@@ -700,18 +714,18 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
             return_data_.assign(memory_.begin() + offset, memory_.begin() + offset + length);
             return ExecResult::REVERT;
         }
-        
+
         case Opcode::JUMPDEST:
             // Valid jump destination, just continue
             break;
-        
+
         default:
             // Unsupported opcode
             return ExecResult::INVALID_OPCODE;
     }
-    
-    return ExecResult::SUCCESS; // Continue execution
+
+    return ExecResult::SUCCESS;  // Continue execution
 }
 
-} // namespace evm
-} // namespace parthenon
+}  // namespace evm
+}  // namespace parthenon

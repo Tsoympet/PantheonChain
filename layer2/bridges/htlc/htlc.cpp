@@ -3,28 +3,24 @@
 namespace parthenon {
 namespace layer2 {
 
-HTLC::HTLC(const std::vector<uint8_t>& hash_lock,
-           uint32_t time_lock,
-           uint64_t amount,
-           const std::vector<uint8_t>& sender,
-           const std::vector<uint8_t>& receiver)
+HTLC::HTLC(const std::vector<uint8_t>& hash_lock, uint32_t time_lock, uint64_t amount,
+           const std::vector<uint8_t>& sender, const std::vector<uint8_t>& receiver)
     : hash_lock_(hash_lock),
       time_lock_(time_lock),
       amount_(amount),
       sender_(sender),
       receiver_(receiver),
-      claimed_(false) {
-}
+      claimed_(false) {}
 
 bool HTLC::ClaimWithPreimage(const std::vector<uint8_t>& preimage) {
     if (claimed_) {
         return false;
     }
-    
+
     if (!VerifyPreimage(preimage)) {
         return false;
     }
-    
+
     claimed_ = true;
     return true;
 }
@@ -33,11 +29,11 @@ bool HTLC::ClaimWithTimeout(uint32_t current_time) {
     if (claimed_) {
         return false;
     }
-    
+
     if (current_time < time_lock_) {
         return false;
     }
-    
+
     claimed_ = true;
     return true;
 }
@@ -52,11 +48,8 @@ bool HTLC::VerifyPreimage(const std::vector<uint8_t>& preimage) const {
     return hash == hash_lock_;
 }
 
-HTLCRoute::HTLCRoute(const std::vector<uint8_t>& payment_hash,
-                     uint64_t total_amount)
-    : payment_hash_(payment_hash),
-      total_amount_(total_amount) {
-}
+HTLCRoute::HTLCRoute(const std::vector<uint8_t>& payment_hash, uint64_t total_amount)
+    : payment_hash_(payment_hash), total_amount_(total_amount) {}
 
 void HTLCRoute::AddHop(const RouteHop& hop) {
     hops_.push_back(hop);
@@ -74,16 +67,16 @@ bool HTLCRoute::Validate() const {
     if (hops_.empty()) {
         return false;
     }
-    
+
     // Check CLTV expiry decreases along route
     for (size_t i = 1; i < hops_.size(); ++i) {
-        if (hops_[i].cltv_expiry >= hops_[i-1].cltv_expiry) {
+        if (hops_[i].cltv_expiry >= hops_[i - 1].cltv_expiry) {
             return false;
         }
     }
-    
+
     return true;
 }
 
-} // namespace layer2
-} // namespace parthenon
+}  // namespace layer2
+}  // namespace parthenon

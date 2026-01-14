@@ -5,11 +5,11 @@
 #ifndef PARTHENON_CRYPTO_SHA256_H
 #define PARTHENON_CRYPTO_SHA256_H
 
+#include <array>
 #include <cstdint>
 #include <cstring>
-#include <array>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace parthenon {
 namespace crypto {
@@ -20,7 +20,7 @@ namespace crypto {
  * This is a consensus-critical component - any changes must maintain compatibility
  */
 class SHA256 {
-public:
+  public:
     static constexpr size_t OUTPUT_SIZE = 32;
     static constexpr size_t BLOCK_SIZE = 64;
 
@@ -43,9 +43,9 @@ public:
     static Hash Hash256(const uint8_t* data, size_t len);
     static Hash Hash256(const std::vector<uint8_t>& data);
 
-private:
+  private:
     void Transform(const uint8_t* chunk);
-    
+
     uint32_t state_[8];
     uint8_t buffer_[BLOCK_SIZE];
     uint64_t byte_count_;
@@ -58,7 +58,7 @@ private:
  * SHA256d(x) = SHA256(SHA256(x))
  */
 class SHA256d {
-public:
+  public:
     using Hash = SHA256::Hash;
 
     // Compute double SHA-256
@@ -72,25 +72,25 @@ public:
  * TaggedHash(tag, msg) = SHA256(SHA256(tag) || SHA256(tag) || msg)
  */
 class TaggedSHA256 {
-public:
+  public:
     using Hash = SHA256::Hash;
 
     TaggedSHA256(const std::string& tag);
-    
+
     void Write(const uint8_t* data, size_t len);
     void Write(const std::vector<uint8_t>& data);
-    
+
     Hash Finalize();
 
     // Convenience function
     static Hash HashTagged(const std::string& tag, const uint8_t* data, size_t len);
     static Hash HashTagged(const std::string& tag, const std::vector<uint8_t>& data);
 
-private:
+  private:
     SHA256 hasher_;
 };
 
-} // namespace crypto
-} // namespace parthenon
+}  // namespace crypto
+}  // namespace parthenon
 
-#endif // PARTHENON_CRYPTO_SHA256_H
+#endif  // PARTHENON_CRYPTO_SHA256_H

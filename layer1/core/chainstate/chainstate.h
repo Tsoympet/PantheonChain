@@ -4,8 +4,9 @@
 #ifndef PARTHENON_CHAINSTATE_CHAINSTATE_H
 #define PARTHENON_CHAINSTATE_CHAINSTATE_H
 
-#include "primitives/block.h"
 #include "primitives/asset.h"
+#include "primitives/block.h"
+
 #include <cstdint>
 #include <map>
 
@@ -17,19 +18,19 @@ namespace chainstate {
  * including height, total supply per asset, and validation state
  */
 class ChainState {
-public:
+  public:
     ChainState() : height_(0), total_supply_() {
         // Initialize all asset supplies to zero
         total_supply_[primitives::AssetID::TALANTON] = 0;
         total_supply_[primitives::AssetID::DRACHMA] = 0;
         total_supply_[primitives::AssetID::OBOLOS] = 0;
     }
-    
+
     /**
      * Get current blockchain height
      */
     uint64_t GetHeight() const { return height_; }
-    
+
     /**
      * Get total supply for an asset
      */
@@ -40,16 +41,16 @@ public:
         }
         return 0;
     }
-    
+
     /**
      * Apply a block to the chain state
      * Updates height and total supplies
-     * 
+     *
      * @param block Block to apply
      * @return true if block was successfully applied
      */
     bool ApplyBlock(const primitives::Block& block);
-    
+
     /**
      * Validate that a block can be applied to current state
      * Checks:
@@ -57,12 +58,12 @@ public:
      * - Difficulty target is correct
      * - Coinbase reward is valid
      * - Total supplies won't exceed caps
-     * 
+     *
      * @param block Block to validate
      * @return true if block is valid for current state
      */
     bool ValidateBlock(const primitives::Block& block) const;
-    
+
     /**
      * Reset chain state to genesis
      */
@@ -72,20 +73,19 @@ public:
         total_supply_[primitives::AssetID::DRACHMA] = 0;
         total_supply_[primitives::AssetID::OBOLOS] = 0;
     }
-    
-private:
+
+  private:
     uint64_t height_;
     std::map<primitives::AssetID, uint64_t> total_supply_;
-    
+
     /**
      * Calculate total coinbase outputs by asset
      */
-    std::map<primitives::AssetID, uint64_t> GetCoinbaseOutputs(
-        const primitives::Transaction& coinbase
-    ) const;
+    std::map<primitives::AssetID, uint64_t>
+    GetCoinbaseOutputs(const primitives::Transaction& coinbase) const;
 };
 
-} // namespace chainstate
-} // namespace parthenon
+}  // namespace chainstate
+}  // namespace parthenon
 
-#endif // PARTHENON_CHAINSTATE_CHAINSTATE_H
+#endif  // PARTHENON_CHAINSTATE_CHAINSTATE_H

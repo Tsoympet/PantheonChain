@@ -1,5 +1,7 @@
 #include "escrow.h"
+
 #include "../core/crypto/sha256.h"
+
 #include <cstring>
 
 namespace parthenon {
@@ -26,13 +28,13 @@ TimeLockEscrow TimeLockEscrow::Deserialize(const std::vector<uint8_t>& data, siz
     if (pos + 8 > data.size()) {
         return TimeLockEscrow();
     }
-    
+
     uint64_t locktime = 0;
     for (int i = 0; i < 8; ++i) {
         locktime |= (static_cast<uint64_t>(data[pos + i]) << (i * 8));
     }
     pos += 8;
-    
+
     return TimeLockEscrow(locktime);
 }
 
@@ -46,7 +48,7 @@ HashLockEscrow::HashLockEscrow(const Hash256& hash) : hash_(hash) {}
 bool HashLockEscrow::VerifyPreimage(const Preimage& preimage) const {
     // Hash the preimage using SHA-256
     auto computed_hash = crypto::SHA256::Hash256(preimage.data(), preimage.size());
-    
+
     // Compare with stored hash
     return computed_hash == hash_;
 }
@@ -59,11 +61,11 @@ HashLockEscrow HashLockEscrow::Deserialize(const std::vector<uint8_t>& data, siz
     if (pos + 32 > data.size()) {
         return HashLockEscrow();
     }
-    
+
     Hash256 hash;
     std::copy(data.begin() + pos, data.begin() + pos + 32, hash.begin());
     pos += 32;
-    
+
     return HashLockEscrow(hash);
 }
 
@@ -80,29 +82,29 @@ bool ConditionalEscrow::IsReleasable(uint64_t current_time, const Preimage* prei
     if (current_time < locktime_) {
         return false;
     }
-    
+
     // Must provide valid preimage
     if (preimage == nullptr) {
         return false;
     }
-    
+
     // Verify preimage
     auto computed_hash = crypto::SHA256::Hash256(preimage->data(), preimage->size());
-    
+
     return computed_hash == hash_;
 }
 
 std::vector<uint8_t> ConditionalEscrow::Serialize() const {
     std::vector<uint8_t> result;
-    
+
     // Serialize locktime
     for (int i = 0; i < 8; ++i) {
         result.push_back(static_cast<uint8_t>((locktime_ >> (i * 8)) & 0xFF));
     }
-    
+
     // Serialize hash
     result.insert(result.end(), hash_.begin(), hash_.end());
-    
+
     return result;
 }
 
@@ -110,19 +112,19 @@ ConditionalEscrow ConditionalEscrow::Deserialize(const std::vector<uint8_t>& dat
     if (pos + 40 > data.size()) {
         return ConditionalEscrow();
     }
-    
+
     // Deserialize locktime
     uint64_t locktime = 0;
     for (int i = 0; i < 8; ++i) {
         locktime |= (static_cast<uint64_t>(data[pos + i]) << (i * 8));
     }
     pos += 8;
-    
+
     // Deserialize hash
     Hash256 hash;
     std::copy(data.begin() + pos, data.begin() + pos + 32, hash.begin());
     pos += 32;
-    
+
     return ConditionalEscrow(locktime, hash);
 }
 
@@ -173,10 +175,10 @@ bool Escrow::IsReleasable(uint64_t current_time, const Preimage* preimage) const
 
 std::vector<uint8_t> Escrow::Serialize() const {
     std::vector<uint8_t> result;
-    
+
     // Serialize type
     result.push_back(static_cast<uint8_t>(type_));
-    
+
     // Serialize escrow data based on type
     switch (type_) {
         case EscrowType::TIME_LOCKED: {
@@ -195,7 +197,7 @@ std::vector<uint8_t> Escrow::Serialize() const {
             break;
         }
     }
-    
+
     return result;
 }
 
@@ -203,13 +205,13 @@ Escrow Escrow::Deserialize(const std::vector<uint8_t>& data, size_t& pos) {
     if (pos + 1 > data.size()) {
         return Escrow();
     }
-    
+
     // Deserialize type
     EscrowType type = static_cast<EscrowType>(data[pos]);
     pos++;
-    
+
     Escrow escrow(type);
-    
+
     // Deserialize escrow data based on type
     switch (type) {
         case EscrowType::TIME_LOCKED: {
@@ -228,9 +230,9 @@ Escrow Escrow::Deserialize(const std::vector<uint8_t>& data, size_t& pos) {
             break;
         }
     }
-    
+
     return escrow;
 }
 
-} // namespace settlement
-} // namespace parthenon
+}  // namespace settlement
+}  // namespace parthenon

@@ -1,7 +1,9 @@
 // ParthenonChain - ZK-Rollup Implementation
 
 #include "zk_rollup.h"
+
 #include "crypto/sha256.h"
+
 #include <cstring>
 
 namespace parthenon {
@@ -24,21 +26,21 @@ bool ZKRollupState::ApplyTransaction(const ZKTransaction& tx) {
     if (used_nullifiers_[tx.nullifier]) {
         return false;
     }
-    
+
     // Mark nullifier as used
     used_nullifiers_[tx.nullifier] = true;
-    
+
     // Update state root (simplified)
     crypto::SHA256 hasher;
     hasher.Write(state_root_.data(), state_root_.size());
     hasher.Write(tx.tx_hash.data(), tx.tx_hash.size());
     state_root_ = hasher.Finalize();
-    
+
     return true;
 }
 
-std::vector<std::array<uint8_t, 32>> ZKRollupState::GetMerkleProof(
-    [[maybe_unused]] const std::vector<uint8_t>& account) const {
+std::vector<std::array<uint8_t, 32>>
+ZKRollupState::GetMerkleProof([[maybe_unused]] const std::vector<uint8_t>& account) const {
     // In production: generate actual merkle proof
     return {};
 }
@@ -51,9 +53,8 @@ bool ZKRollupState::VerifyMerkleProof(
     return true;
 }
 
-std::optional<std::array<uint8_t, 32>> ZKRollupState::GetBalance(
-    const std::vector<uint8_t>& account) const {
-    
+std::optional<std::array<uint8_t, 32>>
+ZKRollupState::GetBalance(const std::vector<uint8_t>& account) const {
     auto it = balances_.find(account);
     if (it == balances_.end()) {
         return std::nullopt;
@@ -62,10 +63,7 @@ std::optional<std::array<uint8_t, 32>> ZKRollupState::GetBalance(
 }
 
 // ZKRollup implementation
-ZKRollup::ZKRollup() 
-    : current_batch_id_(0)
-    , current_block_height_(0) {
-}
+ZKRollup::ZKRollup() : current_batch_id_(0), current_block_height_(0) {}
 
 ZKRollup::~ZKRollup() {}
 
@@ -74,12 +72,12 @@ bool ZKRollup::SubmitBatch(const ZKRollupBatch& batch) {
     if (!VerifyBatchProof(batch)) {
         return false;
     }
-    
+
     BatchInfo info;
     info.batch = batch;
     info.submission_block = current_block_height_;
     info.finalized = false;
-    
+
     batches_[batch.batch_id] = info;
     return true;
 }
@@ -101,16 +99,16 @@ ZKRollupBatch ZKRollup::CreateBatch() {
     ZKRollupBatch batch;
     batch.batch_id = current_batch_id_++;
     batch.state_root_before = state_.GetStateRoot();
-    
+
     // Process transactions
     for (const auto& tx : pending_transactions_) {
         state_.ApplyTransaction(tx);
         batch.transaction_hashes.push_back(tx.tx_hash);
     }
-    
+
     batch.state_root_after = state_.GetStateRoot();
     batch.timestamp = current_block_height_;
-    
+
     pending_transactions_.clear();
     return batch;
 }
@@ -126,7 +124,7 @@ bool ZKRollup::FinalizeBatch(uint64_t batch_id) {
     if (it == batches_.end()) {
         return false;
     }
-    
+
     it->second.finalized = true;
     return true;
 }
@@ -146,7 +144,8 @@ std::vector<uint8_t> ZKRollup::CompressBatch([[maybe_unused]] const ZKRollupBatc
     return {};
 }
 
-std::optional<ZKRollupBatch> ZKRollup::DecompressBatch([[maybe_unused]] const std::vector<uint8_t>& data) const {
+std::optional<ZKRollupBatch>
+ZKRollup::DecompressBatch([[maybe_unused]] const std::vector<uint8_t>& data) const {
     // In production: decompress batch data
     return std::nullopt;
 }
@@ -155,17 +154,17 @@ std::optional<ZKRollupBatch> ZKRollup::DecompressBatch([[maybe_unused]] const st
 ZKRollupProver::ZKRollupProver(ZKRollup* rollup) : rollup_(rollup) {}
 ZKRollupProver::~ZKRollupProver() {}
 
-privacy::zksnark::ZKProof ZKRollupProver::GenerateBatchProof(
-    [[maybe_unused]] const ZKRollupBatch& batch) {
+privacy::zksnark::ZKProof
+ZKRollupProver::GenerateBatchProof([[maybe_unused]] const ZKRollupBatch& batch) {
     // In production: generate actual zk-SNARK proof
     privacy::zksnark::ZKProof proof;
     proof.proof_data.resize(128);
     return proof;
 }
 
-privacy::zksnark::ZKProof ZKRollupProver::GenerateTransferProof(
-    [[maybe_unused]] const ZKTransaction& tx,
-    [[maybe_unused]] const std::vector<uint8_t>& witness) {
+privacy::zksnark::ZKProof
+ZKRollupProver::GenerateTransferProof([[maybe_unused]] const ZKTransaction& tx,
+                                      [[maybe_unused]] const std::vector<uint8_t>& witness) {
     // In production: generate transfer proof
     privacy::zksnark::ZKProof proof;
     proof.proof_data.resize(64);
@@ -204,7 +203,7 @@ bool ZKRollupExitManager::RequestExit(const ExitRequest& request) {
     if (!VerifyExitProof(request)) {
         return false;
     }
-    
+
     pending_exits_[request.account] = request;
     return true;
 }
@@ -214,7 +213,7 @@ bool ZKRollupExitManager::ProcessExit(const std::vector<uint8_t>& account) {
     if (it == pending_exits_.end()) {
         return false;
     }
-    
+
     it->second.processed = true;
     return true;
 }
@@ -234,6 +233,6 @@ bool ZKRollupExitManager::VerifyExitProof([[maybe_unused]] const ExitRequest& re
     return request.ownership_proof.IsValid();
 }
 
-} // namespace rollups
-} // namespace layer2
-} // namespace parthenon
+}  // namespace rollups
+}  // namespace layer2
+}  // namespace parthenon

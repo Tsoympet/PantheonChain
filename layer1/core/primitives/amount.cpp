@@ -2,8 +2,9 @@
 // Consensus-critical: Safe arithmetic with overflow protection
 
 #include "amount.h"
-#include <sstream>
+
 #include <iomanip>
+#include <sstream>
 
 namespace parthenon {
 namespace primitives {
@@ -66,5 +67,5 @@ Amount Amount::Deserialize(const uint8_t* input) {
     return Amount(value);
 }
 
-} // namespace primitives
-} // namespace parthenon
+}  // namespace primitives
+}  // namespace parthenon

@@ -13,22 +13,22 @@ class QComboBox;
 class TransactionPage : public QWidget {
     Q_OBJECT
 
-public:
-    explicit TransactionPage(RPCClient *rpc, QWidget *parent = nullptr);
+  public:
+    explicit TransactionPage(RPCClient* rpc, QWidget* parent = nullptr);
 
-private slots:
+  private slots:
     void onRefresh();
     void onFilterChanged(int index);
     void onTransactionHistoryUpdated();
 
-private:
+  private:
     void setupUI();
     void loadTransactions();
-    
-    RPCClient *rpcClient;
-    QTableWidget *transactionTable;
-    QPushButton *refreshButton;
-    QComboBox *filterComboBox;
+
+    RPCClient* rpcClient;
+    QTableWidget* transactionTable;
+    QPushButton* refreshButton;
+    QComboBox* filterComboBox;
 };
 
-#endif // TRANSACTIONPAGE_H
+#endif  // TRANSACTIONPAGE_H

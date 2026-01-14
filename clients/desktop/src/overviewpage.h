@@ -13,32 +13,32 @@ class QComboBox;
 class OverviewPage : public QWidget {
     Q_OBJECT
 
-public:
-    explicit OverviewPage(RPCClient *rpc, QWidget *parent = nullptr);
+  public:
+    explicit OverviewPage(RPCClient* rpc, QWidget* parent = nullptr);
     void updateBalances();
 
-signals:
+  signals:
     void sendRequested();
     void receiveRequested();
 
-private slots:
+  private slots:
     void onAssetChanged(int index);
     void onQuickSend();
     void onQuickReceive();
 
-private:
+  private:
     void setupUI();
-    
-    RPCClient *rpcClient;
-    QComboBox *assetSelector;
-    QLabel *balanceLabel;
-    QLabel *balanceValueLabel;
-    QLabel *talnBalanceLabel;
-    QLabel *drmBalanceLabel;
-    QLabel *oblBalanceLabel;
-    QPushButton *sendButton;
-    QPushButton *receiveButton;
+
+    RPCClient* rpcClient;
+    QComboBox* assetSelector;
+    QLabel* balanceLabel;
+    QLabel* balanceValueLabel;
+    QLabel* talnBalanceLabel;
+    QLabel* drmBalanceLabel;
+    QLabel* oblBalanceLabel;
+    QPushButton* sendButton;
+    QPushButton* receiveButton;
     QString currentAsset;
 };
 
-#endif // OVERVIEWPAGE_H
+#endif  // OVERVIEWPAGE_H
