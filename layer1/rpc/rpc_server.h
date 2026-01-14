@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "rate_limiter.h"
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -93,9 +95,17 @@ class RPCServer {
     /**
      * Handle an RPC request
      * @param request JSON-RPC request
+     * @param client_ip Client IP address for rate limiting
      * @return JSON-RPC response
      */
-    RPCResponse HandleRequest(const RPCRequest& request);
+    RPCResponse HandleRequest(const RPCRequest& request, const std::string& client_ip = "");
+
+    /**
+     * Configure rate limiting
+     * @param requests_per_window Maximum requests per window
+     * @param window_seconds Window duration in seconds
+     */
+    void ConfigureRateLimit(uint32_t requests_per_window, uint32_t window_seconds);
 
   private:
     uint16_t port_;
@@ -105,6 +115,9 @@ class RPCServer {
     // Component references
     node::Node* node_;
     wallet::Wallet* wallet_;
+    
+    // Rate limiting
+    std::unique_ptr<RateLimiter> rate_limiter_;
 
     // Initialize standard RPC methods
     void InitializeStandardMethods();

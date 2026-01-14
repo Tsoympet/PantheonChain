@@ -40,3 +40,13 @@ target_link_libraries(test_block PRIVATE
 )
 
 add_test(NAME test_block COMMAND test_block)
+
+add_executable(test_safe_math
+    test_safe_math.cpp
+)
+
+target_link_libraries(test_safe_math PRIVATE
+    parthenon_primitives
+)
+
+add_test(NAME test_safe_math COMMAND test_safe_math)
