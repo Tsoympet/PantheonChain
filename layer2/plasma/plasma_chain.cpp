@@ -82,7 +82,7 @@ PlasmaChain::BuildMerkleRoot(const std::vector<std::array<uint8_t, 32>>& tx_hash
             std::array<uint8_t, 32> combined;
 
             if (i + 1 < current_level.size()) {
-                // Hash two nodes together
+                // Hash two nodes together - copy first 16 bytes from each
                 std::memcpy(combined.data(), current_level[i].data(), 16);
                 std::memcpy(combined.data() + 16, current_level[i + 1].data(), 16);
             } else {
@@ -219,6 +219,9 @@ PlasmaBlock PlasmaOperator::CreateBlock() {
     block.merkle_root = chain_->BuildMerkleRoot(block.transactions);
 
     // Calculate block hash (simplified)
+    
+    // Calculate block hash (simplified) - use only 8 bytes to avoid overflow
+    std::memset(block.block_hash.data(), 0, 32);  // Zero the entire hash first
     std::memcpy(block.block_hash.data(), &block.block_number, sizeof(uint64_t));
 
     return block;

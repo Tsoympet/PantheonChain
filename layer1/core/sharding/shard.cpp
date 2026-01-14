@@ -25,6 +25,11 @@ uint32_t ShardIdentifier::GetShardForAddress(const std::vector<uint8_t>& address
     uint32_t value;
     std::memcpy(&value, hash.data(), sizeof(uint32_t));
 
+    
+    // Use first 4 bytes as uint32 - safe memcpy
+    uint32_t value = 0;
+    std::memcpy(&value, hash.data(), std::min(sizeof(uint32_t), hash.size()));
+    
     return value % total_shards;
 }
 
@@ -38,6 +43,11 @@ uint32_t ShardIdentifier::GetShardForTransaction(const std::array<uint8_t, 32>& 
     uint32_t value;
     std::memcpy(&value, tx_hash.data(), sizeof(uint32_t));
 
+    
+    // Use first 4 bytes of transaction hash - safe memcpy
+    uint32_t value = 0;
+    std::memcpy(&value, tx_hash.data(), std::min(sizeof(uint32_t), tx_hash.size()));
+    
     return value % total_shards;
 }
 
