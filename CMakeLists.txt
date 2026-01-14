@@ -35,8 +35,9 @@ add_subdirectory(third_party/leveldb EXCLUDE_FROM_ALL)
 # Remove strict warning flags from leveldb target to avoid errors in third-party code
 if(TARGET leveldb)
   if(MSVC)
-    # MSVC: Disable warnings as errors
+    # MSVC: Disable warnings as errors and suppress CRT security warnings for third-party code
     target_compile_options(leveldb PRIVATE /WX-)
+    target_compile_definitions(leveldb PRIVATE _CRT_SECURE_NO_WARNINGS)
   else()
     # GCC/Clang: Disable specific warnings
     target_compile_options(leveldb PRIVATE -Wno-error -Wno-conversion -Wno-old-style-cast -Wno-shadow)
