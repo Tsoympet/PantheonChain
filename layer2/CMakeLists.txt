@@ -8,6 +8,7 @@ add_library(layer2
     indexers/contract_indexer/contract_indexer.cpp
     apis/graphql/graphql_api.cpp
     apis/websocket/websocket_api.cpp
+    dex/dex.cpp
 )
 
 target_include_directories(layer2 PUBLIC

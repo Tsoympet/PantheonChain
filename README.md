@@ -437,14 +437,16 @@ Stay connected with the ParthenonChain community:
 ✅ Enhanced privacy features (Ring signatures, Stealth addresses)  
 ✅ Advanced smart contract debugging tools  
 ✅ Blockchain explorer web interface  
+✅ Decentralized exchange (DEX) with AMM  
+✅ Hardware wallet firmware verification  
 
 ### Upcoming Features
-- 🔜 Decentralized exchange (DEX) integration
-- 🔜 Hardware wallet firmware verification
 - 🔜 zkSNARK privacy enhancements
 - 🔜 Cross-shard transactions
 - 🔜 Mobile SDK libraries
 - 🔜 IDE plugins for smart contract development
+- 🔜 Governance voting mechanisms
+- 🔜 Staking and delegation features
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and [docs/RELEASES.md](docs/RELEASES.md) for the full roadmap.
 

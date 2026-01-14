@@ -3,6 +3,7 @@
 add_library(parthenon_wallet STATIC
     wallet.cpp
     hardware/hardware_wallet.cpp
+    hardware/firmware_verification.cpp
 )
 
 target_include_directories(parthenon_wallet PUBLIC
