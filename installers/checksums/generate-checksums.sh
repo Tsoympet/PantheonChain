@@ -3,15 +3,21 @@
 
 set -e
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Read version from VERSION file
+VERSION=$(cat "$PROJECT_ROOT/VERSION" 2>/dev/null || echo "1.0.0")
+
 echo "=== Generating checksums for ParthenonChain release artifacts ==="
 
-OUTPUT_FILE="parthenon-1.0.0-checksums.txt"
+OUTPUT_FILE="parthenon-${VERSION}-checksums.txt"
 
 # Remove old checksums
 rm -f "$OUTPUT_FILE"
 
 # Generate SHA-256 checksums
-echo "# ParthenonChain 1.0.0 - SHA-256 Checksums" > "$OUTPUT_FILE"
+echo "# ParthenonChain ${VERSION} - SHA-256 Checksums" > "$OUTPUT_FILE"
 echo "# Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
