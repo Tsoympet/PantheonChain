@@ -6,11 +6,16 @@
 
 #include <chrono>
 #include <cstring>
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <fcntl.h>
-#include <iostream>
 #include <netdb.h>
-#include <random>
 #include <unistd.h>
+#endif
+#include <iostream>
+#include <random>
 
 namespace parthenon {
 namespace p2p {
