@@ -359,6 +359,15 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 
 ## Documentation
 
+### 🚀 Getting Started (For Users)
+
+- 📥 **[Download Guide](DOWNLOAD.md)** - Download and install ParthenonChain
+- ⚡ **[Quick Start](QUICK_START.md)** - Get started in minutes
+- 🆘 **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
+- 📱 **[Client Status](CLIENT_STATUS.md)** - All clients and their readiness
+
+### 📚 Technical Documentation (For Developers)
+
 - 📖 **[Whitepaper](WHITEPAPER.md)** - Technical specification and design rationale
 - 🏗️ **[Architecture](docs/ARCHITECTURE.md)** - System design and component overview
 - 🔐 **[Security Model](docs/SECURITY_MODEL.md)** - Security properties and threat model

@@ -218,7 +218,7 @@ See: [README.md](../README.md) and [docs/INSTALLATION.md](../docs/INSTALLATION.m
 4. **IMPORTANT**: Backup your recovery phrase!
 5. Start receiving and sending transactions
 
-See: [clients/mobile/README.md](../clients/mobile/README.md)
+See: [clients/mobile/react-native/README.md](../clients/mobile/react-native/README.md)
 
 ## 🔧 Configuration
 

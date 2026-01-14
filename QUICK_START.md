@@ -311,9 +311,9 @@ Now that you're running ParthenonChain:
 - 🖥️ [GPU Acceleration](docs/GPU_ACCELERATION.md)
 - 🏊 [Mining Pool Setup](docs/NETWORKING_RPC.md)
 
-### For Users
+### For Mobile Users
 - 💼 [Desktop Wallet Guide](clients/desktop/README.md)
-- 📱 [Mobile Wallet](clients/mobile/README.md)
+- 📱 [Mobile Wallet](clients/mobile/react-native/README.md)
 - 🔐 [Hardware Wallet Setup](docs/HARDWARE_WALLET.md)
 
 ---
@@ -327,7 +327,7 @@ A: Usually 2-6 hours depending on your internet speed and hardware.
 A: You'll receive all three when mining or receiving payments. Each has its own purpose.
 
 **Q: Can I use ParthenonChain on mobile?**  
-A: Yes! We have mobile wallets for iOS and Android (see [clients/mobile](clients/mobile/README.md)).
+A: Yes! We have mobile wallets for iOS and Android (see [clients/mobile/react-native](clients/mobile/react-native/README.md)).
 
 **Q: Is mining profitable?**  
 A: It depends on your electricity costs and hardware. GPU/ASIC mining is more efficient than CPU.
