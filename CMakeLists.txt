@@ -33,7 +33,7 @@ if(TARGET secp256k1)
     # MSVC: Disable warnings as errors
     target_compile_options(secp256k1 PRIVATE /WX-)
   else()
-    # GCC/Clang: Disable specific warnings
+    # GCC/Clang: Disable warnings as errors
     target_compile_options(secp256k1 PRIVATE -Wno-error)
   endif()
 endif()
