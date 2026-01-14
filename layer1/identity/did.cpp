@@ -21,7 +21,7 @@ std::string DIDManager::CreateDID(const std::vector<uint8_t>& public_key) {
     std::stringstream ss;
     ss << "did:parthenon:";
     for (size_t i = 0; i < std::min(public_key.size(), size_t(16)); ++i) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)public_key[i];
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(public_key[i]);
     }
 
     std::string did = ss.str();
