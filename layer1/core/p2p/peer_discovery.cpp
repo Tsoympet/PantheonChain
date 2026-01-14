@@ -3,6 +3,20 @@
 #include "peer_discovery.h"
 
 #include <algorithm>
+#include <cstring>
+#include <sstream>
+
+// Platform-specific networking headers
+#ifdef _WIN32
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#else
+#  include <arpa/inet.h>
+#  include <netdb.h>
+#  include <netinet/in.h>
+#  include <sys/socket.h>
+#  include <sys/types.h>
+#endif
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -35,9 +49,23 @@ PeerDiscovery::PeerDiscovery(PeerDatabase& peer_db)
     : peer_db_(peer_db),
       dns_discovery_enabled_(true),
       peer_exchange_enabled_(true),
-      peer_discovered_callback_(nullptr) {}
+      peer_discovered_callback_(nullptr) {
+#ifdef _WIN32
+    // Initialize WinSock for Windows networking
+    WSADATA wsa_data;
+    int result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    // WSAStartup returns 0 on success, non-zero on failure
+    // If initialization fails, networking operations will fail gracefully later
+    (void)result;  // Suppress unused variable warning in release builds
+#endif
+}
 
-PeerDiscovery::~PeerDiscovery() {}
+PeerDiscovery::~PeerDiscovery() {
+#ifdef _WIN32
+    // Cleanup WinSock on Windows
+    WSACleanup();
+#endif
+}
 
 bool PeerDiscovery::ParseAddressPort(const std::string& addr_str, std::string& address,
                                      uint16_t& port) {
