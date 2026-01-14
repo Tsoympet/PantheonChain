@@ -58,6 +58,9 @@ endif()
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party/cpp-httplib)
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party/json/include)
 
+# Include directory for project-wide headers (e.g., version information)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
 # Layer 1 Core - Consensus Critical
 add_subdirectory(layer1)
 
