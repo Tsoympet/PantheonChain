@@ -13,22 +13,22 @@ class QLineEdit;
 class ReceivePage : public QWidget {
     Q_OBJECT
 
-public:
-    explicit ReceivePage(RPCClient *rpc, QWidget *parent = nullptr);
+  public:
+    explicit ReceivePage(RPCClient* rpc, QWidget* parent = nullptr);
 
-private slots:
+  private slots:
     void onGenerateAddress();
     void onCopyAddress();
 
-private:
+  private:
     void setupUI();
-    
-    RPCClient *rpcClient;
-    QLabel *addressLabel;
-    QLineEdit *addressEdit;
-    QPushButton *generateButton;
-    QPushButton *copyButton;
-    QLabel *qrCodeLabel;
+
+    RPCClient* rpcClient;
+    QLabel* addressLabel;
+    QLineEdit* addressEdit;
+    QPushButton* generateButton;
+    QPushButton* copyButton;
+    QLabel* qrCodeLabel;
 };
 
-#endif // RECEIVEPAGE_H
+#endif  // RECEIVEPAGE_H

@@ -1,7 +1,9 @@
 // ParthenonChain - Merkle Patricia Trie Implementation
 
 #include "mpt.h"
+
 #include "crypto/sha256.h"
+
 #include <algorithm>
 #include <cstring>
 
@@ -20,7 +22,7 @@ void MerklePatriciaTrie::Put(const Key& key, const Value& value) {
         Delete(key);
         return;
     }
-    
+
     auto nibbles = ToNibbles(key);
     root_ = Insert(root_, nibbles, 0, value);
 }
@@ -47,19 +49,19 @@ void MerklePatriciaTrie::Clear() {
 std::vector<uint8_t> MerklePatriciaTrie::ToNibbles(const Key& key) {
     std::vector<uint8_t> nibbles;
     nibbles.reserve(key.size() * 2);
-    
+
     for (uint8_t byte : key) {
-        nibbles.push_back(byte >> 4);        // High nibble
-        nibbles.push_back(byte & 0x0F);      // Low nibble
+        nibbles.push_back(byte >> 4);    // High nibble
+        nibbles.push_back(byte & 0x0F);  // Low nibble
     }
-    
+
     return nibbles;
 }
 
 MerklePatriciaTrie::Key MerklePatriciaTrie::FromNibbles(const std::vector<uint8_t>& nibbles) {
     Key key;
     key.reserve((nibbles.size() + 1) / 2);
-    
+
     for (size_t i = 0; i < nibbles.size(); i += 2) {
         uint8_t byte = nibbles[i] << 4;
         if (i + 1 < nibbles.size()) {
@@ -67,27 +69,23 @@ MerklePatriciaTrie::Key MerklePatriciaTrie::FromNibbles(const std::vector<uint8_
         }
         key.push_back(byte);
     }
-    
+
     return key;
 }
 
 size_t MerklePatriciaTrie::CommonPrefixLength(const std::vector<uint8_t>& a, size_t a_start,
-                                                const std::vector<uint8_t>& b, size_t b_start) {
+                                              const std::vector<uint8_t>& b, size_t b_start) {
     size_t length = 0;
-    while (a_start + length < a.size() && 
-           b_start + length < b.size() && 
+    while (a_start + length < a.size() && b_start + length < b.size() &&
            a[a_start + length] == b[b_start + length]) {
         length++;
     }
     return length;
 }
 
-MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(
-    NodePtr node, 
-    const std::vector<uint8_t>& nibbles, 
-    size_t idx, 
-    const Value& value
-) {
+MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(NodePtr node,
+                                                       const std::vector<uint8_t>& nibbles,
+                                                       size_t idx, const Value& value) {
     // Base case: reached end of path
     if (idx == nibbles.size()) {
         if (node->type == NodeType::EMPTY) {
@@ -110,7 +108,7 @@ MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(
             return branch;
         }
     }
-    
+
     if (node->type == NodeType::EMPTY) {
         // Create new leaf for remaining path
         auto leaf = std::make_shared<Node>();
@@ -119,10 +117,10 @@ MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(
         leaf->value = value;
         return leaf;
     }
-    
+
     if (node->type == NodeType::LEAF || node->type == NodeType::EXTENSION) {
         size_t common = CommonPrefixLength(nibbles, idx, node->path, 0);
-        
+
         if (common == node->path.size()) {
             // Path fully matches - continue down
             if (node->type == NodeType::LEAF) {
@@ -136,11 +134,10 @@ MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(
                     auto branch = std::make_shared<Node>();
                     branch->type = NodeType::BRANCH;
                     branch->children.resize(17);
-                    branch->children[nibbles[idx + common]] = Insert(
-                        std::make_shared<Node>(), nibbles, idx + common + 1, value
-                    );
-                    branch->value = node->value; // Old leaf value goes to branch
-                    
+                    branch->children[nibbles[idx + common]] =
+                        Insert(std::make_shared<Node>(), nibbles, idx + common + 1, value);
+                    branch->value = node->value;  // Old leaf value goes to branch
+
                     if (common > 0) {
                         // Create extension
                         auto ext = std::make_shared<Node>();
@@ -162,7 +159,7 @@ MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(
             auto branch = std::make_shared<Node>();
             branch->type = NodeType::BRANCH;
             branch->children.resize(17);
-            
+
             // Add old node's remaining path
             if (common < node->path.size()) {
                 auto old_child = std::make_shared<Node>();
@@ -172,16 +169,15 @@ MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(
                 old_child->children = node->children;
                 branch->children[node->path[common]] = old_child;
             }
-            
+
             // Add new value's remaining path
             if (idx + common < nibbles.size()) {
-                branch->children[nibbles[idx + common]] = Insert(
-                    std::make_shared<Node>(), nibbles, idx + common + 1, value
-                );
+                branch->children[nibbles[idx + common]] =
+                    Insert(std::make_shared<Node>(), nibbles, idx + common + 1, value);
             } else {
                 branch->value = value;
             }
-            
+
             // Add extension for common prefix if needed
             if (common > 0) {
                 auto ext = std::make_shared<Node>();
@@ -191,30 +187,29 @@ MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Insert(
                 ext->children[0] = branch;
                 return ext;
             }
-            
+
             return branch;
         }
     }
-    
+
     if (node->type == NodeType::BRANCH) {
         uint8_t nibble = nibbles[idx];
-        node->children[nibble] = Insert(node->children[nibble] ? node->children[nibble] : std::make_shared<Node>(),
-                                         nibbles, idx + 1, value);
+        node->children[nibble] =
+            Insert(node->children[nibble] ? node->children[nibble] : std::make_shared<Node>(),
+                   nibbles, idx + 1, value);
         return node;
     }
-    
+
     return node;
 }
 
-std::optional<MerklePatriciaTrie::Value> MerklePatriciaTrie::Lookup(
-    const NodePtr& node,
-    const std::vector<uint8_t>& nibbles,
-    size_t idx
-) const {
+std::optional<MerklePatriciaTrie::Value>
+MerklePatriciaTrie::Lookup(const NodePtr& node, const std::vector<uint8_t>& nibbles,
+                           size_t idx) const {
     if (!node || node->type == NodeType::EMPTY) {
         return std::nullopt;
     }
-    
+
     if (idx == nibbles.size()) {
         if (node->type == NodeType::LEAF || node->type == NodeType::BRANCH) {
             if (!node->value.empty()) {
@@ -223,7 +218,7 @@ std::optional<MerklePatriciaTrie::Value> MerklePatriciaTrie::Lookup(
         }
         return std::nullopt;
     }
-    
+
     if (node->type == NodeType::LEAF) {
         // Check if path matches
         if (idx + node->path.size() == nibbles.size()) {
@@ -233,7 +228,7 @@ std::optional<MerklePatriciaTrie::Value> MerklePatriciaTrie::Lookup(
         }
         return std::nullopt;
     }
-    
+
     if (node->type == NodeType::EXTENSION) {
         // Check if path matches
         if (idx + node->path.size() <= nibbles.size()) {
@@ -243,7 +238,7 @@ std::optional<MerklePatriciaTrie::Value> MerklePatriciaTrie::Lookup(
         }
         return std::nullopt;
     }
-    
+
     if (node->type == NodeType::BRANCH) {
         uint8_t nibble = nibbles[idx];
         if (nibble < 16 && node->children[nibble]) {
@@ -251,19 +246,16 @@ std::optional<MerklePatriciaTrie::Value> MerklePatriciaTrie::Lookup(
         }
         return std::nullopt;
     }
-    
+
     return std::nullopt;
 }
 
-MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Remove(
-    NodePtr node,
-    const std::vector<uint8_t>& nibbles,
-    size_t idx
-) {
+MerklePatriciaTrie::NodePtr
+MerklePatriciaTrie::Remove(NodePtr node, const std::vector<uint8_t>& nibbles, size_t idx) {
     if (!node || node->type == NodeType::EMPTY) {
         return node;
     }
-    
+
     // Simplified removal - just marks as empty for now
     // Full implementation would handle node collapsing
     if (idx == nibbles.size()) {
@@ -272,26 +264,26 @@ MerklePatriciaTrie::NodePtr MerklePatriciaTrie::Remove(
         }
         return node;
     }
-    
+
     return node;
 }
 
 std::vector<uint8_t> MerklePatriciaTrie::EncodeNode(const NodePtr& node) const {
     std::vector<uint8_t> encoded;
-    
+
     if (!node || node->type == NodeType::EMPTY) {
-        return encoded; // Empty encoding
+        return encoded;  // Empty encoding
     }
-    
+
     // Encode node type
     encoded.push_back(static_cast<uint8_t>(node->type));
-    
+
     // Encode path (for leaf/extension)
     if (node->type == NodeType::LEAF || node->type == NodeType::EXTENSION) {
         encoded.push_back(static_cast<uint8_t>(node->path.size()));
         encoded.insert(encoded.end(), node->path.begin(), node->path.end());
     }
-    
+
     // Encode value
     if (!node->value.empty()) {
         encoded.push_back(static_cast<uint8_t>(node->value.size() >> 8));
@@ -301,7 +293,7 @@ std::vector<uint8_t> MerklePatriciaTrie::EncodeNode(const NodePtr& node) const {
         encoded.push_back(0);
         encoded.push_back(0);
     }
-    
+
     // Encode children (for branch)
     if (node->type == NodeType::BRANCH) {
         for (size_t i = 0; i < 16; i++) {
@@ -321,7 +313,7 @@ std::vector<uint8_t> MerklePatriciaTrie::EncodeNode(const NodePtr& node) const {
             encoded.insert(encoded.end(), child_hash.begin(), child_hash.end());
         }
     }
-    
+
     return encoded;
 }
 
@@ -330,17 +322,17 @@ MerklePatriciaTrie::Hash MerklePatriciaTrie::HashNode(const NodePtr& node) const
         // Empty node hash
         return Hash{};
     }
-    
+
     auto encoded = EncodeNode(node);
-    
+
     crypto::SHA256 hasher;
     hasher.Write(encoded.data(), encoded.size());
     auto hash_result = hasher.Finalize();
-    
+
     Hash result;
     std::memcpy(result.data(), hash_result.data(), 32);
     return result;
 }
 
-} // namespace evm
-} // namespace parthenon
+}  // namespace evm
+}  // namespace parthenon

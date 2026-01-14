@@ -1,13 +1,14 @@
 // ParthenonChain - Zero-Copy Networking Implementation
 
 #include "zero_copy_network.h"
-#include <iostream>
+
 #include <cstring>
+#include <iostream>
 
 #ifdef __linux__
-#include <sys/sendfile.h>
-#include <sys/mman.h>
 #include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/sendfile.h>
 #include <unistd.h>
 #endif
 
@@ -25,12 +26,12 @@ ssize_t ZeroCopyNetwork::SendFile(int socket_fd, int file_fd, off_t offset, size
     // Use sendfile() system call for zero-copy transfer
     off_t off = offset;
     ssize_t sent = sendfile(socket_fd, file_fd, &off, count);
-    
+
     if (sent < 0) {
         std::cerr << "sendfile() failed: " << strerror(errno) << "\n";
         return -1;
     }
-    
+
     return sent;
 #else
     std::cerr << "sendfile() not available on this platform\n";
@@ -42,12 +43,12 @@ ssize_t ZeroCopyNetwork::Splice(int fd_in, int fd_out, size_t len) {
 #ifdef __linux__
     // Use splice() for zero-copy pipe transfer
     ssize_t spliced = splice(fd_in, nullptr, fd_out, nullptr, len, SPLICE_F_MOVE | SPLICE_F_MORE);
-    
+
     if (spliced < 0) {
         std::cerr << "splice() failed: " << strerror(errno) << "\n";
         return -1;
     }
-    
+
     return spliced;
 #else
     std::cerr << "splice() not available on this platform\n";
@@ -62,25 +63,25 @@ void* ZeroCopyNetwork::MemoryMapFile(const std::string& file_path, size_t& size)
         std::cerr << "Failed to open file: " << file_path << "\n";
         return nullptr;
     }
-    
+
     // Get file size
     off_t file_size = lseek(fd, 0, SEEK_END);
     if (file_size < 0) {
         close(fd);
         return nullptr;
     }
-    
+
     size = static_cast<size_t>(file_size);
-    
+
     // Memory map the file
     void* addr = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);  // Can close FD after mmap
-    
+
     if (addr == MAP_FAILED) {
         std::cerr << "mmap() failed: " << strerror(errno) << "\n";
         return nullptr;
     }
-    
+
     return addr;
 #else
     std::cerr << "mmap() not available on this platform\n";
@@ -116,7 +117,7 @@ ssize_t ZeroCopyNetwork::OptimizedSend(int socket_fd, const void* data, size_t l
         return sent;
     }
 #endif
-    
+
     // Fallback to regular send
     return send(socket_fd, data, len, MSG_DONTWAIT);
 }
@@ -133,22 +134,22 @@ bool DPDKNetwork::Init(const std::vector<std::string>& config) {
     if (initialized_) {
         return true;
     }
-    
+
     if (!IsAvailable()) {
         std::cerr << "DPDK not available on this system\n";
         std::cout << "NOTE: Install DPDK library for kernel bypass networking\n";
         std::cout << "      Continuing with standard socket API\n";
         return false;
     }
-    
+
     // TODO: Initialize DPDK EAL (Environment Abstraction Layer)
     // Convert config to argc/argv
     // rte_eal_init(argc, argv);
-    
+
     // For now, mark as unavailable
     std::cout << "DPDK initialization skipped (library not linked)\n";
     std::cout << "To enable: Install DPDK and link with -lrte_eal -lrte_ethdev\n";
-    
+
     return false;
 }
 
@@ -156,35 +157,37 @@ bool DPDKNetwork::SetupPort(uint16_t port_id, uint16_t rx_queues, uint16_t tx_qu
     if (!initialized_) {
         return false;
     }
-    
+
     // TODO: Configure port
     // rte_eth_dev_configure(port_id, rx_queues, tx_queues, &port_conf);
     // Setup RX queues
     // Setup TX queues
     // rte_eth_dev_start(port_id);
-    
+
     return false;
 }
 
-uint16_t DPDKNetwork::SendBurst(uint16_t port_id, uint16_t queue_id, void** packets, uint16_t count) {
+uint16_t DPDKNetwork::SendBurst(uint16_t port_id, uint16_t queue_id, void** packets,
+                                uint16_t count) {
     if (!initialized_) {
         return 0;
     }
-    
+
     // TODO: Send packet burst
     // return rte_eth_tx_burst(port_id, queue_id, (struct rte_mbuf**)packets, count);
-    
+
     return 0;
 }
 
-uint16_t DPDKNetwork::ReceiveBurst(uint16_t port_id, uint16_t queue_id, void** packets, uint16_t max_count) {
+uint16_t DPDKNetwork::ReceiveBurst(uint16_t port_id, uint16_t queue_id, void** packets,
+                                   uint16_t max_count) {
     if (!initialized_) {
         return 0;
     }
-    
+
     // TODO: Receive packet burst
     // return rte_eth_rx_burst(port_id, queue_id, (struct rte_mbuf**)packets, max_count);
-    
+
     return 0;
 }
 
@@ -198,11 +201,11 @@ std::string DPDKNetwork::GetPortStats(uint16_t port_id) {
     if (!initialized_) {
         return "DPDK not initialized";
     }
-    
+
     // TODO: Get port statistics
     // struct rte_eth_stats stats;
     // rte_eth_stats_get(port_id, &stats);
-    
+
     return "Port " + std::to_string(port_id) + " stats unavailable";
 }
 
@@ -214,5 +217,5 @@ void DPDKNetwork::Shutdown() {
     }
 }
 
-} // namespace p2p
-} // namespace parthenon
+}  // namespace p2p
+}  // namespace parthenon

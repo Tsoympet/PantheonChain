@@ -3,9 +3,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "rpc_client.h"
+
 #include <QMainWindow>
 #include <QStackedWidget>
-#include "rpc_client.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -23,11 +24,11 @@ class TransactionPage;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public:
-    MainWindow(QWidget *parent = nullptr);
+  public:
+    MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-private slots:
+  private slots:
     void showOverview();
     void showSend();
     void showReceive();
@@ -37,7 +38,7 @@ private slots:
     void onConnectionStatusChanged(bool connected);
     void onBalanceChanged();
 
-private:
+  private:
     void createActions();
     void createMenus();
     void createToolBars();
@@ -45,36 +46,36 @@ private:
     void connectToRPC();
 
     // Pages
-    QStackedWidget *centralStack;
-    OverviewPage *overviewPage;
-    SendPage *sendPage;
-    ReceivePage *receivePage;
-    TransactionPage *transactionPage;
+    QStackedWidget* centralStack;
+    OverviewPage* overviewPage;
+    SendPage* sendPage;
+    ReceivePage* receivePage;
+    TransactionPage* transactionPage;
 
     // Actions
-    QAction *overviewAction;
-    QAction *sendAction;
-    QAction *receiveAction;
-    QAction *transactionsAction;
-    QAction *exitAction;
-    QAction *aboutAction;
-    QAction *aboutQtAction;
+    QAction* overviewAction;
+    QAction* sendAction;
+    QAction* receiveAction;
+    QAction* transactionsAction;
+    QAction* exitAction;
+    QAction* aboutAction;
+    QAction* aboutQtAction;
 
     // Menus
-    QMenu *fileMenu;
-    QMenu *viewMenu;
-    QMenu *helpMenu;
+    QMenu* fileMenu;
+    QMenu* viewMenu;
+    QMenu* helpMenu;
 
     // Toolbar
-    QToolBar *toolBar;
+    QToolBar* toolBar;
 
     // Status bar widgets
-    QLabel *connectionLabel;
-    QLabel *blockHeightLabel;
-    QLabel *syncProgressLabel;
+    QLabel* connectionLabel;
+    QLabel* blockHeightLabel;
+    QLabel* syncProgressLabel;
 
     // RPC client
-    RPCClient *rpcClient;
+    RPCClient* rpcClient;
 };
 
-#endif // MAINWINDOW_H
+#endif  // MAINWINDOW_H

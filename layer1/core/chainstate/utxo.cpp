@@ -13,7 +13,7 @@ void UTXOSet::AddCoin(const primitives::OutPoint& outpoint, const Coin& coin) {
 bool UTXOSet::SpendCoin(const primitives::OutPoint& outpoint) {
     auto it = utxos_.find(outpoint);
     if (it == utxos_.end()) {
-        return false; // Coin not found
+        return false;  // Coin not found
     }
     utxos_.erase(it);
     return true;
@@ -31,5 +31,5 @@ bool UTXOSet::HaveCoin(const primitives::OutPoint& outpoint) const {
     return utxos_.find(outpoint) != utxos_.end();
 }
 
-} // namespace chainstate
-} // namespace parthenon
+}  // namespace chainstate
+}  // namespace parthenon

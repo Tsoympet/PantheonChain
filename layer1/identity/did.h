@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
+#include <array>
+#include <cstdint>
 #include <map>
 #include <optional>
-#include <cstdint>
-#include <array>
+#include <string>
+#include <vector>
 
 namespace parthenon {
 namespace identity {
@@ -20,26 +20,26 @@ namespace identity {
 struct DIDDocument {
     std::string id;  // did:parthenon:...
     std::vector<std::string> context;
-    
+
     struct PublicKey {
         std::string id;
         std::string type;  // Ed25519, Secp256k1, etc.
         std::string controller;
         std::vector<uint8_t> public_key_bytes;
     };
-    
+
     struct Service {
         std::string id;
         std::string type;
         std::string service_endpoint;
     };
-    
+
     std::vector<PublicKey> public_keys;
     std::vector<std::string> authentication;
     std::vector<Service> services;
     uint64_t created;
     uint64_t updated;
-    
+
     DIDDocument() : created(0), updated(0) {}
 };
 
@@ -55,7 +55,7 @@ struct VerifiableCredential {
     std::string expiration_date;
     std::map<std::string, std::string> credential_subject;
     std::vector<uint8_t> proof;
-    
+
     bool IsExpired(uint64_t current_time) const;
 };
 
@@ -64,54 +64,42 @@ struct VerifiableCredential {
  * Create and manage DIDs
  */
 class DIDManager {
-public:
+  public:
     DIDManager();
     ~DIDManager();
-    
+
     /**
      * Create new DID
      */
     std::string CreateDID(const std::vector<uint8_t>& public_key);
-    
+
     /**
      * Resolve DID to document
      */
     std::optional<DIDDocument> ResolveDID(const std::string& did);
-    
+
     /**
      * Update DID document
      */
-    bool UpdateDIDDocument(
-        const std::string& did,
-        const DIDDocument& document,
-        const std::vector<uint8_t>& signature
-    );
-    
+    bool UpdateDIDDocument(const std::string& did, const DIDDocument& document,
+                           const std::vector<uint8_t>& signature);
+
     /**
      * Revoke DID
      */
-    bool RevokeDID(
-        const std::string& did,
-        const std::vector<uint8_t>& signature
-    );
-    
+    bool RevokeDID(const std::string& did, const std::vector<uint8_t>& signature);
+
     /**
      * Add public key to DID
      */
-    bool AddPublicKey(
-        const std::string& did,
-        const DIDDocument::PublicKey& key
-    );
-    
+    bool AddPublicKey(const std::string& did, const DIDDocument::PublicKey& key);
+
     /**
      * Add service endpoint
      */
-    bool AddService(
-        const std::string& did,
-        const DIDDocument::Service& service
-    );
-    
-private:
+    bool AddService(const std::string& did, const DIDDocument::Service& service);
+
+  private:
     std::map<std::string, DIDDocument> did_registry_;
 };
 
@@ -119,33 +107,31 @@ private:
  * Verifiable Credentials Manager
  */
 class CredentialManager {
-public:
+  public:
     /**
      * Issue credential
      */
-    VerifiableCredential IssueCredential(
-        const std::string& issuer_did,
-        const std::string& subject_did,
-        const std::map<std::string, std::string>& claims,
-        const std::vector<uint8_t>& issuer_signature
-    );
-    
+    VerifiableCredential IssueCredential(const std::string& issuer_did,
+                                         const std::string& subject_did,
+                                         const std::map<std::string, std::string>& claims,
+                                         const std::vector<uint8_t>& issuer_signature);
+
     /**
      * Verify credential
      */
     bool VerifyCredential(const VerifiableCredential& credential);
-    
+
     /**
      * Revoke credential
      */
     bool RevokeCredential(const std::string& credential_id);
-    
+
     /**
      * Check if credential is revoked
      */
     bool IsRevoked(const std::string& credential_id) const;
-    
-private:
+
+  private:
     std::map<std::string, bool> revocation_list_;
 };
 
@@ -154,23 +140,18 @@ private:
  * Selective disclosure without revealing full credential
  */
 class ZKPCredentials {
-public:
+  public:
     /**
      * Create ZK proof for specific claims
      */
-    std::vector<uint8_t> CreateProof(
-        const VerifiableCredential& credential,
-        const std::vector<std::string>& claims_to_prove
-    );
-    
+    std::vector<uint8_t> CreateProof(const VerifiableCredential& credential,
+                                     const std::vector<std::string>& claims_to_prove);
+
     /**
      * Verify ZK proof
      */
-    bool VerifyProof(
-        const std::vector<uint8_t>& proof,
-        const std::string& issuer_did
-    );
+    bool VerifyProof(const std::vector<uint8_t>& proof, const std::string& issuer_did);
 };
 
-} // namespace identity
-} // namespace parthenon
+}  // namespace identity
+}  // namespace parthenon

@@ -23,7 +23,7 @@ enum class Opcode : uint8_t {
     MULMOD = 0x09,
     EXP = 0x0a,
     SIGNEXTEND = 0x0b,
-    
+
     // 0x10: Comparison & Bitwise Logic
     LT = 0x10,
     GT = 0x11,
@@ -39,10 +39,10 @@ enum class Opcode : uint8_t {
     SHL = 0x1b,
     SHR = 0x1c,
     SAR = 0x1d,
-    
+
     // 0x20: SHA3
     SHA3 = 0x20,
-    
+
     // 0x30: Environmental Information
     ADDRESS = 0x30,
     BALANCE = 0x31,
@@ -60,7 +60,7 @@ enum class Opcode : uint8_t {
     RETURNDATASIZE = 0x3d,
     RETURNDATACOPY = 0x3e,
     EXTCODEHASH = 0x3f,
-    
+
     // 0x40: Block Information
     BLOCKHASH = 0x40,
     COINBASE = 0x41,
@@ -71,7 +71,7 @@ enum class Opcode : uint8_t {
     CHAINID = 0x46,
     SELFBALANCE = 0x47,
     BASEFEE = 0x48,
-    
+
     // 0x50: Stack, Memory, Storage and Flow
     POP = 0x50,
     MLOAD = 0x51,
@@ -85,7 +85,7 @@ enum class Opcode : uint8_t {
     MSIZE = 0x59,
     GAS = 0x5a,
     JUMPDEST = 0x5b,
-    
+
     // 0x60-0x7f: Push Operations
     PUSH1 = 0x60,
     PUSH2 = 0x61,
@@ -119,7 +119,7 @@ enum class Opcode : uint8_t {
     PUSH30 = 0x7d,
     PUSH31 = 0x7e,
     PUSH32 = 0x7f,
-    
+
     // 0x80-0x8f: Duplication Operations
     DUP1 = 0x80,
     DUP2 = 0x81,
@@ -137,7 +137,7 @@ enum class Opcode : uint8_t {
     DUP14 = 0x8d,
     DUP15 = 0x8e,
     DUP16 = 0x8f,
-    
+
     // 0x90-0x9f: Exchange Operations
     SWAP1 = 0x90,
     SWAP2 = 0x91,
@@ -155,14 +155,14 @@ enum class Opcode : uint8_t {
     SWAP14 = 0x9d,
     SWAP15 = 0x9e,
     SWAP16 = 0x9f,
-    
+
     // 0xa0: Logging Operations
     LOG0 = 0xa0,
     LOG1 = 0xa1,
     LOG2 = 0xa2,
     LOG3 = 0xa3,
     LOG4 = 0xa4,
-    
+
     // 0xf0: System Operations
     CREATE = 0xf0,
     CALL = 0xf1,
@@ -193,8 +193,9 @@ inline bool IsPushOp(Opcode op) {
  * Get number of bytes to push for PUSH operations
  */
 inline uint8_t GetPushSize(Opcode op) {
-    if (!IsPushOp(op)) return 0;
-    return static_cast<uint8_t>(op) - 0x5f; // PUSH1 = 0x60, pushes 1 byte
+    if (!IsPushOp(op))
+        return 0;
+    return static_cast<uint8_t>(op) - 0x5f;  // PUSH1 = 0x60, pushes 1 byte
 }
 
 /**
@@ -208,8 +209,9 @@ inline bool IsDupOp(Opcode op) {
  * Get DUP depth (1-16)
  */
 inline uint8_t GetDupDepth(Opcode op) {
-    if (!IsDupOp(op)) return 0;
-    return static_cast<uint8_t>(op) - 0x7f; // DUP1 = 0x80, depth 1
+    if (!IsDupOp(op))
+        return 0;
+    return static_cast<uint8_t>(op) - 0x7f;  // DUP1 = 0x80, depth 1
 }
 
 /**
@@ -223,8 +225,9 @@ inline bool IsSwapOp(Opcode op) {
  * Get SWAP depth (1-16)
  */
 inline uint8_t GetSwapDepth(Opcode op) {
-    if (!IsSwapOp(op)) return 0;
-    return static_cast<uint8_t>(op) - 0x8f; // SWAP1 = 0x90, depth 1
+    if (!IsSwapOp(op))
+        return 0;
+    return static_cast<uint8_t>(op) - 0x8f;  // SWAP1 = 0x90, depth 1
 }
 
 /**
@@ -238,9 +241,10 @@ inline bool IsLogOp(Opcode op) {
  * Get number of topics for LOG operation
  */
 inline uint8_t GetLogTopics(Opcode op) {
-    if (!IsLogOp(op)) return 0;
-    return static_cast<uint8_t>(op) - 0xa0; // LOG0 = 0xa0, 0 topics
+    if (!IsLogOp(op))
+        return 0;
+    return static_cast<uint8_t>(op) - 0xa0;  // LOG0 = 0xa0, 0 topics
 }
 
-} // namespace evm
-} // namespace parthenon
+}  // namespace evm
+}  // namespace parthenon

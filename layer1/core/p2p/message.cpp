@@ -1,7 +1,9 @@
 // ParthenonChain - Network Messages Implementation
 
 #include "message.h"
+
 #include "crypto/sha256.h"
+
 #include <cstring>
 
 namespace parthenon {
@@ -40,8 +42,8 @@ static uint64_t ReadCompactSize(const uint8_t*& data) {
         return size;
     } else if (first == 254) {
         uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
-                       (static_cast<uint64_t>(data[2]) << 16) |
-                       (static_cast<uint64_t>(data[3]) << 24);
+                        (static_cast<uint64_t>(data[2]) << 16) |
+                        (static_cast<uint64_t>(data[3]) << 24);
         data += 4;
         return size;
     } else {
@@ -59,57 +61,55 @@ static uint64_t ReadCompactSize(const uint8_t*& data) {
 std::vector<uint8_t> MessageHeader::Serialize() const {
     std::vector<uint8_t> result;
     result.reserve(24);
-    
+
     // Magic (4 bytes)
     result.push_back(static_cast<uint8_t>(magic));
     result.push_back(static_cast<uint8_t>(magic >> 8));
     result.push_back(static_cast<uint8_t>(magic >> 16));
     result.push_back(static_cast<uint8_t>(magic >> 24));
-    
+
     // Command (12 bytes)
     for (int i = 0; i < 12; i++) {
         result.push_back(static_cast<uint8_t>(command[i]));
     }
-    
+
     // Length (4 bytes)
     result.push_back(static_cast<uint8_t>(length));
     result.push_back(static_cast<uint8_t>(length >> 8));
     result.push_back(static_cast<uint8_t>(length >> 16));
     result.push_back(static_cast<uint8_t>(length >> 24));
-    
+
     // Checksum (4 bytes)
     result.push_back(static_cast<uint8_t>(checksum));
     result.push_back(static_cast<uint8_t>(checksum >> 8));
     result.push_back(static_cast<uint8_t>(checksum >> 16));
     result.push_back(static_cast<uint8_t>(checksum >> 24));
-    
+
     return result;
 }
 
 std::optional<MessageHeader> MessageHeader::Deserialize(const uint8_t* data) {
     MessageHeader header;
-    
+
     // Magic
     header.magic = data[0] | (static_cast<uint32_t>(data[1]) << 8) |
-                  (static_cast<uint32_t>(data[2]) << 16) |
-                  (static_cast<uint32_t>(data[3]) << 24);
+                   (static_cast<uint32_t>(data[2]) << 16) | (static_cast<uint32_t>(data[3]) << 24);
     data += 4;
-    
+
     // Command
     std::memcpy(header.command, data, 12);
     data += 12;
-    
+
     // Length
     header.length = data[0] | (static_cast<uint32_t>(data[1]) << 8) |
-                   (static_cast<uint32_t>(data[2]) << 16) |
-                   (static_cast<uint32_t>(data[3]) << 24);
+                    (static_cast<uint32_t>(data[2]) << 16) | (static_cast<uint32_t>(data[3]) << 24);
     data += 4;
-    
+
     // Checksum
     header.checksum = data[0] | (static_cast<uint32_t>(data[1]) << 8) |
-                     (static_cast<uint32_t>(data[2]) << 16) |
-                     (static_cast<uint32_t>(data[3]) << 24);
-    
+                      (static_cast<uint32_t>(data[2]) << 16) |
+                      (static_cast<uint32_t>(data[3]) << 24);
+
     return header;
 }
 
@@ -127,22 +127,22 @@ bool MessageHeader::IsValid(uint32_t expected_magic) const {
 
 std::vector<uint8_t> VersionMessage::Serialize() const {
     std::vector<uint8_t> result;
-    
+
     // Version (4 bytes)
     for (int i = 0; i < 4; i++) {
         result.push_back(static_cast<uint8_t>(version >> (8 * i)));
     }
-    
+
     // Services (8 bytes)
     for (int i = 0; i < 8; i++) {
         result.push_back(static_cast<uint8_t>(services >> (8 * i)));
     }
-    
+
     // Timestamp (8 bytes)
     for (int i = 0; i < 8; i++) {
         result.push_back(static_cast<uint8_t>(timestamp >> (8 * i)));
     }
-    
+
     // Addr_recv (26 bytes) - simplified, just services + IP + port
     for (int i = 0; i < 8; i++) {
         result.push_back(static_cast<uint8_t>(addr_recv.services >> (8 * i)));
@@ -152,7 +152,7 @@ std::vector<uint8_t> VersionMessage::Serialize() const {
     }
     result.push_back(static_cast<uint8_t>(addr_recv.port >> 8));
     result.push_back(static_cast<uint8_t>(addr_recv.port));
-    
+
     // Addr_from (26 bytes)
     for (int i = 0; i < 8; i++) {
         result.push_back(static_cast<uint8_t>(addr_from.services >> (8 * i)));
@@ -162,82 +162,83 @@ std::vector<uint8_t> VersionMessage::Serialize() const {
     }
     result.push_back(static_cast<uint8_t>(addr_from.port >> 8));
     result.push_back(static_cast<uint8_t>(addr_from.port));
-    
+
     // Nonce (8 bytes)
     for (int i = 0; i < 8; i++) {
         result.push_back(static_cast<uint8_t>(nonce >> (8 * i)));
     }
-    
+
     // User agent
     WriteCompactSize(result, user_agent.size());
     for (char c : user_agent) {
         result.push_back(static_cast<uint8_t>(c));
     }
-    
+
     // Start height (4 bytes)
     for (int i = 0; i < 4; i++) {
         result.push_back(static_cast<uint8_t>(start_height >> (8 * i)));
     }
-    
+
     // Relay (1 byte)
     result.push_back(relay ? 1 : 0);
-    
+
     return result;
 }
 
 std::optional<VersionMessage> VersionMessage::Deserialize(const uint8_t* data, size_t len) {
-    if (len < 85) return std::nullopt; // Minimum size
-    
+    if (len < 85)
+        return std::nullopt;  // Minimum size
+
     VersionMessage msg;
     const uint8_t* ptr = data;
-    
+
     // Version
     msg.version = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
-                 (static_cast<uint32_t>(ptr[2]) << 16) |
-                 (static_cast<uint32_t>(ptr[3]) << 24);
+                  (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
     ptr += 4;
-    
+
     // Services
     msg.services = 0;
     for (int i = 0; i < 8; i++) {
         msg.services |= static_cast<uint64_t>(ptr[i]) << (8 * i);
     }
     ptr += 8;
-    
+
     // Timestamp
     msg.timestamp = 0;
     for (int i = 0; i < 8; i++) {
         msg.timestamp |= static_cast<int64_t>(ptr[i]) << (8 * i);
     }
     ptr += 8;
-    
+
     // Skip addr_recv and addr_from for now (52 bytes total)
     ptr += 52;
-    
+
     // Nonce
     msg.nonce = 0;
     for (int i = 0; i < 8; i++) {
         msg.nonce |= static_cast<uint64_t>(ptr[i]) << (8 * i);
     }
     ptr += 8;
-    
+
     // User agent
     uint64_t ua_len = ReadCompactSize(ptr);
-    if (ua_len > 256 || ptr + ua_len > data + len) return std::nullopt; // Bounds check
+    if (ua_len > 256 || ptr + ua_len > data + len)
+        return std::nullopt;  // Bounds check
     msg.user_agent = std::string(reinterpret_cast<const char*>(ptr), ua_len);
     ptr += ua_len;
-    
+
     // Start height
     msg.start_height = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
-                      (static_cast<uint32_t>(ptr[2]) << 16) |
-                      (static_cast<uint32_t>(ptr[3]) << 24);
+                       (static_cast<uint32_t>(ptr[2]) << 16) |
+                       (static_cast<uint32_t>(ptr[3]) << 24);
     ptr += 4;
-    
+
     // Relay (optional)
     if (ptr < data + len) {
         msg.relay = (*ptr != 0);
     }
-    
+
     return msg;
 }
 
@@ -252,8 +253,9 @@ std::vector<uint8_t> PingPongMessage::Serialize() const {
 }
 
 std::optional<PingPongMessage> PingPongMessage::Deserialize(const uint8_t* data, size_t len) {
-    if (len < 8) return std::nullopt;
-    
+    if (len < 8)
+        return std::nullopt;
+
     PingPongMessage msg;
     msg.nonce = 0;
     for (int i = 0; i < 8; i++) {
@@ -267,32 +269,32 @@ std::optional<PingPongMessage> PingPongMessage::Deserialize(const uint8_t* data,
 std::vector<uint8_t> InvVect::Serialize() const {
     std::vector<uint8_t> result;
     result.reserve(36);  // 4 bytes for type + 32 bytes for hash
-    
+
     // Type (4 bytes)
     uint32_t type_val = static_cast<uint32_t>(type);
     for (int i = 0; i < 4; i++) {
         result.push_back(static_cast<uint8_t>(type_val >> (8 * i)));
     }
-    
+
     // Hash (32 bytes)
     result.insert(result.end(), hash.begin(), hash.end());
-    
+
     return result;
 }
 
 std::optional<InvVect> InvVect::Deserialize(const uint8_t* data) {
     InvVect inv;
-    
+
     // Type
     uint32_t type_val = data[0] | (static_cast<uint32_t>(data[1]) << 8) |
-                       (static_cast<uint32_t>(data[2]) << 16) |
-                       (static_cast<uint32_t>(data[3]) << 24);
+                        (static_cast<uint32_t>(data[2]) << 16) |
+                        (static_cast<uint32_t>(data[3]) << 24);
     inv.type = static_cast<InvType>(type_val);
     data += 4;
-    
+
     // Hash
     std::copy(data, data + 32, inv.hash.begin());
-    
+
     return inv;
 }
 
@@ -300,33 +302,36 @@ std::optional<InvVect> InvVect::Deserialize(const uint8_t* data) {
 
 std::vector<uint8_t> InvMessage::Serialize() const {
     std::vector<uint8_t> result;
-    
+
     WriteCompactSize(result, inventory.size());
     for (const auto& inv : inventory) {
         auto inv_bytes = inv.Serialize();
         result.insert(result.end(), inv_bytes.begin(), inv_bytes.end());
     }
-    
+
     return result;
 }
 
 std::optional<InvMessage> InvMessage::Deserialize(const uint8_t* data, size_t len) {
     InvMessage msg;
     const uint8_t* ptr = data;
-    
+
     uint64_t count = ReadCompactSize(ptr);
-    if (count > MAX_INV_SIZE) return std::nullopt;
-    
+    if (count > MAX_INV_SIZE)
+        return std::nullopt;
+
     for (uint64_t i = 0; i < count; i++) {
-        if (ptr + 36 > data + len) return std::nullopt;
-        
+        if (ptr + 36 > data + len)
+            return std::nullopt;
+
         auto inv = InvVect::Deserialize(ptr);
-        if (!inv) return std::nullopt;
-        
+        if (!inv)
+            return std::nullopt;
+
         msg.inventory.push_back(*inv);
         ptr += 36;
     }
-    
+
     return msg;
 }
 
@@ -335,32 +340,29 @@ std::optional<InvMessage> InvMessage::Deserialize(const uint8_t* data, size_t le
 uint32_t CalculateChecksum(const std::vector<uint8_t>& payload) {
     auto hash = crypto::SHA256d::Hash256d(payload);
     return hash[0] | (static_cast<uint32_t>(hash[1]) << 8) |
-           (static_cast<uint32_t>(hash[2]) << 16) |
-           (static_cast<uint32_t>(hash[3]) << 24);
+           (static_cast<uint32_t>(hash[2]) << 16) | (static_cast<uint32_t>(hash[3]) << 24);
 }
 
-std::vector<uint8_t> CreateNetworkMessage(
-    uint32_t magic,
-    const char* command,
-    const std::vector<uint8_t>& payload
-) {
+std::vector<uint8_t> CreateNetworkMessage(uint32_t magic, const char* command,
+                                          const std::vector<uint8_t>& payload) {
     MessageHeader header;
     header.magic = magic;
     // Safe string copy with null termination
     size_t len = std::strlen(command);
-    if (len >= 12) len = 11; // Leave room for null terminator
+    if (len >= 12)
+        len = 11;  // Leave room for null terminator
     std::memcpy(header.command, command, len);
     header.command[len] = '\0';
     // Fill remaining with zeros
     std::memset(header.command + len + 1, 0, 12 - len - 1);
     header.length = static_cast<uint32_t>(payload.size());
     header.checksum = CalculateChecksum(payload);
-    
+
     auto result = header.Serialize();
     result.insert(result.end(), payload.begin(), payload.end());
-    
+
     return result;
 }
 
-} // namespace p2p
-} // namespace parthenon
+}  // namespace p2p
+}  // namespace parthenon

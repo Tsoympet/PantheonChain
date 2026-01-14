@@ -4,10 +4,10 @@
 #pragma once
 
 #include <array>
-#include <map>
-#include <vector>
 #include <cstdint>
+#include <map>
 #include <optional>
+#include <vector>
 
 namespace parthenon {
 namespace evm {
@@ -49,11 +49,11 @@ inline uint64_t ToUint64(const uint256_t& value) {
  */
 struct AccountState {
     uint64_t nonce;
-    uint256_t balance; // OBL balance for gas
+    uint256_t balance;  // OBL balance for gas
     std::array<uint8_t, 32> code_hash;
     std::array<uint8_t, 32> storage_root;
-    std::vector<uint8_t> code; // Contract bytecode
-    
+    std::vector<uint8_t> code;  // Contract bytecode
+
     AccountState() : nonce(0), balance{}, code_hash{}, storage_root{} {}
 };
 
@@ -69,74 +69,74 @@ struct StorageEntry {
  * World state - maintains all account states
  */
 class WorldState {
-public:
+  public:
     WorldState() = default;
-    
+
     /**
      * Get account state
      */
     std::optional<AccountState> GetAccount(const Address& addr) const;
-    
+
     /**
      * Set account state
      */
     void SetAccount(const Address& addr, const AccountState& state);
-    
+
     /**
      * Check if account exists
      */
     bool AccountExists(const Address& addr) const;
-    
+
     /**
      * Get contract storage value
      */
     uint256_t GetStorage(const Address& addr, const uint256_t& key) const;
-    
+
     /**
      * Set contract storage value
      */
     void SetStorage(const Address& addr, const uint256_t& key, const uint256_t& value);
-    
+
     /**
      * Get contract code
      */
     std::vector<uint8_t> GetCode(const Address& addr) const;
-    
+
     /**
      * Set contract code
      */
     void SetCode(const Address& addr, const std::vector<uint8_t>& code);
-    
+
     /**
      * Get OBL balance
      */
     uint256_t GetBalance(const Address& addr) const;
-    
+
     /**
      * Set OBL balance
      */
     void SetBalance(const Address& addr, const uint256_t& balance);
-    
+
     /**
      * Get nonce
      */
     uint64_t GetNonce(const Address& addr) const;
-    
+
     /**
      * Set nonce
      */
     void SetNonce(const Address& addr, uint64_t nonce);
-    
+
     /**
      * Delete account
      */
     void DeleteAccount(const Address& addr);
-    
+
     /**
      * Calculate state root (Merkle Patricia Trie root)
      */
     std::array<uint8_t, 32> CalculateStateRoot() const;
-    
+
     /**
      * Create snapshot for reverting
      */
@@ -144,11 +144,11 @@ public:
         std::map<Address, AccountState> accounts;
         std::map<std::pair<Address, uint256_t>, uint256_t> storage;
     };
-    
+
     Snapshot CreateSnapshot() const;
     void RestoreSnapshot(const Snapshot& snapshot);
-    
-private:
+
+  private:
     std::map<Address, AccountState> accounts_;
     std::map<std::pair<Address, uint256_t>, uint256_t> storage_;
 };
@@ -162,5 +162,5 @@ struct LogEntry {
     std::vector<uint8_t> data;
 };
 
-} // namespace evm
-} // namespace parthenon
+}  // namespace evm
+}  // namespace parthenon

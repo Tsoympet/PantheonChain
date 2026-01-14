@@ -6,15 +6,13 @@ namespace parthenon {
 namespace evm {
 
 // PrivateContractState implementation
-bool PrivateContractState::StoreEncrypted(
-    const std::string& key,
-    const std::vector<uint8_t>& encrypted_value,
-    const privacy::zksnark::ZKProof& proof) {
-    
+bool PrivateContractState::StoreEncrypted(const std::string& key,
+                                          const std::vector<uint8_t>& encrypted_value,
+                                          const privacy::zksnark::ZKProof& proof) {
     if (!proof.IsValid()) {
         return false;
     }
-    
+
     encrypted_storage_[key] = encrypted_value;
     return true;
 }
@@ -28,14 +26,12 @@ std::optional<std::vector<uint8_t>> PrivateContractState::GetEncrypted(const std
 }
 
 bool PrivateContractState::VerifyStateTransition(
-    const std::string& key,
-    const std::vector<uint8_t>& new_encrypted_value,
+    const std::string& key, const std::vector<uint8_t>& new_encrypted_value,
     const privacy::zksnark::ZKProof& transition_proof) {
-    
     if (!transition_proof.IsValid()) {
         return false;
     }
-    
+
     encrypted_storage_[key] = new_encrypted_value;
     return true;
 }
@@ -44,16 +40,13 @@ bool PrivateContractState::VerifyStateTransition(
 PrivateERC20::PrivateERC20(const std::string& name, const std::string& symbol)
     : name_(name), symbol_(symbol) {}
 
-bool PrivateERC20::Transfer(
-    const std::vector<uint8_t>& from,
-    const std::vector<uint8_t>& to,
-    const std::vector<uint8_t>& encrypted_amount,
-    const privacy::zksnark::ZKProof& proof) {
-    
+bool PrivateERC20::Transfer(const std::vector<uint8_t>& from, const std::vector<uint8_t>& to,
+                            const std::vector<uint8_t>& encrypted_amount,
+                            const privacy::zksnark::ZKProof& proof) {
     if (!proof.IsValid()) {
         return false;
     }
-    
+
     // In production: verify sender has sufficient balance via ZK proof
     balances_[from] = encrypted_amount;  // Update from balance (encrypted)
     balances_[to] = encrypted_amount;    // Update to balance (encrypted)
@@ -68,15 +61,13 @@ std::vector<uint8_t> PrivateERC20::GetEncryptedBalance(const std::vector<uint8_t
     return it->second;
 }
 
-bool PrivateERC20::Mint(
-    const std::vector<uint8_t>& to,
-    const std::vector<uint8_t>& encrypted_amount,
-    const privacy::zksnark::ZKProof& proof) {
-    
+bool PrivateERC20::Mint(const std::vector<uint8_t>& to,
+                        const std::vector<uint8_t>& encrypted_amount,
+                        const privacy::zksnark::ZKProof& proof) {
     if (!proof.IsValid()) {
         return false;
     }
-    
+
     balances_[to] = encrypted_amount;
     return true;
 }
@@ -86,7 +77,7 @@ bool PrivateAuction::SubmitBid(const SealedBid& bid) {
     if (!VerifyBid(bid)) {
         return false;
     }
-    
+
     bids_.push_back(bid);
     return true;
 }
@@ -95,7 +86,7 @@ std::optional<std::vector<uint8_t>> PrivateAuction::RevealAndDetermineWinner() {
     if (bids_.empty()) {
         return std::nullopt;
     }
-    
+
     // In production: decrypt bids and find highest
     auction_ended_ = true;
     return bids_[0].bidder;
@@ -111,11 +102,11 @@ bool PrivateVoting::CastVote(const Vote& vote) {
     if (used_nullifiers_[vote.nullifier]) {
         return false;
     }
-    
+
     if (!VerifyVote(vote)) {
         return false;
     }
-    
+
     votes_.push_back(vote);
     used_nullifiers_[vote.nullifier] = true;
     return true;
@@ -133,5 +124,5 @@ bool PrivateVoting::VerifyVote(const Vote& vote) {
     return vote.eligibility_proof.IsValid();
 }
 
-} // namespace evm
-} // namespace parthenon
+}  // namespace evm
+}  // namespace parthenon

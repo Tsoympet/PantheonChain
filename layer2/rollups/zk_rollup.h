@@ -4,11 +4,12 @@
 #pragma once
 
 #include "privacy/zk_snark.h"
-#include <vector>
+
 #include <array>
+#include <cstdint>
 #include <map>
 #include <optional>
-#include <cstdint>
+#include <vector>
 
 namespace parthenon {
 namespace layer2 {
@@ -26,7 +27,7 @@ struct ZKRollupBatch {
     privacy::zksnark::ZKProof validity_proof;  // Proof that batch is valid
     uint64_t timestamp;
     std::vector<uint8_t> operator_signature;
-    
+
     ZKRollupBatch() : batch_id(0), timestamp(0) {
         state_root_before.fill(0);
         state_root_after.fill(0);
@@ -39,11 +40,11 @@ struct ZKRollupBatch {
  */
 struct ZKTransaction {
     std::array<uint8_t, 32> tx_hash;
-    std::array<uint8_t, 32> nullifier;      // Prevents double-spending
-    std::array<uint8_t, 32> commitment;      // Output commitment
-    privacy::zksnark::ZKProof transfer_proof; // Proof of valid transfer
-    std::vector<uint8_t> encrypted_data;     // Encrypted amount/recipient
-    
+    std::array<uint8_t, 32> nullifier;         // Prevents double-spending
+    std::array<uint8_t, 32> commitment;        // Output commitment
+    privacy::zksnark::ZKProof transfer_proof;  // Proof of valid transfer
+    std::vector<uint8_t> encrypted_data;       // Encrypted amount/recipient
+
     ZKTransaction() {
         tx_hash.fill(0);
         nullifier.fill(0);
@@ -56,44 +57,38 @@ struct ZKTransaction {
  * Manages rollup state tree
  */
 class ZKRollupState {
-public:
+  public:
     ZKRollupState();
     ~ZKRollupState();
-    
+
     /**
      * Get current state root
      */
     std::array<uint8_t, 32> GetStateRoot() const;
-    
+
     /**
      * Apply transaction to state
      */
     bool ApplyTransaction(const ZKTransaction& tx);
-    
+
     /**
      * Get merkle proof for account
      */
-    std::vector<std::array<uint8_t, 32>> GetMerkleProof(
-        const std::vector<uint8_t>& account
-    ) const;
-    
+    std::vector<std::array<uint8_t, 32>> GetMerkleProof(const std::vector<uint8_t>& account) const;
+
     /**
      * Verify merkle proof
      */
-    bool VerifyMerkleProof(
-        const std::vector<uint8_t>& account,
-        const std::vector<std::array<uint8_t, 32>>& proof,
-        const std::array<uint8_t, 32>& root
-    ) const;
-    
+    bool VerifyMerkleProof(const std::vector<uint8_t>& account,
+                           const std::vector<std::array<uint8_t, 32>>& proof,
+                           const std::array<uint8_t, 32>& root) const;
+
     /**
      * Get account balance (encrypted)
      */
-    std::optional<std::array<uint8_t, 32>> GetBalance(
-        const std::vector<uint8_t>& account
-    ) const;
-    
-private:
+    std::optional<std::array<uint8_t, 32>> GetBalance(const std::vector<uint8_t>& account) const;
+
+  private:
     std::array<uint8_t, 32> state_root_;
     std::map<std::vector<uint8_t>, std::array<uint8_t, 32>> balances_;
     std::map<std::array<uint8_t, 32>, bool> used_nullifiers_;
@@ -104,73 +99,73 @@ private:
  * Zero-knowledge rollup for scalability and privacy
  */
 class ZKRollup {
-public:
+  public:
     ZKRollup();
     ~ZKRollup();
-    
+
     /**
      * Submit a new batch with validity proof
      */
     bool SubmitBatch(const ZKRollupBatch& batch);
-    
+
     /**
      * Get batch by ID
      */
     std::optional<ZKRollupBatch> GetBatch(uint64_t batch_id) const;
-    
+
     /**
      * Add transaction to pending batch
      */
     bool AddTransaction(const ZKTransaction& tx);
-    
+
     /**
      * Create batch from pending transactions
      */
     ZKRollupBatch CreateBatch();
-    
+
     /**
      * Verify batch proof
      */
     bool VerifyBatchProof(const ZKRollupBatch& batch) const;
-    
+
     /**
      * Finalize batch (no challenge period needed - instant finality)
      */
     bool FinalizeBatch(uint64_t batch_id);
-    
+
     /**
      * Get pending batches
      */
     std::vector<ZKRollupBatch> GetPendingBatches() const;
-    
+
     /**
      * Get current batch ID
      */
     uint64_t GetCurrentBatchId() const { return current_batch_id_; }
-    
+
     /**
      * Compress batch data (more efficient than optimistic rollup)
      */
     std::vector<uint8_t> CompressBatch(const ZKRollupBatch& batch) const;
-    
+
     /**
      * Decompress batch data
      */
     std::optional<ZKRollupBatch> DecompressBatch(const std::vector<uint8_t>& data) const;
-    
+
     /**
      * Get state
      */
     ZKRollupState& GetState() { return state_; }
     const ZKRollupState& GetState() const { return state_; }
-    
-private:
+
+  private:
     struct BatchInfo {
         ZKRollupBatch batch;
         uint64_t submission_block;
         bool finalized;
     };
-    
+
     uint64_t current_batch_id_;
     uint64_t current_block_height_;
     ZKRollupState state_;
@@ -184,31 +179,27 @@ private:
  * Generates validity proofs for batches
  */
 class ZKRollupProver {
-public:
+  public:
     explicit ZKRollupProver(ZKRollup* rollup);
     ~ZKRollupProver();
-    
+
     /**
      * Generate validity proof for batch
      */
-    privacy::zksnark::ZKProof GenerateBatchProof(
-        const ZKRollupBatch& batch
-    );
-    
+    privacy::zksnark::ZKProof GenerateBatchProof(const ZKRollupBatch& batch);
+
     /**
      * Generate transfer proof for transaction
      */
-    privacy::zksnark::ZKProof GenerateTransferProof(
-        const ZKTransaction& tx,
-        const std::vector<uint8_t>& witness
-    );
-    
+    privacy::zksnark::ZKProof GenerateTransferProof(const ZKTransaction& tx,
+                                                    const std::vector<uint8_t>& witness);
+
     /**
      * Setup proof parameters (trusted setup)
      */
     bool SetupParameters(size_t circuit_size);
-    
-private:
+
+  private:
     ZKRollup* rollup_;
     privacy::zksnark::ProofParameters params_;
 };
@@ -218,26 +209,26 @@ private:
  * Verifies validity proofs
  */
 class ZKRollupVerifier {
-public:
+  public:
     explicit ZKRollupVerifier(ZKRollup* rollup);
     ~ZKRollupVerifier();
-    
+
     /**
      * Verify batch validity proof
      */
     bool VerifyBatchProof(const ZKRollupBatch& batch) const;
-    
+
     /**
      * Verify transaction proof
      */
     bool VerifyTransactionProof(const ZKTransaction& tx) const;
-    
+
     /**
      * Batch verify multiple proofs (more efficient)
      */
     bool BatchVerifyProofs(const std::vector<ZKRollupBatch>& batches) const;
-    
-private:
+
+  private:
     ZKRollup* rollup_;
     privacy::zksnark::ProofParameters params_;
 };
@@ -247,7 +238,7 @@ private:
  * Manages withdrawals from rollup to L1
  */
 class ZKRollupExitManager {
-public:
+  public:
     struct ExitRequest {
         std::vector<uint8_t> account;
         uint64_t amount;
@@ -256,36 +247,34 @@ public:
         privacy::zksnark::ZKProof ownership_proof;
         uint64_t request_block;
         bool processed;
-        
-        ExitRequest() : amount(0), request_block(0), processed(false) {
-            merkle_root.fill(0);
-        }
+
+        ExitRequest() : amount(0), request_block(0), processed(false) { merkle_root.fill(0); }
     };
-    
+
     /**
      * Request exit from rollup
      */
     bool RequestExit(const ExitRequest& request);
-    
+
     /**
      * Process exit (transfer from L2 to L1)
      */
     bool ProcessExit(const std::vector<uint8_t>& account);
-    
+
     /**
      * Get pending exits
      */
     std::vector<ExitRequest> GetPendingExits() const;
-    
+
     /**
      * Verify exit proof
      */
     bool VerifyExitProof(const ExitRequest& request) const;
-    
-private:
+
+  private:
     std::map<std::vector<uint8_t>, ExitRequest> pending_exits_;
 };
 
-} // namespace rollups
-} // namespace layer2
-} // namespace parthenon
+}  // namespace rollups
+}  // namespace layer2
+}  // namespace parthenon

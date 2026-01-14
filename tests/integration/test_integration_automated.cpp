@@ -1,104 +1,108 @@
 // ParthenonChain - Automated Integration Tests
 // End-to-end testing for complete system functionality
 
-#include "core/node/node.h"
-#include "core/mining/miner.h"
-#include "wallet/wallet.h"
-#include "primitives/transaction.h"
-#include "primitives/block.h"
 #include "consensus/issuance.h"
 #include "p2p/peer_database.h"
+#include "primitives/block.h"
+#include "primitives/transaction.h"
+
+#include "core/mining/miner.h"
+#include "core/node/node.h"
+#include "wallet/wallet.h"
+
 #include <cassert>
-#include <iostream>
-#include <thread>
 #include <chrono>
 #include <filesystem>
+#include <iostream>
+#include <thread>
 
 using namespace parthenon;
 
 // Test utilities
 namespace {
-    int test_count = 0;
-    int test_passed = 0;
-    int test_failed = 0;
-    
-    void TEST_START(const char* name) {
-        std::cout << "\n=== TEST: " << name << " ===\n";
-        test_count++;
-    }
-    
-    void TEST_PASS(const char* name) {
-        std::cout << "✅ PASS: " << name << "\n";
-        test_passed++;
-    }
-    
-    void TEST_FAIL(const char* name, const char* reason) {
-        std::cerr << "❌ FAIL: " << name << " - " << reason << "\n";
-        test_failed++;
-    }
-    
-    #define ASSERT_TRUE(cond, msg) do { \
-        if (!(cond)) { \
-            TEST_FAIL(__func__, msg); \
-            return false; \
-        } \
-    } while(0)
-    
-    #define ASSERT_EQ(a, b, msg) do { \
-        if ((a) != (b)) { \
-            TEST_FAIL(__func__, msg); \
-            return false; \
-        } \
-    } while(0)
-    
-    // Easy difficulty for testing - allows quick nonce finding
-    constexpr uint32_t EASY_TEST_DIFFICULTY_BITS = 0x207fffff;
-    
-    // Helper to generate a deterministic seed for testing purposes only
-    // NOT cryptographically secure - use only in tests
-    std::array<uint8_t, 32> GenerateTestSeedDeterministic(uint8_t seed_byte = 0x42) {
-        std::array<uint8_t, 32> seed;
-        for (size_t i = 0; i < 32; i++) {
-            seed[i] = static_cast<uint8_t>((seed_byte + i) & 0xFF);
-        }
-        return seed;
-    }
+int test_count = 0;
+int test_passed = 0;
+int test_failed = 0;
+
+void TEST_START(const char* name) {
+    std::cout << "\n=== TEST: " << name << " ===\n";
+    test_count++;
 }
+
+void TEST_PASS(const char* name) {
+    std::cout << "✅ PASS: " << name << "\n";
+    test_passed++;
+}
+
+void TEST_FAIL(const char* name, const char* reason) {
+    std::cerr << "❌ FAIL: " << name << " - " << reason << "\n";
+    test_failed++;
+}
+
+#define ASSERT_TRUE(cond, msg)        \
+    do {                              \
+        if (!(cond)) {                \
+            TEST_FAIL(__func__, msg); \
+            return false;             \
+        }                             \
+    } while (0)
+
+#define ASSERT_EQ(a, b, msg)          \
+    do {                              \
+        if ((a) != (b)) {             \
+            TEST_FAIL(__func__, msg); \
+            return false;             \
+        }                             \
+    } while (0)
+
+// Easy difficulty for testing - allows quick nonce finding
+constexpr uint32_t EASY_TEST_DIFFICULTY_BITS = 0x207fffff;
+
+// Helper to generate a deterministic seed for testing purposes only
+// NOT cryptographically secure - use only in tests
+std::array<uint8_t, 32> GenerateTestSeedDeterministic(uint8_t seed_byte = 0x42) {
+    std::array<uint8_t, 32> seed;
+    for (size_t i = 0; i < 32; i++) {
+        seed[i] = static_cast<uint8_t>((seed_byte + i) & 0xFF);
+    }
+    return seed;
+}
+}  // namespace
 
 // Test 1: Complete block production and validation flow
 bool test_block_production_flow() {
     TEST_START("Block Production Flow");
-    
+
     // Create temporary test directory
     std::filesystem::create_directories("/tmp/test_block_prod");
-    
+
     // Initialize chainstate
     chainstate::ChainState chain_state;
-    
+
     // Create wallet for coinbase
     auto seed = GenerateTestSeedDeterministic(0x11);
     wallet::Wallet wallet(seed);
     auto address = wallet.GenerateAddress("mining");
-    
+
     // Create miner
     mining::Miner miner(chain_state, address.pubkey);
-    
+
     // Create block template
     auto template_opt = miner.CreateBlockTemplate();
     ASSERT_TRUE(template_opt.has_value(), "Failed to create block template");
-    
+
     // Verify template structure
     auto& block_template = *template_opt;
     ASSERT_TRUE(block_template.block.transactions.size() > 0, "Template should have transactions");
     ASSERT_TRUE(block_template.block.transactions[0].IsCoinbase(), "First tx should be coinbase");
     ASSERT_EQ(block_template.height, 1u, "First block should be height 1");
-    
+
     // For testing, manually create a valid block without full PoW mining
     // Set difficulty to minimum and use nonce 0
     auto block = block_template.block;
     block.header.bits = EASY_TEST_DIFFICULTY_BITS;
     block.header.nonce = 0;
-    
+
     // Try a few nonces to find one that works (much faster than full mining)
     bool found = false;
     for (uint32_t nonce = 0; nonce < 1000000; nonce++) {
@@ -109,23 +113,23 @@ bool test_block_production_flow() {
         }
     }
     ASSERT_TRUE(found, "Failed to find valid nonce");
-    
+
     // Verify block structure
     ASSERT_TRUE(block.IsValid(), "Block should be valid");
-    
+
     // Validate and apply block to chainstate
     ASSERT_TRUE(chain_state.ValidateBlock(block), "Block validation failed");
     ASSERT_TRUE(chain_state.ApplyBlock(block), "Failed to apply block");
-    
+
     // Verify chainstate updated
     ASSERT_EQ(chain_state.GetHeight(), 1u, "Chain height should be 1");
-    
+
     // Verify block hash meets difficulty
     ASSERT_TRUE(block.header.MeetsDifficultyTarget(), "Block doesn't meet difficulty");
-    
+
     // Cleanup
     std::filesystem::remove_all("/tmp/test_block_prod");
-    
+
     TEST_PASS("Block Production Flow");
     return true;
 }
@@ -320,52 +324,52 @@ bool test_smart_contract_flow() {
 // Test 5: Peer database and scoring system
 bool test_peer_database() {
     TEST_START("Peer Database and Scoring");
-    
+
     std::filesystem::create_directories("/tmp/test_peer_db");
-    
+
     p2p::PeerDatabase db;
     ASSERT_TRUE(db.Open("/tmp/test_peer_db/peers.dat"), "Failed to open peer database");
-    
+
     // Add peers
     db.AddPeer("192.168.1.100", 8333, 1);
     db.AddPeer("192.168.1.101", 8333, 1);
     db.AddPeer("192.168.1.102", 8333, 1);
-    
+
     ASSERT_EQ(db.GetPeerCount(), 3u, "Should have 3 peers");
-    
+
     // Test connection tracking
     db.RecordConnectionAttempt("192.168.1.100", 8333);
     db.RecordSuccessfulConnection("192.168.1.100", 8333);
-    
+
     db.RecordConnectionAttempt("192.168.1.101", 8333);
     db.RecordFailedConnection("192.168.1.101", 8333);
-    
+
     // Test scoring
     db.RecordBlockReceived("192.168.1.100", 8333);
     db.RecordTxReceived("192.168.1.100", 8333);
     db.RecordInvalidMessage("192.168.1.101", 8333);
-    
+
     // Get good peers (should prefer peer with higher score)
     auto good_peers = db.GetGoodPeers(10);
     ASSERT_TRUE(good_peers.size() > 0, "Should have good peers");
     ASSERT_TRUE(good_peers[0].score > 50.0, "Top peer should have high score");
-    
+
     // Test banning
     db.BanPeer("192.168.1.102", 8333, 3600);
     ASSERT_TRUE(db.IsBanned("192.168.1.102", 8333), "Peer should be banned");
     ASSERT_EQ(db.GetBannedCount(), 1u, "Should have 1 banned peer");
-    
+
     // Close and reopen to test persistence
     db.Close();
-    
+
     p2p::PeerDatabase db2;
     ASSERT_TRUE(db2.Open("/tmp/test_peer_db/peers.dat"), "Failed to reopen database");
     ASSERT_EQ(db2.GetPeerCount(), 3u, "Peers should persist");
     ASSERT_TRUE(db2.IsBanned("192.168.1.102", 8333), "Ban should persist");
-    
+
     db2.Close();
     std::filesystem::remove_all("/tmp/test_peer_db");
-    
+
     TEST_PASS("Peer Database and Scoring");
     return true;
 }
@@ -421,39 +425,39 @@ bool test_utxo_persistence() {
 /*
 bool test_performance_validation() {
     TEST_START("Performance - Block Validation");
-    
+
     std::filesystem::create_directories("/tmp/test_perf");
-    
+
     node::Node node("/tmp/test_perf", 18339);
     ASSERT_TRUE(node.Start(), "Node failed to start");
-    
+
     crypto::Seed seed = crypto::GenerateSeed();
     wallet::Wallet wallet(seed);
     auto addr = wallet.GetNewAddress();
-    
+
     mining::Miner miner;
-    
+
     // Measure block processing time
     auto start = std::chrono::high_resolution_clock::now();
-    
+
     const uint32_t num_blocks = 100;
     for (uint32_t i = 0; i < num_blocks; i++) {
         auto block = miner.MineBlock(addr, i, {});
         ASSERT_TRUE(node.ProcessBlock(*block, "local"), "Failed to process block");
     }
-    
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    
+
     double blocks_per_second = (num_blocks * 1000.0) / duration.count();
     std::cout << "Block validation throughput: " << blocks_per_second << " blocks/second\n";
     std::cout << "Average time per block: " << (duration.count() / num_blocks) << " ms\n";
-    
+
     ASSERT_TRUE(blocks_per_second > 10.0, "Should process at least 10 blocks/second");
-    
+
     node.Stop();
     std::filesystem::remove_all("/tmp/test_perf");
-    
+
     TEST_PASS("Performance - Block Validation");
     return true;
 }
@@ -464,7 +468,7 @@ int main() {
     std::cout << "╔══════════════════════════════════════════════════════════╗\n";
     std::cout << "║  PantheonChain - Automated Integration Test Suite       ║\n";
     std::cout << "╚══════════════════════════════════════════════════════════╝\n";
-    
+
     // Run all tests
     test_block_production_flow();
     // test_transaction_flow();  // TODO: Needs wallet transaction creation
@@ -473,16 +477,19 @@ int main() {
     test_peer_database();
     // test_utxo_persistence();  // TODO: Needs node persistence
     // test_performance_validation();  // TODO: Needs implementation fixes
-    
+
     // Print summary
     std::cout << "\n";
     std::cout << "╔══════════════════════════════════════════════════════════╗\n";
     std::cout << "║  Test Summary                                            ║\n";
     std::cout << "╠══════════════════════════════════════════════════════════╣\n";
-    std::cout << "║  Total Tests:  " << test_count << "                                           ║\n";
-    std::cout << "║  Passed:       " << test_passed << "                                           ║\n";
-    std::cout << "║  Failed:       " << test_failed << "                                           ║\n";
+    std::cout << "║  Total Tests:  " << test_count
+              << "                                           ║\n";
+    std::cout << "║  Passed:       " << test_passed
+              << "                                           ║\n";
+    std::cout << "║  Failed:       " << test_failed
+              << "                                           ║\n";
     std::cout << "╚══════════════════════════════════════════════════════════╝\n";
-    
+
     return (test_failed == 0) ? 0 : 1;
 }

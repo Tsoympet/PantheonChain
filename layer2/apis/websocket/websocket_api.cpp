@@ -2,49 +2,50 @@
 // WebSocket endpoint for real-time blockchain updates
 
 #include "websocket_api.h"
+
 #include <algorithm>
-#include <mutex>
 #include <map>
 #include <memory>
+#include <mutex>
 
 namespace parthenon {
 namespace layer2 {
 namespace apis {
 
 class WebSocketAPI::Impl {
-public:
+  public:
     Impl(uint16_t port) : port_(port), running_(false), next_client_id_(1) {}
-    
+
     bool Start() {
         if (running_) {
             return false;
         }
-        
+
         // In a full implementation, this would:
         // 1. Initialize WebSocket server
         // 2. Setup connection handlers
         // 3. Start listening for connections
-        
+
         running_ = true;
         return true;
     }
-    
+
     void Stop() {
         if (!running_) {
             return;
         }
-        
+
         // Close all client connections
         std::lock_guard<std::mutex> lock(mutex_);
         clients_.clear();
         subscriptions_.clear();
-        
+
         running_ = false;
     }
-    
+
     void Broadcast(const std::string& message) {
         std::lock_guard<std::mutex> lock(mutex_);
-        
+
         // In a real implementation, send to all connected WebSocket clients
         for (const auto& client : clients_) {
             // websocket_send(client.connection, message);
@@ -52,38 +53,39 @@ public:
         }
         (void)message;  // Suppress unused warning (would be used in websocket_send)
     }
-    
+
     void OnNewBlock(std::function<void(const std::string&)> callback) {
         std::lock_guard<std::mutex> lock(mutex_);
         block_callback_ = callback;
     }
-    
+
     void OnNewTransaction(std::function<void(const std::string&)> callback) {
         std::lock_guard<std::mutex> lock(mutex_);
         tx_callback_ = callback;
     }
-    
+
     void Subscribe(uint64_t client_id, const std::string& topic) {
         std::lock_guard<std::mutex> lock(mutex_);
         subscriptions_[topic].push_back(client_id);
     }
-    
+
     void Unsubscribe(uint64_t client_id, const std::string& topic) {
         std::lock_guard<std::mutex> lock(mutex_);
         auto& subs = subscriptions_[topic];
         subs.erase(std::remove(subs.begin(), subs.end(), client_id), subs.end());
     }
-    
+
     void PublishToTopic(const std::string& topic, const std::string& message) {
         std::lock_guard<std::mutex> lock(mutex_);
-        
+
         auto it = subscriptions_.find(topic);
         if (it != subscriptions_.end()) {
             for (uint64_t client_id : it->second) {
                 // Find client and send message
-                auto client_it = std::find_if(clients_.begin(), clients_.end(),
-                    [client_id](const ClientInfo& c) { return c.id == client_id; });
-                
+                auto client_it =
+                    std::find_if(clients_.begin(), clients_.end(),
+                                 [client_id](const ClientInfo& c) { return c.id == client_id; });
+
                 if (client_it != clients_.end()) {
                     // websocket_send(client_it->connection, message);
                     (void)message;  // Suppress unused warning (would be used in websocket_send)
@@ -91,19 +93,19 @@ public:
             }
         }
     }
-    
+
     size_t GetConnectedClients() const {
         std::lock_guard<std::mutex> lock(mutex_);
         return clients_.size();
     }
-    
+
     void NotifyNewBlock(const std::string& block_data) {
         if (block_callback_) {
             block_callback_(block_data);
         }
         PublishToTopic("blocks", block_data);
     }
-    
+
     void NotifyNewTransaction(const std::string& tx_data) {
         if (tx_callback_) {
             tx_callback_(tx_data);
@@ -111,19 +113,19 @@ public:
         PublishToTopic("transactions", tx_data);
     }
 
-private:
+  private:
     struct ClientInfo {
         uint64_t id;
         // void* connection; // WebSocket connection handle
         std::string address;
         uint64_t connected_time;
     };
-    
+
     uint16_t port_;
     bool running_;
     uint64_t next_client_id_;
     std::vector<ClientInfo> clients_;
-    std::map<std::string, std::vector<uint64_t>> subscriptions_; // topic -> client_ids
+    std::map<std::string, std::vector<uint64_t>> subscriptions_;  // topic -> client_ids
     std::function<void(const std::string&)> block_callback_;
     std::function<void(const std::string&)> tx_callback_;
     mutable std::mutex mutex_;
@@ -157,7 +159,7 @@ void WebSocketAPI::OnNewTransaction(std::function<void(const std::string&)> call
 
 bool WebSocketAPI::IsRunning() const {
     // Would access impl's running state
-    return false; // Simplified
+    return false;  // Simplified
 }
 
 void WebSocketAPI::Subscribe(uint64_t client_id, const std::string& topic) {
@@ -184,6 +186,6 @@ void WebSocketAPI::NotifyNewTransaction(const std::string& tx_data) {
     impl_->NotifyNewTransaction(tx_data);
 }
 
-} // namespace apis
-} // namespace layer2
-} // namespace parthenon
+}  // namespace apis
+}  // namespace layer2
+}  // namespace parthenon

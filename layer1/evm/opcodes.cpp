@@ -15,7 +15,7 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::STOP:
         case Opcode::INVALID:
             return 0;
-        
+
         // Base cost (3 gas)
         case Opcode::ADDRESS:
         case Opcode::ORIGIN:
@@ -37,7 +37,7 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::GAS:
         case Opcode::RETURNDATASIZE:
             return 2;
-        
+
         // Very low (3 gas)
         case Opcode::ADD:
         case Opcode::SUB:
@@ -58,7 +58,7 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::POP:
         case Opcode::JUMPDEST:
             return 3;
-        
+
         // PUSH operations (3 gas)
         case Opcode::PUSH1:
         case Opcode::PUSH2:
@@ -93,7 +93,7 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::PUSH31:
         case Opcode::PUSH32:
             return 3;
-        
+
         // DUP operations (3 gas)
         case Opcode::DUP1:
         case Opcode::DUP2:
@@ -112,7 +112,7 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::DUP15:
         case Opcode::DUP16:
             return 3;
-        
+
         // SWAP operations (3 gas)
         case Opcode::SWAP1:
         case Opcode::SWAP2:
@@ -131,7 +131,7 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::SWAP15:
         case Opcode::SWAP16:
             return 3;
-        
+
         // Low (5 gas)
         case Opcode::MUL:
         case Opcode::DIV:
@@ -140,40 +140,40 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::SMOD:
         case Opcode::SIGNEXTEND:
             return 5;
-        
+
         // Mid (8 gas)
         case Opcode::ADDMOD:
         case Opcode::MULMOD:
         case Opcode::JUMP:
             return 8;
-        
+
         // High (10 gas)
         case Opcode::JUMPI:
-        case Opcode::EXP: // Base cost, additional per byte
+        case Opcode::EXP:  // Base cost, additional per byte
             return 10;
-        
+
         // Memory operations
         case Opcode::MLOAD:
         case Opcode::MSTORE:
         case Opcode::MSTORE8:
             return 3;
-        
+
         // Storage operations
         case Opcode::SLOAD:
-            return 800; // Expensive
+            return 800;  // Expensive
         case Opcode::SSTORE:
-            return 20000; // Very expensive base cost
-        
+            return 20000;  // Very expensive base cost
+
         // Copy operations
         case Opcode::CALLDATALOAD:
             return 3;
         case Opcode::CALLDATACOPY:
         case Opcode::CODECOPY:
         case Opcode::RETURNDATACOPY:
-            return 3; // Base cost, additional per word
+            return 3;  // Base cost, additional per word
         case Opcode::EXTCODECOPY:
-            return 700; // Base cost, additional per word
-        
+            return 700;  // Base cost, additional per word
+
         // External operations
         case Opcode::BALANCE:
             return 700;
@@ -182,19 +182,19 @@ uint64_t GetOpcodeCost(Opcode op) {
             return 700;
         case Opcode::BLOCKHASH:
             return 20;
-        
+
         // SHA3
         case Opcode::SHA3:
-            return 30; // Base cost, additional per word
-        
+            return 30;  // Base cost, additional per word
+
         // Logging
         case Opcode::LOG0:
         case Opcode::LOG1:
         case Opcode::LOG2:
         case Opcode::LOG3:
         case Opcode::LOG4:
-            return 375; // Base cost, additional per byte and topic
-        
+            return 375;  // Base cost, additional per byte and topic
+
         // Contract operations
         case Opcode::CREATE:
         case Opcode::CREATE2:
@@ -203,21 +203,21 @@ uint64_t GetOpcodeCost(Opcode op) {
         case Opcode::CALLCODE:
         case Opcode::DELEGATECALL:
         case Opcode::STATICCALL:
-            return 700; // Base cost, additional if value transfer
-        
+            return 700;  // Base cost, additional if value transfer
+
         // Return operations
         case Opcode::RETURN:
         case Opcode::REVERT:
-            return 0; // Gas refund handled separately
-        
+            return 0;  // Gas refund handled separately
+
         // Selfdestruct
         case Opcode::SELFDESTRUCT:
-            return 5000; // Base cost, additional if beneficiary account created
-        
+            return 5000;  // Base cost, additional if beneficiary account created
+
         default:
             return 0;
     }
 }
 
-} // namespace evm
-} // namespace parthenon
+}  // namespace evm
+}  // namespace parthenon
