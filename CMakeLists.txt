@@ -34,7 +34,13 @@ set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build LevelDB benchmarks")
 add_subdirectory(third_party/leveldb EXCLUDE_FROM_ALL)
 # Remove strict warning flags from leveldb target to avoid errors in third-party code
 if(TARGET leveldb)
-  target_compile_options(leveldb PRIVATE -Wno-error -Wno-conversion -Wno-old-style-cast -Wno-shadow)
+  if(MSVC)
+    # MSVC: Disable warnings as errors
+    target_compile_options(leveldb PRIVATE /WX-)
+  else()
+    # GCC/Clang: Disable specific warnings
+    target_compile_options(leveldb PRIVATE -Wno-error -Wno-conversion -Wno-old-style-cast -Wno-shadow)
+  endif()
 endif()
 
 # Include directories for header-only libraries (as system includes to suppress warnings)
