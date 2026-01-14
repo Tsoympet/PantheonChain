@@ -6,10 +6,6 @@
 
 #include <chrono>
 #include <cstring>
-#include <iostream>
-#include <random>
-
-// Platform-specific headers
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -18,6 +14,8 @@
 #include <netdb.h>
 #include <unistd.h>
 #endif
+#include <iostream>
+#include <random>
 
 namespace parthenon {
 namespace p2p {
