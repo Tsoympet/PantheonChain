@@ -20,6 +20,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Initialize submodules
+      run: git submodule update --init --recursive
+
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -69,6 +72,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Initialize submodules
+      run: git submodule update --init --recursive
+
     - name: Install dependencies
       run: |
         brew install cmake openssl boost ninja
@@ -96,6 +102,9 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Initialize submodules
+      run: git submodule update --init --recursive
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
