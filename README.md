@@ -443,14 +443,19 @@ Stay connected with the ParthenonChain community:
 ✅ Cross-shard transactions  
 ✅ Mobile SDK libraries (iOS/Android)  
 ✅ IDE plugins for smart contract development  
+✅ Layer 2 rollup scaling solutions (Optimistic + ZK-Rollups)  
+✅ Formal verification framework  
+✅ Decentralized governance protocol (parameter updates)  
+✅ Cross-chain bridges to major blockchains (Bitcoin, Ethereum, etc.)  
+✅ Quantum-resistant cryptography (Dilithium, Kyber, SPHINCS+)  
 
 ### Future Enhancements
-- 🔜 Layer 2 rollup scaling solutions
-- 🔜 Formal verification framework
-- 🔜 Decentralized governance protocol
-- 🔜 Cross-chain bridges to major blockchains
-- 🔜 Advanced ZK-rollup integration
-- 🔜 Quantum-resistant cryptography
+- 🔜 Decentralized identity (DID) system
+- 🔜 Privacy-preserving smart contracts
+- 🔜 Advanced ZK-STARK integration
+- 🔜 Homomorphic encryption support
+- 🔜 Interplanetary File System (IPFS) integration
+- 🔜 Machine learning on-chain verification
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and [docs/RELEASES.md](docs/RELEASES.md) for the full roadmap.
 

@@ -4,11 +4,13 @@ add_library(layer2
     bridges/channels/payment_channel.cpp
     bridges/htlc/htlc.cpp
     bridges/spv/spv_bridge.cpp
+    bridges/cross_chain/cross_chain_bridge.cpp
     indexers/tx_indexer/tx_indexer.cpp
     indexers/contract_indexer/contract_indexer.cpp
     apis/graphql/graphql_api.cpp
     apis/websocket/websocket_api.cpp
     dex/dex.cpp
+    rollups/zk_rollup.cpp
 )
 
 target_include_directories(layer2 PUBLIC

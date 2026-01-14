@@ -5,6 +5,7 @@ add_library(parthenon_crypto STATIC
     crypto/sha256.cpp
     crypto/schnorr.cpp
     crypto/hardware_crypto.cpp
+    crypto/post_quantum/pq_crypto.cpp
 )
 
 target_include_directories(parthenon_crypto PUBLIC
@@ -69,6 +70,29 @@ if(MSVC)
   target_compile_options(parthenon_sharding PRIVATE /W4 /WX)
 else()
   target_compile_options(parthenon_sharding PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+  )
+endif()
+
+# Governance library
+add_library(parthenon_governance STATIC
+    governance/governance.cpp
+)
+
+target_include_directories(parthenon_governance PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_governance PUBLIC
+    parthenon_crypto
+)
+
+# Set strict compiler flags
+if(MSVC)
+  target_compile_options(parthenon_governance PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_governance PRIVATE
     -Wall -Wextra -Wpedantic -Werror
     -Wno-unused-parameter
   )
