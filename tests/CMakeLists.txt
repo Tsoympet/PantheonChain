@@ -8,6 +8,7 @@ else()
 endif()
 
 add_subdirectory(unit)
+add_subdirectory(fuzzing)
 
 # Integration tests
 add_executable(test_integration integration/test_integration.cpp)

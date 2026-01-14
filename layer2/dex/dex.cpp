@@ -3,6 +3,7 @@
 #include "dex.h"
 
 #include "crypto/sha256.h"
+#include "primitives/safe_math.h"
 
 #include <algorithm>
 #include <ctime>
@@ -10,6 +11,8 @@
 namespace parthenon {
 namespace layer2 {
 namespace dex {
+
+using primitives::SafeMath;
 
 // Static member initialization
 std::map<std::vector<uint8_t>, LiquidityPool> AutomatedMarketMaker::pools_;
@@ -189,7 +192,23 @@ std::optional<Order> OrderBook::GetOrder(const std::vector<uint8_t>& order_id) c
 }
 
 bool OrderBook::ValidateOrder(const Order& order) const {
-    return order.amount > 0 && order.price > 0;
+    // Basic validation
+    if (order.amount == 0 || order.price == 0) {
+        return false;
+    }
+    
+    // Validate assets match this order book
+    if (order.base_asset != base_asset_ || order.quote_asset != quote_asset_) {
+        return false;
+    }
+    
+    // Validate order type
+    if (order.type != OrderType::LIMIT_BUY && order.type != OrderType::LIMIT_SELL &&
+        order.type != OrderType::MARKET_BUY && order.type != OrderType::MARKET_SELL) {
+        return false;
+    }
+    
+    return true;
 }
 
 void OrderBook::RemoveOrder(const std::vector<uint8_t>& order_id) {
@@ -374,6 +393,11 @@ std::optional<LiquidityPool> AutomatedMarketMaker::GetPool(const std::vector<uin
     return it->second;
 }
 
+uint64_t AutomatedMarketMaker::GetOutputAmount(
+    uint64_t input_amount,
+    uint64_t input_reserve,
+    uint64_t output_reserve,
+    uint64_t fee_rate) {
 uint64_t AutomatedMarketMaker::GetOutputAmount(uint64_t input_amount, uint64_t input_reserve,
                                                uint64_t output_reserve, uint64_t fee_rate) {
     
@@ -387,32 +411,40 @@ uint64_t AutomatedMarketMaker::GetOutputAmount(uint64_t input_amount, uint64_t i
         return 0;
     }
     
-    // Apply fee with overflow check
+    // Apply fee with SafeMath
     uint64_t fee_multiplier = 10000 - fee_rate;
-    if (input_amount > UINT64_MAX / fee_multiplier) {
-        return 0;  // Would overflow
+    auto input_with_fee_opt = SafeMath::Mul(input_amount, fee_multiplier);
+    if (!input_with_fee_opt) {
+        return 0;  // Overflow
     }
-    uint64_t input_with_fee = input_amount * fee_multiplier;
+    uint64_t input_with_fee = *input_with_fee_opt;
     
-    // Check numerator overflow
-    if (input_with_fee > UINT64_MAX / output_reserve) {
-        return 0;  // Would overflow
+    // Calculate numerator with SafeMath
+    auto numerator_opt = SafeMath::Mul(input_with_fee, output_reserve);
+    if (!numerator_opt) {
+        return 0;  // Overflow
     }
-    uint64_t numerator = input_with_fee * output_reserve;
+    uint64_t numerator = *numerator_opt;
     
-    // Calculate denominator with overflow check
-    if (input_reserve > UINT64_MAX / 10000) {
-        return 0;  // Would overflow
-    }
-    uint64_t denominator = (input_reserve * 10000) + input_with_fee;
-
-    
-    // Check for division by zero
-    if (denominator == 0) {
-        return 0;
+    // Calculate denominator with SafeMath
+    auto reserve_scaled_opt = SafeMath::Mul(input_reserve, 10000);
+    if (!reserve_scaled_opt) {
+        return 0;  // Overflow
     }
     
-    return numerator / denominator;
+    auto denominator_opt = SafeMath::Add(*reserve_scaled_opt, input_with_fee);
+    if (!denominator_opt) {
+        return 0;  // Overflow
+    }
+    uint64_t denominator = *denominator_opt;
+    
+    // Safe division
+    auto result_opt = SafeMath::Div(numerator, denominator);
+    if (!result_opt) {
+        return 0;  // Division by zero (shouldn't happen due to earlier checks)
+    }
+    
+    return *result_opt;
 }
 
 double AutomatedMarketMaker::GetPrice(const std::vector<uint8_t>& pool_id,
