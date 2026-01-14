@@ -9,13 +9,13 @@
 </p>
 
 <p align="center">
-  <a href="#key-features">Features</a> •
+  <a href="#-download">Download</a> •
   <a href="#quick-start">Quick Start</a> •
+  <a href="#key-features">Features</a> •
   <a href="#installation">Installation</a> •
   <a href="#documentation">Documentation</a> •
   <a href="#development">Development</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#community">Community</a>
+  <a href="#contributing">Contributing</a>
 </p>
 
 <p align="center">
@@ -28,6 +28,46 @@
   <a href="https://github.com/Tsoympet/PantheonChain/actions">
     <img src="https://img.shields.io/github/actions/workflow/status/Tsoympet/PantheonChain/build.yml?style=flat-square" alt="Build Status">
   </a>
+</p>
+
+---
+
+## 📥 Download
+
+**Ready to use ParthenonChain?** Download the installer for your platform:
+
+<table align="center">
+<tr>
+<td align="center">
+<h3>🪟 Windows</h3>
+<a href="https://github.com/Tsoympet/PantheonChain/releases/latest">
+<b>Download for Windows</b><br/>
+<code>parthenon-1.0.0-windows-x64-setup.exe</code>
+</a>
+<br/><sub>Windows 10/11 (64-bit)</sub>
+</td>
+<td align="center">
+<h3>🍎 macOS</h3>
+<a href="https://github.com/Tsoympet/PantheonChain/releases/latest">
+<b>Download for macOS</b><br/>
+<code>parthenon-1.0.0-macos.dmg</code>
+</a>
+<br/><sub>macOS 10.15+ (Intel & Apple Silicon)</sub>
+</td>
+<td align="center">
+<h3>🐧 Linux</h3>
+<a href="https://github.com/Tsoympet/PantheonChain/releases/latest">
+<b>Download for Linux</b><br/>
+<code>.deb</code> or <code>.rpm</code>
+</a>
+<br/><sub>Ubuntu, Debian, Fedora, RHEL</sub>
+</td>
+</tr>
+</table>
+
+<p align="center">
+  <strong>📖 New to ParthenonChain?</strong><br/>
+  Read the <a href="QUICK_START.md"><b>Quick Start Guide</b></a> or <a href="DOWNLOAD.md"><b>Download Instructions</b></a>
 </p>
 
 ---
@@ -66,9 +106,29 @@ ParthenonChain is a production-grade Layer-1 blockchain implementing **SHA-256d 
 
 ## Quick Start
 
-### Running with Docker (Recommended)
+### 🚀 Easiest: Download Pre-built Installer (Recommended for Users)
 
-The fastest way to run a ParthenonChain node:
+**For end users**: Download and run the installer for your operating system:
+
+👉 **[Download ParthenonChain](https://github.com/Tsoympet/PantheonChain/releases/latest)** - Get the installer (.exe, .dmg, .deb, or .rpm)
+
+See the **[Quick Start Guide](QUICK_START.md)** for step-by-step installation instructions.
+
+After installation:
+```bash
+# Start the node
+parthenond
+
+# Check node status
+parthenon-cli getinfo
+
+# Create wallet address
+parthenon-cli getnewaddress
+```
+
+### 🐳 For Developers: Running with Docker
+
+The fastest way to run a ParthenonChain node for development:
 
 ```bash
 # Clone the repository
@@ -85,9 +145,11 @@ docker-compose logs -f parthenond
 docker exec -it parthenon-node parthenon-cli getinfo
 ```
 
-### Using Pre-built Binaries
+### Using Pre-built Binaries (Alternative)
 
-Download the latest release for your platform from the [Releases](https://github.com/Tsoympet/PantheonChain/releases) page.
+If you prefer manual installation without the installer:
+
+Download the latest release binaries from the [Releases](https://github.com/Tsoympet/PantheonChain/releases) page.
 
 ```bash
 # Linux/macOS
