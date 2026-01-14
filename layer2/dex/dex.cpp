@@ -398,6 +398,8 @@ uint64_t AutomatedMarketMaker::GetOutputAmount(
     uint64_t input_reserve,
     uint64_t output_reserve,
     uint64_t fee_rate) {
+uint64_t AutomatedMarketMaker::GetOutputAmount(uint64_t input_amount, uint64_t input_reserve,
+                                               uint64_t output_reserve, uint64_t fee_rate) {
     
     // Validate fee_rate is reasonable (< 10000 = 100%)
     if (fee_rate >= 10000) {
