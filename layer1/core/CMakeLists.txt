@@ -26,6 +26,54 @@ else()
   )
 endif()
 
+# Privacy library (zkSNARK and ring signatures)
+add_library(parthenon_privacy STATIC
+    privacy/zk_snark.cpp
+    privacy/ring_signature.cpp
+)
+
+target_include_directories(parthenon_privacy PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_privacy PUBLIC
+    parthenon_crypto
+)
+
+# Set strict compiler flags
+if(MSVC)
+  target_compile_options(parthenon_privacy PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_privacy PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+  )
+endif()
+
+# Sharding library (cross-shard transactions)
+add_library(parthenon_sharding STATIC
+    sharding/shard.cpp
+)
+
+target_include_directories(parthenon_sharding PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(parthenon_sharding PUBLIC
+    parthenon_crypto
+    parthenon_primitives
+)
+
+# Set strict compiler flags
+if(MSVC)
+  target_compile_options(parthenon_sharding PRIVATE /W4 /WX)
+else()
+  target_compile_options(parthenon_sharding PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wno-unused-parameter
+  )
+endif()
+
 # Consensus library (depends on crypto)
 add_library(parthenon_consensus STATIC
     consensus/difficulty.cpp

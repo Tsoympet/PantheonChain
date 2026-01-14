@@ -1,5 +1,5 @@
 #include "ring_signature.h"
-#include "layer1/core/crypto/sha256.h"
+#include "crypto/sha256.h"
 #include <cstring>
 #include <algorithm>
 
@@ -34,7 +34,7 @@ RingSignature RingSigner::Sign(
         hasher.Write(secret_key.data(), secret_key.size());
         
         std::array<uint8_t, 32> hash;
-        hasher.Finalize(hash.data());
+        hash = hasher.Finalize();
         
         // Store in signature (simplified)
         std::memcpy(sig.signatures[i].data(), hash.data(), 32);
@@ -69,7 +69,7 @@ std::array<uint8_t, 32> RingSigner::HashToPoint(
     
     crypto::SHA256 hasher;
     hasher.Write(public_key.data(), public_key.size());
-    hasher.Finalize(point.data());
+    point = hasher.Finalize();
     
     return point;
 }
@@ -177,7 +177,7 @@ std::array<uint8_t, 33> StealthAddress::Generate(
     hasher.Write(view_key.data(), view_key.size());
     
     std::array<uint8_t, 32> hash;
-    hasher.Finalize(hash.data());
+    hash = hasher.Finalize();
     
     // Combine with spend key
     stealth_addr[0] = 0x02;  // Compressed public key prefix
@@ -200,7 +200,7 @@ bool StealthAddress::BelongsTo(
     hasher.Write(tx_public_key.data(), tx_public_key.size());
     
     std::array<uint8_t, 32> hash;
-    hasher.Finalize(hash.data());
+    hash = hasher.Finalize();
     
     // Check if it matches
     std::array<uint8_t, 33> computed;
@@ -225,7 +225,7 @@ std::array<uint8_t, 32> StealthAddress::RecoverSecretKey(
     hasher.Write(tx_public_key.data(), tx_public_key.size());
     
     std::array<uint8_t, 32> shared_secret;
-    hasher.Finalize(shared_secret.data());
+    shared_secret = hasher.Finalize();
     
     // Derive stealth secret key = spend_secret + shared_secret
     for (size_t i = 0; i < 32; ++i) {

@@ -439,14 +439,18 @@ Stay connected with the ParthenonChain community:
 ✅ Blockchain explorer web interface  
 ✅ Decentralized exchange (DEX) with AMM  
 ✅ Hardware wallet firmware verification  
+✅ zkSNARK privacy enhancements  
+✅ Cross-shard transactions  
+✅ Mobile SDK libraries (iOS/Android)  
+✅ IDE plugins for smart contract development  
 
-### Upcoming Features
-- 🔜 zkSNARK privacy enhancements
-- 🔜 Cross-shard transactions
-- 🔜 Mobile SDK libraries
-- 🔜 IDE plugins for smart contract development
-- 🔜 Governance voting mechanisms
-- 🔜 Staking and delegation features
+### Future Enhancements
+- 🔜 Layer 2 rollup scaling solutions
+- 🔜 Formal verification framework
+- 🔜 Decentralized governance protocol
+- 🔜 Cross-chain bridges to major blockchains
+- 🔜 Advanced ZK-rollup integration
+- 🔜 Quantum-resistant cryptography
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and [docs/RELEASES.md](docs/RELEASES.md) for the full roadmap.
 
