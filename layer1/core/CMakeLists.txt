@@ -199,6 +199,9 @@ target_link_libraries(parthenon_p2p PUBLIC
 # Link WinSock library on Windows for networking support
 if(WIN32)
   target_link_libraries(parthenon_p2p PRIVATE ws2_32)
+# Link WinSock library on Windows
+if(WIN32)
+    target_link_libraries(parthenon_p2p PRIVATE ws2_32)
 endif()
 
 # Set strict compiler flags

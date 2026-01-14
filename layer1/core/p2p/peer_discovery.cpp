@@ -17,6 +17,17 @@
 #  include <sys/socket.h>
 #  include <sys/types.h>
 #endif
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#endif
+#include <cstring>
+#include <sstream>
 
 namespace parthenon {
 namespace p2p {

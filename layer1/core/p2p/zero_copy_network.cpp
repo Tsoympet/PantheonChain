@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 
+// Platform-specific headers
 #ifdef __linux__
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -12,7 +13,12 @@
 #include <unistd.h>
 #endif
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <sys/socket.h>
+#endif
 
 namespace parthenon {
 namespace p2p {

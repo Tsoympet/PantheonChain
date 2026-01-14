@@ -9,16 +9,23 @@
 #include "message.h"
 #include "protocol.h"
 
+// Platform-specific networking headers
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+
 #include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <netinet/in.h>
 #include <queue>
 #include <set>
-#include <sys/socket.h>
 #include <thread>
 #include <vector>
 
