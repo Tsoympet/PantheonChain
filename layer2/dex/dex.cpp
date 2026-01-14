@@ -24,9 +24,6 @@ std::vector<uint8_t> OrderBook::PlaceOrder(const Order& order) {
     }
 
     Order new_order = order;
-    auto hash = crypto::SHA256::Hash256(
-        std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(&order),
-                             reinterpret_cast<const uint8_t*>(&order) + sizeof(Order)));
     // Serialize order data safely instead of using reinterpret_cast on struct
     std::vector<uint8_t> order_data;
     order_data.reserve(sizeof(uint64_t) * 3 + order.trader_pubkey.size());
@@ -88,9 +85,6 @@ std::vector<Trade> OrderBook::MatchOrders() {
         uint64_t trade_price = sell_order.price;
 
         Trade trade;
-        auto hash = crypto::SHA256::Hash256(std::vector<uint8_t>(
-            reinterpret_cast<const uint8_t*>(&trade_amount),
-            reinterpret_cast<const uint8_t*>(&trade_amount) + sizeof(uint64_t)));
         // Serialize trade data safely instead of using reinterpret_cast on primitive
         std::vector<uint8_t> trade_data;
         trade_data.reserve(sizeof(uint64_t) * 2);
@@ -382,13 +376,6 @@ std::optional<LiquidityPool> AutomatedMarketMaker::GetPool(const std::vector<uin
 
 uint64_t AutomatedMarketMaker::GetOutputAmount(uint64_t input_amount, uint64_t input_reserve,
                                                uint64_t output_reserve, uint64_t fee_rate) {
-    // Apply fee
-    uint64_t input_with_fee = input_amount * (10000 - fee_rate);
-uint64_t AutomatedMarketMaker::GetOutputAmount(
-    uint64_t input_amount,
-    uint64_t input_reserve,
-    uint64_t output_reserve,
-    uint64_t fee_rate) {
     
     // Validate fee_rate is reasonable (< 10000 = 100%)
     if (fee_rate >= 10000) {
@@ -509,11 +496,6 @@ std::vector<Trade> DEXManager::GetRecentTrades(primitives::AssetID base, primiti
 
 uint64_t DEXManager::Get24HVolume(primitives::AssetID base, primitives::AssetID quote) const {
     uint64_t now = static_cast<uint64_t>(std::time(nullptr));
-    uint64_t day_ago = now - 86400;
-
-    uint64_t volume = 0;
-    for (const auto& trade : trade_history_) {
-        if (trade.base_asset == base && trade.quote_asset == quote && trade.timestamp >= day_ago) {
     
     // Check for underflow
     uint64_t day_ago = (now >= 86400) ? (now - 86400) : 0;
