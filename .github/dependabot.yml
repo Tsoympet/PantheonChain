@@ -17,6 +17,24 @@ updates:
     open-pull-requests-limit: 5
     reviewers:
       - "Tsoympet"
+  
+  # Docker - Monitor base images in Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Tsoympet"
     
   # Git Submodules - Third-party C++ dependencies
   - package-ecosystem: "gitsubmodule"
@@ -47,6 +65,10 @@ updates:
       networking-libraries:
         patterns: 
           - "cpp-httplib"
+      json-libraries:
+        patterns:
+          - "json"
+          - "nlohmann*"
   
   # npm - React Native Mobile App dependencies
   - package-ecosystem: "npm"
@@ -63,6 +85,7 @@ updates:
     commit-message:
       prefix: "deps(mobile)"
       include: "scope"
+    versioning-strategy: increase
     open-pull-requests-limit: 10
     reviewers:
       - "Tsoympet"
