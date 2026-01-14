@@ -82,15 +82,17 @@ bool RingVerifier::Verify(const RingSignature& signature, const std::vector<uint
     // Verify each signature component
     for (size_t i = 0; i < signature.ring.size(); ++i) {
         // Simplified verification
-        // In production, would verify ring signature equation
-        // Hash the message with each ring key to verify signature
+        // In production, would verify ring signature equation using the message hash
+        // For now, ensure message parameter is referenced (prevents compiler warning)
         crypto::SHA256 hasher;
         hasher.Write(message.data(), message.size());
         hasher.Write(signature.ring[i].data(), signature.ring[i].size());
         
+        // TODO: Use hash in actual cryptographic verification
         std::array<uint8_t, 32> hash = hasher.Finalize();
+        (void)hash;  // Intentionally unused in simplified implementation
         
-        // Check that signature contains non-zero data and relates to the hashed message
+        // Check that signature contains non-zero data
         bool valid = true;
         for (uint8_t byte : signature.signatures[i]) {
             if (byte == 0) {
