@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(ParthenonChain VERSION 0.1.0 LANGUAGES CXX C)
+project(ParthenonChain VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -58,3 +58,43 @@ add_subdirectory(clients)
 
 # Tests
 add_subdirectory(tests)
+
+# CPack configuration for package generation
+set(CPACK_PACKAGE_NAME "ParthenonChain")
+set(CPACK_PACKAGE_VENDOR "ParthenonChain Foundation")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "ParthenonChain - A Multi-Asset Proof-of-Work Blockchain with Smart Contracts")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "ParthenonChain")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+
+# Platform-specific packaging
+if(WIN32)
+  set(CPACK_GENERATOR "NSIS;ZIP")
+  set(CPACK_NSIS_DISPLAY_NAME "ParthenonChain ${PROJECT_VERSION}")
+  set(CPACK_NSIS_PACKAGE_NAME "ParthenonChain")
+  set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+  set(CPACK_NSIS_MODIFY_PATH ON)
+elseif(APPLE)
+  set(CPACK_GENERATOR "DragNDrop;TGZ")
+  set(CPACK_DMG_VOLUME_NAME "ParthenonChain")
+  set(CPACK_DMG_FORMAT "UDZO")
+elseif(UNIX)
+  set(CPACK_GENERATOR "DEB;RPM;TGZ")
+  
+  # Debian package configuration
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "ParthenonChain Foundation <dev@parthenonchain.org>")
+  set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+  set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libssl3 | libssl1.1, libboost-system1.74.0 | libboost-system1.71.0")
+  
+  # RPM package configuration
+  set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+  set(CPACK_RPM_PACKAGE_GROUP "Applications/System")
+  set(CPACK_RPM_PACKAGE_REQUIRES "openssl, boost-system")
+endif()
+
+include(CPack)
