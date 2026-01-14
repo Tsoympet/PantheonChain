@@ -38,9 +38,20 @@ PeerDiscovery::PeerDiscovery(PeerDatabase& peer_db)
     : peer_db_(peer_db),
       dns_discovery_enabled_(true),
       peer_exchange_enabled_(true),
-      peer_discovered_callback_(nullptr) {}
+      peer_discovered_callback_(nullptr) {
+#ifdef _WIN32
+    // Initialize WinSock for Windows networking
+    WSADATA wsa_data;
+    WSAStartup(MAKEWORD(2, 2), &wsa_data);
+#endif
+}
 
-PeerDiscovery::~PeerDiscovery() {}
+PeerDiscovery::~PeerDiscovery() {
+#ifdef _WIN32
+    // Cleanup WinSock on Windows
+    WSACleanup();
+#endif
+}
 
 bool PeerDiscovery::ParseAddressPort(const std::string& addr_str, std::string& address,
                                      uint16_t& port) {
