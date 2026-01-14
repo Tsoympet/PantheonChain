@@ -196,6 +196,11 @@ target_link_libraries(parthenon_p2p PUBLIC
     parthenon_crypto
 )
 
+# Link WinSock library on Windows
+if(WIN32)
+    target_link_libraries(parthenon_p2p PRIVATE ws2_32)
+endif()
+
 # Set strict compiler flags
 if(MSVC)
   target_compile_options(parthenon_p2p PRIVATE /W4 /WX)

@@ -3,12 +3,19 @@
 #include "peer_discovery.h"
 
 #include <algorithm>
-#include <arpa/inet.h>
 #include <cstring>
-#include <netdb.h>
 #include <sstream>
+
+// Platform-specific networking headers
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#endif
 
 namespace parthenon {
 namespace p2p {
