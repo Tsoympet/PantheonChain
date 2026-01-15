@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp' ]
+        language: [ 'cpp', 'javascript' ]
 
     steps:
     - name: Checkout repository
@@ -39,6 +39,7 @@ jobs:
         queries: security-and-quality
 
     - name: Install dependencies
+      if: matrix.language == 'cpp'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -49,6 +50,7 @@ jobs:
           ninja-build
 
     - name: Build
+      if: matrix.language == 'cpp'
       run: |
         cmake -B build -DCMAKE_BUILD_TYPE=Release -GNinja
         cmake --build build --parallel
