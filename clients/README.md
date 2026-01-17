@@ -62,7 +62,8 @@ ParthenonChain provides multiple client applications for different use cases and
 
 **Target Users**: General users
 
-**See**: [desktop/README.md](desktop/README.md)
+**See**: [desktop/README.md](desktop/README.md)  
+**Screenshots**: [desktop/screenshots/](desktop/screenshots/)
 
 ### 4. Mobile Wallet
 
@@ -83,7 +84,8 @@ ParthenonChain provides multiple client applications for different use cases and
 
 **Target Users**: Mobile users, miners
 
-**See**: [mobile/react-native/README.md](mobile/react-native/README.md)
+**See**: [mobile/react-native/README.md](mobile/react-native/README.md)  
+**Screenshots**: [mobile/screenshots/](mobile/screenshots/)
 
 ## Quick Start
 

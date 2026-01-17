@@ -97,6 +97,8 @@ Features:
 - macOS: Drag-and-drop .app bundle
 - Linux: Optional component in packages
 
+**Screenshots**: See [clients/desktop/screenshots/](../clients/desktop/screenshots/) for UI documentation and screenshot guidelines.
+
 ### Mobile Wallet
 
 **Status**: ✅ **Production Ready**
@@ -127,6 +129,8 @@ Features:
 - Android: APK available, Google Play submission pending
 
 **Build Instructions**: See [clients/mobile/README.md](../clients/mobile/README.md)
+
+**Screenshots**: See [clients/mobile/screenshots/](../clients/mobile/screenshots/) for UI documentation and screenshot guidelines (iOS and Android).
 
 ## 📦 What's Included in Installers
 
