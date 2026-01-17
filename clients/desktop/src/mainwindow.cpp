@@ -8,6 +8,7 @@
 #include "transactionpage.h"
 
 #include <QAction>
+#include <QApplication>
 #include <QLabel>
 #include <QMenu>
 #include <QMenuBar>

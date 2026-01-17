@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QObject>
 #include <QString>
+#include <QVariant>
 
 class QNetworkAccessManager;
 class QNetworkReply;
