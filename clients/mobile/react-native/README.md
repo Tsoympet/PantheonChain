@@ -11,13 +11,77 @@ React Native mobile wallet with integrated share mining.
 
 - **Transaction Management**
   - Send transactions
-  - Receive addresses
+  - Receive addresses with QR codes
   - Transaction history
+  - QR code scanner for addresses
 
 - **Share Mining**
   - Mobile CPU mining
   - Hashrate monitoring
   - Mining toggle
+  - Pool integration
+
+- **Security**
+  - Biometric authentication (Touch ID / Face ID)
+  - Secure key storage
+  - Encrypted wallet backup
+
+- **User Experience**
+  - SPV lightweight mode (no full blockchain required)
+  - Push notifications for transactions
+  - Native iOS and Android UI
+  - Dark mode support
+
+## Screenshots
+
+📸 **See [screenshots/README.md](screenshots/README.md) for detailed screenshot documentation and capture guidelines.**
+
+The mobile wallet features a modern React Native interface optimized for both iOS and Android:
+
+### Main Screens
+
+1. **Home/Dashboard**
+   - Asset selector
+   - Large balance display
+   - All balances summary
+   - Quick action buttons (Send, Receive, Mining)
+   - Recent transactions preview
+   - Bottom navigation
+
+2. **Send Screen**
+   - Asset selection
+   - Recipient address with QR scanner button
+   - Amount input with MAX button
+   - Fee calculation
+   - Send confirmation
+
+3. **Receive Screen**
+   - Large QR code for receiving
+   - Address display with copy button
+   - Share functionality
+   - New address generation
+
+4. **Transaction History**
+   - Filterable transaction list
+   - Transaction details view
+   - Pull to refresh
+   - Confirmation status
+
+5. **Mining Screen**
+   - Start/Stop mining toggle
+   - Hashrate display
+   - Share statistics
+   - CPU usage controls
+   - Estimated earnings
+
+6. **Settings**
+   - Wallet backup/restore
+   - Network selection
+   - Mining configuration
+   - Theme and language
+   - Security settings
+
+For actual screenshots of the mobile app on iOS and Android, see the [screenshots directory](screenshots/).
 
 ## Setup
 

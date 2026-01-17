@@ -6,7 +6,7 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-< parameter name = "QGroupBox>
+#include <QGroupBox>
 #include <QApplication>
 #include <QClipboard>
 #include <QDateTime>

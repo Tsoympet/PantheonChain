@@ -365,6 +365,7 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 - ⚡ **[Quick Start](QUICK_START.md)** - Get started in minutes
 - 🆘 **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
 - 📱 **[Client Status](CLIENT_STATUS.md)** - All clients and their readiness
+- 📸 **[Screenshots Guide](docs/SCREENSHOTS.md)** - Client UI screenshots and capture guidelines
 
 ### 📚 Technical Documentation (For Developers)
 
