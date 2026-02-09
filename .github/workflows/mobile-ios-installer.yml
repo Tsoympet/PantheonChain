@@ -1,0 +1,59 @@
+name: Mobile iOS Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'clients/mobile/react-native/**'
+      - '.github/workflows/mobile-ios-installer.yml'
+
+jobs:
+  build-ios-installer:
+    name: Build iOS IPA Installer
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: clients/mobile/react-native
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Expo token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN secret is required to build iOS installers with EAS."
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          token: ${{ secrets.EXPO_TOKEN }}
+          eas-version: latest
+
+      - name: Build iOS installer (IPA)
+        run: npx eas-cli build --platform ios --profile ios-release --non-interactive --wait
+
+      - name: Download IPA artifact
+        run: |
+          BUILD_ID=$(npx eas-cli build:list --platform ios --limit 1 --status finished --json --non-interactive | jq -r '.[0].id')
+          npx eas-cli build:download --platform ios --id "$BUILD_ID" --path parthenon-mobile-ios.ipa --non-interactive
+
+      - name: Upload iOS installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: parthenon-mobile-ios-ipa
+          path: clients/mobile/react-native/parthenon-mobile-ios.ipa
+          retention-days: 14
