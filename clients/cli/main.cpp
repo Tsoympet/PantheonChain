@@ -23,6 +23,11 @@ class RPCClient {
 
     std::string Call(const std::string& method, const std::vector<std::string>& params) {
         // Simulate RPC call
+        (void)host_;      // Reserved for future networked RPC integration
+        (void)port_;      // Reserved for future networked RPC integration
+        (void)user_;      // Reserved for future RPC authentication integration
+        (void)password_;  // Reserved for future RPC authentication integration
+
         std::string result = "{\"result\": ";
 
         if (method == "getinfo") {

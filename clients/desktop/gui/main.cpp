@@ -22,6 +22,8 @@ class MainWindow {
     MainWindow() { std::cout << "ParthenonChain Desktop Wallet v1.0.0" << std::endl; }
 
     void Show() {
+        (void)current_asset_;  // Reserved for future asset-specific UI behavior
+
         std::cout << "\n=== ParthenonChain Wallet ===" << std::endl;
         std::cout << "TALN Balance: " << balance_taln_ << std::endl;
         std::cout << "DRM Balance: " << balance_drm_ << std::endl;
