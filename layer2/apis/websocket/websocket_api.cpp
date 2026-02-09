@@ -121,9 +121,9 @@ class WebSocketAPI::Impl {
         uint64_t connected_time;
     };
 
-    uint16_t port_;
+    [[maybe_unused]] uint16_t port_;
     bool running_;
-    uint64_t next_client_id_;
+    [[maybe_unused]] uint64_t next_client_id_;
     std::vector<ClientInfo> clients_;
     std::map<std::string, std::vector<uint64_t>> subscriptions_;  // topic -> client_ids
     std::function<void(const std::string&)> block_callback_;

@@ -102,7 +102,7 @@ class GraphQLAPI::Impl {
         })";
     }
 
-    uint16_t port_;
+    [[maybe_unused]] uint16_t port_;
     bool running_;
     std::function<std::string(const std::string&)> block_callback_;
     std::function<std::string(const std::string&)> tx_callback_;
