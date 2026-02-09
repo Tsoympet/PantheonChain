@@ -44,7 +44,9 @@ void TestMessageHeaderSerialization() {
 
     MessageHeader header;
     header.magic = NetworkMagic::MAINNET;
-    std::strncpy(header.command, "version", 12);
+    constexpr char kVersionCommand[] = "version";
+    std::memset(header.command, 0, sizeof(header.command));
+    std::memcpy(header.command, kVersionCommand, sizeof(kVersionCommand) - 1);
     header.length = 100;
     header.checksum = 0x12345678;
 
