@@ -12,7 +12,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     
@@ -37,7 +37,7 @@ jobs:
         powershell -ExecutionPolicy Bypass -File build.ps1
     
     - name: Upload Windows Installer
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: windows-installer
         path: installers/windows/*.exe
@@ -45,7 +45,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     
@@ -71,7 +71,7 @@ jobs:
         ./build.sh
     
     - name: Upload macOS DMG
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: macos-dmg
         path: installers/macos/*.dmg
@@ -82,7 +82,7 @@ jobs:
       matrix:
         package: [deb, rpm]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     
@@ -113,7 +113,7 @@ jobs:
         ./build.sh ${{ matrix.package }}
     
     - name: Upload Linux Package
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: linux-${{ matrix.package }}
         path: installers/linux/*.${{ matrix.package }}
@@ -122,10 +122,10 @@ jobs:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
     
     - name: Download All Artifacts
-      uses: actions/download-artifact@v7.0.0
+      uses: actions/download-artifact@v4
     
     - name: Generate Checksums
       run: |
