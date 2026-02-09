@@ -1,0 +1,22 @@
+{
+  "cli": {
+    "version": ">= 10.0.0"
+  },
+  "build": {
+    "android-apk": {
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "android-aab": {
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "ios-release": {
+      "ios": {
+        "simulator": false
+      }
+    }
+  }
+}

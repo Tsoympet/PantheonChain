@@ -1,0 +1,59 @@
+name: Mobile Android Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'clients/mobile/react-native/**'
+      - '.github/workflows/mobile-android-installer.yml'
+
+jobs:
+  build-android-installer:
+    name: Build Android APK Installer
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/mobile/react-native
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Expo token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN secret is required to build Android installers with EAS."
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          token: ${{ secrets.EXPO_TOKEN }}
+          eas-version: latest
+
+      - name: Build Android installer (APK)
+        run: npx eas-cli build --platform android --profile android-apk --non-interactive --wait
+
+      - name: Download APK artifact
+        run: |
+          BUILD_ID=$(npx eas-cli build:list --platform android --limit 1 --status finished --json --non-interactive | jq -r '.[0].id')
+          npx eas-cli build:download --platform android --id "$BUILD_ID" --path parthenon-mobile-android.apk --non-interactive
+
+      - name: Upload Android installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: parthenon-mobile-android-apk
+          path: clients/mobile/react-native/parthenon-mobile-android.apk
+          retention-days: 14
