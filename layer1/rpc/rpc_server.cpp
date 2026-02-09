@@ -293,7 +293,7 @@ RPCResponse RPCServer::HandleGetBlock(const RPCRequest& req) {
         }
 
         // Get block from node's chain
-        auto block_opt = node_->GetBlockByHeight(height);
+        auto block_opt = node_->GetBlockByHeight(static_cast<uint32_t>(height));
 
         if (!block_opt) {
             response.error = "Block not found at height " + std::to_string(height);
