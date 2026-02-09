@@ -200,8 +200,8 @@ class ZKRollupProver {
     bool SetupParameters(size_t circuit_size);
 
   private:
-    ZKRollup* rollup_;
-    privacy::zksnark::ProofParameters params_;
+    [[maybe_unused]] ZKRollup* rollup_;
+    [[maybe_unused]] privacy::zksnark::ProofParameters params_;
 };
 
 /**
@@ -229,8 +229,8 @@ class ZKRollupVerifier {
     bool BatchVerifyProofs(const std::vector<ZKRollupBatch>& batches) const;
 
   private:
-    ZKRollup* rollup_;
-    privacy::zksnark::ProofParameters params_;
+    [[maybe_unused]] ZKRollup* rollup_;
+    [[maybe_unused]] privacy::zksnark::ProofParameters params_;
 };
 
 /**
