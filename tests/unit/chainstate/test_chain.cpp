@@ -48,7 +48,7 @@ Block CreateAndMineBlock(uint64_t height, const std::array<uint8_t, 32>& prev_ha
 
     block.header.version = 1;
     block.header.prev_block_hash = prev_hash;
-    block.header.timestamp = 1234567890 + height * 600;
+    block.header.timestamp = static_cast<uint32_t>(1234567890 + height * 600);
     block.header.bits = Difficulty::GetInitialBits();
     block.header.nonce = 0;
 
