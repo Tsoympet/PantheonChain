@@ -46,7 +46,7 @@ void TestMerkleTreeSingle() {
 
     std::array<uint8_t, 32> txid{};
     for (int i = 0; i < 32; i++) {
-        txid[i] = i;
+        txid[i] = static_cast<uint8_t>(i);
     }
 
     std::vector<std::array<uint8_t, 32>> hashes = {txid};
@@ -64,8 +64,8 @@ void TestMerkleTreePair() {
     std::array<uint8_t, 32> tx1{};
     std::array<uint8_t, 32> tx2{};
     for (int i = 0; i < 32; i++) {
-        tx1[i] = i;
-        tx2[i] = 32 - i;
+        tx1[i] = static_cast<uint8_t>(i);
+        tx2[i] = static_cast<uint8_t>(32 - i);
     }
 
     std::vector<std::array<uint8_t, 32>> hashes = {tx1, tx2};
@@ -88,7 +88,7 @@ void TestMerkleTreeMultiple() {
     std::vector<std::array<uint8_t, 32>> hashes;
     for (int i = 0; i < 7; i++) {
         std::array<uint8_t, 32> hash{};
-        hash[0] = i;
+        hash[0] = static_cast<uint8_t>(i);
         hashes.push_back(hash);
     }
 
@@ -100,7 +100,7 @@ void TestMerkleTreeMultiple() {
 
     // Adding another transaction changes root
     std::array<uint8_t, 32> hash8{};
-    hash8[0] = 8;
+    hash8[0] = static_cast<uint8_t>(8);
     hashes.push_back(hash8);
     auto root3 = MerkleTree::CalculateRoot(hashes);
     assert(root != root3);
