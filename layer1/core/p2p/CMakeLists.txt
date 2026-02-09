@@ -1,6 +1,7 @@
 # P2P networking module
 
 # Find OpenSSL for TLS support
+find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 add_library(parthenon_p2p STATIC
@@ -22,7 +23,7 @@ target_include_directories(parthenon_p2p PUBLIC
 target_link_libraries(parthenon_p2p PUBLIC
     parthenon_primitives
     parthenon_crypto
-    pthread
+    Threads::Threads
     OpenSSL::SSL
     OpenSSL::Crypto
 )
