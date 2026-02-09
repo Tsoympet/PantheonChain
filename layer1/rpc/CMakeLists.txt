@@ -1,5 +1,6 @@
 # RPC module
 
+find_package(Threads REQUIRED)
 add_library(parthenon_rpc STATIC
     rpc_server.cpp
 )
@@ -15,5 +16,5 @@ target_link_libraries(parthenon_rpc PUBLIC
     parthenon_node
     parthenon_wallet
     leveldb
-    pthread
+    Threads::Threads
 )
