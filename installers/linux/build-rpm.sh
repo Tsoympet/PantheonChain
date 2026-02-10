@@ -1,6 +1,12 @@
 #!/bin/bash
 # ParthenonChain RPM Build Script
 
+# Some CI jobs invoke this script with `sh`, which breaks bash-specific features
+# (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
+if [ -z "${BASH_VERSION:-}" ]; then
+    exec bash "$0" "$@"
+fi
+
 set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
