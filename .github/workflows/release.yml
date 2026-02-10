@@ -235,19 +235,19 @@ jobs:
           elif [ -f "$EXAMPLE_CONFIG_PATH" ]; then
             cp "$EXAMPLE_CONFIG_PATH" "$CONFIG_PATH"
           else
-            {
-              echo "# Auto-generated default configuration for release packaging"
-              echo "network_port=8333"
-              echo "max_connections=125"
-              echo "network_timeout=30"
-              echo "rpc_enabled=true"
-              echo "rpc_port=8332"
-              echo "rpc_user=parthenonrpc"
-              echo "rpc_password=change-me"
-              echo "data_dir=/var/lib/parthenon"
-              echo "log_level=info"
-              echo "mining_enabled=false"
-            } > "$CONFIG_PATH"
+            printf '%s\n' \
+              '# Auto-generated default configuration for release packaging' \
+              'network_port=8333' \
+              'max_connections=125' \
+              'network_timeout=30' \
+              'rpc_enabled=true' \
+              'rpc_port=8332' \
+              'rpc_user=parthenonrpc' \
+              'rpc_password=change-me' \
+              'data_dir=/var/lib/parthenon' \
+              'log_level=info' \
+              'mining_enabled=false' \
+              > "$CONFIG_PATH"
           fi
         fi
 
