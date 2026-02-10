@@ -14,6 +14,7 @@ echo "Building ParthenonChain Linux packages (type: $PACKAGE_TYPE)..."
 
 ensure_config_file() {
     local conf_source="${ROOT_DIR}/clients/core-daemon/parthenond.conf"
+    local conf_example="${ROOT_DIR}/parthenond.conf.example"
     local conf_dest="${BUILD_DIR}/clients/core-daemon/parthenond.conf"
 
     if [ -f "${conf_dest}" ]; then
@@ -25,6 +26,8 @@ ensure_config_file() {
 
     if [ -f "${conf_source}" ]; then
         cp "${conf_source}" "${conf_dest}"
+    elif [ -f "${conf_example}" ]; then
+        cp "${conf_example}" "${conf_dest}"
     else
         cat > "${conf_dest}" << 'EOF'
 # Auto-generated default configuration for package builds
