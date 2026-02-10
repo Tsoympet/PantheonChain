@@ -45,10 +45,12 @@ ensure_build_tools() {
         fi
     }
 
-    os_id_like=""
+    local os_id_like=""
     if [ -f /etc/os-release ]; then
         os_id_like="$(awk -F= '/^(ID|ID_LIKE)=/{print tolower($2)}' /etc/os-release | tr -d '"')"
     fi
+
+    OS_ID_LIKE="$os_id_like"
 
     # Native RPM hosts should provide package names that satisfy BuildRequires.
     if echo "$os_id_like" | grep -Eq '(rhel|centos|fedora|rocky|almalinux|suse)'; then
@@ -95,7 +97,6 @@ ensure_git_safe_directory() {
     existing_safe="$(git config --global --get-all safe.directory 2>/dev/null || true)"
 
     add_safe_directory() {
-        dir="$1"
         local dir="$1"
         if [ -z "$dir" ]; then
             return
@@ -133,53 +134,21 @@ print_git_safe_directories() {
 print_git_safe_directories
 
 create_source_tarball() {
-    tarball_path="$1"
-create_source_tarball() {
     local tarball_path="$1"
-    local git_error
-    local repo_path
 
-    if git archive --format=tar.gz --prefix="parthenon-${VERSION}/" HEAD > "$tarball_path" 2>/tmp/parthenon-git-archive.err; then
-        rm -f /tmp/parthenon-git-archive.err
-        return 0
+    # RPM builds require vendored third_party submodules (secp256k1/leveldb/etc.).
+    # `git archive` omits submodule contents, so package from the working tree instead.
+    if [ -f "$PROJECT_ROOT/.gitmodules" ]; then
+        git -C "$PROJECT_ROOT" submodule update --init --recursive
     fi
 
-    git_error="$(cat /tmp/parthenon-git-archive.err 2>/dev/null || true)"
-
-    if printf '%s\n' "$git_error" | grep -q "detected dubious ownership in repository"; then
-        repo_path="$(printf '%s\n' "$git_error" | sed -nE "s/.*repository at '([^']+)'.*/\1/p" | head -n1)"
-        if [ -n "$repo_path" ]; then
-            echo "Detected dubious ownership for git repository: $repo_path"
-            git config --global --add safe.directory "$repo_path"
-            if git archive --format=tar.gz --prefix="parthenon-${VERSION}/" HEAD > "$tarball_path"; then
-                rm -f /tmp/parthenon-git-archive.err
-                return 0
-            fi
-        fi
-    fi
-
-    echo "$git_error" >&2
-    rm -f /tmp/parthenon-git-archive.err
-    return 1
+    tar \
+        --exclude-vcs \
+        --exclude='./installers/linux/parthenon-*.rpm' \
+        -czf "$tarball_path" \
+        --transform "s|^\.|parthenon-${VERSION}|" \
+        -C "$PROJECT_ROOT" .
 }
-
-    local repo_root
-
-    if ! repo_root="$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel 2>/dev/null)"; then
-        echo "ERROR: Unable to determine git repository root from $PROJECT_ROOT"
-        exit 1
-    fi
-
-    # CI environments often mount workspaces with ownership that differs from the current user.
-    # Registering the repository as safe avoids "detected dubious ownership" failures for git archive.
-    if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fxq "$repo_root"; then
-        echo "Configuring git safe.directory for: $repo_root"
-        git config --global --add safe.directory "$repo_root"
-    fi
-}
-
-ensure_git_safe_directory
-
 # Create RPM build directory structure
 RPMBUILD_DIR="$HOME/rpmbuild"
 mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
@@ -204,7 +173,14 @@ sed -i \
 echo "Building RPM package..."
 cd "$RPMBUILD_DIR"
 
-rpmbuild -ba SPECS/parthenon.spec
+RPMBUILD_ARGS=(-ba SPECS/parthenon.spec)
+if echo "$OS_ID_LIKE" | grep -Eq '(debian|ubuntu)'; then
+    # Debian/Ubuntu use different package naming than RPM BuildRequires.
+    # Toolchain dependencies are installed via apt above, so skip rpm db checks here.
+    RPMBUILD_ARGS=(--nodeps --define "_unitdir /usr/lib/systemd/system" -ba SPECS/parthenon.spec)
+fi
+
+rpmbuild "${RPMBUILD_ARGS[@]}"
 
 # Copy built RPM to installers/linux directory
 echo "Copying RPM to installers/linux..."
