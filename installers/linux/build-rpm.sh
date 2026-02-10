@@ -3,8 +3,8 @@
 
 # Some CI jobs invoke this script with `sh`, which breaks bash-specific features
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
-shell_command="$(ps -p $$ -o comm= 2>/dev/null | tr -d '[:space:]' || true)"
-if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ] || [ "$shell_command" != "bash" ]; then
+running_shell="$(ps -p $$ -o comm= 2>/dev/null | tr -d '[:space:]' || true)"
+if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ] || [ "$running_shell" != "bash" ]; then
     exec bash "$0" "$@"
 fi
 
