@@ -28,7 +28,15 @@ jobs:
           throw "NSIS install completed but makensis.exe was not found in $nsisPath"
         }
 
+        $env:Path += ";$nsisPath"
         "$nsisPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        Write-Host "NSIS installed at: $((Get-Command makensis).Source)"
+        makensis /VERSION
+
+    - name: Verify NSIS in PATH
+      shell: pwsh
+      run: |
+        Write-Host "Resolved makensis path: $((Get-Command makensis).Source)"
         makensis /VERSION
     
     - name: Configure CMake
@@ -41,8 +49,10 @@ jobs:
       run: cd build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
     
     - name: Build NSIS Installer
+      shell: pwsh
       run: |
         cd installers/windows
+        Write-Host "Using makensis from: $((Get-Command makensis).Source)"
         powershell -ExecutionPolicy Bypass -File build.ps1
     
     - name: Upload Windows Installer
