@@ -298,6 +298,10 @@ jobs:
           fi
         fi
 
+    - name: Mark workspace as safe for git
+      if: matrix.package == 'rpm'
+      run: git config --global --add safe.directory /workspace
+
     - name: Validate RPM spec expansion
       if: matrix.package == 'rpm'
       run: |
