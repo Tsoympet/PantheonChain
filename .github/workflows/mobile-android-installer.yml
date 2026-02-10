@@ -45,12 +45,7 @@ jobs:
 
       - name: Ensure EAS project is configured
         run: |
-          PROJECT_ID=$(jq -r '.projectId // empty' .easproject)
-          if [ -z "$PROJECT_ID" ]; then
-            echo "Unable to read EAS project ID from clients/mobile/react-native/.easproject."
-            exit 1
-          fi
-          npx eas-cli init --id "$PROJECT_ID" --force --non-interactive
+          npx eas-cli init --force --non-interactive
       - name: Build Android installer (APK)
         run: npx eas-cli build --platform android --profile android-apk --non-interactive --wait
 
