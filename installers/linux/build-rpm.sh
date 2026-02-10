@@ -88,6 +88,24 @@ ensure_build_tools() {
 
 ensure_build_tools
 
+ensure_git_safe_directory() {
+    local repo_root
+
+    if ! repo_root="$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel 2>/dev/null)"; then
+        echo "ERROR: Unable to determine git repository root from $PROJECT_ROOT"
+        exit 1
+    fi
+
+    # CI environments often mount workspaces with ownership that differs from the current user.
+    # Registering the repository as safe avoids "detected dubious ownership" failures for git archive.
+    if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fxq "$repo_root"; then
+        echo "Configuring git safe.directory for: $repo_root"
+        git config --global --add safe.directory "$repo_root"
+    fi
+}
+
+ensure_git_safe_directory
+
 # Create RPM build directory structure
 RPMBUILD_DIR="$HOME/rpmbuild"
 mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
