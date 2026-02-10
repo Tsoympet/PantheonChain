@@ -28,12 +28,14 @@ jobs:
           "C:\Program Files\NSIS"
         )
 
+        foreach ($path in $nsisPaths) {
+          $path | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        }
+
         $resolved = $nsisPaths | Where-Object { Test-Path (Join-Path $_ "makensis.exe") } | Select-Object -First 1
         if (-not $resolved) {
           throw "NSIS installation directory not found. Checked: $($nsisPaths -join ', ')"
         }
-
-        $resolved | Out-File -FilePath $env:GITHUB_PATH -Encoding ascii -Append
 
     - name: Verify NSIS availability
       shell: pwsh
