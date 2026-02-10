@@ -4,7 +4,7 @@
 # Some CI jobs invoke this script with `sh`, which breaks bash-specific features
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
 if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ] \
-    || [ "$(ps -p $$ -o comm= 2>/dev/null | tr -d '[:space:]' || true)" != "bash" ]; then
+    || [ "$(ps -p "$$" -o comm= 2>/dev/null | tr -d '[:space:]' || true)" != "bash" ]; then
     exec bash "$0" "$@"
 fi
 
