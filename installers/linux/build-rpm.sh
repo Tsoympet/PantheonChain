@@ -3,9 +3,9 @@
 
 # Some CI jobs invoke this script with `sh`, which breaks bash-specific features
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
-if [ -z "${PARTHENON_RPM_REEXECED:-}" ]; then
+if [ -z "${PARTHENON_RPM_REEXECUTED:-}" ]; then
     reexec_bash() {
-        export PARTHENON_RPM_REEXECED=1
+        export PARTHENON_RPM_REEXECUTED=1
         exec bash "$0" "$@"
     }
 
