@@ -44,13 +44,25 @@ cp "$SCRIPT_DIR/parthenon.spec" "$SPEC_FILE"
 sed -i \
     -e "s/^Version:[[:space:]].*/Version:        ${VERSION}/" \
     -e "s|\$\(date +\"%a %b %d %Y\"\)|${CHANGELOG_DATE}|g" \
+    -e "s|^\* \$\(date .\+\) ParthenonChain Foundation <dev@parthenonchain\.org> - .\+$|* ${CHANGELOG_DATE} ParthenonChain Foundation <dev@parthenonchain.org> - ${VERSION}-${RELEASE}|" \
     -e "s/^\* .\+ ParthenonChain Foundation <dev@parthenonchain\.org> - .\+$/\* ${CHANGELOG_DATE} ParthenonChain Foundation <dev@parthenonchain.org> - ${VERSION}-${RELEASE}/" \
     "$SPEC_FILE"
 
 # Build RPM
 echo "Building RPM package..."
 cd "$RPMBUILD_DIR"
-rpmbuild -ba SPECS/parthenon.spec
+
+RPMBUILD_ARGS=(-ba SPECS/parthenon.spec)
+
+# Ubuntu runners provide Debian development packages (e.g. libssl-dev, libboost-all-dev)
+# that do not satisfy RPM BuildRequires names (openssl-devel, boost-devel, gcc-c++).
+# Keep strict dependency checks for native RPM environments and bypass only on Debian/Ubuntu.
+if [ -f /etc/os-release ] && grep -Eq '^(ID|ID_LIKE)=.*(debian|ubuntu)' /etc/os-release; then
+    echo "Detected Debian/Ubuntu host; building RPM with --nodeps due to cross-distro BuildRequires naming"
+    RPMBUILD_ARGS=(--nodeps "${RPMBUILD_ARGS[@]}")
+fi
+
+rpmbuild "${RPMBUILD_ARGS[@]}"
 
 # Copy built RPM to installers/linux directory
 echo "Copying RPM to installers/linux..."

@@ -41,10 +41,14 @@ This directory contains scripts for creating Debian (.deb) and RPM (.rpm) packag
 2. Create the package:
    ```bash
    cd installers/linux
-   rpmbuild -ba parthenon.spec
+   ./build-rpm.sh
    ```
 
-3. Output: `parthenon-1.0.0-1.el8.x86_64.rpm`
+   Notes:
+   - `build-rpm.sh` normalizes the spec `%changelog` header date to a valid RPM format before running `rpmbuild`.
+   - On Debian/Ubuntu hosts, the script automatically uses `rpmbuild --nodeps` because RPM `BuildRequires` names (such as `openssl-devel` and `boost-devel`) do not map 1:1 to Debian package names (`libssl-dev`, `libboost-all-dev`).
+
+3. Output: `parthenon-1.0.0-1.*.rpm`
 
 ## Installation
 
