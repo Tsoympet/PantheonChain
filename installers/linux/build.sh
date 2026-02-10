@@ -42,8 +42,20 @@ EOF
     fi
 }
 
+verify_config_file() {
+    local conf_dest="${BUILD_DIR}/clients/core-daemon/parthenond.conf"
+
+    if [ ! -f "${conf_dest}" ]; then
+        echo "ERROR: Required config file is still missing: ${conf_dest}"
+        exit 1
+    fi
+
+    echo "Verified package config: ${conf_dest}"
+}
+
 if [ "$PACKAGE_TYPE" = "deb" ] || [ "$PACKAGE_TYPE" = "rpm" ] || [ "$PACKAGE_TYPE" = "all" ]; then
     ensure_config_file
+    verify_config_file
 fi
 
 if [ "$PACKAGE_TYPE" = "deb" ] || [ "$PACKAGE_TYPE" = "all" ]; then
