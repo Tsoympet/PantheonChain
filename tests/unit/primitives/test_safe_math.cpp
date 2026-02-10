@@ -138,8 +138,7 @@ void test_checked_operations() {
 
     // CheckedAdd - normal case
     try {
-        uint64_t result = SafeMath::CheckedAdd(100, 200);
-        assert(result == 300);
+        assert(SafeMath::CheckedAdd(100, 200) == 300);
     } catch (...) {
         assert(false && "Should not throw");
     }
@@ -154,8 +153,7 @@ void test_checked_operations() {
 
     // CheckedSub - normal case
     try {
-        uint64_t result = SafeMath::CheckedSub(200, 100);
-        assert(result == 100);
+        assert(SafeMath::CheckedSub(200, 100) == 100);
     } catch (...) {
         assert(false && "Should not throw");
     }
