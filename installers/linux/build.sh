@@ -74,6 +74,10 @@ fi
 if [ "$PACKAGE_TYPE" = "rpm" ] || [ "$PACKAGE_TYPE" = "all" ]; then
     # Build RPM package
     if [ -f "./build-rpm.sh" ]; then
+        if [ -f /etc/os-release ] && grep -Eq '^(ID|ID_LIKE)=.*(debian|ubuntu)' /etc/os-release; then
+            echo "Note: RPMs are best built on Fedora/RHEL/CentOS runners for native BuildRequires resolution"
+        fi
+
         echo "Building RPM package..."
         bash ./build-rpm.sh
     elif [ -f "./parthenon.spec" ]; then
