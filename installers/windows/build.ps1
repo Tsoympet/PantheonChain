@@ -84,6 +84,7 @@ function Resolve-BuildArtifactPath {
     param(
         [Parameter(Mandatory=$true)][string]$configuredPath,
         [Parameter(Mandatory=$true)][string]$flatPath,
+        [Parameter(Mandatory=$true)][string]$binaryName,
         [Parameter(Mandatory=$true)][string]$label
     )
 
@@ -93,10 +94,40 @@ function Resolve-BuildArtifactPath {
         }
     }
 
+    $buildRoot = "..\..\build"
+    if (Test-Path $buildRoot) {
+        $discoveredCandidate = Get-ChildItem -Path $buildRoot -Filter $binaryName -Recurse -File -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+
+        if ($discoveredCandidate) {
+            Write-Host "Warning: using discovered fallback artifact for $label: $($discoveredCandidate.FullName)" -ForegroundColor Yellow
+            return $discoveredCandidate.FullName
+        }
+    }
+
     Write-Host "Error: Missing required artifact for $label." -ForegroundColor Red
     Write-Host "Expected one of:" -ForegroundColor Yellow
     Write-Host " - $configuredPath" -ForegroundColor Yellow
     Write-Host " - $flatPath" -ForegroundColor Yellow
+    if (Test-Path $buildRoot) {
+        Write-Host "Searched recursively under: $buildRoot for $binaryName" -ForegroundColor Yellow
+    }
+    exit 1
+}
+
+function Stage-ArtifactForNsis {
+    param(
+        [Parameter(Mandatory=$true)][string]$sourcePath,
+        [Parameter(Mandatory=$true)][string]$outputFileName,
+        [Parameter(Mandatory=$true)][string]$stagingDirectory
+    )
+
+    New-Item -ItemType Directory -Path $stagingDirectory -Force | Out-Null
+    $destinationPath = Join-Path $stagingDirectory $outputFileName
+    Copy-Item -Path $sourcePath -Destination $destinationPath -Force
+    return (Resolve-Path $destinationPath).Path
+}
+
     exit 1
 }
 
@@ -156,6 +187,14 @@ if (Test-Path ".\parthenon-installer.nsi") {
 
     $buildConfig = if ([string]::IsNullOrWhiteSpace($env:BUILD_TYPE)) { "Release" } else { $env:BUILD_TYPE }
 
+    $daemonBinaryPath = Resolve-BuildArtifactPath -configuredPath "..\..\build\clients\core-daemon\$buildConfig\parthenond.exe" -flatPath "..\..\build\clients\core-daemon\parthenond.exe" -binaryName "parthenond.exe" -label "parthenond"
+    $cliBinaryPath = Resolve-BuildArtifactPath -configuredPath "..\..\build\clients\cli\$buildConfig\parthenon-cli.exe" -flatPath "..\..\build\clients\cli\parthenon-cli.exe" -binaryName "parthenon-cli.exe" -label "parthenon-cli"
+    $desktopBinaryPath = Resolve-BuildArtifactPath -configuredPath "..\..\build\clients\desktop\$buildConfig\parthenon-qt.exe" -flatPath "..\..\build\clients\desktop\parthenon-qt.exe" -binaryName "parthenon-qt.exe" -label "parthenon-qt"
+
+    $nsisStagingDirectory = ".\.nsis-input"
+    $stagedDaemonBinaryPath = Stage-ArtifactForNsis -sourcePath $daemonBinaryPath -outputFileName "parthenond.exe" -stagingDirectory $nsisStagingDirectory
+    $stagedCliBinaryPath = Stage-ArtifactForNsis -sourcePath $cliBinaryPath -outputFileName "parthenon-cli.exe" -stagingDirectory $nsisStagingDirectory
+    $stagedDesktopBinaryPath = Stage-ArtifactForNsis -sourcePath $desktopBinaryPath -outputFileName "parthenon-qt.exe" -stagingDirectory $nsisStagingDirectory
     $daemonBinaryPath = Resolve-BuildArtifactPath -configuredPath "..\..\build\clients\core-daemon\$buildConfig\parthenond.exe" -flatPath "..\..\build\clients\core-daemon\parthenond.exe" -label "parthenond"
     $cliBinaryPath = Resolve-BuildArtifactPath -configuredPath "..\..\build\clients\cli\$buildConfig\parthenon-cli.exe" -flatPath "..\..\build\clients\cli\parthenon-cli.exe" -label "parthenon-cli"
     $desktopBinaryPath = Resolve-BuildArtifactPath -configuredPath "..\..\build\clients\desktop\$buildConfig\parthenon-qt.exe" -flatPath "..\..\build\clients\desktop\parthenon-qt.exe" -label "parthenon-qt"
@@ -164,6 +203,11 @@ if (Test-Path ".\parthenon-installer.nsi") {
     Write-Host "Resolved parthenond binary: $daemonBinaryPath" -ForegroundColor Cyan
     Write-Host "Resolved parthenon-cli binary: $cliBinaryPath" -ForegroundColor Cyan
     Write-Host "Resolved parthenon-qt binary: $desktopBinaryPath" -ForegroundColor Cyan
+    Write-Host "Staged parthenond binary: $stagedDaemonBinaryPath" -ForegroundColor Cyan
+    Write-Host "Staged parthenon-cli binary: $stagedCliBinaryPath" -ForegroundColor Cyan
+    Write-Host "Staged parthenon-qt binary: $stagedDesktopBinaryPath" -ForegroundColor Cyan
+
+    & $makensisPath "/DBUILD_CONFIG=$buildConfig" "/DDAEMON_BINARY_PATH=$stagedDaemonBinaryPath" "/DCLI_BINARY_PATH=$stagedCliBinaryPath" "/DDESKTOP_BINARY_PATH=$stagedDesktopBinaryPath" parthenon-installer.nsi
 
     & $makensisPath "/DBUILD_CONFIG=$buildConfig" "/DDAEMON_BINARY_PATH=$daemonBinaryPath" "/DCLI_BINARY_PATH=$cliBinaryPath" "/DDESKTOP_BINARY_PATH=$desktopBinaryPath" parthenon-installer.nsi
 
