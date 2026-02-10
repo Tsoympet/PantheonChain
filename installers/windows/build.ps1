@@ -132,7 +132,10 @@ if (Test-Path ".\parthenon-installer.nsi") {
 
     Write-Host "Using NSIS compiler: $makensisPath" -ForegroundColor Cyan
     Write-Host "Running NSIS installer build..." -ForegroundColor Cyan
-    & $makensisPath parthenon-installer.nsi
+
+    $buildConfig = if ([string]::IsNullOrWhiteSpace($env:BUILD_TYPE)) { "Release" } else { $env:BUILD_TYPE }
+    Write-Host "NSIS BUILD_CONFIG: $buildConfig" -ForegroundColor Cyan
+    & $makensisPath "/DBUILD_CONFIG=$buildConfig" parthenon-installer.nsi
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Windows installer build complete!" -ForegroundColor Green

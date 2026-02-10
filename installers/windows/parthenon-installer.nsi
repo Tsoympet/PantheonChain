@@ -13,6 +13,10 @@
 !include "MUI2.nsh"
 
 ; Output file
+!ifndef BUILD_CONFIG
+  !define BUILD_CONFIG "Release"
+!endif
+
 OutFile "parthenon-${PRODUCT_VERSION}-windows-x64-setup.exe"
 
 ; Install directory
@@ -50,8 +54,8 @@ Section "Core Daemon (parthenond)" SecDaemon
   SectionIn RO
   
   SetOutPath "$INSTDIR\bin"
-  File "..\..\build\clients\core-daemon\parthenond.exe"
-  File "..\..\build\clients\core-daemon\parthenond.conf"
+  File "..\..\build\clients\core-daemon\${BUILD_CONFIG}\parthenond.exe"
+  File "..\..\build\clients\core-daemon\${BUILD_CONFIG}\parthenond.conf"
   
   ; Create data directory
   CreateDirectory "$APPDATA\ParthenonChain"
@@ -64,7 +68,7 @@ SectionEnd
 
 Section "Command Line Tools (parthenon-cli)" SecCLI
   SetOutPath "$INSTDIR\bin"
-  File "..\..\build\clients\cli\parthenon-cli.exe"
+  File "..\..\build\clients\cli\${BUILD_CONFIG}\parthenon-cli.exe"
   
   ; Add to PATH
   EnVar::SetHKLM
@@ -75,7 +79,7 @@ SectionEnd
 
 Section "Desktop Wallet (parthenon-qt)" SecGUI
   SetOutPath "$INSTDIR\bin"
-  File "..\..\build\clients\desktop\parthenon-qt.exe"
+  File "..\..\build\clients\desktop\${BUILD_CONFIG}\parthenon-qt.exe"
   
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\ParthenonChain Wallet.lnk" "$INSTDIR\bin\parthenon-qt.exe"
   CreateShortCut "$DESKTOP\ParthenonChain Wallet.lnk" "$INSTDIR\bin\parthenon-qt.exe"
