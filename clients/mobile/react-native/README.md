@@ -120,6 +120,23 @@ npm run ios
 npm start
 ```
 
+
+### EAS Build Prerequisites (CI and local)
+
+Before running EAS builds (especially in CI):
+
+- Use **Expo SDK 41+** (this project is configured for SDK 49 via `expo` and `app.json`).
+- Ensure `EXPO_TOKEN` is configured in your CI secrets.
+- Do not rely on keystore generation in `--non-interactive` mode.
+  - Create Android credentials ahead of time with `eas credentials`.
+  - Upload credentials to Expo (remote) before CI builds, or use local credentials securely.
+
+Install dependencies after Expo SDK updates:
+
+```bash
+npm install
+```
+
 ## Building for Production
 
 ### Android
