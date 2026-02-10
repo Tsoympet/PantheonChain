@@ -183,7 +183,10 @@ void test_checked_operations() {
 
     // CheckedDiv - normal case
     try {
-        assert(SafeMath::CheckedDiv(200, 100) == 2);
+        const uint64_t result = SafeMath::CheckedDiv(200, 100);
+        if (result != 2) {
+            throw std::runtime_error("CheckedDiv returned unexpected value");
+        }
     } catch (...) {
         assert(false && "Should not throw");
     }
