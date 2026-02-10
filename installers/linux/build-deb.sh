@@ -45,8 +45,34 @@ cp "${BUILD_DIR}/clients/cli/parthenon-cli" "${DEB_DIR}/usr/bin/"
 cp "${BUILD_DIR}/clients/desktop/parthenon-qt" "${DEB_DIR}/usr/bin/"
 chmod 755 "${DEB_DIR}/usr/bin"/*
 
-# Copy configuration
-cp "${BUILD_DIR}/clients/core-daemon/parthenond.conf" "${DEB_DIR}/etc/parthenon/"
+# Ensure configuration exists, then copy it
+CONFIG_PATH="${BUILD_DIR}/clients/core-daemon/parthenond.conf"
+SOURCE_CONFIG_PATH="../../clients/core-daemon/parthenond.conf"
+
+if [ ! -f "${CONFIG_PATH}" ]; then
+    echo "Configuration not found at ${CONFIG_PATH}; attempting to source or generate default config"
+    mkdir -p "$(dirname "${CONFIG_PATH}")"
+
+    if [ -f "${SOURCE_CONFIG_PATH}" ]; then
+        cp "${SOURCE_CONFIG_PATH}" "${CONFIG_PATH}"
+    else
+        cat > "${CONFIG_PATH}" << 'EOF'
+# Auto-generated default configuration for package builds
+network_port=8333
+max_connections=125
+network_timeout=30
+rpc_enabled=true
+rpc_port=8332
+rpc_user=parthenonrpc
+rpc_password=change-me
+data_dir=/var/lib/parthenon
+log_level=info
+mining_enabled=false
+EOF
+    fi
+fi
+
+cp "${CONFIG_PATH}" "${DEB_DIR}/etc/parthenon/"
 
 # Copy documentation
 cp ../../README.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
