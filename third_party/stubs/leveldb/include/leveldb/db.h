@@ -11,15 +11,18 @@ namespace leveldb {
 
 class Status {
   public:
-    Status() : ok_(true) {}
-    static Status OK() { return Status(true); }
-    static Status NotFound() { return Status(false); }
+    enum class Code { kOk, kNotFound, kInvalidArgument };
 
-    bool ok() const { return ok_; }
+    Status() : code_(Code::kOk) {}
+    static Status OK() { return Status(Code::kOk); }
+    static Status NotFound() { return Status(Code::kNotFound); }
+    static Status InvalidArgument() { return Status(Code::kInvalidArgument); }
+
+    bool ok() const { return code_ == Code::kOk; }
 
   private:
-    explicit Status(bool ok) : ok_(ok) {}
-    bool ok_;
+    explicit Status(Code code) : code_(code) {}
+    Code code_;
 };
 
 class Slice {
@@ -113,10 +116,10 @@ class DB {
     static Status Open(const Options& options, const std::string& name, DB** dbptr) {
         (void)name;
         if (dbptr == nullptr) {
-            return Status::NotFound();
+            return Status::InvalidArgument();
         }
         if (!options.create_if_missing) {
-            return Status::NotFound();
+            return Status::InvalidArgument();
         }
         *dbptr = new DB();
         return Status::OK();
@@ -153,7 +156,7 @@ class DB {
     Status Write(const WriteOptions& options, WriteBatch* batch) {
         (void)options;
         if (batch == nullptr) {
-            return Status::NotFound();
+            return Status::InvalidArgument();
         }
         for (const auto& op : batch->Operations()) {
             if (op.type == WriteBatch::Operation::Type::kPut) {

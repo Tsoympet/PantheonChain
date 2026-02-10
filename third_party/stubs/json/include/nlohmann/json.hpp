@@ -264,7 +264,7 @@ class json {
         char* end = nullptr;
         const char* start = value.c_str();
         double result = std::strtod(start, &end);
-        if (start == end || end == nullptr || *end != '\0') {
+        if (start == end || *end != '\0') {
             return false;
         }
         if (out != nullptr) {

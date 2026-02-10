@@ -16,6 +16,7 @@ static const unsigned char secp256k1_stub_curve_order[32] = {
     0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
     0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41
 };
+static const unsigned char secp256k1_stub_xor_constant = 0xA5;
 
 static int secp256k1_stub_is_zero(const unsigned char* data) {
     for (size_t i = 0; i < 32; ++i) {
@@ -41,7 +42,7 @@ static int secp256k1_stub_compare(const unsigned char* lhs, const unsigned char*
 static void secp256k1_stub_pubkey_from_seckey(const unsigned char* seckey,
                                               unsigned char* pubkey32) {
     for (size_t i = 0; i < 32; ++i) {
-        pubkey32[i] = (unsigned char)(seckey[i] ^ 0xA5);
+        pubkey32[i] = (unsigned char)(seckey[i] ^ secp256k1_stub_xor_constant);
     }
 }
 
