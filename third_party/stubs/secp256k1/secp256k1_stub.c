@@ -18,21 +18,21 @@ static const unsigned char secp256k1_stub_curve_order[32] = {
 };
 static const unsigned char secp256k1_stub_xor_constant = 0xA5;
 
-static int secp256k1_stub_is_zero(const unsigned char* data) {
+static int secp256k1_stub_is_zero(const unsigned char* bytes) {
     for (size_t i = 0; i < 32; ++i) {
-        if (data[i] != 0) {
+        if (bytes[i] != 0) {
             return 0;
         }
     }
     return 1;
 }
 
-static int secp256k1_stub_compare(const unsigned char* lhs, const unsigned char* rhs) {
+static int secp256k1_stub_compare(const unsigned char* first, const unsigned char* second) {
     for (size_t i = 0; i < 32; ++i) {
-        if (lhs[i] < rhs[i]) {
+        if (first[i] < second[i]) {
             return -1;
         }
-        if (lhs[i] > rhs[i]) {
+        if (first[i] > second[i]) {
             return 1;
         }
     }

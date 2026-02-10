@@ -248,10 +248,10 @@ class json {
     static std::string Trim(const std::string& value) {
         size_t start = 0;
         size_t end = value.size();
-        while (start < end && std::isspace(static_cast<unsigned char>(value[start])) != 0) {
+        while (start < end && std::isspace(static_cast<unsigned char>(value[start]))) {
             ++start;
         }
-        while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
+        while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1]))) {
             --end;
         }
         return value.substr(start, end - start);
