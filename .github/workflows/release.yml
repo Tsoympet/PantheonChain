@@ -111,10 +111,10 @@ jobs:
       run: |
         $buildConfig = if ([string]::IsNullOrWhiteSpace("${{env.BUILD_TYPE}}")) { "Release" } else { "${{env.BUILD_TYPE}}" }
         $requiredArtifacts = @(
-          "build/$buildConfig/parthenond.exe",
+          "build/clients/core-daemon/$buildConfig/parthenond.exe",
           "build/clients/core-daemon/parthenond.conf",
-          "build/$buildConfig/parthenon-cli.exe",
-          "build/$buildConfig/parthenon-qt.exe"
+          "build/clients/cli/$buildConfig/parthenon-cli.exe",
+          "build/clients/desktop/$buildConfig/parthenon-qt.exe"
         )
 
         foreach ($artifact in $requiredArtifacts) {
@@ -123,25 +123,6 @@ jobs:
           }
 
           Write-Host "Found required artifact: $(Resolve-Path $artifact)"
-        }
-
-    - name: Copy executables to expected locations
-      shell: pwsh
-      run: |
-        $buildType = if ([string]::IsNullOrWhiteSpace("${{env.BUILD_TYPE}}")) { "Release" } else { "${{env.BUILD_TYPE}}" }
-        $clients = @('core-daemon', 'cli', 'desktop')
-
-        foreach ($client in $clients) {
-          $sourcePath = "build/clients/$client/$buildType"
-          $destPath = "build/clients/$client"
-
-          if (Test-Path "$sourcePath/*.exe") {
-            Copy-Item "$sourcePath/*.exe" -Destination $destPath -Force
-            Write-Host "Copied executables from $sourcePath to $destPath"
-          }
-          else {
-            Write-Host "No executables found under $sourcePath; skipping copy"
-          }
         }
 
     - name: Build NSIS Installer
