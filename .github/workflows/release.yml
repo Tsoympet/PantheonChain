@@ -199,6 +199,10 @@ jobs:
           fi
         fi
 
+    - name: Validate RPM spec expansion
+      if: matrix.package == 'rpm'
+      run: rpmspec -P installers/linux/parthenon.spec >/tmp/parthenon.spec.expanded
+
     - name: Build Package
       run: |
         cd installers/linux

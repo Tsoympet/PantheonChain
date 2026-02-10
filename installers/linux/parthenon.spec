@@ -47,7 +47,30 @@ install -m 755 build/clients/cli/parthenon-cli $RPM_BUILD_ROOT/usr/bin/
 install -m 755 build/clients/desktop/parthenon-qt $RPM_BUILD_ROOT/usr/bin/
 
 # Install configuration
-install -m 644 build/clients/core-daemon/parthenond.conf $RPM_BUILD_ROOT/etc/parthenon/
+CONFIG_SOURCE="build/clients/core-daemon/parthenond.conf"
+if [ ! -f "$CONFIG_SOURCE" ]; then
+    if [ -f "clients/core-daemon/parthenond.conf" ]; then
+        CONFIG_SOURCE="clients/core-daemon/parthenond.conf"
+    elif [ -f "parthenond.conf.example" ]; then
+        CONFIG_SOURCE="parthenond.conf.example"
+    else
+        mkdir -p build/clients/core-daemon
+        cat > "$CONFIG_SOURCE" << 'EOF'
+# Auto-generated default configuration for RPM package builds
+network_port=8333
+max_connections=125
+network_timeout=30
+rpc_enabled=true
+rpc_port=8332
+rpc_user=parthenonrpc
+rpc_password=change-me
+data_dir=/var/lib/parthenon
+log_level=info
+mining_enabled=false
+EOF
+    fi
+fi
+install -m 644 "$CONFIG_SOURCE" $RPM_BUILD_ROOT/etc/parthenon/parthenond.conf
 
 # Install systemd service
 cat > $RPM_BUILD_ROOT/usr/lib/systemd/system/parthenond.service << EOF
