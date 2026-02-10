@@ -32,7 +32,7 @@ jobs:
       run: |
         $env:Path = "C:\Program Files (x86)\NSIS;" + $env:Path
         cd installers/windows
-        powershell -ExecutionPolicy Bypass -File build.ps1
+        pwsh -ExecutionPolicy Bypass -File build.ps1
     
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
