@@ -148,8 +148,27 @@ jobs:
       timeout-minutes: 15
       run: |
         sudo apt-get update
+
+        # Common Linux build dependencies used by both DEB and RPM jobs.
         sudo apt-get install -y --no-install-recommends \
-          rpm cmake g++ libssl-dev libboost-all-dev qt6-base-dev
+          cmake g++ libssl-dev libboost-all-dev qt6-base-dev
+
+        # RPM-specific tooling for Ubuntu runners. Some distros expose `rpmbuild`
+        # via `rpm`, while others split it into `rpm-build`.
+        if [ "${{ matrix.package }}" = "rpm" ]; then
+          sudo apt-get install -y --no-install-recommends \
+            rpm build-essential cmake g++ libssl-dev libboost-all-dev
+
+          if ! command -v rpmbuild >/dev/null 2>&1; then
+            sudo apt-get install -y --no-install-recommends rpm-build || true
+          fi
+
+          if ! command -v rpmbuild >/dev/null 2>&1; then
+            echo "rpmbuild is not available on this Ubuntu image; consider using a Fedora/RHEL container for RPM packaging"
+            exit 1
+          fi
+        fi
+
         cmake --version
         if ! dpkg --compare-versions "$(cmake --version | head -n1 | awk '{print $3}')" ge 3.15; then
           echo "CMake >= 3.15 is required for Linux packaging"
