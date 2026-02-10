@@ -9,8 +9,8 @@ Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  cmake >= 3.15
 BuildRequires:  g++
-BuildRequires:  libssl-dev
-BuildRequires:  libboost-dev
+BuildRequires:  openssl-devel
+BuildRequires:  boost-devel
 
 Requires:       openssl >= 3.0.0
 Requires:       boost-system
