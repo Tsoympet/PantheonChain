@@ -21,11 +21,8 @@ jobs:
     
     - name: Install NSIS
       shell: pwsh
-      run: choco install nsis -y --no-progress
-
-    - name: Add NSIS to PATH
-      shell: pwsh
       run: |
+        choco install nsis -y --no-progress
         $nsisPaths = @(
           "C:\Program Files (x86)\NSIS",
           "C:\Program Files\NSIS"
@@ -36,7 +33,7 @@ jobs:
           throw "NSIS installation directory not found. Checked: $($nsisPaths -join ', ')"
         }
 
-        $resolved | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        $resolved | Out-File -FilePath $env:GITHUB_PATH -Encoding ascii -Append
 
     - name: Verify NSIS availability
       shell: pwsh
@@ -82,11 +79,6 @@ jobs:
             Set-Content -Path $configPath -Value $defaultConfig
           }
         }
-
-    - name: Set up NSIS Path
-      shell: pwsh
-      run: |
-        echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Build NSIS Installer
       shell: pwsh
