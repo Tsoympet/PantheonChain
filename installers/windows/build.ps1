@@ -100,8 +100,8 @@ function Resolve-BuildArtifactPath {
             Select-Object -First 1
 
         if ($discoveredCandidate) {
-            # Keep this message format-safe for Windows PowerShell: avoid `$label:`-style interpolation in double-quoted strings.
-            Write-Host ("Warning: using discovered fallback artifact for {0}: {1}" -f $label, $discoveredCandidate.FullName) -ForegroundColor Yellow
+            # Keep this message format-safe for Windows PowerShell: avoid `$label:`-style interpolation; use `${label}` instead.
+            Write-Host "Warning: using discovered fallback artifact for ${label}: $($discoveredCandidate.FullName)" -ForegroundColor Yellow
             return $discoveredCandidate.FullName
         }
     }
