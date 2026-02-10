@@ -31,6 +31,7 @@ fi
 VERSION="$(printf '%s' "${VERSION:-1.0.0}" | tr -d '\r' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+([-.+][A-Za-z0-9.-]+)?' | head -n1)"
 VERSION="${VERSION:-1.0.0}"
 RELEASE="1"
+CHANGELOG_DATE="$(LC_ALL=C date '+%a %b %d %Y')"
 
 echo "=== Building ParthenonChain RPM Package ==="
 echo "Version: $VERSION-$RELEASE"
@@ -104,6 +105,7 @@ cp "$SCRIPT_DIR/parthenon.spec" "$SPEC_FILE"
 
 sed -i \
     -e "s/^Version:[[:space:]].*/Version:        ${VERSION}/" \
+    -e "0,/^\* [A-Za-z]{3} [A-Za-z]{3} [ 0-9]{2} [0-9]{4} ParthenonChain Foundation <dev@parthenonchain.org> - [0-9][^[:space:]]*/s//\* ${CHANGELOG_DATE} ParthenonChain Foundation <dev@parthenonchain.org> - ${VERSION}-${RELEASE}/" \
     "$SPEC_FILE"
 
 # Build RPM
