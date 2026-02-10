@@ -3,9 +3,14 @@
 
 # Some CI jobs invoke this script with `sh`, which breaks bash-specific features
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
-if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ] \
-    || [ "$(command -v ps >/dev/null 2>&1 && ps -p "$$" -o comm= 2>/dev/null)" != "bash" ]; then
+if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
     exec bash "$0" "$@"
+fi
+
+if command -v ps >/dev/null 2>&1; then
+    if [ "$(ps -p "$$" -o comm= 2>/dev/null)" != "bash" ]; then
+        exec bash "$0" "$@"
+    fi
 fi
 
 set -e
