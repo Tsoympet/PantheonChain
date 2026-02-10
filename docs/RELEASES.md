@@ -126,12 +126,13 @@ Trigger the workflow manually from GitHub Actions UI:
 2. Select "Release Build" workflow
 3. Click "Run workflow"
 4. Specify:
-   - **Version**: Version number to release (e.g., `1.0.0`) - **Required**
+   - **Version**: Version number without 'v' prefix (e.g., `1.0.0`) - **Required**
    - **Draft**: Whether to create as draft release (default: true)
 
 Alternatively, use GitHub CLI:
 ```bash
 # Run with version (required) and draft option
+# Note: Provide version WITHOUT 'v' prefix (e.g., 1.0.0, not v1.0.0)
 gh workflow run release.yml -f version=1.0.0 -f draft=true
 
 # Run with version to create non-draft release

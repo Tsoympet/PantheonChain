@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
+        description: 'Version to release (e.g., 1.0.0 without v prefix)'
         required: true
-        default: ''
       draft:
         description: 'Create as draft release'
         required: false
@@ -320,7 +319,7 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || true }}
+        draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || github.event_name == 'push' }}
         tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
         files: |
           windows-installer/*.exe
