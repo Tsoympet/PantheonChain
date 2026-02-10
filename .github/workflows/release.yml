@@ -21,7 +21,11 @@ jobs:
     
     - name: Install NSIS
       shell: pwsh
-      run: choco install nsis -y --no-progress
+      run: |
+        choco install nsis -y --no-progress
+        Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+        refreshenv
+        makensis /VERSION
 
     - name: Add NSIS to PATH
       shell: pwsh
