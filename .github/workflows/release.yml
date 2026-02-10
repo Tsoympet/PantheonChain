@@ -324,12 +324,12 @@ jobs:
     - name: Validate RPM spec expansion
       if: matrix.package == 'rpm'
       run: |
-        docker run --rm           -v "${{ github.workspace }}:/workspace"           -w /workspace           fedora:latest           bash -lc "git config --global --add safe.directory /workspace && dnf install -y rpm-build >/dev/null && rpmspec -P installers/linux/parthenon.spec >/tmp/parthenon.spec.expanded"
+        docker run --rm           -v "${{ github.workspace }}:/workspace"           -w /workspace           fedora:latest           bash -lc "dnf install -y git rpm-build >/dev/null && git config --global --add safe.directory /workspace && rpmspec -P installers/linux/parthenon.spec >/tmp/parthenon.spec.expanded"
 
     - name: Build Package
       run: |
         if [ "${{ matrix.package }}" = "rpm" ]; then
-          docker run --rm             -v "${{ github.workspace }}:/workspace"             -w /workspace/installers/linux             fedora:latest             bash -lc "git config --global --add safe.directory /workspace && dnf install -y rpm-build rpmdevtools cmake gcc-c++ openssl-devel boost-devel qt6-qtbase-devel git >/dev/null && chmod +x build.sh && ./build.sh rpm"
+          docker run --rm             -v "${{ github.workspace }}:/workspace"             -w /workspace/installers/linux             fedora:latest             bash -lc "dnf install -y git rpm-build rpmdevtools cmake gcc-c++ openssl-devel boost-devel qt6-qtbase-devel >/dev/null && git config --global --add safe.directory /workspace && chmod +x build.sh && ./build.sh rpm"
         else
           cd installers/linux
           chmod +x build.sh
