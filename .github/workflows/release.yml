@@ -23,7 +23,12 @@ jobs:
       shell: pwsh
       run: |
         choco install nsis -y --no-progress
-        $nsisPaths = @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS")
+        $nsisPaths = @(
+          "C:\Program Files (x86)\NSIS",
+          "C:\Program Files\NSIS",
+          "C:\ProgramData\chocolatey\bin",
+          "C:\ProgramData\chocolatey\lib\nsis\tools"
+        )
         $resolved = $nsisPaths | Where-Object { Test-Path (Join-Path $_ "makensis.exe") } | Select-Object -First 1
         if (-not $resolved) {
           throw "NSIS installation directory not found. Checked: $($nsisPaths -join ', ')"
@@ -31,6 +36,9 @@ jobs:
 
         "NSIS_HOME=$resolved" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         "$resolved" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+        # GitHub PATH updates apply to subsequent steps, but we also need access right now
+        $env:PATH = "$resolved;$env:PATH"
 
     - name: Verify NSIS availability
       shell: pwsh
