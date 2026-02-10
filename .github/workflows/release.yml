@@ -226,13 +226,18 @@ jobs:
 
     - name: Validate RPM spec expansion
       if: matrix.package == 'rpm'
-      run: rpmspec -P installers/linux/parthenon.spec >/tmp/parthenon.spec.expanded
+      run: |
+        docker run --rm           -v "${{ github.workspace }}:/workspace"           -w /workspace           fedora:latest           bash -lc "dnf install -y rpm-build >/dev/null && rpmspec -P installers/linux/parthenon.spec >/tmp/parthenon.spec.expanded"
 
     - name: Build Package
       run: |
-        cd installers/linux
-        chmod +x build.sh
-        ./build.sh ${{ matrix.package }}
+        if [ "${{ matrix.package }}" = "rpm" ]; then
+          docker run --rm             -v "${{ github.workspace }}:/workspace"             -w /workspace/installers/linux             fedora:latest             bash -lc "dnf install -y rpm-build rpmdevtools cmake gcc-c++ openssl-devel boost-devel qt6-qtbase-devel git >/dev/null && chmod +x build.sh && ./build.sh rpm"
+        else
+          cd installers/linux
+          chmod +x build.sh
+          ./build.sh deb
+        fi
     
     - name: Upload Linux Package
       uses: actions/upload-artifact@v4
