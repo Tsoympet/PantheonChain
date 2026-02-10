@@ -25,8 +25,8 @@
   <a href="https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/Tsoympet/PantheonChain/test.yml?style=flat-square&label=tests" alt="Tests">
   </a>
-  <a href="https://github.com/Tsoympet/PantheonChain/actions/workflows/release.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/Tsoympet/PantheonChain/release.yml?style=flat-square&label=release" alt="Release">
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/Tsoympet/PantheonChain?style=flat-square" alt="License">
   </a>
 </p>
 
