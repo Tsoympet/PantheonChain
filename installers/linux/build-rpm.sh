@@ -35,10 +35,8 @@ echo "Copying spec file..."
 SPEC_FILE="$RPMBUILD_DIR/SPECS/parthenon.spec"
 cp "$SCRIPT_DIR/parthenon.spec" "$SPEC_FILE"
 
-CURRENT_DATE=$(date +"%a %b %d %Y")
 sed -i \
     -e "s/^Version:[[:space:]].*/Version:        ${VERSION}/" \
-    -e "s/^\* \$(date +\"%a %b %d %Y\") /* ${CURRENT_DATE} /" \
     "$SPEC_FILE"
 
 # Build RPM

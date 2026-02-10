@@ -8,9 +8,9 @@ URL:            https://parthenonchain.org
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  cmake >= 3.15
-BuildRequires:  gcc-c++
-BuildRequires:  openssl-devel
-BuildRequires:  boost-devel
+BuildRequires:  g++
+BuildRequires:  libssl-dev
+BuildRequires:  libboost-dev
 
 Requires:       openssl >= 3.0.0
 Requires:       boost-system
@@ -106,7 +106,7 @@ fi
 %dir %attr(750,parthenon,parthenon) /var/lib/parthenon
 
 %changelog
-* $(date +"%a %b %d %Y") ParthenonChain Foundation <dev@parthenonchain.org> - 1.0.0-1
+* Mon Feb 10 2026 ParthenonChain Foundation <dev@parthenonchain.org> - 1.0.0-1
 - Initial release
 - Full consensus implementation with three native assets
 - EVM-compatible smart contracts (OBOLOS)
