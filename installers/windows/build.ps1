@@ -40,16 +40,28 @@ function Install-NsisIfAvailable {
     }
 
     $choco = Get-Command choco -ErrorAction SilentlyContinue
-    if (-not $choco) {
-        Write-Host "NSIS not found and Chocolatey is unavailable. Skipping automatic NSIS installation." -ForegroundColor Yellow
-        return
-    }
+    if ($choco) {
+        Write-Host "NSIS compiler not found; attempting Chocolatey installation..." -ForegroundColor Yellow
+        & $choco.Source install nsis -y --no-progress
+        if ($LASTEXITCODE -eq 0) {
+            return
+        }
 
-    Write-Host "NSIS compiler not found; attempting Chocolatey installation..." -ForegroundColor Yellow
-    & $choco.Source install nsis -y --no-progress
-    if ($LASTEXITCODE -ne 0) {
         Write-Host "Warning: Chocolatey NSIS installation failed with exit code $LASTEXITCODE." -ForegroundColor Yellow
     }
+
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if ($winget) {
+        Write-Host "Attempting NSIS installation via winget..." -ForegroundColor Yellow
+        & $winget.Source install --id NSIS.NSIS --exact --silent --accept-package-agreements --accept-source-agreements
+        if ($LASTEXITCODE -eq 0) {
+            return
+        }
+
+        Write-Host "Warning: winget NSIS installation failed with exit code $LASTEXITCODE." -ForegroundColor Yellow
+    }
+
+    Write-Host "NSIS not found and no supported package manager installation succeeded." -ForegroundColor Yellow
 }
 
 # Check if NSIS installer script exists
