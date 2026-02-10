@@ -4,6 +4,17 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: false
+        default: ''
+      draft:
+        description: 'Create as draft release'
+        required: false
+        default: true
+        type: boolean
 
 env:
   BUILD_TYPE: Release
@@ -309,7 +320,8 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        draft: true
+        draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || true }}
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && (inputs.version != '' && format('v{0}', inputs.version) || github.ref_name) || github.ref_name }}
         files: |
           windows-installer/*.exe
           windows-installer/*.exe.asc
