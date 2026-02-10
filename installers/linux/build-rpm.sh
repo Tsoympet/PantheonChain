@@ -11,10 +11,11 @@ if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
         fi
 
         export PARTHENON_RPM_REEXEC_GUARD=1
-        exec bash "$0" "$@"
-        unset PARTHENON_RPM_REEXEC_GUARD
-        echo "ERROR: Unable to re-exec under bash." >&2
-        exit 1
+        if ! exec bash "$0" "$@"; then
+            unset PARTHENON_RPM_REEXEC_GUARD
+            echo "ERROR: Unable to re-exec under bash." >&2
+            exit 1
+        fi
     }
 
     if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
