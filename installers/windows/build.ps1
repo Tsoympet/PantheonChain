@@ -101,7 +101,6 @@ function Resolve-BuildArtifactPath {
 
         if ($discoveredCandidate) {
             Write-Host "Warning: using discovered fallback artifact for ${label}: $($discoveredCandidate.FullName)" -ForegroundColor Yellow
-            Write-Host "Warning: using discovered fallback artifact for $label: $($discoveredCandidate.FullName)" -ForegroundColor Yellow
             return $discoveredCandidate.FullName
         }
     }
