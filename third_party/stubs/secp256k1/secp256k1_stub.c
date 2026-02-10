@@ -1,5 +1,8 @@
 #include "secp256k1.h"
 
+/* Stub implementation for builds without the real secp256k1 dependency.
+ * This is NOT cryptographically secure and must not be used in production. */
+
 #include <stdlib.h>
 #include <string.h>
 

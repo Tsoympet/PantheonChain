@@ -1,8 +1,11 @@
 #ifndef NLOHMANN_JSON_STUB_HPP
 #define NLOHMANN_JSON_STUB_HPP
 
+#include <cctype>
+#include <cstdlib>
 #include <initializer_list>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -40,7 +43,38 @@ class json {
     json(std::initializer_list<std::pair<const std::string, json>> init)
         : type_(Type::kObject), boolean_(false), number_(0.0), object_(init.begin(), init.end()) {}
 
-    static json parse(const std::string& /*unused*/) { return json(); }
+    static json parse(const std::string& input) {
+        const std::string trimmed = Trim(input);
+        if (trimmed.empty() || trimmed == "null") {
+            return json();
+        }
+        if (trimmed == "true") {
+            return json(true);
+        }
+        if (trimmed == "false") {
+            return json(false);
+        }
+        if (trimmed == "[]") {
+            return json(array_t{});
+        }
+        if (trimmed == "{}") {
+            return json(object_t{});
+        }
+        if (trimmed.size() >= 2 && trimmed.front() == '"' && trimmed.back() == '"') {
+            return json(trimmed.substr(1, trimmed.size() - 2));
+        }
+        double number_value = 0.0;
+        if (TryParseNumber(trimmed, &number_value)) {
+            return json(number_value);
+        }
+        if (!trimmed.empty() && trimmed.front() == '[') {
+            return json(array_t{});
+        }
+        if (!trimmed.empty() && trimmed.front() == '{') {
+            return json(object_t{});
+        }
+        throw std::runtime_error("json stub parser failed to parse input");
+    }
 
     static json array() { return json(array_t{}); }
 
@@ -209,6 +243,34 @@ class json {
     static const json& Null() {
         static json null_json;
         return null_json;
+    }
+
+    static std::string Trim(const std::string& value) {
+        size_t start = 0;
+        size_t end = value.size();
+        while (start < end && std::isspace(static_cast<unsigned char>(value[start])) != 0) {
+            ++start;
+        }
+        while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
+            --end;
+        }
+        return value.substr(start, end - start);
+    }
+
+    static bool TryParseNumber(const std::string& value, double* out) {
+        if (value.empty()) {
+            return false;
+        }
+        char* end = nullptr;
+        const char* start = value.c_str();
+        double result = std::strtod(start, &end);
+        if (start == end || end == nullptr || *end != '\0') {
+            return false;
+        }
+        if (out != nullptr) {
+            *out = result;
+        }
+        return true;
     }
 
     Type type_;

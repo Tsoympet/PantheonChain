@@ -111,9 +111,11 @@ class DB {
 
   public:
     static Status Open(const Options& options, const std::string& name, DB** dbptr) {
-        (void)options;
         (void)name;
         if (dbptr == nullptr) {
+            return Status::NotFound();
+        }
+        if (!options.create_if_missing) {
             return Status::NotFound();
         }
         *dbptr = new DB();
