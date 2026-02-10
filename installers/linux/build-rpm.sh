@@ -5,7 +5,7 @@
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
 reexec_bash() {
     if [ -n "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
-        echo "ERROR: bash is required to run this script." >&2
+        echo "ERROR: Unable to re-exec under bash; aborting to avoid recursion." >&2
         exit 1
     fi
 
