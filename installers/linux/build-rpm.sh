@@ -20,7 +20,12 @@ if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
         reexec_bash
     fi
 
-    # Some environments export bash-specific variables into non-bash shells.
+    # Some CI environments export bash variables into non-bash shells.
+    # If bash-specific builtins are missing, re-exec explicitly.
+    if ! command -v shopt >/dev/null 2>&1; then
+        reexec_bash
+    fi
+
     # Verify the actual process name when ps is available and returns output.
     if command -v ps >/dev/null 2>&1; then
         running_shell="$(ps -p "$$" -o comm= 2>/dev/null || true)"
