@@ -12,7 +12,7 @@ VERSION_FILE="$PROJECT_ROOT/VERSION"
 VERSION_HEADER_FILE="$PROJECT_ROOT/version.h"
 
 extract_version() {
-    local source_file="$1"
+    source_file="$1"
     if [ ! -f "$source_file" ]; then
         return
     fi
@@ -45,14 +45,14 @@ ensure_build_tools() {
         fi
     }
 
-    local os_id_like=""
+    os_id_like=""
     if [ -f /etc/os-release ]; then
         os_id_like="$(awk -F= '/^(ID|ID_LIKE)=/{print tolower($2)}' /etc/os-release | tr -d '"')"
     fi
 
     # Native RPM hosts should provide package names that satisfy BuildRequires.
     if echo "$os_id_like" | grep -Eq '(rhel|centos|fedora|rocky|almalinux|suse)'; then
-        local missing=0
+        missing=0
         for cmd in cmake g++ rpmbuild; do
             if ! command -v "$cmd" >/dev/null 2>&1; then
                 missing=1
@@ -95,6 +95,7 @@ ensure_git_safe_directory() {
     existing_safe="$(git config --global --get-all safe.directory 2>/dev/null || true)"
 
     add_safe_directory() {
+        dir="$1"
         local dir="$1"
         if [ -z "$dir" ]; then
             return
@@ -122,6 +123,17 @@ ensure_git_safe_directory() {
 
 ensure_git_safe_directory
 
+print_git_safe_directories() {
+    echo "Current git safe.directory entries:"
+    if ! git config --global --get-all safe.directory 2>/dev/null; then
+        echo "(none)"
+    fi
+}
+
+print_git_safe_directories
+
+create_source_tarball() {
+    tarball_path="$1"
 create_source_tarball() {
     local tarball_path="$1"
     local git_error
