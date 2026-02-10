@@ -89,11 +89,14 @@ ensure_build_tools() {
 ensure_build_tools
 
 ensure_git_safe_directory() {
+    local existing_safe
+    local current_dir
 
     existing_safe="$(git config --global --get-all safe.directory 2>/dev/null || true)"
 
     add_safe_directory() {
         dir="$1"
+        local dir="$1"
         if [ -z "$dir" ]; then
             return
         fi
@@ -131,6 +134,10 @@ print_git_safe_directories
 
 create_source_tarball() {
     tarball_path="$1"
+create_source_tarball() {
+    local tarball_path="$1"
+    local git_error
+    local repo_path
 
     if git archive --format=tar.gz --prefix="parthenon-${VERSION}/" HEAD > "$tarball_path" 2>/tmp/parthenon-git-archive.err; then
         rm -f /tmp/parthenon-git-archive.err
@@ -155,6 +162,23 @@ create_source_tarball() {
     rm -f /tmp/parthenon-git-archive.err
     return 1
 }
+
+    local repo_root
+
+    if ! repo_root="$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel 2>/dev/null)"; then
+        echo "ERROR: Unable to determine git repository root from $PROJECT_ROOT"
+        exit 1
+    fi
+
+    # CI environments often mount workspaces with ownership that differs from the current user.
+    # Registering the repository as safe avoids "detected dubious ownership" failures for git archive.
+    if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fxq "$repo_root"; then
+        echo "Configuring git safe.directory for: $repo_root"
+        git config --global --add safe.directory "$repo_root"
+    fi
+}
+
+ensure_git_safe_directory
 
 # Create RPM build directory structure
 RPMBUILD_DIR="$HOME/rpmbuild"

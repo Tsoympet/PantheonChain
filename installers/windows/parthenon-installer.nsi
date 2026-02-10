@@ -17,6 +17,75 @@
   !define BUILD_CONFIG "Release"
 !endif
 
+; Allow build scripts to inject fully-resolved artifact paths.
+; If not provided, fall back to discovering config-scoped and flat output layouts.
+!ifndef DAEMON_BINARY_PATH
+!define DAEMON_BINARY_CONFIGURED "..\..\build\clients\core-daemon\${BUILD_CONFIG}\parthenond.exe"
+!define DAEMON_BINARY_FLAT "..\..\build\clients\core-daemon\parthenond.exe"
+!if /FileExists "${DAEMON_BINARY_CONFIGURED}"
+  !define DAEMON_BINARY_PATH "${DAEMON_BINARY_CONFIGURED}"
+!else
+  !if /FileExists "${DAEMON_BINARY_FLAT}"
+    !define DAEMON_BINARY_PATH "${DAEMON_BINARY_FLAT}"
+; Resolve build artifact paths for both config-scoped and flat output layouts.
+; This keeps the installer script compatible with local and CI build directory structures.
+!define DAEMON_BINARY_CONFIGURED "..\..\build\clients\core-daemon\${BUILD_CONFIG}\parthenond.exe"
+!define DAEMON_BINARY_FLAT "..\..\build\clients\core-daemon\parthenond.exe"
+!if /FileExists "${DAEMON_BINARY_CONFIGURED}"
+  !define DAEMON_BINARY "${DAEMON_BINARY_CONFIGURED}"
+!else
+  !if /FileExists "${DAEMON_BINARY_FLAT}"
+    !define DAEMON_BINARY "${DAEMON_BINARY_FLAT}"
+  !else
+    !error "Missing parthenond.exe. Expected one of: ${DAEMON_BINARY_CONFIGURED} OR ${DAEMON_BINARY_FLAT}"
+  !endif
+!endif
+!endif
+
+!ifndef CLI_BINARY_PATH
+!define CLI_BINARY_CONFIGURED "..\..\build\clients\cli\${BUILD_CONFIG}\parthenon-cli.exe"
+!define CLI_BINARY_FLAT "..\..\build\clients\cli\parthenon-cli.exe"
+!if /FileExists "${CLI_BINARY_CONFIGURED}"
+  !define CLI_BINARY_PATH "${CLI_BINARY_CONFIGURED}"
+!else
+  !if /FileExists "${CLI_BINARY_FLAT}"
+    !define CLI_BINARY_PATH "${CLI_BINARY_FLAT}"
+
+!define CLI_BINARY_CONFIGURED "..\..\build\clients\cli\${BUILD_CONFIG}\parthenon-cli.exe"
+!define CLI_BINARY_FLAT "..\..\build\clients\cli\parthenon-cli.exe"
+!if /FileExists "${CLI_BINARY_CONFIGURED}"
+  !define CLI_BINARY "${CLI_BINARY_CONFIGURED}"
+!else
+  !if /FileExists "${CLI_BINARY_FLAT}"
+    !define CLI_BINARY "${CLI_BINARY_FLAT}"
+  !else
+    !error "Missing parthenon-cli.exe. Expected one of: ${CLI_BINARY_CONFIGURED} OR ${CLI_BINARY_FLAT}"
+  !endif
+!endif
+!endif
+
+!ifndef DESKTOP_BINARY_PATH
+!define DESKTOP_BINARY_CONFIGURED "..\..\build\clients\desktop\${BUILD_CONFIG}\parthenon-qt.exe"
+!define DESKTOP_BINARY_FLAT "..\..\build\clients\desktop\parthenon-qt.exe"
+!if /FileExists "${DESKTOP_BINARY_CONFIGURED}"
+  !define DESKTOP_BINARY_PATH "${DESKTOP_BINARY_CONFIGURED}"
+!else
+  !if /FileExists "${DESKTOP_BINARY_FLAT}"
+    !define DESKTOP_BINARY_PATH "${DESKTOP_BINARY_FLAT}"
+
+!define DESKTOP_BINARY_CONFIGURED "..\..\build\clients\desktop\${BUILD_CONFIG}\parthenon-qt.exe"
+!define DESKTOP_BINARY_FLAT "..\..\build\clients\desktop\parthenon-qt.exe"
+!if /FileExists "${DESKTOP_BINARY_CONFIGURED}"
+  !define DESKTOP_BINARY "${DESKTOP_BINARY_CONFIGURED}"
+!else
+  !if /FileExists "${DESKTOP_BINARY_FLAT}"
+    !define DESKTOP_BINARY "${DESKTOP_BINARY_FLAT}"
+  !else
+    !error "Missing parthenon-qt.exe. Expected one of: ${DESKTOP_BINARY_CONFIGURED} OR ${DESKTOP_BINARY_FLAT}"
+  !endif
+!endif
+!endif
+
 OutFile "parthenon-${PRODUCT_VERSION}-windows-x64-setup.exe"
 
 ; Install directory
@@ -54,7 +123,8 @@ Section "Core Daemon (parthenond)" SecDaemon
   SectionIn RO
   
   SetOutPath "$INSTDIR\bin"
-  File "..\..\build\clients\core-daemon\${BUILD_CONFIG}\parthenond.exe"
+  File "${DAEMON_BINARY_PATH}"
+  File "${DAEMON_BINARY}"
   File "..\..\build\clients\core-daemon\parthenond.conf"
   
   ; Create data directory
@@ -68,7 +138,8 @@ SectionEnd
 
 Section "Command Line Tools (parthenon-cli)" SecCLI
   SetOutPath "$INSTDIR\bin"
-  File "..\..\build\clients\cli\${BUILD_CONFIG}\parthenon-cli.exe"
+  File "${CLI_BINARY_PATH}"
+  File "${CLI_BINARY}"
   
   ; Add to PATH
   EnVar::SetHKLM
@@ -79,7 +150,8 @@ SectionEnd
 
 Section "Desktop Wallet (parthenon-qt)" SecGUI
   SetOutPath "$INSTDIR\bin"
-  File "..\..\build\clients\desktop\${BUILD_CONFIG}\parthenon-qt.exe"
+  File "${DESKTOP_BINARY_PATH}"
+  File "${DESKTOP_BINARY}"
   
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\ParthenonChain Wallet.lnk" "$INSTDIR\bin\parthenon-qt.exe"
   CreateShortCut "$DESKTOP\ParthenonChain Wallet.lnk" "$INSTDIR\bin\parthenon-qt.exe"
