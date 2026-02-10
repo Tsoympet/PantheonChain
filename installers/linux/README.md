@@ -45,7 +45,7 @@ This directory contains scripts for creating Debian (.deb) and RPM (.rpm) packag
    ```
 
    Notes:
-   - `build-rpm.sh` normalizes the spec `%changelog` header date to a valid RPM format before running `rpmbuild`.
+   - The RPM spec keeps a static `%changelog` date header (required by `rpmbuild`).
    - On Debian/Ubuntu hosts, the script automatically uses `rpmbuild --nodeps` because RPM `BuildRequires` names (such as `openssl-devel` and `boost-devel`) do not map 1:1 to Debian package names (`libssl-dev`, `libboost-all-dev`).
 
 3. Output: `parthenon-1.0.0-1.*.rpm`
