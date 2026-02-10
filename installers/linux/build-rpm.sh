@@ -11,8 +11,9 @@ if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
         fi
 
         export PARTHENON_RPM_REEXEC_GUARD=1
-        bash "$0" "$@"
-        exit $?
+        exec bash "$0" "$@"
+        echo "ERROR: Unable to re-exec under bash." >&2
+        exit 1
     }
 
     if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
@@ -23,6 +24,8 @@ if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
     # Verify the actual process name when ps is available and returns output.
     if command -v ps >/dev/null 2>&1; then
         running_shell="$(ps -p "$$" -o comm= 2>/dev/null || true)"
+        running_shell="${running_shell##*/}"
+        running_shell="${running_shell#-}"
         if [ -n "$running_shell" ] && [ "$running_shell" != "bash" ]; then
             reexec_bash
         fi
