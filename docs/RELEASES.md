@@ -110,10 +110,33 @@ Releases are automated via GitHub Actions (`.github/workflows/release.yml`).
 
 ### Trigger
 
+**Option 1: Tag Push (Recommended)**
+
 Push a version tag:
 ```bash
 git tag -a v1.0.0 -m "Release 1.0.0"
 git push origin v1.0.0
+```
+
+**Option 2: Manual Workflow Dispatch**
+
+Trigger the workflow manually from GitHub Actions UI:
+
+1. Go to GitHub Actions tab
+2. Select "Release Build" workflow
+3. Click "Run workflow"
+4. Specify:
+   - **Version**: Version number without 'v' prefix (e.g., `1.0.0`) - **Required**
+   - **Draft**: Whether to create as draft release (default: true)
+
+Alternatively, use GitHub CLI:
+```bash
+# Run with version (required) and draft option
+# Note: Provide version WITHOUT 'v' prefix (e.g., 1.0.0, not v1.0.0)
+gh workflow run release.yml -f version=1.0.0 -f draft=true
+
+# Run with version to create non-draft release
+gh workflow run release.yml -f version=1.0.0 -f draft=false
 ```
 
 ### Workflow Steps
