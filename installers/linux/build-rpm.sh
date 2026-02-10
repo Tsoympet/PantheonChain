@@ -6,8 +6,15 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Read version from VERSION file
-VERSION=$(cat "$PROJECT_ROOT/VERSION" 2>/dev/null || echo "1.0.0")
+# Read version from VERSION file (supports plain semver or C/C++ #define format)
+VERSION_FILE="$PROJECT_ROOT/VERSION"
+if [ -f "$VERSION_FILE" ]; then
+    VERSION=$(sed -nE 's/^#define[[:space:]]+PANTHEONCHAIN_VERSION[[:space:]]+"([^"]+)".*/\1/p' "$VERSION_FILE" | head -n1)
+    if [ -z "$VERSION" ]; then
+        VERSION=$(sed -nE 's/^([0-9]+\.[0-9]+\.[0-9]+([-+][A-Za-z0-9.-]+)?)$/\1/p' "$VERSION_FILE" | head -n1)
+    fi
+fi
+VERSION="${VERSION:-1.0.0}"
 RELEASE="1"
 
 echo "=== Building ParthenonChain RPM Package ==="
@@ -23,9 +30,16 @@ echo "Creating source tarball: $TARBALL"
 cd "$PROJECT_ROOT"
 git archive --format=tar.gz --prefix="parthenon-${VERSION}/" HEAD > "$RPMBUILD_DIR/SOURCES/$TARBALL"
 
-# Copy spec file to SPECS directory
+# Copy spec file to SPECS directory and template dynamic values
 echo "Copying spec file..."
-cp "$SCRIPT_DIR/parthenon.spec" "$RPMBUILD_DIR/SPECS/"
+SPEC_FILE="$RPMBUILD_DIR/SPECS/parthenon.spec"
+cp "$SCRIPT_DIR/parthenon.spec" "$SPEC_FILE"
+
+CURRENT_DATE=$(date +"%a %b %d %Y")
+sed -i \
+    -e "s/^Version:[[:space:]].*/Version:        ${VERSION}/" \
+    -e "s/^\* \$(date +\"%a %b %d %Y\") /* ${CURRENT_DATE} /" \
+    "$SPEC_FILE"
 
 # Build RPM
 echo "Building RPM package..."
