@@ -36,6 +36,14 @@ echo "=== Building ParthenonChain RPM Package ==="
 echo "Version: $VERSION-$RELEASE"
 
 ensure_build_tools() {
+    run_pkg_install() {
+        if command -v sudo >/dev/null 2>&1; then
+            sudo "$@"
+        else
+            "$@"
+        fi
+    }
+
     local os_id_like=""
     if [ -f /etc/os-release ]; then
         os_id_like="$(awk -F= '/^(ID|ID_LIKE)=/{print tolower($2)}' /etc/os-release | tr -d '"')"
@@ -54,10 +62,10 @@ ensure_build_tools() {
         if [ "$missing" -eq 1 ]; then
             if command -v dnf >/dev/null 2>&1; then
                 echo "Installing RPM build dependencies with dnf..."
-                sudo dnf install -y boost-devel cmake gcc-c++ openssl-devel rpm-build
+                run_pkg_install dnf install -y boost-devel cmake gcc-c++ openssl-devel rpm-build
             elif command -v yum >/dev/null 2>&1; then
                 echo "Installing RPM build dependencies with yum..."
-                sudo yum install -y boost-devel cmake gcc-c++ openssl-devel rpm-build
+                run_pkg_install yum install -y boost-devel cmake gcc-c++ openssl-devel rpm-build
             else
                 echo "ERROR: Missing build tools and no dnf/yum package manager found."
                 exit 1
@@ -67,11 +75,11 @@ ensure_build_tools() {
     elif echo "$os_id_like" | grep -Eq '(debian|ubuntu)'; then
         if ! command -v rpmbuild >/dev/null 2>&1; then
             echo "Installing Debian/Ubuntu RPM build dependencies..."
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends \
+            run_pkg_install apt-get update
+            run_pkg_install apt-get install -y --no-install-recommends \
                 rpm build-essential cmake g++ libssl-dev libboost-all-dev
             if ! command -v rpmbuild >/dev/null 2>&1; then
-                sudo apt-get install -y --no-install-recommends rpm-build || true
+                run_pkg_install apt-get install -y --no-install-recommends rpm-build || true
             fi
         fi
     fi
@@ -102,17 +110,7 @@ sed -i \
 echo "Building RPM package..."
 cd "$RPMBUILD_DIR"
 
-RPMBUILD_ARGS=(-ba SPECS/parthenon.spec)
-
-# Ubuntu runners provide Debian development packages (e.g. libssl-dev, libboost-all-dev)
-# that do not satisfy RPM BuildRequires names (openssl-devel, boost-devel, gcc-c++).
-# Keep strict dependency checks for native RPM environments and bypass only on Debian/Ubuntu.
-if [ -f /etc/os-release ] && grep -Eq '^(ID|ID_LIKE)=.*(debian|ubuntu)' /etc/os-release; then
-    echo "Detected Debian/Ubuntu host; building RPM with --nodeps due to cross-distro BuildRequires naming"
-    RPMBUILD_ARGS=(--nodeps "${RPMBUILD_ARGS[@]}")
-fi
-
-rpmbuild "${RPMBUILD_ARGS[@]}"
+rpmbuild -ba SPECS/parthenon.spec
 
 # Copy built RPM to installers/linux directory
 echo "Copying RPM to installers/linux..."
