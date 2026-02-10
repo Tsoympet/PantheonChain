@@ -6,6 +6,7 @@
 #include "primitives/asset.h"
 
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 
 namespace parthenon {
@@ -113,12 +114,20 @@ void TestDifficultyDeterminism() {
         Difficulty::CalculateNextDifficulty(target1, time_end1 - time_start, 2016 * 10 * 60);
 
     // Verify determinism
+    if (new_target1a != new_target1b) {
+        std::cerr << "  ❌ Difficulty calculation is non-deterministic" << std::endl;
+        std::abort();
+    }
     assert(new_target1a == new_target1b);
     std::cout << "  ✅ Difficulty calculation is deterministic" << std::endl;
 
     // Verify difficulty increases (target decreases) when blocks are faster
     uint32_t new_target2 =
         Difficulty::CalculateNextDifficulty(target1, time_end2 - time_start, 2016 * 10 * 60);
+    if (new_target2 >= target1) {
+        std::cerr << "  ❌ Difficulty failed to increase for faster blocks" << std::endl;
+        std::abort();
+    }
     assert(new_target2 < target1);  // Target should decrease (difficulty increase)
     std::cout << "  ✅ Difficulty adjusts correctly for faster blocks" << std::endl;
 
