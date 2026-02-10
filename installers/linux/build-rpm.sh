@@ -3,7 +3,7 @@
 
 # Some CI jobs invoke this script with `sh`, which breaks bash-specific features
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
-if [ -z "${BASH_VERSION:-}" ]; then
+if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
     exec bash "$0" "$@"
 fi
 
