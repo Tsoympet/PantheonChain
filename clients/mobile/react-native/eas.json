@@ -1,14 +1,17 @@
 {
   "cli": {
-    "version": ">= 10.0.0"
+    "version": ">= 10.0.0",
+    "appVersionSource": "local"
   },
   "build": {
     "android-apk": {
+      "credentialsSource": "remote",
       "android": {
         "buildType": "apk"
       }
     },
     "android-aab": {
+      "credentialsSource": "remote",
       "android": {
         "buildType": "app-bundle"
       }
