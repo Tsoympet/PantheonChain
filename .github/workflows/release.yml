@@ -91,6 +91,9 @@ jobs:
     - name: Build NSIS Installer
       shell: pwsh
       run: |
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        $env:Path += ";C:\Program Files (x86)\NSIS;C:\Program Files\NSIS"
+        Get-Command makensis -ErrorAction Stop | Out-Null
         cd installers/windows
         pwsh -ExecutionPolicy Bypass -File build.ps1
     
