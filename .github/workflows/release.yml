@@ -165,7 +165,37 @@ jobs:
     
     - name: Run Tests
       run: cd build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
-    
+
+    - name: Ensure default daemon config exists for packaging
+      run: |
+        CONFIG_PATH="build/clients/core-daemon/parthenond.conf"
+        SOURCE_CONFIG_PATH="clients/core-daemon/parthenond.conf"
+        EXAMPLE_CONFIG_PATH="parthenond.conf.example"
+
+        if [ ! -f "$CONFIG_PATH" ]; then
+          mkdir -p "$(dirname "$CONFIG_PATH")"
+
+          if [ -f "$SOURCE_CONFIG_PATH" ]; then
+            cp "$SOURCE_CONFIG_PATH" "$CONFIG_PATH"
+          elif [ -f "$EXAMPLE_CONFIG_PATH" ]; then
+            cp "$EXAMPLE_CONFIG_PATH" "$CONFIG_PATH"
+          else
+            cat > "$CONFIG_PATH" << 'EOF'
+# Auto-generated default configuration for release packaging
+network_port=8333
+max_connections=125
+network_timeout=30
+rpc_enabled=true
+rpc_port=8332
+rpc_user=parthenonrpc
+rpc_password=change-me
+data_dir=/var/lib/parthenon
+log_level=info
+mining_enabled=false
+EOF
+          fi
+        fi
+
     - name: Build Package
       run: |
         cd installers/linux
