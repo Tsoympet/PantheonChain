@@ -110,19 +110,21 @@ jobs:
       shell: pwsh
       run: |
         $buildConfig = if ([string]::IsNullOrWhiteSpace("${{env.BUILD_TYPE}}")) { "Release" } else { "${{env.BUILD_TYPE}}" }
-        $requiredArtifacts = @(
-          "build/clients/core-daemon/$buildConfig/parthenond.exe",
-          "build/clients/core-daemon/parthenond.conf",
-          "build/clients/cli/$buildConfig/parthenon-cli.exe",
-          "build/clients/desktop/$buildConfig/parthenon-qt.exe"
+
+        $artifactCandidates = @(
+          @{ Label = "parthenond.exe"; Candidates = @("build/clients/core-daemon/$buildConfig/parthenond.exe", "build/clients/core-daemon/parthenond.exe") },
+          @{ Label = "parthenon-cli.exe"; Candidates = @("build/clients/cli/$buildConfig/parthenon-cli.exe", "build/clients/cli/parthenon-cli.exe") },
+          @{ Label = "parthenon-qt.exe"; Candidates = @("build/clients/desktop/$buildConfig/parthenon-qt.exe", "build/clients/desktop/parthenon-qt.exe") },
+          @{ Label = "parthenond.conf"; Candidates = @("build/clients/core-daemon/parthenond.conf") }
         )
 
-        foreach ($artifact in $requiredArtifacts) {
-          if (-not (Test-Path $artifact)) {
-            Write-Error "Missing required NSIS artifact: $artifact"
+        foreach ($artifact in $artifactCandidates) {
+          $resolved = $artifact.Candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $resolved) {
+            Write-Error "Missing required NSIS artifact: $($artifact.Label). Expected one of: $($artifact.Candidates -join ', ')"
           }
 
-          Write-Host "Found required artifact: $(Resolve-Path $artifact)"
+          Write-Host "Found required artifact ($($artifact.Label)): $(Resolve-Path $resolved)"
         }
 
     - name: Build NSIS Installer
@@ -159,6 +161,17 @@ jobs:
         if ($env:NSIS_HOME) {
           Write-Host "NSIS_HOME=$env:NSIS_HOME"
         }
+
+        Write-Host "Discovered Windows executables under build/:"
+        if (Test-Path "build") {
+          Get-ChildItem -Path "build" -Recurse -File -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty FullName |
+            ForEach-Object { Write-Host " - $_" }
+        }
+        else {
+          Write-Warning "build directory does not exist before installer step"
+        }
+
         cd installers/windows
         pwsh -ExecutionPolicy Bypass -File build.ps1
     
