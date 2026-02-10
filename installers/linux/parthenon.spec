@@ -8,7 +8,7 @@ URL:            https://parthenonchain.org
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  cmake >= 3.15
-BuildRequires:  g++
+BuildRequires:  gcc-c++
 BuildRequires:  openssl-devel
 BuildRequires:  boost-devel
 
