@@ -96,6 +96,7 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       matrix:
         package: [deb, rpm]
@@ -108,15 +109,14 @@ jobs:
       run: git submodule update --init --recursive
     
     - name: Install Dependencies
+      timeout-minutes: 15
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake g++ libssl-dev libboost-all-dev qt6-base-dev
-
-    - name: Install RPM Build Dependencies (for rpm build)
-      if: matrix.package == 'rpm'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y rpm cmake g++ libssl-dev libboost-dev qt6-base-dev
+        sudo apt-get install -y --no-install-recommends \
+          cmake g++ libssl-dev libboost-all-dev qt6-base-dev
+        if [ "${{ matrix.package }}" = "rpm" ]; then
+          sudo apt-get install -y --no-install-recommends rpm
+        fi
     
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
