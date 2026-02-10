@@ -17,7 +17,9 @@ jobs:
         submodules: recursive
 
     - name: Install NSIS
-      uses: repolevedavaj/install-nsis@v1.0.2
+      shell: pwsh
+      run: |
+        choco install nsis -y --no-progress
 
     - name: Initialize submodules
       run: git submodule update --init --recursive
@@ -25,8 +27,29 @@ jobs:
     - name: Verify NSIS Installation
       shell: pwsh
       run: |
-        where.exe makensis
-        makensis /VERSION
+        $paths = @(
+          "C:\ProgramData\chocolatey\bin",
+          "C:\ProgramData\chocolatey\lib\nsis\tools",
+          "C:\Program Files (x86)\NSIS",
+          "C:\Program Files\NSIS"
+        ) | Where-Object { Test-Path $_ }
+
+        foreach ($pathEntry in $paths) {
+          $pathEntry | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        }
+
+        $makensis = $paths |
+          ForEach-Object { Join-Path $_ "makensis.exe" } |
+          Where-Object { Test-Path $_ } |
+          Select-Object -First 1
+
+        if (-not $makensis) {
+          Write-Error "makensis.exe not found after NSIS install"
+        }
+
+        "NSIS_HOME=$([System.IO.Path]::GetDirectoryName($makensis))" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        & $makensis /VERSION
 
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
@@ -70,6 +93,10 @@ jobs:
     - name: Build NSIS Installer
       shell: pwsh
       run: |
+        where.exe makensis
+        if ($env:NSIS_HOME) {
+          Write-Host "NSIS_HOME=$env:NSIS_HOME"
+        }
         cd installers/windows
         pwsh -ExecutionPolicy Bypass -File build.ps1
     
