@@ -121,6 +121,9 @@ jobs:
   create-release:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
+    env:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
     steps:
     - uses: actions/checkout@v4
     
@@ -138,7 +141,13 @@ jobs:
       env:
         GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      if: env.GPG_PRIVATE_KEY != ''
       run: |
+        if [ -z "$GPG_PRIVATE_KEY" ]; then
+          echo "GPG private key not configured; skipping artifact signing"
+          exit 0
+        fi
+
         echo "$GPG_PRIVATE_KEY" | gpg --import
         cd installers/checksums
         chmod +x sign-release.sh

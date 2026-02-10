@@ -19,14 +19,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Tsoympet/PantheonChain/releases">
-    <img src="https://img.shields.io/github/v/release/Tsoympet/PantheonChain?style=flat-square" alt="Release">
+  <a href="https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Tsoympet/PantheonChain/build.yml?style=flat-square&label=build" alt="Build">
   </a>
-  <a href="https://github.com/Tsoympet/PantheonChain/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License">
+  <a href="https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Tsoympet/PantheonChain/test.yml?style=flat-square&label=tests" alt="Tests">
   </a>
-  <a href="https://github.com/Tsoympet/PantheonChain/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/Tsoympet/PantheonChain/build.yml?style=flat-square" alt="Build Status">
+  <a href="https://github.com/Tsoympet/PantheonChain/actions/workflows/release.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Tsoympet/PantheonChain/release.yml?style=flat-square&label=release" alt="Release">
   </a>
 </p>
 
