@@ -51,6 +51,7 @@ chmod 755 "${DEB_DIR}/usr/bin"/*
 # Ensure configuration exists, then copy it
 CONFIG_PATH="${BUILD_DIR}/clients/core-daemon/parthenond.conf"
 SOURCE_CONFIG_PATH="${ROOT_DIR}/clients/core-daemon/parthenond.conf"
+EXAMPLE_CONFIG_PATH="${ROOT_DIR}/parthenond.conf.example"
 
 if [ ! -f "${CONFIG_PATH}" ]; then
     echo "Configuration not found at ${CONFIG_PATH}; attempting to source or generate default config"
@@ -58,6 +59,10 @@ if [ ! -f "${CONFIG_PATH}" ]; then
 
     if [ -f "${SOURCE_CONFIG_PATH}" ]; then
         cp "${SOURCE_CONFIG_PATH}" "${CONFIG_PATH}"
+    elif [ -f "${EXAMPLE_CONFIG_PATH}" ]; then
+        # Keep package builds resilient when core-daemon config is moved/renamed
+        # by reusing the top-level sample and normalizing it into the expected path.
+        cp "${EXAMPLE_CONFIG_PATH}" "${CONFIG_PATH}"
     else
         cat > "${CONFIG_PATH}" << 'EOF'
 # Auto-generated default configuration for package builds
