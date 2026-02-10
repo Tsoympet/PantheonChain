@@ -170,8 +170,7 @@ void test_checked_operations() {
 
     // CheckedMul - normal case
     try {
-        uint64_t result = SafeMath::CheckedMul(100, 200);
-        assert(result == 20000);
+        assert(SafeMath::CheckedMul(100, 200) == 20000);
     } catch (...) {
         assert(false && "Should not throw");
     }
@@ -186,8 +185,7 @@ void test_checked_operations() {
 
     // CheckedDiv - normal case
     try {
-        uint64_t result = SafeMath::CheckedDiv(200, 100);
-        assert(result == 2);
+        assert(SafeMath::CheckedDiv(200, 100) == 2);
     } catch (...) {
         assert(false && "Should not throw");
     }
