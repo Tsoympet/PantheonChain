@@ -88,6 +88,69 @@ ensure_build_tools() {
 
 ensure_build_tools
 
+ensure_git_safe_directory() {
+    local existing_safe
+    local current_dir
+
+    existing_safe="$(git config --global --get-all safe.directory 2>/dev/null || true)"
+
+    add_safe_directory() {
+        local dir="$1"
+        if [ -z "$dir" ]; then
+            return
+        fi
+
+        if ! printf '%s\n' "$existing_safe" | grep -Fxq "$dir"; then
+            echo "Configuring git safe.directory for: $dir"
+            git config --global --add safe.directory "$dir"
+            existing_safe="$(printf '%s\n%s\n' "$existing_safe" "$dir" | sed '/^$/d')"
+        fi
+    }
+
+    # CI environments often mount workspaces with ownership that differs from the current user.
+    # Walk upward to register any parent repo roots (e.g. /workspace), then project root itself.
+    current_dir="$PROJECT_ROOT"
+    while [ "$current_dir" != "/" ]; do
+        if [ -d "$current_dir/.git" ] || [ -f "$current_dir/.git" ]; then
+            add_safe_directory "$current_dir"
+        fi
+        current_dir="$(dirname "$current_dir")"
+    done
+
+    add_safe_directory "$PROJECT_ROOT"
+}
+
+ensure_git_safe_directory
+
+create_source_tarball() {
+    local tarball_path="$1"
+    local git_error
+    local repo_path
+
+    if git archive --format=tar.gz --prefix="parthenon-${VERSION}/" HEAD > "$tarball_path" 2>/tmp/parthenon-git-archive.err; then
+        rm -f /tmp/parthenon-git-archive.err
+        return 0
+    fi
+
+    git_error="$(cat /tmp/parthenon-git-archive.err 2>/dev/null || true)"
+
+    if printf '%s\n' "$git_error" | grep -q "detected dubious ownership in repository"; then
+        repo_path="$(printf '%s\n' "$git_error" | sed -nE "s/.*repository at '([^']+)'.*/\1/p" | head -n1)"
+        if [ -n "$repo_path" ]; then
+            echo "Detected dubious ownership for git repository: $repo_path"
+            git config --global --add safe.directory "$repo_path"
+            if git archive --format=tar.gz --prefix="parthenon-${VERSION}/" HEAD > "$tarball_path"; then
+                rm -f /tmp/parthenon-git-archive.err
+                return 0
+            fi
+        fi
+    fi
+
+    echo "$git_error" >&2
+    rm -f /tmp/parthenon-git-archive.err
+    return 1
+}
+
 # Create RPM build directory structure
 RPMBUILD_DIR="$HOME/rpmbuild"
 mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
@@ -96,7 +159,7 @@ mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 TARBALL="parthenon-${VERSION}.tar.gz"
 echo "Creating source tarball: $TARBALL"
 cd "$PROJECT_ROOT"
-git archive --format=tar.gz --prefix="parthenon-${VERSION}/" HEAD > "$RPMBUILD_DIR/SOURCES/$TARBALL"
+create_source_tarball "$RPMBUILD_DIR/SOURCES/$TARBALL"
 
 # Copy spec file to SPECS directory and template dynamic values
 echo "Copying spec file..."
