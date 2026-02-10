@@ -22,6 +22,9 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
+    - name: Mark /workspace as safe for git
+      run: git config --global --add safe.directory /workspace
+
     - uses: actions/checkout@v4
       with:
         submodules: recursive
@@ -69,7 +72,7 @@ jobs:
     
     - name: Build
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
-    
+
     - name: Run Tests
       run: cd build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
 
@@ -101,6 +104,25 @@ jobs:
             ) -join "`n"
             Set-Content -Path $configPath -Value $defaultConfig
           }
+        }
+
+    - name: Verify Windows build artifacts for NSIS
+      shell: pwsh
+      run: |
+        $buildConfig = if ([string]::IsNullOrWhiteSpace("${{env.BUILD_TYPE}}")) { "Release" } else { "${{env.BUILD_TYPE}}" }
+        $requiredArtifacts = @(
+          "build/clients/core-daemon/$buildConfig/parthenond.exe",
+          "build/clients/core-daemon/$buildConfig/parthenond.conf",
+          "build/clients/cli/$buildConfig/parthenon-cli.exe",
+          "build/clients/desktop/$buildConfig/parthenon-qt.exe"
+        )
+
+        foreach ($artifact in $requiredArtifacts) {
+          if (-not (Test-Path $artifact)) {
+            Write-Error "Missing required NSIS artifact: $artifact"
+          }
+
+          Write-Host "Found required artifact: $(Resolve-Path $artifact)"
         }
 
     - name: Build NSIS Installer
@@ -149,6 +171,9 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
+    - name: Mark /workspace as safe for git
+      run: git config --global --add safe.directory /workspace
+
     - uses: actions/checkout@v4
       with:
         submodules: recursive
@@ -190,6 +215,9 @@ jobs:
       matrix:
         package: [deb, rpm]
     steps:
+    - name: Mark /workspace as safe for git
+      run: git config --global --add safe.directory /workspace
+
     - uses: actions/checkout@v4
       with:
         submodules: recursive
