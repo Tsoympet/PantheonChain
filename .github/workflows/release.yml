@@ -27,13 +27,6 @@ jobs:
       shell: pwsh
       run: echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-    - name: Build NSIS Installer
-      shell: pwsh
-      run: |
-        $env:Path = "C:\Program Files (x86)\NSIS;" + $env:Path
-        cd installers/windows
-        pwsh -ExecutionPolicy Bypass -File build.ps1
-    
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
     
@@ -42,6 +35,43 @@ jobs:
     
     - name: Run Tests
       run: cd build && ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+
+    - name: Ensure default daemon config exists for packaging
+      shell: pwsh
+      run: |
+        $configPath = "build/clients/core-daemon/parthenond.conf"
+        $sourceConfigPath = "clients/core-daemon/parthenond.conf"
+
+        if (-Not (Test-Path $configPath)) {
+          New-Item -ItemType Directory -Path (Split-Path -Parent $configPath) -Force | Out-Null
+
+          if (Test-Path $sourceConfigPath) {
+            Copy-Item $sourceConfigPath $configPath -Force
+          }
+          else {
+            $defaultConfig = @(
+              "# Auto-generated default configuration for release packaging",
+              "network_port=8333",
+              "max_connections=125",
+              "network_timeout=30",
+              "rpc_enabled=true",
+              "rpc_port=8332",
+              "rpc_user=parthenonrpc",
+              "rpc_password=change-me",
+              "data_dir=/var/lib/parthenon",
+              "log_level=info",
+              "mining_enabled=false"
+            ) -join "`n"
+            Set-Content -Path $configPath -Value $defaultConfig
+          }
+        }
+
+    - name: Build NSIS Installer
+      shell: pwsh
+      run: |
+        $env:Path = "C:\Program Files (x86)\NSIS;" + $env:Path
+        cd installers/windows
+        pwsh -ExecutionPolicy Bypass -File build.ps1
     
     - name: Upload Windows Installer
       uses: actions/upload-artifact@v4
