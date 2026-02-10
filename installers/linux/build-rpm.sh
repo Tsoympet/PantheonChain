@@ -175,6 +175,7 @@ create_source_tarball() {
 
     tar \
         --exclude-vcs \
+        --exclude='./build' \
         --exclude='./installers/linux/parthenon-*.rpm' \
         -czf "$tarball_path" \
         --transform "s|^\.|parthenon-${VERSION}|" \
