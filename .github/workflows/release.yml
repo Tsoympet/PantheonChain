@@ -23,19 +23,14 @@ jobs:
       shell: pwsh
       run: |
         choco install nsis -y --no-progress
-        $nsisPaths = @(
-          "C:\Program Files (x86)\NSIS",
-          "C:\Program Files\NSIS"
-        )
-
-        foreach ($path in $nsisPaths) {
-          $path | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        }
-
+        $nsisPaths = @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS")
         $resolved = $nsisPaths | Where-Object { Test-Path (Join-Path $_ "makensis.exe") } | Select-Object -First 1
         if (-not $resolved) {
           throw "NSIS installation directory not found. Checked: $($nsisPaths -join ', ')"
         }
+
+        "NSIS_HOME=$resolved" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "PATH=$resolved;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Verify NSIS availability
       shell: pwsh
@@ -85,8 +80,6 @@ jobs:
     - name: Build NSIS Installer
       shell: pwsh
       run: |
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-        $env:Path += ";C:\Program Files (x86)\NSIS;C:\Program Files\NSIS"
         Get-Command makensis -ErrorAction Stop | Out-Null
         cd installers/windows
         pwsh -ExecutionPolicy Bypass -File build.ps1
