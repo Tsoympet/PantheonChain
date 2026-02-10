@@ -153,11 +153,13 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
-          cmake g++ libssl-dev libboost-all-dev qt6-base-dev
-        if [ "${{ matrix.package }}" = "rpm" ]; then
-          sudo apt-get install -y --no-install-recommends rpm
+          rpm cmake g++ libssl-dev libboost-all-dev qt6-base-dev
+        cmake --version
+        if ! dpkg --compare-versions "$(cmake --version | head -n1 | awk '{print $3}')" ge 3.15; then
+          echo "CMake >= 3.15 is required for Linux packaging"
+          exit 1
         fi
-    
+
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
     
