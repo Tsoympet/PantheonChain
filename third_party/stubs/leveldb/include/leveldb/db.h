@@ -28,7 +28,8 @@ class Status {
 class Slice {
   public:
     Slice() = default;
-    explicit Slice(std::string value) : value_(std::move(value)) {}
+    explicit Slice(const std::string& value) : value_(value) {}
+    explicit Slice(std::string&& value) : value_(std::move(value)) {}
 
     const std::string& ToString() const { return value_; }
 
