@@ -79,7 +79,7 @@ jobs:
     - name: Ensure default daemon config exists for packaging
       shell: pwsh
       run: |
-        $configPath = "build/clients/core-daemon/${{env.BUILD_TYPE}}/parthenond.conf"
+        $configPath = "build/clients/core-daemon/parthenond.conf"
         $sourceConfigPath = "clients/core-daemon/parthenond.conf"
 
         if (-Not (Test-Path $configPath)) {
@@ -111,10 +111,10 @@ jobs:
       run: |
         $buildConfig = if ([string]::IsNullOrWhiteSpace("${{env.BUILD_TYPE}}")) { "Release" } else { "${{env.BUILD_TYPE}}" }
         $requiredArtifacts = @(
-          "build/clients/core-daemon/$buildConfig/parthenond.exe",
-          "build/clients/core-daemon/$buildConfig/parthenond.conf",
-          "build/clients/cli/$buildConfig/parthenon-cli.exe",
-          "build/clients/desktop/$buildConfig/parthenon-qt.exe"
+          "build/$buildConfig/parthenond.exe",
+          "build/clients/core-daemon/parthenond.conf",
+          "build/$buildConfig/parthenon-cli.exe",
+          "build/$buildConfig/parthenon-qt.exe"
         )
 
         foreach ($artifact in $requiredArtifacts) {
@@ -306,7 +306,7 @@ jobs:
     - name: Build Package
       run: |
         if [ "${{ matrix.package }}" = "rpm" ]; then
-          docker run --rm             -v "${{ github.workspace }}:/workspace"             -w /workspace/installers/linux             fedora:latest             bash -lc "dnf install -y rpm-build rpmdevtools cmake gcc-c++ openssl-devel boost-devel qt6-qtbase-devel git >/dev/null && chmod +x build.sh && ./build.sh rpm"
+          docker run --rm             -v "${{ github.workspace }}:/workspace"             -w /workspace/installers/linux             fedora:latest             bash -lc "git config --global --add safe.directory /workspace && dnf install -y rpm-build rpmdevtools cmake gcc-c++ openssl-devel boost-devel qt6-qtbase-devel git >/dev/null && chmod +x build.sh && ./build.sh rpm"
         else
           cd installers/linux
           chmod +x build.sh
