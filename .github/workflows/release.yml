@@ -125,6 +125,25 @@ jobs:
           Write-Host "Found required artifact: $(Resolve-Path $artifact)"
         }
 
+    - name: Copy executables to expected locations
+      shell: pwsh
+      run: |
+        $buildType = if ([string]::IsNullOrWhiteSpace("${{env.BUILD_TYPE}}")) { "Release" } else { "${{env.BUILD_TYPE}}" }
+        $clients = @('core-daemon', 'cli', 'desktop')
+
+        foreach ($client in $clients) {
+          $sourcePath = "build/clients/$client/$buildType"
+          $destPath = "build/clients/$client"
+
+          if (Test-Path "$sourcePath/*.exe") {
+            Copy-Item "$sourcePath/*.exe" -Destination $destPath -Force
+            Write-Host "Copied executables from $sourcePath to $destPath"
+          }
+          else {
+            Write-Host "No executables found under $sourcePath; skipping copy"
+          }
+        }
+
     - name: Build NSIS Installer
       shell: pwsh
       run: |
@@ -305,7 +324,7 @@ jobs:
     - name: Validate RPM spec expansion
       if: matrix.package == 'rpm'
       run: |
-        docker run --rm           -v "${{ github.workspace }}:/workspace"           -w /workspace           fedora:latest           bash -lc "dnf install -y rpm-build >/dev/null && rpmspec -P installers/linux/parthenon.spec >/tmp/parthenon.spec.expanded"
+        docker run --rm           -v "${{ github.workspace }}:/workspace"           -w /workspace           fedora:latest           bash -lc "git config --global --add safe.directory /workspace && dnf install -y rpm-build >/dev/null && rpmspec -P installers/linux/parthenon.spec >/tmp/parthenon.spec.expanded"
 
     - name: Build Package
       run: |
