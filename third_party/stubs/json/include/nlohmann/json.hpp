@@ -278,8 +278,8 @@ class json {
         while (start < end && std::isspace(static_cast<unsigned char>(value[start]))) {
             ++start;
         }
-        // end > start ensures end - 1 is a valid index.
         while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1]))) {
+            // end > start ensures end - 1 is a valid index.
             --end;
         }
         return value.substr(start, end - start);
