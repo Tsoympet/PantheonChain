@@ -161,6 +161,17 @@ jobs:
         if ($env:NSIS_HOME) {
           Write-Host "NSIS_HOME=$env:NSIS_HOME"
         }
+
+        Write-Host "Discovered Windows executables under build/:"
+        if (Test-Path "build") {
+          Get-ChildItem -Path "build" -Recurse -File -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty FullName |
+            ForEach-Object { Write-Host " - $_" }
+        }
+        else {
+          Write-Warning "build directory does not exist before installer step"
+        }
+
         cd installers/windows
         pwsh -ExecutionPolicy Bypass -File build.ps1
     

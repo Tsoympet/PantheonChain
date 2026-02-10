@@ -100,6 +100,7 @@ function Resolve-BuildArtifactPath {
             Select-Object -First 1
 
         if ($discoveredCandidate) {
+            Write-Host "Warning: using discovered fallback artifact for ${label}: $($discoveredCandidate.FullName)" -ForegroundColor Yellow
             Write-Host "Warning: using discovered fallback artifact for $label: $($discoveredCandidate.FullName)" -ForegroundColor Yellow
             return $discoveredCandidate.FullName
         }
@@ -207,6 +208,17 @@ if (Test-Path ".\parthenon-installer.nsi") {
     Write-Host "Staged parthenon-cli binary: $stagedCliBinaryPath" -ForegroundColor Cyan
     Write-Host "Staged parthenon-qt binary: $stagedDesktopBinaryPath" -ForegroundColor Cyan
 
+    Write-Host "Enumerating build tree executables for diagnostics..." -ForegroundColor Cyan
+    if (Test-Path "..\..\build") {
+        Get-ChildItem -Path "..\..\build" -Recurse -File -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty FullName |
+            ForEach-Object { Write-Host " - $_" -ForegroundColor DarkGray }
+    }
+    else {
+        Write-Host "Warning: build directory not found at ..\..\build" -ForegroundColor Yellow
+    }
+
+    & $makensisPath "/DBUILD_CONFIG=$buildConfig" "/DDAEMON_BINARY_PATH=$stagedDaemonBinaryPath" "/DCLI_BINARY_PATH=$stagedCliBinaryPath" "/DDESKTOP_BINARY_PATH=$stagedDesktopBinaryPath" parthenon-installer.nsi
     & $makensisPath "/DBUILD_CONFIG=$buildConfig" "/DDAEMON_BINARY_PATH=$stagedDaemonBinaryPath" "/DCLI_BINARY_PATH=$stagedCliBinaryPath" "/DDESKTOP_BINARY_PATH=$stagedDesktopBinaryPath" parthenon-installer.nsi
 
     & $makensisPath "/DBUILD_CONFIG=$buildConfig" "/DDAEMON_BINARY_PATH=$daemonBinaryPath" "/DCLI_BINARY_PATH=$cliBinaryPath" "/DDESKTOP_BINARY_PATH=$desktopBinaryPath" parthenon-installer.nsi
