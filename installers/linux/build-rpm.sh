@@ -4,15 +4,18 @@
 # Some CI jobs invoke this script with `sh`, which breaks bash-specific features
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
 if [ -z "${PARTHENON_RPM_REEXECED:-}" ]; then
-    if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
+    reexec_bash() {
         export PARTHENON_RPM_REEXECED=1
         exec bash "$0" "$@"
+    }
+
+    if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
+        reexec_bash
     fi
 
     if command -v ps >/dev/null 2>&1; then
         if [ "$(ps -p "$$" -o comm= 2>/dev/null)" != "bash" ]; then
-            export PARTHENON_RPM_REEXECED=1
-            exec bash "$0" "$@"
+            reexec_bash
         fi
     fi
 fi
