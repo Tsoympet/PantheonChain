@@ -11,11 +11,8 @@ if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
         fi
 
         export PARTHENON_RPM_REEXEC_GUARD=1
-        if ! bash "$0" "$@"; then
-            echo "ERROR: Unable to re-exec under bash." >&2
-            exit 1
-        fi
-        exit 0
+        bash "$0" "$@"
+        exit $?
     }
 
     if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
@@ -23,7 +20,7 @@ if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
     fi
 
     # Some environments export bash-specific variables into non-bash shells.
-    # Verify the actual process name when ps is available.
+    # Verify the actual process name when ps is available and returns output.
     if command -v ps >/dev/null 2>&1; then
         running_shell="$(ps -p "$$" -o comm= 2>/dev/null || true)"
         if [ -n "$running_shell" ] && [ "$running_shell" != "bash" ]; then
