@@ -172,9 +172,9 @@ class json {
             case Type::kBoolean:
                 return boolean_ ? "true" : "false";
             case Type::kArray:
-                return "[]";
+                return DumpArray();
             case Type::kObject:
-                return "{}";
+                return DumpObject();
             case Type::kNull:
             default:
                 return "null";
@@ -243,6 +243,32 @@ class json {
     static const json& Null() {
         static json null_json;
         return null_json;
+    }
+
+    std::string DumpArray() const {
+        std::string output = "[";
+        for (size_t i = 0; i < array_.size(); ++i) {
+            if (i > 0) {
+                output += ",";
+            }
+            output += array_[i].dump();
+        }
+        output += "]";
+        return output;
+    }
+
+    std::string DumpObject() const {
+        std::string output = "{";
+        bool first = true;
+        for (const auto& item : object_) {
+            if (!first) {
+                output += ",";
+            }
+            output += "\"" + item.first + "\":" + item.second.dump();
+            first = false;
+        }
+        output += "}";
+        return output;
     }
 
     static std::string Trim(const std::string& value) {
