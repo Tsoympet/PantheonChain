@@ -3,37 +3,40 @@
 
 # Some CI jobs invoke this script with `sh`, which breaks bash-specific features
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
-if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
-    reexec_bash() {
-        if ! command -v bash >/dev/null 2>&1; then
-            echo "ERROR: bash is required to run this script." >&2
-            exit 1
-        fi
-
-        export PARTHENON_RPM_REEXEC_GUARD=1
-        exec bash "$0" "$@"
-        echo "ERROR: Unable to re-exec under bash." >&2
+reexec_bash() {
+    if [ -n "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
+        echo "ERROR: bash is required to run this script." >&2
         exit 1
-    }
-
-    if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
-        reexec_bash
     fi
 
-    # Some CI environments export bash variables into non-bash shells.
-    # If bash-specific builtins are missing, re-exec explicitly.
-    if ! command -v shopt >/dev/null 2>&1; then
-        reexec_bash
+    if ! command -v bash >/dev/null 2>&1; then
+        echo "ERROR: bash is required to run this script." >&2
+        exit 1
     fi
 
-    # Verify the actual process name when ps is available and returns output.
-    if command -v ps >/dev/null 2>&1; then
-        running_shell="$(ps -p "$$" -o comm= 2>/dev/null || true)"
-        running_shell="${running_shell##*/}"
-        running_shell="${running_shell#-}"
-        if [ -n "$running_shell" ] && [ "$running_shell" != "bash" ]; then
-            reexec_bash
-        fi
+    export PARTHENON_RPM_REEXEC_GUARD=1
+    exec bash "$0" "$@"
+    echo "ERROR: Unable to re-exec under bash." >&2
+    exit 1
+}
+
+if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
+    reexec_bash "$@"
+fi
+
+# Some CI environments export bash variables into non-bash shells.
+# If bash-specific builtins are missing, re-exec explicitly.
+if ! command -v shopt >/dev/null 2>&1; then
+    reexec_bash "$@"
+fi
+
+# Verify the actual process name when ps is available and returns output.
+if command -v ps >/dev/null 2>&1; then
+    running_shell="$(ps -p "$$" -o comm= 2>/dev/null || true)"
+    running_shell="${running_shell##*/}"
+    running_shell="${running_shell#-}"
+    if [ -n "$running_shell" ] && [ "$running_shell" != "bash" ]; then
+        reexec_bash "$@"
     fi
 fi
 
