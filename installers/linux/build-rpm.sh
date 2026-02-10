@@ -88,6 +88,40 @@ ensure_build_tools() {
 
 ensure_build_tools
 
+ensure_git_safe_directory() {
+    local existing_safe
+    local current_dir
+
+    existing_safe="$(git config --global --get-all safe.directory 2>/dev/null || true)"
+
+    add_safe_directory() {
+        local dir="$1"
+        if [ -z "$dir" ]; then
+            return
+        fi
+
+        if ! printf '%s\n' "$existing_safe" | grep -Fxq "$dir"; then
+            echo "Configuring git safe.directory for: $dir"
+            git config --global --add safe.directory "$dir"
+            existing_safe="$(printf '%s\n%s\n' "$existing_safe" "$dir" | sed '/^$/d')"
+        fi
+    }
+
+    # CI environments often mount workspaces with ownership that differs from the current user.
+    # Walk upward to register any parent repo roots (e.g. /workspace), then project root itself.
+    current_dir="$PROJECT_ROOT"
+    while [ "$current_dir" != "/" ]; do
+        if [ -d "$current_dir/.git" ] || [ -f "$current_dir/.git" ]; then
+            add_safe_directory "$current_dir"
+        fi
+        current_dir="$(dirname "$current_dir")"
+    done
+
+    add_safe_directory "$PROJECT_ROOT"
+}
+
+ensure_git_safe_directory
+
 # Create RPM build directory structure
 RPMBUILD_DIR="$HOME/rpmbuild"
 mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
