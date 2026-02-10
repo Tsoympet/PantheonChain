@@ -5,14 +5,24 @@
 # (`local`, arrays, BASH_SOURCE). Re-exec under bash early when needed.
 if [ -z "${PARTHENON_RPM_REEXEC_GUARD:-}" ]; then
     reexec_bash() {
+        if ! command -v bash >/dev/null 2>&1; then
+            echo "ERROR: bash is required to run this script." >&2
+            exit 1
+        fi
+
         export PARTHENON_RPM_REEXEC_GUARD=1
         exec bash "$0" "$@"
+        unset PARTHENON_RPM_REEXEC_GUARD
+        echo "ERROR: Unable to re-exec under bash." >&2
+        exit 1
     }
 
     if [ -z "${BASH_VERSION:-}" ] || [ -z "${BASH_SOURCE:-}" ]; then
         reexec_bash
     fi
 
+    # Some environments export bash-specific variables into non-bash shells.
+    # Verify the actual process name when ps is available.
     if command -v ps >/dev/null 2>&1; then
         if [ "$(ps -p "$$" -o comm= 2>/dev/null)" != "bash" ]; then
             reexec_bash
