@@ -184,7 +184,7 @@ const App = () => {
                 setSending(true);
                 
                 // Sign transaction
-                const tx = await WalletService.signTransaction({
+                await WalletService.signTransaction({
                   asset: selectedAsset,
                   to: recipientAddress,
                   amount: amountNum,
