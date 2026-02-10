@@ -106,7 +106,7 @@ fi
 %dir %attr(750,parthenon,parthenon) /var/lib/parthenon
 
 %changelog
-* Mon Feb 10 2026 ParthenonChain Foundation <dev@parthenonchain.org> - 1.0.0-1
+* Tue Feb 10 2026 ParthenonChain Foundation <dev@parthenonchain.org> - 1.0.0-1
 - Initial release
 - Full consensus implementation with three native assets
 - EVM-compatible smart contracts (OBOLOS)
