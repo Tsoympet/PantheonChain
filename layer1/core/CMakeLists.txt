@@ -11,7 +11,7 @@ add_library(parthenon_crypto STATIC
 
 target_include_directories(parthenon_crypto PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/third_party/secp256k1/include
+    ${SECP256K1_INCLUDE_DIR}
 )
 
 target_link_libraries(parthenon_crypto PUBLIC
