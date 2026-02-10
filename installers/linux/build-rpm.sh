@@ -43,9 +43,7 @@ cp "$SCRIPT_DIR/parthenon.spec" "$SPEC_FILE"
 
 sed -i \
     -e "s/^Version:[[:space:]].*/Version:        ${VERSION}/" \
-    -e "s|\$\(date +\"%a %b %d %Y\"\)|${CHANGELOG_DATE}|g" \
-    -e "s|^\* \$\(date .\+\) ParthenonChain Foundation <dev@parthenonchain\.org> - .\+$|* ${CHANGELOG_DATE} ParthenonChain Foundation <dev@parthenonchain.org> - ${VERSION}-${RELEASE}|" \
-    -e "s/^\* .\+ ParthenonChain Foundation <dev@parthenonchain\.org> - .\+$/\* ${CHANGELOG_DATE} ParthenonChain Foundation <dev@parthenonchain.org> - ${VERSION}-${RELEASE}/" \
+    -e "/^%changelog/{n;s|^\* .* ParthenonChain Foundation <dev@parthenonchain\.org> - .*|* ${CHANGELOG_DATE} ParthenonChain Foundation <dev@parthenonchain.org> - ${VERSION}-${RELEASE}|;}" \
     "$SPEC_FILE"
 
 # Build RPM
