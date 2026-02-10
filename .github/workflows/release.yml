@@ -319,7 +319,7 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || github.event_name == 'push' }}
+        draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft == true || github.event_name == 'push' && true }}
         tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
         files: |
           windows-installer/*.exe
