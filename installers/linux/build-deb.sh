@@ -53,18 +53,28 @@ CONFIG_PATH="${BUILD_DIR}/clients/core-daemon/parthenond.conf"
 SOURCE_CONFIG_PATH="${ROOT_DIR}/clients/core-daemon/parthenond.conf"
 EXAMPLE_CONFIG_PATH="${ROOT_DIR}/parthenond.conf.example"
 
-if [ ! -f "${CONFIG_PATH}" ]; then
-    echo "Configuration not found at ${CONFIG_PATH}; attempting to source or generate default config"
-    mkdir -p "$(dirname "${CONFIG_PATH}")"
+resolve_config_source() {
+    # 1) CMake-generated file in build tree
+    if [ -f "${CONFIG_PATH}" ]; then
+        echo "${CONFIG_PATH}"
+        return
+    fi
 
+    # 2) Repository daemon config (if tracked)
     if [ -f "${SOURCE_CONFIG_PATH}" ]; then
-        cp "${SOURCE_CONFIG_PATH}" "${CONFIG_PATH}"
-    elif [ -f "${EXAMPLE_CONFIG_PATH}" ]; then
-        # Keep package builds resilient when core-daemon config is moved/renamed
-        # by reusing the top-level sample and normalizing it into the expected path.
-        cp "${EXAMPLE_CONFIG_PATH}" "${CONFIG_PATH}"
-    else
-        cat > "${CONFIG_PATH}" << 'EOF'
+        echo "${SOURCE_CONFIG_PATH}"
+        return
+    fi
+
+    # 3) Top-level example config
+    if [ -f "${EXAMPLE_CONFIG_PATH}" ]; then
+        echo "${EXAMPLE_CONFIG_PATH}"
+        return
+    fi
+
+    # 4) Last-resort synthesized config
+    mkdir -p "$(dirname "${CONFIG_PATH}")"
+    cat > "${CONFIG_PATH}" << 'EOF'
 # Auto-generated default configuration for package builds
 network_port=8333
 max_connections=125
@@ -77,10 +87,12 @@ data_dir=/var/lib/parthenon
 log_level=info
 mining_enabled=false
 EOF
-    fi
-fi
+    echo "${CONFIG_PATH}"
+}
 
-cp "${CONFIG_PATH}" "${DEB_DIR}/etc/parthenon/"
+RESOLVED_CONFIG_PATH="$(resolve_config_source)"
+echo "Using daemon config: ${RESOLVED_CONFIG_PATH}"
+cp "${RESOLVED_CONFIG_PATH}" "${DEB_DIR}/etc/parthenon/parthenond.conf"
 
 # Copy documentation
 cp "${ROOT_DIR}/README.md" "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
