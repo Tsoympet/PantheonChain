@@ -91,8 +91,12 @@ EOF
 }
 
 RESOLVED_CONFIG_PATH="$(resolve_config_source)"
-echo "Using daemon config: ${RESOLVED_CONFIG_PATH}"
-cp "${RESOLVED_CONFIG_PATH}" "${DEB_DIR}/etc/parthenon/parthenond.conf"
+if [ -f "${RESOLVED_CONFIG_PATH}" ]; then
+    echo "Using daemon config: ${RESOLVED_CONFIG_PATH}"
+    cp "${RESOLVED_CONFIG_PATH}" "${DEB_DIR}/etc/parthenon/parthenond.conf"
+else
+    echo "Warning: parthenond.conf not found; DEB will be built without a packaged default config"
+fi
 
 # Copy documentation
 cp "${ROOT_DIR}/README.md" "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
