@@ -83,10 +83,14 @@ jobs:
           }
         }
 
+    - name: Set up NSIS Path
+      shell: pwsh
+      run: |
+        echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
     - name: Build NSIS Installer
       shell: pwsh
       run: |
-        $env:Path = "C:\Program Files (x86)\NSIS;" + $env:Path
         cd installers/windows
         pwsh -ExecutionPolicy Bypass -File build.ps1
     
