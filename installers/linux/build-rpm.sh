@@ -35,6 +35,50 @@ RELEASE="1"
 echo "=== Building ParthenonChain RPM Package ==="
 echo "Version: $VERSION-$RELEASE"
 
+ensure_build_tools() {
+    local os_id_like=""
+    if [ -f /etc/os-release ]; then
+        os_id_like="$(awk -F= '/^(ID|ID_LIKE)=/{print tolower($2)}' /etc/os-release | tr -d '"')"
+    fi
+
+    # Native RPM hosts should provide package names that satisfy BuildRequires.
+    if echo "$os_id_like" | grep -Eq '(rhel|centos|fedora|rocky|almalinux|suse)'; then
+        local missing=0
+        for cmd in cmake g++ rpmbuild; do
+            if ! command -v "$cmd" >/dev/null 2>&1; then
+                missing=1
+                break
+            fi
+        done
+
+        if [ "$missing" -eq 1 ]; then
+            if command -v dnf >/dev/null 2>&1; then
+                echo "Installing RPM build dependencies with dnf..."
+                sudo dnf install -y boost-devel cmake gcc-c++ openssl-devel rpm-build
+            elif command -v yum >/dev/null 2>&1; then
+                echo "Installing RPM build dependencies with yum..."
+                sudo yum install -y boost-devel cmake gcc-c++ openssl-devel rpm-build
+            else
+                echo "ERROR: Missing build tools and no dnf/yum package manager found."
+                exit 1
+            fi
+        fi
+    # Debian/Ubuntu package names differ from RPM BuildRequires names.
+    elif echo "$os_id_like" | grep -Eq '(debian|ubuntu)'; then
+        if ! command -v rpmbuild >/dev/null 2>&1; then
+            echo "Installing Debian/Ubuntu RPM build dependencies..."
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends \
+                rpm build-essential cmake g++ libssl-dev libboost-all-dev
+            if ! command -v rpmbuild >/dev/null 2>&1; then
+                sudo apt-get install -y --no-install-recommends rpm-build || true
+            fi
+        fi
+    fi
+}
+
+ensure_build_tools
+
 # Create RPM build directory structure
 RPMBUILD_DIR="$HOME/rpmbuild"
 mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
