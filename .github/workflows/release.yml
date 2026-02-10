@@ -137,6 +137,7 @@ jobs:
         ./generate-checksums.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm
     
     - name: Sign Artifacts (if GPG key available)
+      if: env.GPG_PRIVATE_KEY != ''
       env:
         GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
