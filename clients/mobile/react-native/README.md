@@ -127,8 +127,9 @@ Before running EAS builds (especially in CI):
 
 - Use **Expo SDK 41+** (this project is configured for SDK 49 via `expo` and `app.json`).
 - Ensure `EXPO_TOKEN` is configured in your CI secrets.
-- Do not rely on keystore generation in `--non-interactive` mode.
-  - Create Android credentials ahead of time with `eas credentials`.
+- Do not rely on credential generation in `--non-interactive` mode.
+  - Create Android and iOS credentials ahead of time with `npx eas credentials -p android` and `npx eas credentials -p ios`.
+  - For iOS CI builds, make sure the **Distribution Certificate** and **Provisioning Profile** are uploaded in Expo and mapped to the build profile.
   - Upload credentials to Expo (remote) before CI builds, or use local credentials securely.
 
 Install dependencies after Expo SDK updates:
