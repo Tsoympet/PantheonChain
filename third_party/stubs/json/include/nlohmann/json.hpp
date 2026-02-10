@@ -2,6 +2,7 @@
 #define NLOHMANN_JSON_STUB_HPP
 
 #include <cctype>
+#include <cerrno>
 #include <cstdlib>
 #include <initializer_list>
 #include <map>
@@ -289,8 +290,9 @@ class json {
         }
         char* end = nullptr;
         const char* start = value.c_str();
+        errno = 0;
         double result = std::strtod(start, &end);
-        if (start == end || *end != '\0') {
+        if (start == end || *end != '\0' || errno == ERANGE) {
             return false;
         }
         if (out != nullptr) {

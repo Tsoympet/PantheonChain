@@ -168,6 +168,7 @@ class DB {
         return Status::OK();
     }
 
+    // Caller owns the returned iterator and is responsible for deleting it.
     Iterator* NewIterator(const ReadOptions& options) {
         (void)options;
         return new MapIterator(&data_);
