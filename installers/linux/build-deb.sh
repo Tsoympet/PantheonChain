@@ -3,11 +3,14 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
 VERSION="1.0.0"
 ARCH="amd64"
 PACKAGE_NAME="parthenon"
-BUILD_DIR="../../build"
-DEB_DIR="deb_build"
+BUILD_DIR="${ROOT_DIR}/build"
+DEB_DIR="${SCRIPT_DIR}/deb_build"
 
 echo "=== Building Debian package for ParthenonChain v${VERSION} ==="
 
@@ -47,7 +50,7 @@ chmod 755 "${DEB_DIR}/usr/bin"/*
 
 # Ensure configuration exists, then copy it
 CONFIG_PATH="${BUILD_DIR}/clients/core-daemon/parthenond.conf"
-SOURCE_CONFIG_PATH="../../clients/core-daemon/parthenond.conf"
+SOURCE_CONFIG_PATH="${ROOT_DIR}/clients/core-daemon/parthenond.conf"
 
 if [ ! -f "${CONFIG_PATH}" ]; then
     echo "Configuration not found at ${CONFIG_PATH}; attempting to source or generate default config"
@@ -75,18 +78,18 @@ fi
 cp "${CONFIG_PATH}" "${DEB_DIR}/etc/parthenon/"
 
 # Copy documentation
-cp ../../README.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
-cp ../../EULA.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
-cp ../../WHITEPAPER.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
-if [ -f "../../LICENSE" ]; then
-    cp ../../LICENSE "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+cp "${ROOT_DIR}/README.md" "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+cp "${ROOT_DIR}/EULA.md" "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+cp "${ROOT_DIR}/WHITEPAPER.md" "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+if [ -f "${ROOT_DIR}/LICENSE" ]; then
+    cp "${ROOT_DIR}/LICENSE" "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
 fi
-cp ../../CHANGELOG.md "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
+cp "${ROOT_DIR}/CHANGELOG.md" "${DEB_DIR}/usr/share/doc/${PACKAGE_NAME}/"
 
 # Copy icon if available
-if [ -f "../../clients/desktop/assets/icon.png" ]; then
+if [ -f "${ROOT_DIR}/clients/desktop/assets/icon.png" ]; then
     mkdir -p "${DEB_DIR}/usr/share/pixmaps"
-    cp "../../clients/desktop/assets/icon.png" "${DEB_DIR}/usr/share/pixmaps/parthenon.png"
+    cp "${ROOT_DIR}/clients/desktop/assets/icon.png" "${DEB_DIR}/usr/share/pixmaps/parthenon.png"
 fi
 
 # Create desktop entry
@@ -220,10 +223,11 @@ EOF
 chmod 755 "${DEB_DIR}/DEBIAN/postrm"
 
 # Build package
-dpkg-deb --build "${DEB_DIR}" "${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
+OUTPUT_DEB="${SCRIPT_DIR}/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
+dpkg-deb --build "${DEB_DIR}" "${OUTPUT_DEB}"
 
-echo "=== Debian package created: ${PACKAGE_NAME}_${VERSION}_${ARCH}.deb ==="
-echo "Size: $(du -h ${PACKAGE_NAME}_${VERSION}_${ARCH}.deb | cut -f1)"
+echo "=== Debian package created: ${OUTPUT_DEB} ==="
+echo "Size: $(du -h "${OUTPUT_DEB}" | cut -f1)"
 
 # Cleanup
 rm -rf "${DEB_DIR}"
