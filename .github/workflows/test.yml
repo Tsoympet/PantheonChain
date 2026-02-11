@@ -18,10 +18,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: false
+        fetch-depth: 0
 
     - name: Initialize submodules
-      run: git submodule update --init --recursive
+      run: |
+        git submodule sync --recursive
+        git submodule update --init --recursive --depth=1
 
     - name: Install dependencies
       run: |
@@ -73,10 +76,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: false
+        fetch-depth: 0
 
     - name: Initialize submodules
-      run: git submodule update --init --recursive
+      run: |
+        git submodule sync --recursive
+        git submodule update --init --recursive --depth=1
 
     - name: Install dependencies
       run: |
@@ -104,10 +110,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: false
+        fetch-depth: 0
 
     - name: Initialize submodules
-      run: git submodule update --init --recursive
+      run: |
+        git submodule sync --recursive
+        git submodule update --init --recursive --depth=1
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
