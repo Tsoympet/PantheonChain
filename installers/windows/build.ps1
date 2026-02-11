@@ -100,7 +100,7 @@ function Resolve-BuildArtifactPath {
             Select-Object -First 1
 
         if ($discoveredCandidate) {
-            Write-Host "Warning: using discovered fallback artifact for ${label}: $($discoveredCandidate.FullName)" -ForegroundColor Yellow
+            Write-Host ("Warning: using discovered fallback artifact for {0}: {1}" -f $label, $discoveredCandidate.FullName) -ForegroundColor Yellow
             return $discoveredCandidate.FullName
         }
     }
