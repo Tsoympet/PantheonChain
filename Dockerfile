@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for PantheonChain
 # Stage 1: Builder
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:22.04 AS builder
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
@@ -39,7 +39,7 @@ RUN mkdir -p build && cd build && \
 RUN cd build && ctest --output-on-failure || true
 
 # Stage 2: Runtime
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
