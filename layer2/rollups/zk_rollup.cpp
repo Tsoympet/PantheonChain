@@ -151,7 +151,7 @@ ZKRollup::DecompressBatch([[maybe_unused]] const std::vector<uint8_t>& data) con
 }
 
 // ZKRollupProver implementation
-ZKRollupProver::ZKRollupProver(ZKRollup* rollup) : rollup_(rollup) {}
+ZKRollupProver::ZKRollupProver() {}
 ZKRollupProver::~ZKRollupProver() {}
 
 privacy::zksnark::ZKProof

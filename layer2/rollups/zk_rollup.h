@@ -181,7 +181,7 @@ class ZKRollup {
  */
 class ZKRollupProver {
   public:
-    explicit ZKRollupProver(ZKRollup* rollup);
+    ZKRollupProver();
     ~ZKRollupProver();
 
     /**
@@ -201,7 +201,6 @@ class ZKRollupProver {
     bool SetupParameters(size_t circuit_size);
 
   private:
-    ZKRollup* rollup_;
     privacy::zksnark::ProofParameters params_;
 };
 
