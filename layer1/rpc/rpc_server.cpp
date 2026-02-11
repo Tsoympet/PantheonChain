@@ -1,11 +1,11 @@
 // ParthenonChain - JSON-RPC Server Implementation with HTTP Support
 
 #include "rpc_server.h"
-#include "validation.h"
 
 #include "primitives/transaction.h"
 
 #include "node/node.h"
+#include "validation.h"
 #include "wallet/wallet.h"
 
 #include <httplib.h>
@@ -21,7 +21,10 @@ namespace parthenon {
 namespace rpc {
 
 RPCServer::RPCServer(uint16_t port)
-    : port_(port), running_(false), node_(nullptr), wallet_(nullptr),
+    : port_(port),
+      running_(false),
+      node_(nullptr),
+      wallet_(nullptr),
       rate_limiter_(std::make_unique<RateLimiter>(100, 60)) {
     InitializeStandardMethods();
 }
@@ -53,19 +56,19 @@ bool RPCServer::Start() {
         try {
             // Extract client IP for rate limiting
             std::string client_ip = req.remote_addr;
-            
+
             // Check rate limit
             if (!rate_limiter_->AllowRequest(client_ip)) {
                 json error_response;
                 error_response["jsonrpc"] = "2.0";
-                error_response["error"] = {{"code", -32001},
-                                           {"message", "Rate limit exceeded. Please try again later."}};
+                error_response["error"] = {
+                    {"code", -32001}, {"message", "Rate limit exceeded. Please try again later."}};
                 error_response["id"] = nullptr;
                 res.status = 429;  // Too Many Requests
                 res.set_content(error_response.dump(), "application/json");
                 return;
             }
-            
+
             // Parse JSON-RPC request
             auto j = json::parse(req.body);
 
@@ -140,7 +143,8 @@ void RPCServer::ConfigureRateLimit(uint32_t requests_per_window, uint32_t window
     rate_limiter_ = std::make_unique<RateLimiter>(requests_per_window, window_seconds);
 }
 
-RPCResponse RPCServer::HandleRequest(const RPCRequest& request, const std::string& /* client_ip */) {
+RPCResponse RPCServer::HandleRequest(const RPCRequest& request,
+                                     const std::string& /* client_ip */) {
     RPCResponse response;
     response.id = request.id;
 
@@ -285,7 +289,7 @@ RPCResponse RPCServer::HandleGetBlock(const RPCRequest& req) {
             }
             height = *height_opt;
         }
-        
+
         // Validate block height
         if (!InputValidator::ValidateBlockHeight(height, node_->GetHeight())) {
             response.error = "Block height exceeds chain height";

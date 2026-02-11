@@ -2,9 +2,9 @@
 #define PARTHENON_SETTLEMENT_ESCROW_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <vector>
-#include <cstddef>
 
 namespace parthenon {
 namespace settlement {

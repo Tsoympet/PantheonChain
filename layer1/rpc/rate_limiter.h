@@ -20,8 +20,8 @@ struct RateLimitInfo {
     uint32_t request_count;
     std::chrono::steady_clock::time_point window_start;
     std::chrono::steady_clock::time_point last_request;
-    
-    RateLimitInfo() 
+
+    RateLimitInfo()
         : request_count(0),
           window_start(std::chrono::steady_clock::now()),
           last_request(std::chrono::steady_clock::now()) {}
@@ -39,8 +39,7 @@ class RateLimiter {
      * @param window_seconds Time window in seconds
      * @param burst_size Maximum burst size (default = requests_per_window)
      */
-    RateLimiter(uint32_t requests_per_window = 100, 
-                uint32_t window_seconds = 60,
+    RateLimiter(uint32_t requests_per_window = 100, uint32_t window_seconds = 60,
                 uint32_t burst_size = 0)
         : max_requests_(requests_per_window),
           window_duration_(std::chrono::seconds(window_seconds)),
@@ -53,33 +52,32 @@ class RateLimiter {
      */
     bool AllowRequest(const std::string& ip_address) {
         std::lock_guard<std::mutex> lock(mutex_);
-        
+
         auto now = std::chrono::steady_clock::now();
         auto& info = clients_[ip_address];
-        
+
         // Check if we need to reset the window
         auto elapsed = now - info.window_start;
         if (elapsed >= window_duration_) {
             info.request_count = 0;
             info.window_start = now;
         }
-        
+
         // Check rate limit
         if (info.request_count >= max_requests_) {
             return false;  // Rate limit exceeded
         }
-        
+
         // Check burst limit (prevent too many requests in short time)
         auto time_since_last = now - info.last_request;
-        if (time_since_last < std::chrono::milliseconds(100) && 
-            info.request_count >= burst_size_) {
+        if (time_since_last < std::chrono::milliseconds(100) && info.request_count >= burst_size_) {
             return false;  // Burst limit exceeded
         }
-        
+
         // Allow request
         info.request_count++;
         info.last_request = now;
-        
+
         return true;
     }
 
@@ -114,7 +112,7 @@ class RateLimiter {
         std::lock_guard<std::mutex> lock(mutex_);
         auto now = std::chrono::steady_clock::now();
         auto cleanup_threshold = std::chrono::hours(1);
-        
+
         for (auto it = clients_.begin(); it != clients_.end();) {
             if (now - it->second.last_request > cleanup_threshold) {
                 it = clients_.erase(it);
@@ -136,7 +134,7 @@ class RateLimiter {
     uint32_t max_requests_;
     std::chrono::seconds window_duration_;
     uint32_t burst_size_;
-    
+
     mutable std::mutex mutex_;
     std::map<std::string, RateLimitInfo> clients_;
 };

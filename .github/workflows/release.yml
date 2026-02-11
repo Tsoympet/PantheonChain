@@ -340,8 +340,18 @@ jobs:
         name: linux-${{ matrix.package }}
         path: installers/linux/*.${{ matrix.package }}
 
+  build-mobile-android:
+    uses: ./.github/workflows/mobile-android-installer.yml
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  build-mobile-ios:
+    uses: ./.github/workflows/mobile-ios-installer.yml
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
   create-release:
-    needs: [build-windows, build-macos, build-linux]
+    needs: [build-windows, build-macos, build-linux, build-mobile-android, build-mobile-ios]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -359,7 +369,7 @@ jobs:
       run: |
         cd installers/checksums
         chmod +x generate-checksums.sh
-        ./generate-checksums.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm
+        ./generate-checksums.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm ../../parthenon-mobile-android-apk/*.apk ../../parthenon-mobile-ios-ipa/*.ipa
     
     - name: Sign Artifacts (if GPG key available)
       if: env.GPG_PRIVATE_KEY != ''
@@ -375,7 +385,7 @@ jobs:
         echo "$GPG_PRIVATE_KEY" | gpg --import
         cd installers/checksums
         chmod +x sign-release.sh
-        GPG_KEY_ID=$GPG_KEY_ID ./sign-release.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm
+        GPG_KEY_ID=$GPG_KEY_ID ./sign-release.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm ../../parthenon-mobile-android-apk/*.apk ../../parthenon-mobile-ios-ipa/*.ipa
     
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -391,6 +401,10 @@ jobs:
           linux-deb/*.deb.asc
           linux-rpm/*.rpm
           linux-rpm/*.rpm.asc
+          parthenon-mobile-android-apk/*.apk
+          parthenon-mobile-android-apk/*.apk.asc
+          parthenon-mobile-ios-ipa/*.ipa
+          parthenon-mobile-ios-ipa/*.ipa.asc
           installers/checksums/parthenon-*-checksums.txt
         body: |
           # ParthenonChain ${{ github.ref_name }}
@@ -410,6 +424,10 @@ jobs:
           ### 🐧 Linux
           - **[parthenon_*_amd64.deb](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon_1.0.0_amd64.deb)** - Debian/Ubuntu package
           - **[parthenon-*.rpm](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon-1.0.0-1.el8.x86_64.rpm)** - RPM package (RHEL/Fedora/CentOS)
+
+          ### 📱 Mobile
+          - **[parthenon-mobile-android.apk](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon-mobile-android.apk)** - Android APK installer
+          - **[parthenon-mobile-ios.ipa](https://github.com/Tsoympet/PantheonChain/releases/latest/download/parthenon-mobile-ios.ipa)** - iOS IPA installer
           
           ## 📖 Installation Guides
           

@@ -1,6 +1,10 @@
 name: Mobile Android Installer
 
 on:
+  workflow_call:
+    secrets:
+      EXPO_TOKEN:
+        required: true
   workflow_dispatch:
   push:
     branches: [ main, develop ]
