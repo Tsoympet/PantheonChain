@@ -323,7 +323,7 @@ jobs:
     - name: Build Package
       run: |
         if [ "${{ matrix.package }}" = "rpm" ]; then
-          docker run --rm             -v "${{ github.workspace }}:/workspace"             -w /workspace/installers/linux             fedora:latest             bash -lc "dnf install -y git rpm-build rpmdevtools cmake gcc-c++ openssl-devel boost-devel qt6-qtbase-devel >/dev/null && git config --global --add safe.directory /workspace && chmod +x build.sh && ./build.sh rpm"
+          docker run --rm             -v "${{ github.workspace }}:/workspace"             -w /workspace/installers/linux             fedora:latest             bash -lc "dnf install -y git rpm-build rpmdevtools cmake gcc-c++ openssl-devel boost-devel qt6-qtbase-devel systemd-rpm-macros >/dev/null && git config --global --add safe.directory /workspace && chmod +x build.sh && ./build.sh rpm"
         else
           cd installers/linux
           chmod +x build.sh
