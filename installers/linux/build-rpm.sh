@@ -84,7 +84,7 @@ ensure_build_tools() {
         fi
     }
 
-    local os_id_like=""
+    os_id_like=""
     if [ -f /etc/os-release ]; then
         os_id_like="$(awk -F= '/^(ID|ID_LIKE)=/{print tolower($2)}' /etc/os-release | tr -d '"')"
     fi
@@ -130,13 +130,13 @@ ensure_build_tools() {
 ensure_build_tools
 
 ensure_git_safe_directory() {
-    local existing_safe
-    local current_dir
+    existing_safe=""
+    current_dir=""
 
     existing_safe="$(git config --global --get-all safe.directory 2>/dev/null || true)"
 
     add_safe_directory() {
-        local dir="$1"
+        dir="$1"
         if [ -z "$dir" ]; then
             return
         fi
@@ -173,7 +173,7 @@ print_git_safe_directories() {
 print_git_safe_directories
 
 create_source_tarball() {
-    local tarball_path="$1"
+    tarball_path="$1"
 
     # RPM builds require vendored third_party submodules (secp256k1/leveldb/etc.).
     # `git archive` omits submodule contents, so package from the working tree instead.
@@ -213,14 +213,18 @@ sed -i \
 echo "Building RPM package..."
 cd "$RPMBUILD_DIR"
 
-RPMBUILD_ARGS=(-ba SPECS/parthenon.spec)
+RPMBUILD_NODEPS=0
 if echo "$OS_ID_LIKE" | grep -Eq '(debian|ubuntu)'; then
     # Debian/Ubuntu use different package naming than RPM BuildRequires.
     # Toolchain dependencies are installed via apt above, so skip rpm db checks here.
-    RPMBUILD_ARGS=(--nodeps --define "_unitdir /usr/lib/systemd/system" -ba SPECS/parthenon.spec)
+    RPMBUILD_NODEPS=1
 fi
 
-rpmbuild "${RPMBUILD_ARGS[@]}"
+if [ "$RPMBUILD_NODEPS" -eq 1 ]; then
+    rpmbuild --nodeps --define "_unitdir /usr/lib/systemd/system" -ba SPECS/parthenon.spec
+else
+    rpmbuild -ba SPECS/parthenon.spec
+fi
 
 # Copy built RPM to installers/linux directory
 echo "Copying RPM to installers/linux..."
