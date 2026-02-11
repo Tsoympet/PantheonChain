@@ -30,7 +30,10 @@ jobs:
           cmake \
           g++ \
           libssl-dev \
-          libboost-all-dev \
+          libboost-system-dev \
+          libboost-filesystem-dev \
+          libboost-thread-dev \
+          libboost-program-options-dev \
           ninja-build \
           lcov
 

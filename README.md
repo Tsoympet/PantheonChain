@@ -180,7 +180,9 @@ Download the latest release binaries from the [Releases](https://github.com/Tsoy
 ```bash
 sudo apt-get update
 sudo apt-get install build-essential cmake git \
-  libssl-dev libevent-dev libboost-all-dev \
+  libssl-dev libevent-dev \
+  libboost-system-dev libboost-filesystem-dev libboost-thread-dev \
+  libboost-program-options-dev \
   pkg-config autoconf automake libtool
 ```
 
