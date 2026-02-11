@@ -94,8 +94,6 @@ jobs:
   build-windows:
     name: Build (Windows)
     runs-on: windows-latest
-    env:
-      OPENSSL_ROOT_DIR: 'C:/Program Files/OpenSSL-Win64'
 
     steps:
     - name: Checkout repository
@@ -118,9 +116,17 @@ jobs:
 
     - name: Configure CMake
       run: |
+        $opensslCandidates = @()
+        $opensslCandidates += Get-ChildItem -Path $env:ProgramFiles -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue
+        $programFilesX86 = ${env:ProgramFiles(x86)}
+        if ($programFilesX86) {
+          $opensslCandidates += Get-ChildItem -Path $programFilesX86 -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue
+        }
+        $opensslRoot = $opensslCandidates | Select-Object -First 1 -ExpandProperty FullName
+        if (-not $opensslRoot) { throw 'OpenSSL installation not found in Program Files.' }
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
-          -DOPENSSL_ROOT_DIR=$env:OPENSSL_ROOT_DIR `
+          -DOPENSSL_ROOT_DIR=$opensslRoot `
           -GNinja
 
     - name: Build
