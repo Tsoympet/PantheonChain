@@ -2,15 +2,27 @@ cmake_minimum_required(VERSION 3.15)
 
 # Desktop wallet - Full Qt implementation
 
-# Find Qt5
-find_package(Qt5 COMPONENTS Widgets Network QUIET)
+option(PARTHENON_DESKTOP_REQUIRE_QT "Fail configuration when no supported Qt version is available" OFF)
 
-if(Qt5_FOUND)
+# Prefer Qt6, then fallback to Qt5.
+find_package(Qt6 COMPONENTS Widgets Network QUIET)
+if(Qt6_FOUND)
+    set(PARTHENON_QT_TARGET_PREFIX Qt6)
+    set(PARTHENON_QT_VERSION "${Qt6_VERSION}")
+else()
+    find_package(Qt5 COMPONENTS Widgets Network QUIET)
+    if(Qt5_FOUND)
+        set(PARTHENON_QT_TARGET_PREFIX Qt5)
+        set(PARTHENON_QT_VERSION "${Qt5_VERSION}")
+    endif()
+endif()
+
+if(DEFINED PARTHENON_QT_TARGET_PREFIX)
     # Full Qt implementation
     set(CMAKE_AUTOMOC ON)
     set(CMAKE_AUTORCC ON)
     set(CMAKE_AUTOUIC ON)
-    
+
     add_executable(parthenon-qt
         src/main.cpp
         src/mainwindow.cpp
@@ -26,14 +38,23 @@ if(Qt5_FOUND)
         src/transactionpage.cpp
         src/transactionpage.h
     )
-    
+
     target_compile_features(parthenon-qt PRIVATE cxx_std_17)
-    target_link_libraries(parthenon-qt Qt5::Widgets Qt5::Network)
-    
-    message(STATUS "Building ParthenonChain Desktop Wallet with Qt ${Qt5_VERSION}")
+    target_link_libraries(parthenon-qt
+        ${PARTHENON_QT_TARGET_PREFIX}::Widgets
+        ${PARTHENON_QT_TARGET_PREFIX}::Network
+    )
+
+    message(STATUS "Building ParthenonChain Desktop Wallet with ${PARTHENON_QT_TARGET_PREFIX} ${PARTHENON_QT_VERSION}")
 else()
-    # Fallback to scaffold version
-    message(WARNING "Qt5 not found. Building scaffold version.")
+    if(PARTHENON_DESKTOP_REQUIRE_QT)
+        message(FATAL_ERROR
+            "Neither Qt6 nor Qt5 was found. Install Qt development packages or disable PARTHENON_DESKTOP_REQUIRE_QT."
+        )
+    endif()
+
+    # Fallback to scaffold version for environments without Qt.
+    message(STATUS "Qt not found (Qt6/Qt5). Building desktop scaffold target.")
     add_executable(parthenon-qt
         gui/main.cpp
     )
