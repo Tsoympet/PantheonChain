@@ -94,6 +94,8 @@ jobs:
   build-windows:
     name: Build (Windows)
     runs-on: windows-latest
+    env:
+      OPENSSL_ROOT_DIR: 'C:/Program Files/OpenSSL-Win64'
 
     steps:
     - name: Checkout repository
@@ -112,12 +114,13 @@ jobs:
 
     - name: Install dependencies
       run: |
-        choco install cmake ninja -y
+        choco install cmake ninja openssl -y
 
     - name: Configure CMake
       run: |
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
+          -DOPENSSL_ROOT_DIR="${{ env.OPENSSL_ROOT_DIR }}" `
           -GNinja
 
     - name: Build

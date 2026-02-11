@@ -194,6 +194,7 @@ brew install cmake boost openssl libevent autoconf automake libtool
 **Windows:**
 - Install [Visual Studio 2019+](https://visualstudio.microsoft.com/) with C++ support
 - Install [CMake](https://cmake.org/download/)
+- Install [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html) (or via `choco install openssl`)
 
 #### Build Steps
 
