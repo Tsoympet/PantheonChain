@@ -5,6 +5,7 @@
 #define PARTHENON_RPC_RATE_LIMITER_H
 
 #include <chrono>
+#include <cstdint>
 #include <map>
 #include <mutex>
 #include <string>
