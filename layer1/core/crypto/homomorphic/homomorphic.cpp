@@ -10,7 +10,7 @@ namespace crypto {
 namespace homomorphic {
 
 // BFVEncryption implementation
-BFVEncryption::BFVEncryption() : plain_modulus_(1024), coeff_modulus_(1ULL << 60) {}
+BFVEncryption::BFVEncryption() = default;
 
 void BFVEncryption::GenerateKeys(PublicKey& public_key, SecretKey& secret_key) {
     // In production: use Ring-LWE
