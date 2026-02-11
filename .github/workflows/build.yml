@@ -122,7 +122,7 @@ jobs:
         if ($programFilesX86) {
           $opensslCandidates += Get-ChildItem -Path $programFilesX86 -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue
         }
-        $opensslRoot = $opensslCandidates | Select-Object -First 1 -ExpandProperty FullName
+        $opensslRoot = $opensslCandidates | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
         if (-not $opensslRoot) { throw 'OpenSSL installation not found in Program Files.' }
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
