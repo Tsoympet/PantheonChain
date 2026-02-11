@@ -12,7 +12,7 @@ on:
 jobs:
   codeql-analysis:
     name: CodeQL Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       security-events: write
       actions: read
@@ -62,7 +62,7 @@ jobs:
 
   dependency-review:
     name: Dependency Review
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.event_name == 'pull_request'
 
     steps:
@@ -74,7 +74,7 @@ jobs:
 
   build-with-warnings:
     name: Build with Extra Warnings
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout repository
@@ -105,7 +105,7 @@ jobs:
 
   sanitizer-checks:
     name: Sanitizer Checks (AddressSanitizer + UBSan)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout repository
