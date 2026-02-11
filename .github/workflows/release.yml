@@ -15,6 +15,10 @@ on:
         default: true
         type: boolean
 
+permissions:
+  contents: read
+  actions: write
+
 env:
   BUILD_TYPE: Release
 
@@ -336,6 +340,9 @@ jobs:
   create-release:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      actions: read
     env:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
