@@ -5,6 +5,7 @@
 
 #include "rate_limiter.h"
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
