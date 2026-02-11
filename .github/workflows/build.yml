@@ -120,7 +120,7 @@ jobs:
       run: |
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
-          -DOPENSSL_ROOT_DIR="${{ env.OPENSSL_ROOT_DIR }}" `
+          -DOPENSSL_ROOT_DIR=$env:OPENSSL_ROOT_DIR `
           -GNinja
 
     - name: Build
