@@ -128,8 +128,8 @@ Before running EAS builds (especially in CI):
 - Use **Expo SDK 41+** (this project is configured for SDK 49 via `expo` and `app.json`).
 - Ensure `EXPO_TOKEN` is configured in your CI secrets.
 - Initialize/link the EAS project once before CI builds:
-  - `npx eas init`
-  - If you encounter GraphQL errors about a missing experience ID, remove stale `expo.extra.eas.projectId` or `.easproject` entries and rerun `npx eas init` to regenerate them.
+  - `npx eas-cli init`
+  - If you encounter GraphQL errors about a missing experience ID and those entries exist, remove stale `expo.extra.eas.projectId` or `.easproject` values and rerun `npx eas-cli init` to regenerate them.
 - Do not rely on credential generation in `--non-interactive` mode.
   - Create Android and iOS credentials ahead of time with `npx eas credentials -p android` and `npx eas credentials -p ios`.
   - For iOS CI builds, make sure the **Distribution Certificate** and **Provisioning Profile** are uploaded in Expo and mapped to the build profile.
