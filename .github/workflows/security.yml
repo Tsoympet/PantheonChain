@@ -27,10 +27,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: false
 
     - name: Initialize submodules
-      run: git submodule update --init --recursive
+      run: |
+        git -c http.https://github.com/.extraheader= submodule update --init --recursive
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
@@ -80,10 +81,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: false
 
     - name: Initialize submodules
-      run: git submodule update --init --recursive
+      run: |
+        git -c http.https://github.com/.extraheader= submodule update --init --recursive
 
     - name: Install dependencies
       run: |
@@ -111,10 +113,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: false
 
     - name: Initialize submodules
-      run: git submodule update --init --recursive
+      run: |
+        git -c http.https://github.com/.extraheader= submodule update --init --recursive
 
     - name: Install dependencies
       run: |

@@ -24,7 +24,7 @@ jobs:
     - name: Initialize submodules
       run: |
         git submodule sync --recursive
-        git submodule update --init --recursive --depth=1
+        git -c http.https://github.com/.extraheader= submodule update --init --recursive --depth=1
 
     - name: Install dependencies
       run: |
@@ -82,7 +82,7 @@ jobs:
     - name: Initialize submodules
       run: |
         git submodule sync --recursive
-        git submodule update --init --recursive --depth=1
+        git -c http.https://github.com/.extraheader= submodule update --init --recursive --depth=1
 
     - name: Install dependencies
       run: |
@@ -116,7 +116,7 @@ jobs:
     - name: Initialize submodules
       run: |
         git submodule sync --recursive
-        git submodule update --init --recursive --depth=1
+        git -c http.https://github.com/.extraheader= submodule update --init --recursive --depth=1
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
