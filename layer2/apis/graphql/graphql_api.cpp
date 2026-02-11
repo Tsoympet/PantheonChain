@@ -19,6 +19,8 @@ class GraphQLAPI::Impl {
             return false;
         }
 
+        (void)port_;  // Placeholder until HTTP server wiring uses configured port
+
         // In a full implementation, this would:
         // 1. Initialize GraphQL schema
         // 2. Start HTTP server
@@ -102,7 +104,7 @@ class GraphQLAPI::Impl {
         })";
     }
 
-    [[maybe_unused]] uint16_t port_;
+    uint16_t port_;
     bool running_;
     std::function<std::string(const std::string&)> block_callback_;
     std::function<std::string(const std::string&)> tx_callback_;

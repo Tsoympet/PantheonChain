@@ -11,6 +11,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 namespace parthenon {
 namespace layer2 {

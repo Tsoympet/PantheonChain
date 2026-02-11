@@ -2,6 +2,7 @@
 #define PARTHENON_CORE_PRIVACY_RING_SIGNATURE_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 

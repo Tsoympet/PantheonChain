@@ -10,6 +10,7 @@
 #include <optional>
 #include <stack>
 #include <vector>
+#include <cstddef>
 
 namespace parthenon {
 namespace evm {

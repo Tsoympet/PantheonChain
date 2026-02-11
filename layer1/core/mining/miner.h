@@ -14,6 +14,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include <cstddef>
 
 namespace parthenon {
 namespace mining {
