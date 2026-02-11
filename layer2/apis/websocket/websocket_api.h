@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <cstdint>
 
 namespace parthenon {
 namespace layer2 {
