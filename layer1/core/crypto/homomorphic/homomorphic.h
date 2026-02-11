@@ -73,9 +73,6 @@ class BFVEncryption {
      */
     Ciphertext Subtract(const Ciphertext& a, const Ciphertext& b);
 
-  private:
-    [[maybe_unused]] uint64_t plain_modulus_;
-    [[maybe_unused]] uint64_t coeff_modulus_;
 };
 
 /**
