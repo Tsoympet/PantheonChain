@@ -37,6 +37,11 @@ jobs:
       run: |
         choco install nsis -y --no-progress
 
+    - name: Install build dependencies
+      shell: pwsh
+      run: |
+        choco install cmake ninja openssl -y --no-progress
+
     - name: Initialize submodules
       run: git submodule update --init --recursive
 
@@ -68,7 +73,7 @@ jobs:
         & $makensis /VERSION
 
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
     
     - name: Build
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
@@ -253,17 +258,9 @@ jobs:
         # RPM-specific tooling for Ubuntu runners. Some distros expose `rpmbuild`
         # via `rpm`, while others split it into `rpm-build`.
         if [ "${{ matrix.package }}" = "rpm" ]; then
-          sudo apt-get install -y --no-install-recommends \
-            rpm build-essential cmake g++ libssl-dev libboost-all-dev
-
-          if ! command -v rpmbuild >/dev/null 2>&1; then
-            sudo apt-get install -y --no-install-recommends rpm-build || true
-          fi
-
-          if ! command -v rpmbuild >/dev/null 2>&1; then
-            echo "rpmbuild is not available on this Ubuntu image; consider using a Fedora/RHEL container for RPM packaging"
-            exit 1
-          fi
+          # The RPM itself is built inside a Fedora container below, so host-side
+          # rpmbuild packages are intentionally not required on ubuntu-latest.
+          sudo apt-get install -y --no-install-recommends docker.io
         fi
 
         cmake --version
