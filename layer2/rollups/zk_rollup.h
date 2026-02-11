@@ -181,7 +181,7 @@ class ZKRollup {
  */
 class ZKRollupProver {
   public:
-    explicit ZKRollupProver(ZKRollup* rollup);
+    ZKRollupProver();
     ~ZKRollupProver();
 
     /**
