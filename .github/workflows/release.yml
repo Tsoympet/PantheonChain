@@ -342,11 +342,13 @@ jobs:
 
   build-mobile-android:
     uses: ./.github/workflows/mobile-android-installer.yml
-    secrets: inherit
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
   build-mobile-ios:
     uses: ./.github/workflows/mobile-ios-installer.yml
-    secrets: inherit
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
   create-release:
     needs: [build-windows, build-macos, build-linux, build-mobile-android, build-mobile-ios]
