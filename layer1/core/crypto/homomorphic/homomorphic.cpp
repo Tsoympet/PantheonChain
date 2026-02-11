@@ -2,6 +2,8 @@
 
 #include "homomorphic.h"
 
+#include <cstddef>
+
 namespace parthenon {
 namespace crypto {
 namespace homomorphic {
