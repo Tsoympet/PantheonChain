@@ -10,6 +10,7 @@
 #include <map>
 #include <optional>
 #include <vector>
+#include <cstddef>
 
 namespace parthenon {
 namespace layer2 {
@@ -200,8 +201,8 @@ class ZKRollupProver {
     bool SetupParameters(size_t circuit_size);
 
   private:
-    [[maybe_unused]] ZKRollup* rollup_;
-    [[maybe_unused]] privacy::zksnark::ProofParameters params_;
+    ZKRollup* rollup_;
+    privacy::zksnark::ProofParameters params_;
 };
 
 /**
@@ -229,8 +230,8 @@ class ZKRollupVerifier {
     bool BatchVerifyProofs(const std::vector<ZKRollupBatch>& batches) const;
 
   private:
-    [[maybe_unused]] ZKRollup* rollup_;
-    [[maybe_unused]] privacy::zksnark::ProofParameters params_;
+    ZKRollup* rollup_;
+    privacy::zksnark::ProofParameters params_;
 };
 
 /**

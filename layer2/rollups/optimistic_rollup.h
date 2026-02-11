@@ -6,6 +6,7 @@
 #include <map>
 #include <optional>
 #include <vector>
+#include <cstddef>
 
 namespace parthenon {
 namespace layer2 {

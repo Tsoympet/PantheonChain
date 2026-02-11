@@ -22,6 +22,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <cstddef>
 
 namespace parthenon {
 namespace node {

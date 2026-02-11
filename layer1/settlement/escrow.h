@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include <cstddef>
 
 namespace parthenon {
 namespace settlement {

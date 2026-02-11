@@ -21,6 +21,9 @@ class WebSocketAPI::Impl {
             return false;
         }
 
+        (void)port_;           // Placeholder until socket bind/listen is implemented
+        (void)next_client_id_;  // Placeholder until connection IDs are allocated
+
         // In a full implementation, this would:
         // 1. Initialize WebSocket server
         // 2. Setup connection handlers
@@ -121,9 +124,9 @@ class WebSocketAPI::Impl {
         uint64_t connected_time;
     };
 
-    [[maybe_unused]] uint16_t port_;
+    uint16_t port_;
     bool running_;
-    [[maybe_unused]] uint64_t next_client_id_;
+    uint64_t next_client_id_;
     std::vector<ClientInfo> clients_;
     std::map<std::string, std::vector<uint64_t>> subscriptions_;  // topic -> client_ids
     std::function<void(const std::string&)> block_callback_;
