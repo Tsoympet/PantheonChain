@@ -4,10 +4,10 @@
 #ifndef PARTHENON_RPC_VALIDATION_H
 #define PARTHENON_RPC_VALIDATION_H
 
-#include <string>
 #include <cstdint>
-#include <regex>
 #include <optional>
+#include <regex>
+#include <string>
 
 namespace parthenon {
 namespace rpc {
@@ -82,19 +82,19 @@ class InputValidator {
     static std::string SanitizeString(const std::string& input) {
         std::string output;
         output.reserve(input.length());
-        
+
         for (char c : input) {
             // Allow alphanumeric, spaces, and basic punctuation
             if (std::isalnum(c) || c == ' ' || c == '-' || c == '_' || c == '.') {
                 output += c;
             }
         }
-        
+
         // Limit length
         if (output.length() > 256) {
             output = output.substr(0, 256);
         }
-        
+
         return output;
     }
 
@@ -107,16 +107,16 @@ class InputValidator {
         if (str.empty() || str.length() > 20) {  // max uint64_t is 20 digits
             return std::nullopt;
         }
-        
+
         try {
             size_t pos;
             uint64_t value = std::stoull(str, &pos);
-            
+
             // Ensure entire string was parsed
             if (pos != str.length()) {
                 return std::nullopt;
             }
-            
+
             return value;
         } catch (...) {
             return std::nullopt;

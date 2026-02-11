@@ -6,11 +6,11 @@
 #include "opcodes.h"
 #include "state.h"
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <stack>
 #include <vector>
-#include <cstddef>
 
 namespace parthenon {
 namespace evm {
