@@ -36,3 +36,33 @@ jobs:
     - name: Validate Installer Scripts
       run: |
         echo "Installer scripts validated for $RUNNER_OS"
+
+    - name: Validate installers workflow YAML
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        python -m pip install --quiet pyyaml
+        python -c "import pathlib,yaml; yaml.safe_load(pathlib.Path('.github/workflows/installers.yml').read_text(encoding='utf-8')); print('OK')"
+
+    - name: Linux installer script regression checks
+      if: runner.os == 'Linux'
+      run: |
+        bash -n installers/linux/build-rpm.sh
+        if rg -n '^\s*local\s+' installers/linux/build-rpm.sh; then
+          echo "Unexpected local variable declarations found in installers/linux/build-rpm.sh"
+          exit 1
+        fi
+      shell: bash
+
+    - name: Windows installer PowerShell parse check
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $tokens = $null
+        $errs = $null
+        [void][System.Management.Automation.Language.Parser]::ParseFile('installers/windows/build.ps1', [ref]$tokens, [ref]$errs)
+        if ($errs) {
+          $errs | ForEach-Object { "{0}: {1}" -f $_.Extent.StartLineNumber, $_.Message }
+          exit 1
+        }
+        Write-Host 'OK'

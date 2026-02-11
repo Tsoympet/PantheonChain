@@ -105,12 +105,12 @@ function Resolve-BuildArtifactPath {
         }
     }
 
-    Write-Host "Error: Missing required artifact for $label." -ForegroundColor Red
+    Write-Host ("Error: Missing required artifact for {0}." -f $label) -ForegroundColor Red
     Write-Host "Expected one of:" -ForegroundColor Yellow
     Write-Host " - $configuredPath" -ForegroundColor Yellow
     Write-Host " - $flatPath" -ForegroundColor Yellow
     if (Test-Path $buildRoot) {
-        Write-Host "Searched recursively under: $buildRoot for $binaryName" -ForegroundColor Yellow
+        Write-Host ("Searched recursively under: {0} for {1}" -f $buildRoot, $binaryName) -ForegroundColor Yellow
     }
     exit 1
 }
