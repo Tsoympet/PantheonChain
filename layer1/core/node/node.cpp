@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <stdexcept>
 #include <thread>
 
 namespace parthenon {
@@ -353,7 +354,8 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     }
 
     if (!chain_state_.ValidateBlock(block)) {
-        std::cerr << "Block failed chain state validation" << std::endl;
+        std::cerr << "Block failed chain state validation at height " << (GetHeight() + 1)
+                  << std::endl;
         return false;
     }
 
@@ -391,8 +393,8 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     }
 
     if (!chain_state_.ApplyBlock(block)) {
-        std::cerr << "Warning: failed to update mining chain state; mining height may be stale"
-                  << std::endl;
+        std::cerr << "Warning: failed to update mining chain state at height " << GetHeight()
+                  << "; mining height may be stale" << std::endl;
     }
 
     // Store block to disk
@@ -438,20 +440,24 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         address = peer_id.substr(0, colon_pos);
         auto port_str = peer_id.substr(colon_pos + 1);
         bool port_valid = false;
+        unsigned long parsed_port = 0;
         if (!port_str.empty()) {
             try {
-                auto parsed_port = std::stoul(port_str);
+                parsed_port = std::stoul(port_str);
                 if (parsed_port > 0 && parsed_port <= 65535) {
                     port = static_cast<uint16_t>(parsed_port);
                     port_valid = true;
                 }
-            } catch (...) {
+            } catch (const std::invalid_argument&) {
+                port_valid = false;
+            } catch (const std::out_of_range&) {
                 port_valid = false;
             }
         }
 
         if (!port_valid) {
-            std::cerr << "Invalid peer port for peer: " << peer_id << std::endl;
+            std::cerr << "Invalid peer port '" << port_str << "' for peer: " << peer_id
+                      << std::endl;
             port = 0;
         }
     }
