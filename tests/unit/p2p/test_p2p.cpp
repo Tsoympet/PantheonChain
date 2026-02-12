@@ -3,6 +3,8 @@
 
 #include "p2p/message.h"
 #include "p2p/protocol.h"
+#include "primitives/block.h"
+#include "primitives/transaction.h"
 
 #include <cassert>
 #include <cstring>
@@ -163,6 +165,116 @@ void TestNetworkMessageCreation() {
     std::cout << "  ✓ Passed (message creation)" << std::endl;
 }
 
+void TestAddrMessage() {
+    std::cout << "Test: Addr message" << std::endl;
+
+    AddrMessage addr_msg;
+    NetAddr addr1;
+    addr1.time = 123;
+    addr1.services = static_cast<uint64_t>(ServiceFlags::NODE_NETWORK);
+    std::memset(addr1.ip, 0, sizeof(addr1.ip));
+    addr1.ip[10] = 0xFF;
+    addr1.ip[11] = 0xFF;
+    addr1.ip[12] = 1;
+    addr1.ip[13] = 2;
+    addr1.ip[14] = 3;
+    addr1.ip[15] = 4;
+    addr1.port = 8333;
+    addr_msg.addresses.push_back(addr1);
+
+    auto bytes = addr_msg.Serialize();
+    auto parsed = AddrMessage::Deserialize(bytes.data(), bytes.size());
+    assert(parsed.has_value());
+    assert(parsed->addresses.size() == 1);
+    assert(parsed->addresses[0].time == 123);
+    assert(parsed->addresses[0].port == 8333);
+    assert(parsed->addresses[0].ip[15] == 4);
+
+    std::cout << "  ✓ Passed (addr message)" << std::endl;
+}
+
+void TestGetHeadersMessage() {
+    std::cout << "Test: GetHeaders message" << std::endl;
+
+    GetHeadersMessage get_headers;
+    get_headers.version = PROTOCOL_VERSION;
+
+    std::array<uint8_t, 32> locator1{};
+    locator1[0] = 0xAA;
+    std::array<uint8_t, 32> locator2{};
+    locator2[1] = 0xBB;
+    get_headers.block_locator_hashes.push_back(locator1);
+    get_headers.block_locator_hashes.push_back(locator2);
+    get_headers.hash_stop[31] = 0xCC;
+
+    auto bytes = get_headers.Serialize();
+    auto parsed = GetHeadersMessage::Deserialize(bytes.data(), bytes.size());
+    assert(parsed.has_value());
+    assert(parsed->version == PROTOCOL_VERSION);
+    assert(parsed->block_locator_hashes.size() == 2);
+    assert(parsed->block_locator_hashes[0][0] == 0xAA);
+    assert(parsed->block_locator_hashes[1][1] == 0xBB);
+    assert(parsed->hash_stop[31] == 0xCC);
+
+    std::cout << "  ✓ Passed (getheaders message)" << std::endl;
+}
+
+void TestHeadersMessage() {
+    std::cout << "Test: Headers message" << std::endl;
+
+    HeadersMessage headers;
+    parthenon::primitives::BlockHeader h1;
+    h1.version = 2;
+    h1.timestamp = 1000;
+    h1.bits = 0x1d00ffff;
+    h1.nonce = 42;
+    headers.headers.push_back(h1);
+
+    auto bytes = headers.Serialize();
+    auto parsed = HeadersMessage::Deserialize(bytes.data(), bytes.size());
+    assert(parsed.has_value());
+    assert(parsed->headers.size() == 1);
+    assert(parsed->headers[0].version == 2);
+    assert(parsed->headers[0].timestamp == 1000);
+    assert(parsed->headers[0].nonce == 42);
+
+    std::cout << "  ✓ Passed (headers message)" << std::endl;
+}
+
+void TestTxAndBlockMessages() {
+    std::cout << "Test: Tx and Block messages" << std::endl;
+
+    parthenon::primitives::Transaction tx;
+    tx.version = 1;
+    tx.locktime = 0;
+    parthenon::primitives::TxInput in;
+    in.prevout.vout = parthenon::primitives::COINBASE_VOUT_INDEX;
+    in.signature_script = {0x01};
+    tx.inputs.push_back(in);
+    tx.outputs.emplace_back(parthenon::primitives::AssetID::TALANTON, 50,
+                            std::vector<uint8_t>{0x51});
+
+    TxMessage tx_msg(tx);
+    auto tx_bytes = tx_msg.Serialize();
+    auto tx_parsed = TxMessage::Deserialize(tx_bytes.data(), tx_bytes.size());
+    assert(tx_parsed.has_value());
+    assert(tx_parsed->tx.version == tx.version);
+    assert(tx_parsed->tx.outputs.size() == 1);
+
+    parthenon::primitives::Block block;
+    block.transactions.push_back(tx);
+    block.header.merkle_root = block.CalculateMerkleRoot();
+
+    BlockMessage block_msg(block);
+    auto block_bytes = block_msg.Serialize();
+    auto block_parsed = BlockMessage::Deserialize(block_bytes.data(), block_bytes.size());
+    assert(block_parsed.has_value());
+    assert(block_parsed->block.transactions.size() == 1);
+    assert(block_parsed->block.header.merkle_root == block.header.merkle_root);
+
+    std::cout << "  ✓ Passed (tx/block messages)" << std::endl;
+}
+
 int main() {
     std::cout << "=== P2P Protocol Tests ===" << std::endl;
 
@@ -172,6 +284,10 @@ int main() {
     TestInvMessage();
     TestVersionMessage();
     TestNetworkMessageCreation();
+    TestAddrMessage();
+    TestGetHeadersMessage();
+    TestHeadersMessage();
+    TestTxAndBlockMessages();
 
     std::cout << "\n✓ All P2P tests passed!" << std::endl;
     return 0;
