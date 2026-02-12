@@ -160,6 +160,48 @@ static std::optional<uint64_t> ReadCompactSizeChecked(const uint8_t*& data, cons
     return size;
 }
 
+static std::optional<uint64_t> ReadCompactSizeChecked(const uint8_t*& data, const uint8_t* end) {
+    if (data >= end) {
+        return std::nullopt;
+    }
+
+    uint8_t first = *data++;
+    if (first < 253) {
+        return first;
+    }
+
+    if (first == 253) {
+        if (end - data < 2) {
+            return std::nullopt;
+        }
+        uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8);
+        data += 2;
+        return size;
+    }
+
+    if (first == 254) {
+        if (end - data < 4) {
+            return std::nullopt;
+        }
+        uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                        (static_cast<uint64_t>(data[2]) << 16) |
+                        (static_cast<uint64_t>(data[3]) << 24);
+        data += 4;
+        return size;
+    }
+
+    if (end - data < 8) {
+        return std::nullopt;
+    }
+
+    uint64_t size = 0;
+    for (int i = 0; i < 8; i++) {
+        size |= static_cast<uint64_t>(data[i]) << (8 * i);
+    }
+    data += 8;
+    return size;
+}
+
 // MessageHeader
 
 std::vector<uint8_t> MessageHeader::Serialize() const {

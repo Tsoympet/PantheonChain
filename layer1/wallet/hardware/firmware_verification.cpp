@@ -6,7 +6,55 @@
 #include "crypto/sha256.h"
 
 #include <algorithm>
+#include <array>
+#include <cctype>
 #include <ctime>
+#include <sstream>
+
+namespace {
+
+bool ParseSemVer(const std::string& version, std::array<int, 3>& out) {
+    std::stringstream ss(version);
+    std::string token;
+    int idx = 0;
+
+    while (std::getline(ss, token, '.')) {
+        if (idx >= 3 || token.empty() ||
+            !std::all_of(token.begin(), token.end(), [](unsigned char c) { return std::isdigit(c) != 0; })) {
+            return false;
+        }
+        out[idx++] = std::stoi(token);
+    }
+
+    if (idx != 3) {
+        return false;
+    }
+
+    return true;
+}
+
+int CompareSemVer(const std::string& lhs, const std::string& rhs) {
+    std::array<int, 3> l{0, 0, 0};
+    std::array<int, 3> r{0, 0, 0};
+
+    if (!ParseSemVer(lhs, l) || !ParseSemVer(rhs, r)) {
+        return 0;
+    }
+
+    for (int i = 0; i < 3; ++i) {
+        if (l[i] < r[i]) {
+            return -1;
+        }
+        if (l[i] > r[i]) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+}  // namespace
+
 
 namespace parthenon {
 namespace wallet {
@@ -129,10 +177,28 @@ bool FirmwareVerifier::VerifySignature(const std::vector<uint8_t>& firmware,
 std::optional<std::string>
 FirmwareVerifier::CheckLatestVersion(const std::string& vendor,
                                      const std::string& current_version) {
-    // In production, query remote API for latest version
-    // For now, return nullopt indicating current is latest
-    [[maybe_unused]] const std::string& v = vendor;
-    [[maybe_unused]] const std::string& cv = current_version;
+    std::string latest_version;
+    bool found = false;
+
+    for (const auto& [hash, info] : known_firmware_) {
+        (void)hash;
+        if (info.vendor != vendor) {
+            continue;
+        }
+
+        if (!found || CompareSemVer(info.version, latest_version) > 0) {
+            latest_version = info.version;
+            found = true;
+        }
+    }
+
+    if (!found) {
+        return std::nullopt;
+    }
+
+    if (CompareSemVer(latest_version, current_version) > 0) {
+        return latest_version;
+    }
 
     return std::nullopt;
 }
@@ -167,6 +233,17 @@ FirmwareVerifier::GetFirmwareInfo(const std::vector<uint8_t>& firmware_hash) {
         return std::nullopt;
     }
     return it->second;
+}
+
+std::optional<FirmwareInfo>
+FirmwareVerifier::GetFirmwareInfo(const std::string& vendor, const std::string& version) {
+    for (const auto& [hash, info] : known_firmware_) {
+        (void)hash;
+        if (info.vendor == vendor && info.version == version) {
+            return info;
+        }
+    }
+    return std::nullopt;
 }
 
 bool FirmwareVerifier::LoadVendorKeys([[maybe_unused]] const std::string& filename) {
@@ -217,11 +294,15 @@ FirmwareUpdateManager::CheckForUpdates(const std::string& vendor,
         return std::nullopt;
     }
 
-    // In production, fetch firmware info for latest version
-    FirmwareInfo info;
-    info.vendor = vendor;
-    info.version = *latest;
-    return info;
+    auto info = verifier_.GetFirmwareInfo(vendor, *latest);
+    if (info) {
+        return info;
+    }
+
+    FirmwareInfo fallback;
+    fallback.vendor = vendor;
+    fallback.version = *latest;
+    return fallback;
 }
 
 std::optional<std::vector<uint8_t>>

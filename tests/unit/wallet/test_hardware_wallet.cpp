@@ -111,6 +111,44 @@ void test_firmware_signature_verification() {
     std::cout << "✓ Firmware Schnorr signature verification tests passed\n";
 }
 
+
+void test_firmware_version_tracking() {
+    FirmwareVerifier verifier;
+
+    VendorKeys keys;
+    keys.vendor_name = "VersionVendor";
+    keys.public_keys.push_back(std::vector<uint8_t>(32, 0x11));
+    verifier.AddVendorKeys(keys);
+
+    FirmwareInfo v1;
+    v1.vendor = "VersionVendor";
+    v1.version = "1.0.0";
+    v1.hash = std::vector<uint8_t>(32, 0xA1);
+    verifier.AddKnownFirmware(v1);
+
+    FirmwareInfo v2;
+    v2.vendor = "VersionVendor";
+    v2.version = "1.2.0";
+    v2.hash = std::vector<uint8_t>(32, 0xA2);
+    verifier.AddKnownFirmware(v2);
+
+    auto latest_for_old = verifier.CheckLatestVersion("VersionVendor", "1.0.5");
+    assert(latest_for_old.has_value());
+    assert(*latest_for_old == "1.2.0");
+
+    auto latest_for_current = verifier.CheckLatestVersion("VersionVendor", "1.2.0");
+    assert(!latest_for_current.has_value());
+
+    auto not_found = verifier.CheckLatestVersion("UnknownVendor", "1.0.0");
+    assert(!not_found.has_value());
+
+    auto info = verifier.GetFirmwareInfo("VersionVendor", "1.2.0");
+    assert(info.has_value());
+    assert(info->hash == v2.hash);
+
+    std::cout << "✓ Firmware version tracking tests passed\n";
+}
+
 int main() {
     std::cout << "Running hardware wallet tests...\n\n";
 
@@ -118,6 +156,7 @@ int main() {
     test_derivation_path_construction();
     test_hardware_wallet_manager();
     test_firmware_signature_verification();
+    test_firmware_version_tracking();
 
     std::cout << "\nAll hardware wallet tests passed!\n";
     return 0;
