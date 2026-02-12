@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ParthenonChain Logo">
+  <!-- ParthenonChain Logo (refined, 5 columns + 5 chain blocks, clean & consistent) -->
+
+  <!-- Base platform -->
+  <rect x="96" y="404" width="320" height="22" rx="6" fill="#B08D57"/>
+  <rect x="80" y="428" width="352" height="16" rx="6" fill="#1F3A5F"/>
+
+  <!-- Temple -->
+  <!-- Columns (5) -->
+  <rect x="128" y="208" width="34" height="188" rx="9" fill="#1F3A5F"/>
+  <rect x="202" y="208" width="34" height="188" rx="9" fill="#1F3A5F"/>
+  <rect x="239" y="168" width="34" height="228" rx="9" fill="#1F3A5F"/>
+  <rect x="276" y="208" width="34" height="188" rx="9" fill="#1F3A5F"/>
+  <rect x="350" y="208" width="34" height="188" rx="9" fill="#1F3A5F"/>
+
+  <!-- Capitals -->
+  <rect x="120" y="188" width="50" height="18" rx="8" fill="#B08D57"/>
+  <rect x="194" y="188" width="50" height="18" rx="8" fill="#B08D57"/>
+  <rect x="231" y="148" width="50" height="18" rx="8" fill="#B08D57"/>
+  <rect x="268" y="188" width="50" height="18" rx="8" fill="#B08D57"/>
+  <rect x="342" y="188" width="50" height="18" rx="8" fill="#B08D57"/>
+
+  <!-- Architrave -->
+  <rect x="112" y="160" width="288" height="30" rx="8" fill="#B08D57"/>
+
+  <!-- Pediment -->
+  <path d="M256 70 L418 148 L94 148 Z" fill="#B08D57"/>
+
+  <!-- Blockchain element (5 linked squares) -->
+  <g fill="none" stroke="#B08D57" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="144" y="282" width="30" height="30" rx="7"/>
+    <rect x="196" y="282" width="30" height="30" rx="7"/>
+    <rect x="241" y="282" width="30" height="30" rx="7"/>
+    <rect x="286" y="282" width="30" height="30" rx="7"/>
+    <rect x="338" y="282" width="30" height="30" rx="7"/>
+
+    <!-- Connectors (visually centered) -->
+    <path d="M174 297 H196"/>
+    <path d="M226 297 H241"/>
+    <path d="M271 297 H286"/>
+    <path d="M316 297 H338"/>
+  </g>
+</svg>
+
