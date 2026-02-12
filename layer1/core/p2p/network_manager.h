@@ -113,7 +113,7 @@ class PeerConnection {
     std::string user_agent_;
 
     // Network magic
-    uint32_t network_magic_;
+    [[maybe_unused]] uint32_t network_magic_;
 
     // Send/receive buffers
     std::vector<uint8_t> recv_buffer_;
