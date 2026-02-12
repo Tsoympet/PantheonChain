@@ -58,6 +58,48 @@ static uint64_t ReadCompactSize(const uint8_t*& data) {
     }
 }
 
+static std::optional<uint64_t> ReadCompactSizeChecked(const uint8_t*& data, const uint8_t* end) {
+    if (data >= end) {
+        return std::nullopt;
+    }
+
+    uint8_t first = *data++;
+    if (first < 253) {
+        return first;
+    }
+
+    if (first == 253) {
+        if (end - data < 2) {
+            return std::nullopt;
+        }
+        uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8);
+        data += 2;
+        return size;
+    }
+
+    if (first == 254) {
+        if (end - data < 4) {
+            return std::nullopt;
+        }
+        uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+                        (static_cast<uint64_t>(data[2]) << 16) |
+                        (static_cast<uint64_t>(data[3]) << 24);
+        data += 4;
+        return size;
+    }
+
+    if (end - data < 8) {
+        return std::nullopt;
+    }
+
+    uint64_t size = 0;
+    for (int i = 0; i < 8; i++) {
+        size |= static_cast<uint64_t>(data[i]) << (8 * i);
+    }
+    data += 8;
+    return size;
+}
+
 // MessageHeader
 
 std::vector<uint8_t> MessageHeader::Serialize() const {
@@ -341,61 +383,224 @@ std::optional<InvMessage> InvMessage::Deserialize(const uint8_t* data, size_t le
 // AddrMessage
 
 std::vector<uint8_t> AddrMessage::Serialize() const {
-    throw std::logic_error("AddrMessage::Serialize not implemented");
+    std::vector<uint8_t> result;
+    WriteCompactSize(result, addresses.size());
+
+    for (const auto& addr : addresses) {
+        for (int i = 0; i < 4; i++) {
+            result.push_back(static_cast<uint8_t>(addr.time >> (8 * i)));
+        }
+        for (int i = 0; i < 8; i++) {
+            result.push_back(static_cast<uint8_t>(addr.services >> (8 * i)));
+        }
+        result.insert(result.end(), std::begin(addr.ip), std::end(addr.ip));
+        result.push_back(static_cast<uint8_t>(addr.port >> 8));
+        result.push_back(static_cast<uint8_t>(addr.port));
+    }
+
+    return result;
 }
 
 std::optional<AddrMessage> AddrMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("AddrMessage::Deserialize not implemented");
+    AddrMessage msg;
+    const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
+
+    auto count_opt = ReadCompactSizeChecked(ptr, end);
+    if (!count_opt) {
+        return std::nullopt;
+    }
+
+    const uint64_t count = *count_opt;
+    if (count > MAX_ADDR_TO_SEND) {
+        return std::nullopt;
+    }
+
+    for (uint64_t i = 0; i < count; ++i) {
+        if (end - ptr < 30) {
+            return std::nullopt;
+        }
+
+        NetAddr addr;
+        addr.time = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
+                    (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
+        ptr += 4;
+
+        addr.services = 0;
+        for (int j = 0; j < 8; ++j) {
+            addr.services |= static_cast<uint64_t>(ptr[j]) << (8 * j);
+        }
+        ptr += 8;
+
+        std::memcpy(addr.ip, ptr, 16);
+        ptr += 16;
+
+        addr.port = (static_cast<uint16_t>(ptr[0]) << 8) | static_cast<uint16_t>(ptr[1]);
+        ptr += 2;
+
+        msg.addresses.push_back(addr);
+    }
+
+    if (ptr != end) {
+        return std::nullopt;
+    }
+
+    return msg;
 }
 
 // BlockMessage
 
 std::vector<uint8_t> BlockMessage::Serialize() const {
-    throw std::logic_error("BlockMessage::Serialize not implemented");
+    return block.Serialize();
 }
 
 std::optional<BlockMessage> BlockMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("BlockMessage::Deserialize not implemented");
+    auto block_opt = primitives::Block::Deserialize(data, len);
+    if (!block_opt) {
+        return std::nullopt;
+    }
+
+    if (block_opt->Serialize().size() != len) {
+        return std::nullopt;
+    }
+
+    return BlockMessage(*block_opt);
 }
 
 // TxMessage
 
 std::vector<uint8_t> TxMessage::Serialize() const {
-    throw std::logic_error("TxMessage::Serialize not implemented");
+    return tx.Serialize();
 }
 
 std::optional<TxMessage> TxMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("TxMessage::Deserialize not implemented");
+    auto tx_opt = primitives::Transaction::Deserialize(data, len);
+    if (!tx_opt) {
+        return std::nullopt;
+    }
+
+    if (tx_opt->Serialize().size() != len) {
+        return std::nullopt;
+    }
+
+    return TxMessage(*tx_opt);
 }
 
 // GetHeadersMessage
 
 std::vector<uint8_t> GetHeadersMessage::Serialize() const {
-    throw std::logic_error("GetHeadersMessage::Serialize not implemented");
+    std::vector<uint8_t> result;
+
+    for (int i = 0; i < 4; ++i) {
+        result.push_back(static_cast<uint8_t>(version >> (8 * i)));
+    }
+
+    WriteCompactSize(result, block_locator_hashes.size());
+    for (const auto& hash : block_locator_hashes) {
+        result.insert(result.end(), hash.begin(), hash.end());
+    }
+
+    result.insert(result.end(), hash_stop.begin(), hash_stop.end());
+    return result;
 }
 
 std::optional<GetHeadersMessage> GetHeadersMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("GetHeadersMessage::Deserialize not implemented");
+    if (len < 37) {
+        return std::nullopt;
+    }
+
+    GetHeadersMessage msg;
+    const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
+
+    msg.version = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
+                  (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
+    ptr += 4;
+
+    auto count_opt = ReadCompactSizeChecked(ptr, end);
+    if (!count_opt) {
+        return std::nullopt;
+    }
+
+    const uint64_t count = *count_opt;
+    if (count > MAX_HEADERS_COUNT) {
+        return std::nullopt;
+    }
+
+    if (end - ptr < static_cast<std::ptrdiff_t>(count * 32 + 32)) {
+        return std::nullopt;
+    }
+
+    msg.block_locator_hashes.reserve(static_cast<size_t>(count));
+    for (uint64_t i = 0; i < count; ++i) {
+        std::array<uint8_t, 32> hash{};
+        std::copy(ptr, ptr + 32, hash.begin());
+        ptr += 32;
+        msg.block_locator_hashes.push_back(hash);
+    }
+
+    std::copy(ptr, ptr + 32, msg.hash_stop.begin());
+    ptr += 32;
+
+    if (ptr != end) {
+        return std::nullopt;
+    }
+
+    return msg;
 }
 
 // HeadersMessage
 
 std::vector<uint8_t> HeadersMessage::Serialize() const {
-    throw std::logic_error("HeadersMessage::Serialize not implemented");
+    std::vector<uint8_t> result;
+
+    WriteCompactSize(result, headers.size());
+    for (const auto& header : headers) {
+        auto header_bytes = header.Serialize();
+        result.insert(result.end(), header_bytes.begin(), header_bytes.end());
+        WriteCompactSize(result, 0);  // Per Bitcoin wire format: txn count follows each header
+    }
+
+    return result;
 }
 
 std::optional<HeadersMessage> HeadersMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("HeadersMessage::Deserialize not implemented");
+    HeadersMessage msg;
+    const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
+
+    auto count_opt = ReadCompactSizeChecked(ptr, end);
+    if (!count_opt) {
+        return std::nullopt;
+    }
+
+    const uint64_t count = *count_opt;
+    if (count > MAX_HEADERS_COUNT) {
+        return std::nullopt;
+    }
+
+    msg.headers.reserve(static_cast<size_t>(count));
+    for (uint64_t i = 0; i < count; ++i) {
+        if (end - ptr < 104) {
+            return std::nullopt;
+        }
+
+        auto header = primitives::BlockHeader::Deserialize(ptr);
+        ptr += 104;
+
+        auto tx_count_opt = ReadCompactSizeChecked(ptr, end);
+        if (!tx_count_opt || *tx_count_opt != 0) {
+            return std::nullopt;
+        }
+
+        msg.headers.push_back(header);
+    }
+
+    if (ptr != end) {
+        return std::nullopt;
+    }
+
+    return msg;
 }
 
 // Helper functions

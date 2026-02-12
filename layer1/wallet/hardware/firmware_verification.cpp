@@ -192,13 +192,19 @@ std::vector<uint8_t> FirmwareVerifier::ComputeHash(const std::vector<uint8_t>& d
 bool FirmwareVerifier::VerifySchnorrSignature(const std::vector<uint8_t>& message,
                                               const std::vector<uint8_t>& signature,
                                               const std::vector<uint8_t>& public_key) {
-    // In production, use actual Schnorr signature verification
-    // For now, simplified check
-    [[maybe_unused]] const std::vector<uint8_t>& m = message;
-    [[maybe_unused]] const std::vector<uint8_t>& s = signature;
-    [[maybe_unused]] const std::vector<uint8_t>& pk = public_key;
+    if (message.size() != crypto::Schnorr::PRIVATE_KEY_SIZE ||
+        signature.size() != crypto::Schnorr::SIGNATURE_SIZE ||
+        public_key.size() != crypto::Schnorr::PUBLIC_KEY_SIZE) {
+        return false;
+    }
 
-    return signature.size() == 64 && public_key.size() == 32;
+    crypto::Schnorr::PublicKey schnorr_pubkey{};
+    std::copy(public_key.begin(), public_key.end(), schnorr_pubkey.begin());
+
+    crypto::Schnorr::Signature schnorr_signature{};
+    std::copy(signature.begin(), signature.end(), schnorr_signature.begin());
+
+    return crypto::Schnorr::Verify(schnorr_pubkey, message.data(), schnorr_signature);
 }
 
 // FirmwareUpdateManager implementation
