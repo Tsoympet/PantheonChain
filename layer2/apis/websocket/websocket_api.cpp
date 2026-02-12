@@ -12,6 +12,7 @@
 #include <optional>
 
 namespace {
+// Placeholder transport hook until a real WebSocket backend is wired in.
 void websocket_send(void* connection, const std::string& message) {
     (void)connection;
     (void)message;
