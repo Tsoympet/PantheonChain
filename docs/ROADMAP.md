@@ -35,6 +35,8 @@
 ✅ Interplanetary File System (IPFS) integration  
 ✅ Machine learning on-chain verification  
 
+Implementation note: features listed above are included across core and optional modules; some components may be experimental or require additional configuration. See [docs/ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) and [docs/RELEASES.md](RELEASES.md) for implementation details.
+
 **🎉 Feature Complete - All planned features implemented! 🎉**
 
 ## Future Possibilities
