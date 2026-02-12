@@ -203,15 +203,8 @@ Or in README files:
 
 ## Current Status
 
-🟡 **Screenshots Pending** - This directory structure is ready, but actual screenshots need to be captured by running the desktop wallet application with a display environment.
-
-To contribute screenshots:
-1. Build and run the desktop wallet on your system
-2. Capture screenshots following the guidelines above
-3. Place them in this directory
-4. Update this README to mark screenshots as complete (✅)
-5. Submit a pull request
+🟡 **Partially Complete** - `overview.png` exists, while the remaining expected desktop screenshots still need to be captured and added through a binary-capable workflow.
 
 ---
 
-**Note**: Screenshots should be captured with the RPC server running and the wallet connected to show realistic data. You can use testnet or regtest mode with sample data for demonstration purposes.
+**Note**: Binary screenshot files are not added in this change-set because this contribution flow does not support binary attachments.
