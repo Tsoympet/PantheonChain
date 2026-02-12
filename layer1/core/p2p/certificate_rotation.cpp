@@ -41,7 +41,7 @@ bool CertificateRotation::Init(const std::string& cert_dir, uint32_t check_inter
     }
 
     std::cout << "Certificate loaded: " << current_cert_.subject << "\n";
-    std::cout << "Valid until: " << FormatTime(current_cert_.valid_until);
+    std::cout << "Valid until: " << FormatTime(current_cert_.valid_until) << "\n";
 
     if (current_cert_.IsExpired()) {
         std::cerr << "WARNING: Certificate is already expired!\n";
@@ -110,7 +110,7 @@ bool CertificateRotation::CheckAndRotate() {
 
         if (LoadCertificate(cert_path, key_path)) {
             std::cout << "Certificate rotated successfully\n";
-            std::cout << "New validity: " << FormatTime(current_cert_.valid_until);
+            std::cout << "New validity: " << FormatTime(current_cert_.valid_until) << "\n";
 
             if (callback_) {
                 callback_(current_cert_);
@@ -251,7 +251,11 @@ static time_t ASN1_TIME_to_time_t(const ASN1_TIME* time) {
         return 0;
     }
 
-    return mktime(&t);
+#if defined(_WIN32)
+    return _mkgmtime(&t);
+#else
+    return timegm(&t);
+#endif
 }
 
 static std::string FormatTime(time_t time_value) {
@@ -265,7 +269,7 @@ static std::string FormatTime(time_t time_value) {
     if (std::strftime(buffer, sizeof(buffer), "%c", &tm_snapshot) == 0) {
         return {};
     }
-    return std::string(buffer) + "\n";
+    return std::string(buffer);
 }
 
 }  // namespace p2p
