@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <stdexcept>
 #include <thread>
 
 namespace parthenon {
@@ -35,7 +36,7 @@ Node::~Node() {
 }
 
 bool Node::Start() {
-    if (running_) {
+    if (running_.load()) {
         return false;
     }
 
@@ -99,19 +100,19 @@ bool Node::Start() {
     std::cout << "Querying DNS seeds for peers..." << std::endl;
     network_->QueryDNSSeeds();
 
+    running_.store(true);
+    is_syncing_.store(true);
+
     // Start sync loop in background thread
     std::cout << "Starting background sync thread" << std::endl;
     sync_thread_ = std::thread(&Node::SyncLoop, this);
-
-    running_ = true;
-    is_syncing_ = true;
 
     std::cout << "Node started successfully" << std::endl;
     return true;
 }
 
 void Node::Stop() {
-    if (!running_) {
+    if (!running_.load()) {
         return;
     }
 
@@ -123,7 +124,7 @@ void Node::Stop() {
     }
 
     // Stop sync thread
-    is_syncing_ = false;
+    is_syncing_.store(false);
     if (sync_thread_.joinable()) {
         sync_thread_.join();
     }
@@ -142,14 +143,14 @@ void Node::Stop() {
     block_storage_->Close();
     utxo_storage_->Close();
 
-    running_ = false;
+    running_.store(false);
 
     std::cout << "Node stopped" << std::endl;
 }
 
 SyncStatus Node::GetSyncStatus() const {
     SyncStatus status;
-    status.is_syncing = is_syncing_;
+    status.is_syncing = is_syncing_.load();
     status.current_height = GetHeight();
     status.target_height = sync_target_height_;
 
@@ -184,7 +185,7 @@ void Node::AddPeer(const std::string& address, uint16_t port) {
     PeerInfo info;
     info.address = address;
     info.port = port;
-    info.version = 1;
+    info.version = kDefaultPeerVersion;
     info.height = 0;
     info.is_connected = false;
     info.last_seen = 0;
@@ -192,7 +193,7 @@ void Node::AddPeer(const std::string& address, uint16_t port) {
     peers_[peer_id] = info;
 
     // Initiate connection to peer via network manager
-    if (network_ && running_) {
+    if (network_ && running_.load()) {
         network_->AddPeer(address, port);
         std::cout << "Connecting to peer: " << peer_id << std::endl;
     } else {
@@ -210,7 +211,7 @@ bool Node::ProcessBlock(const primitives::Block& block, const std::string& peer_
     // Update sync status
     uint32_t block_height = GetHeight();
     if (block_height >= sync_target_height_) {
-        is_syncing_ = false;
+        is_syncing_.store(false);
     }
 
     // Update wallet if attached
@@ -299,7 +300,7 @@ void Node::OnNewTransaction(std::function<void(const primitives::Transaction&)> 
 void Node::SyncLoop() {
     std::cout << "Starting sync loop..." << std::endl;
 
-    while (is_syncing_ && running_) {
+    while (is_syncing_.load() && running_.load()) {
         uint32_t current_height = GetHeight();
 
         // Get connected peers
@@ -325,7 +326,7 @@ void Node::SyncLoop() {
         } else {
             // Caught up or no target set
             if (sync_target_height_ > 0) {
-                is_syncing_ = false;
+                is_syncing_.store(false);
                 std::cout << "Sync complete at height " << current_height << std::endl;
             } else {
                 // No target yet, query peers for their heights
@@ -349,6 +350,12 @@ void Node::RequestBlocks(const std::string& peer_id, uint32_t start_height, uint
 bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     // Validate block structure
     if (!block.IsValid()) {
+        return false;
+    }
+
+    if (!chain_state_.ValidateBlock(block)) {
+        std::cerr << "Block failed chain state validation at height " << (GetHeight() + 1)
+                  << std::endl;
         return false;
     }
 
@@ -383,6 +390,11 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     chainstate::BlockUndo undo;
     if (!chain_->ConnectBlock(block, undo)) {
         return false;
+    }
+
+    if (!chain_state_.ApplyBlock(block)) {
+        std::cerr << "Warning: failed to update mining chain state at height " << GetHeight()
+                  << "; mining height may be stale" << std::endl;
     }
 
     // Store block to disk
@@ -421,6 +433,52 @@ void Node::BroadcastTransaction(const primitives::Transaction& tx) {
 
 void Node::HandleNewPeer(const std::string& peer_id) {
     std::cout << "New peer connected: " << peer_id << std::endl;
+    auto colon_pos = peer_id.find(':');
+    std::string address = peer_id;
+    uint16_t port = 0;
+    if (colon_pos != std::string::npos) {
+        address = peer_id.substr(0, colon_pos);
+        auto port_str = peer_id.substr(colon_pos + 1);
+        bool port_valid = false;
+        if (!port_str.empty()) {
+            try {
+                auto parsed_value = std::stoul(port_str);
+                if (parsed_value > 0 && parsed_value <= 65535) {
+                    port = static_cast<uint16_t>(parsed_value);
+                    port_valid = true;
+                }
+            } catch (const std::invalid_argument&) {
+                port_valid = false;
+            } catch (const std::out_of_range&) {
+                port_valid = false;
+            }
+        }
+
+        if (!port_valid) {
+            std::cerr << "Invalid peer port '" << port_str << "' for peer: " << peer_id
+                      << std::endl;
+            port = 0;
+        }
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto last_seen = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count());
+
+    auto it = peers_.find(peer_id);
+    if (it == peers_.end()) {
+        PeerInfo info;
+        info.address = address;
+        info.port = port;
+        info.version = kDefaultPeerVersion;
+        info.height = 0;
+        info.is_connected = true;
+        info.last_seen = last_seen;
+        peers_[peer_id] = info;
+    } else {
+        it->second.is_connected = true;
+        it->second.last_seen = last_seen;
+    }
     // Update sync target based on peer height
     // In production: Query peer for their best block height
 }
@@ -429,11 +487,8 @@ void Node::HandleBlockReceived(const std::string& peer_id, const primitives::Blo
     std::cout << "Received block from " << peer_id << std::endl;
 
     // Process the block
-    if (ProcessBlock(block, peer_id)) {
-        // Notify callbacks
-        for (const auto& callback : block_callbacks_) {
-            callback(block);
-        }
+    if (!ProcessBlock(block, peer_id)) {
+        return;
     }
 }
 
@@ -441,11 +496,8 @@ void Node::HandleTxReceived(const std::string& peer_id, const primitives::Transa
     std::cout << "Received transaction from " << peer_id << std::endl;
 
     // Submit to mempool
-    if (SubmitTransaction(tx)) {
-        // Notify callbacks
-        for (const auto& callback : tx_callbacks_) {
-            callback(tx);
-        }
+    if (!SubmitTransaction(tx)) {
+        return;
     }
 }
 
@@ -527,16 +579,12 @@ void Node::StartMining(const std::vector<uint8_t>& coinbase_pubkey, size_t num_t
             num_threads = 1;
     }
 
-    // Note: Miner initialization would require passing chainstate
-    // For now, mining is not fully integrated with the node
-    // TODO: Create miner with proper chainstate reference
-    // miner_ = std::make_unique<mining::Miner>(chainstate, coinbase_pubkey);
+    miner_ = std::make_unique<mining::Miner>(chain_state_, coinbase_pubkey_);
 
     is_mining_ = true;
     total_hashes_ = 0;
 
     std::cout << "Starting mining with " << num_threads << " threads" << std::endl;
-    std::cout << "NOTE: Mining integration with node is pending full implementation" << std::endl;
 
     // Start mining threads
     for (size_t i = 0; i < num_threads; ++i) {
@@ -642,7 +690,7 @@ void Node::AttachWallet(std::shared_ptr<wallet::Wallet> wallet) {
     std::cout << "Wallet attached to node" << std::endl;
 
     // Sync wallet with current chain state if node is running
-    if (running_ && wallet_) {
+    if (running_.load() && wallet_) {
         std::cout << "Syncing wallet with blockchain..." << std::endl;
         SyncWalletWithChain();
     }
