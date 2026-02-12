@@ -8,9 +8,9 @@ ParthenonChain uses a **multi-asset UTXO model** with three native tokens. Each 
 
 | Token | Symbol | Max Supply | Block Reward Schedule | Primary Use |
 |-------|--------|------------|----------------------|-------------|
-| Talanton | TAL | 21,000,000 | Bitcoin-like halving | Store of value, mining rewards |
-| Drachma | DRA | 41,000,000 | Linear decrease | Medium of exchange |
-| Obolos | OBL | 61,000,000 | Exponential decay | Smart contract gas, DRM fees |
+| TALANTON | TAL | 21,000,000 | Bitcoin-like halving | Store of value, mining rewards |
+| DRACHMA | DRA | 41,000,000 | Linear decrease | Medium of exchange |
+| OBOLOS | OBL | 61,000,000 | Exponential decay | Smart contract gas, DRM fees |
 
 ## Issuance Schedule
 
