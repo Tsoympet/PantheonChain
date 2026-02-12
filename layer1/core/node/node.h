@@ -79,7 +79,7 @@ class Node {
     /**
      * Check if node is running
      */
-    bool IsRunning() const { return running_; }
+    bool IsRunning() const { return running_.load(); }
 
     /**
      * Get current synchronization status
@@ -196,7 +196,7 @@ class Node {
 
     std::string data_dir_;
     uint16_t port_;
-    bool running_;
+    std::atomic<bool> running_;
 
     // Core components
     std::unique_ptr<chainstate::Chain> chain_;
@@ -208,7 +208,7 @@ class Node {
     std::map<std::string, PeerInfo> peers_;
 
     // Synchronization state
-    bool is_syncing_;
+    std::atomic<bool> is_syncing_;
     uint32_t sync_target_height_;
     std::thread sync_thread_;
 

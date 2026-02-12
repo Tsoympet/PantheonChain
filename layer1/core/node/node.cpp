@@ -36,7 +36,7 @@ Node::~Node() {
 }
 
 bool Node::Start() {
-    if (running_) {
+    if (running_.load()) {
         return false;
     }
 
@@ -100,8 +100,8 @@ bool Node::Start() {
     std::cout << "Querying DNS seeds for peers..." << std::endl;
     network_->QueryDNSSeeds();
 
-    running_ = true;
-    is_syncing_ = true;
+    running_.store(true);
+    is_syncing_.store(true);
 
     // Start sync loop in background thread
     std::cout << "Starting background sync thread" << std::endl;
@@ -112,7 +112,7 @@ bool Node::Start() {
 }
 
 void Node::Stop() {
-    if (!running_) {
+    if (!running_.load()) {
         return;
     }
 
@@ -124,7 +124,7 @@ void Node::Stop() {
     }
 
     // Stop sync thread
-    is_syncing_ = false;
+    is_syncing_.store(false);
     if (sync_thread_.joinable()) {
         sync_thread_.join();
     }
@@ -143,14 +143,14 @@ void Node::Stop() {
     block_storage_->Close();
     utxo_storage_->Close();
 
-    running_ = false;
+    running_.store(false);
 
     std::cout << "Node stopped" << std::endl;
 }
 
 SyncStatus Node::GetSyncStatus() const {
     SyncStatus status;
-    status.is_syncing = is_syncing_;
+    status.is_syncing = is_syncing_.load();
     status.current_height = GetHeight();
     status.target_height = sync_target_height_;
 
@@ -193,7 +193,7 @@ void Node::AddPeer(const std::string& address, uint16_t port) {
     peers_[peer_id] = info;
 
     // Initiate connection to peer via network manager
-    if (network_ && running_) {
+    if (network_ && running_.load()) {
         network_->AddPeer(address, port);
         std::cout << "Connecting to peer: " << peer_id << std::endl;
     } else {
@@ -211,7 +211,7 @@ bool Node::ProcessBlock(const primitives::Block& block, const std::string& peer_
     // Update sync status
     uint32_t block_height = GetHeight();
     if (block_height >= sync_target_height_) {
-        is_syncing_ = false;
+        is_syncing_.store(false);
     }
 
     // Update wallet if attached
@@ -300,7 +300,7 @@ void Node::OnNewTransaction(std::function<void(const primitives::Transaction&)> 
 void Node::SyncLoop() {
     std::cout << "Starting sync loop..." << std::endl;
 
-    while (is_syncing_ && running_) {
+    while (is_syncing_.load() && running_.load()) {
         uint32_t current_height = GetHeight();
 
         // Get connected peers
@@ -326,7 +326,7 @@ void Node::SyncLoop() {
         } else {
             // Caught up or no target set
             if (sync_target_height_ > 0) {
-                is_syncing_ = false;
+                is_syncing_.store(false);
                 std::cout << "Sync complete at height " << current_height << std::endl;
             } else {
                 // No target yet, query peers for their heights
@@ -692,7 +692,7 @@ void Node::AttachWallet(std::shared_ptr<wallet::Wallet> wallet) {
     std::cout << "Wallet attached to node" << std::endl;
 
     // Sync wallet with current chain state if node is running
-    if (running_ && wallet_) {
+    if (running_.load() && wallet_) {
         std::cout << "Syncing wallet with blockchain..." << std::endl;
         SyncWalletWithChain();
     }
