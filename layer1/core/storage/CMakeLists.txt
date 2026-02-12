@@ -10,8 +10,17 @@ target_include_directories(parthenon_storage PUBLIC
     ${CMAKE_SOURCE_DIR}/layer1
 )
 
+if(TARGET leveldb)
+    target_include_directories(parthenon_storage PUBLIC
+        $<TARGET_PROPERTY:leveldb,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+endif()
+
 target_link_libraries(parthenon_storage PUBLIC
     parthenon_primitives
     parthenon_chainstate
+)
+
+target_link_libraries(parthenon_storage PRIVATE
     leveldb
 )

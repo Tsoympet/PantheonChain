@@ -69,7 +69,9 @@ bool PeerConnection::Connect() {
             return false;
         }
 
-        int result = connect(socket_fd_, (struct sockaddr*)&server_addr, sizeof(server_addr));
+        int result = connect(socket_fd_,
+                             reinterpret_cast<struct sockaddr*>(&server_addr),
+                             sizeof(server_addr));
         if (result < 0 && errno != EINPROGRESS) {
             std::cerr << "Failed to connect to " << address_ << ":" << port_ << std::endl;
             close(socket_fd_);
@@ -382,7 +384,7 @@ bool NetworkManager::CreateListenSocket() {
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(listen_port_);
 
-    if (bind(listen_socket_, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+    if (bind(listen_socket_, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
         close(listen_socket_);
         listen_socket_ = -1;
         return false;
@@ -403,7 +405,8 @@ void NetworkManager::AcceptLoop() {
         struct sockaddr_in client_addr {};
         socklen_t addr_len = sizeof(client_addr);
 
-        int client_socket = accept(listen_socket_, (struct sockaddr*)&client_addr, &addr_len);
+        int client_socket =
+            accept(listen_socket_, reinterpret_cast<struct sockaddr*>(&client_addr), &addr_len);
         if (client_socket < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -638,7 +641,8 @@ void NetworkManager::QueryDNSSeeds() {
         if (getaddrinfo(seed.hostname.c_str(), nullptr, &hints, &result) == 0) {
             for (struct addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
                 if (rp->ai_family == AF_INET) {
-                    struct sockaddr_in* ipv4 = (struct sockaddr_in*)rp->ai_addr;
+                    struct sockaddr_in* ipv4 =
+                        reinterpret_cast<struct sockaddr_in*>(rp->ai_addr);
                     char addr_str[INET_ADDRSTRLEN];
                     inet_ntop(AF_INET, &ipv4->sin_addr, addr_str, INET_ADDRSTRLEN);
                     AddPeer(addr_str, seed.default_port);
