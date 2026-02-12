@@ -113,7 +113,7 @@ class PeerConnection {
     uint64_t nonce_;
     std::string user_agent_;
 
-    // Network magic (reserved for future peer configuration; TODO: wire into peer setup)
+    // Network magic for message header creation and validation
     uint32_t network_magic_;
 
     // Send/receive buffers
