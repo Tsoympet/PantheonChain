@@ -120,7 +120,7 @@ jobs:
 
         foreach ($package in $packages) {
           if (-not (Get-Command $package.Command -ErrorAction SilentlyContinue)) {
-            choco install $package.Name -y --no-progress
+            choco install $package.Name -y
           }
           else {
             Write-Host "$($package.Command) already available; skipping Chocolatey install."
