@@ -1,38 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Linux Installer Icon -->
-  <!-- Design: Temple with package box (DEB/RPM) -->
-  
-  <defs>
-    <style>
-      .primary { fill: #1F3A5F; }
-      .accent { fill: #B08D57; }
-    </style>
-  </defs>
-  
-  <!-- Package box (3D projection) -->
-  <path d="M 64 80 L 128 48 L 192 80 L 192 176 L 128 208 L 64 176 Z" 
-        fill="none" stroke="#1F3A5F" stroke-width="4"/>
-  
-  <!-- Box center line -->
-  <line x1="128" y1="48" x2="128" y2="208" stroke="#1F3A5F" stroke-width="2"/>
-  <line x1="64" y1="80" x2="128" y2="112" stroke="#1F3A5F" stroke-width="2"/>
-  <line x1="192" y1="80" x2="128" y2="112" stroke="#1F3A5F" stroke-width="2"/>
-  
-  <!-- Temple icon on package face -->
-  <g transform="translate(128, 144)">
-    <!-- Base -->
-    <rect x="-24" y="24" width="48" height="4" class="accent"/>
-    
-    <!-- Three columns -->
-    <rect x="-16" y="4" width="6" height="20" class="primary"/>
-    <rect x="-3" y="4" width="6" height="20" class="primary"/>
-    <rect x="10" y="4" width="6" height="20" class="primary"/>
-    
-    <!-- Architrave -->
-    <rect x="-20" y="0" width="40" height="4" class="accent"/>
-    
-    <!-- Pediment -->
-    <path d="M 0 -12 L 24 0 L -24 0 Z" class="accent"/>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parthenon Linux Installer Icon">
+  <!-- Parthenon Linux Installer: package box + temple mark + terminal glyph (>_) -->
+
+  <!-- Package box outline -->
+  <path d="M64 86 L128 52 L192 86 V170 L128 204 L64 170 Z"
+        fill="none"
+        stroke="#1F3A5F"
+        stroke-width="6"
+        stroke-linejoin="round"/>
+
+  <!-- Seams -->
+  <path d="M128 52 V204" fill="none" stroke="#1F3A5F" stroke-width="4" stroke-linecap="round"/>
+  <path d="M64 86 L128 118 L192 86" fill="none" stroke="#1F3A5F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Top-face terminal glyph (>_) to signal Linux/CLI ecosystem -->
+  <g transform="translate(128 96)">
+    <!-- chevron -->
+    <path d="M-34 -10 L-22 0 L-34 10"
+          fill="none"
+          stroke="#B08D57"
+          stroke-width="6"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    <!-- underscore -->
+    <rect x="-6" y="8" width="26" height="6" rx="3" fill="#B08D57"/>
+  </g>
+
+  <!-- Temple mark on front face -->
+  <g transform="translate(128 152)">
+    <path d="M0 -30 L40 -8 L-40 -8 Z" fill="#B08D57"/>
+    <rect x="-42" y="-8" width="84" height="10" rx="5" fill="#B08D57"/>
+    <rect x="-34" y="4" width="68" height="8" rx="4" fill="#B08D57"/>
+
+    <rect x="-26" y="14" width="12" height="34" rx="6" fill="#1F3A5F"/>
+    <rect x="-6"  y="14" width="12" height="34" rx="6" fill="#1F3A5F"/>
+    <rect x="14"  y="14" width="12" height="34" rx="6" fill="#1F3A5F"/>
+
+    <rect x="-30" y="10" width="20" height="8" rx="4" fill="#B08D57"/>
+    <rect x="-10" y="10" width="20" height="8" rx="4" fill="#B08D57"/>
+    <rect x="10"  y="10" width="20" height="8" rx="4" fill="#B08D57"/>
+
+    <rect x="-46" y="50" width="92" height="10" rx="5" fill="#B08D57"/>
   </g>
 </svg>
