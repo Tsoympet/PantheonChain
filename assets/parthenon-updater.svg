@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parthenon Updater Icon">
+  <!-- Circular update arrows -->
+  <g fill="none" stroke="#1F3A5F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M196 92a76 76 0 0 0-128-24"/>
+    <path d="M60 68v28h28"/>
+    <path d="M60 164a76 76 0 0 0 128 24"/>
+    <path d="M196 188v-28h-28"/>
+  </g>
+
+  <!-- Temple mark (centered, consistent geometry) -->
+  <g transform="translate(128 136)">
+    <!-- Pediment -->
+    <path d="M0 -42 L54 -12 L-54 -12 Z" fill="#B08D57"/>
+
+    <!-- Entablature -->
+    <rect x="-56" y="-12" width="112" height="12" rx="6" fill="#B08D57"/>
+    <rect x="-46" y="2" width="92" height="10" rx="5" fill="#B08D57"/>
+
+    <!-- Columns -->
+    <rect x="-34" y="14" width="14" height="48" rx="7" fill="#1F3A5F"/>
+    <rect x="-7"  y="14" width="14" height="48" rx="7" fill="#1F3A5F"/>
+    <rect x="20"  y="14" width="14" height="48" rx="7" fill="#1F3A5F"/>
+
+    <!-- Capitals -->
+    <rect x="-40" y="8" width="24" height="8" rx="4" fill="#B08D57"/>
+    <rect x="-13" y="8" width="24" height="8" rx="4" fill="#B08D57"/>
+    <rect x="14"  y="8" width="24" height="8" rx="4" fill="#B08D57"/>
+
+    <!-- Base -->
+    <rect x="-60" y="66" width="120" height="12" rx="6" fill="#B08D57"/>
+  </g>
+</svg>
