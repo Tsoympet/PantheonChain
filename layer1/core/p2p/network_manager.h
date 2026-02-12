@@ -43,7 +43,8 @@ enum class PeerState { CONNECTING, HANDSHAKE, CONNECTED, DISCONNECTED, BANNED };
  */
 class PeerConnection {
   public:
-    PeerConnection(int socket_fd, const std::string& address, uint16_t port);
+    PeerConnection(int socket_fd, const std::string& address, uint16_t port,
+                   uint32_t network_magic);
     ~PeerConnection();
 
     // Connection management
