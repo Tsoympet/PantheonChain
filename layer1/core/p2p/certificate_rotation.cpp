@@ -5,6 +5,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <ctime>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
@@ -14,7 +15,8 @@ namespace parthenon {
 namespace p2p {
 
 // Forward declaration of helper function
-static time_t ASN1_TIME_to_time_t(ASN1_TIME* time);
+static time_t ASN1_TIME_to_time_t(const ASN1_TIME* time);
+static std::string FormatTime(time_t time_value);
 
 bool CertificateInfo::IsExpired() const {
     return std::time(nullptr) >= valid_until;
@@ -39,7 +41,7 @@ bool CertificateRotation::Init(const std::string& cert_dir, uint32_t check_inter
     }
 
     std::cout << "Certificate loaded: " << current_cert_.subject << "\n";
-    std::cout << "Valid until: " << std::ctime(&current_cert_.valid_until);
+    std::cout << "Valid until: " << FormatTime(current_cert_.valid_until);
 
     if (current_cert_.IsExpired()) {
         std::cerr << "WARNING: Certificate is already expired!\n";
@@ -108,7 +110,7 @@ bool CertificateRotation::CheckAndRotate() {
 
         if (LoadCertificate(cert_path, key_path)) {
             std::cout << "Certificate rotated successfully\n";
-            std::cout << "New validity: " << std::ctime(&current_cert_.valid_until);
+            std::cout << "New validity: " << FormatTime(current_cert_.valid_until);
 
             if (callback_) {
                 callback_(current_cert_);
@@ -239,38 +241,31 @@ bool CertificateRotation::LoadCertificate(const std::string& cert_path,
 }
 
 // Helper function to convert ASN1_TIME to time_t
-static time_t ASN1_TIME_to_time_t(ASN1_TIME* time) {
-    struct tm t;
-    const char* str = (const char*)time->data;
-    size_t i = 0;
-
-    memset(&t, 0, sizeof(t));
-
-    if (time->type == V_ASN1_UTCTIME) {
-        t.tm_year = (str[i++] - '0') * 10;
-        t.tm_year += (str[i++] - '0');
-        if (t.tm_year < 70)
-            t.tm_year += 100;
-    } else if (time->type == V_ASN1_GENERALIZEDTIME) {
-        t.tm_year = (str[i++] - '0') * 1000;
-        t.tm_year += (str[i++] - '0') * 100;
-        t.tm_year += (str[i++] - '0') * 10;
-        t.tm_year += (str[i++] - '0');
-        t.tm_year -= 1900;
+static time_t ASN1_TIME_to_time_t(const ASN1_TIME* time) {
+    if (!time) {
+        return 0;
     }
 
-    t.tm_mon = (str[i++] - '0') * 10;
-    t.tm_mon += (str[i++] - '0') - 1;
-    t.tm_mday = (str[i++] - '0') * 10;
-    t.tm_mday += (str[i++] - '0');
-    t.tm_hour = (str[i++] - '0') * 10;
-    t.tm_hour += (str[i++] - '0');
-    t.tm_min = (str[i++] - '0') * 10;
-    t.tm_min += (str[i++] - '0');
-    t.tm_sec = (str[i++] - '0') * 10;
-    t.tm_sec += (str[i++] - '0');
+    std::tm t {};
+    if (ASN1_TIME_to_tm(time, &t) != 1) {
+        return 0;
+    }
 
     return mktime(&t);
+}
+
+static std::string FormatTime(time_t time_value) {
+    std::tm tm_snapshot {};
+#if defined(_WIN32)
+    localtime_s(&tm_snapshot, &time_value);
+#else
+    localtime_r(&time_value, &tm_snapshot);
+#endif
+    char buffer[64];
+    if (std::strftime(buffer, sizeof(buffer), "%c", &tm_snapshot) == 0) {
+        return {};
+    }
+    return std::string(buffer) + "\n";
 }
 
 }  // namespace p2p
