@@ -1,49 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- ParthenonChain Network Symbol -->
-  <!-- Design: Simplified Parthenon temple as geometric abstraction -->
-  <!-- Following ancient Greek geometric principles -->
-  
-  <defs>
-    <style>
-      .primary { fill: #1F3A5F; }
-      .secondary { fill: #B08D57; }
-    </style>
-  </defs>
-  
-  <!-- Background: transparent -->
-  
-  <!-- Base platform (foundation) -->
-  <rect x="32" y="200" width="192" height="12" class="secondary"/>
-  
-  <!-- Five Doric columns (simplified vertical bars) -->
-  <!-- Using 1:2:3 proportional system -->
-  <rect x="48" y="92" width="16" height="108" class="primary"/>
-  <rect x="88" y="92" width="16" height="108" class="primary"/>
-  <rect x="128" y="72" width="16" height="128" class="primary"/>
-  <rect x="168" y="92" width="16" height="108" class="primary"/>
-  <rect x="208" y="92" width="16" height="108" class="primary"/>
-  
-  <!-- Column capitals (simplified) -->
-  <rect x="44" y="84" width="24" height="8" class="secondary"/>
-  <rect x="84" y="84" width="24" height="8" class="secondary"/>
-  <rect x="124" y="64" width="24" height="8" class="secondary"/>
-  <rect x="164" y="84" width="24" height="8" class="secondary"/>
-  <rect x="204" y="84" width="24" height="8" class="secondary"/>
-  
-  <!-- Architrave (horizontal beam connecting columns) -->
-  <rect x="40" y="72" width="184" height="12" class="secondary"/>
-  
-  <!-- Pediment (triangular top) - pure geometric triangle -->
-  <path d="M 128 32 L 232 64 L 24 64 Z" class="secondary"/>
-  
-  <!-- Abstract blockchain element: three linked squares in center -->
-  <g opacity="0.9">
-    <rect x="80" y="140" width="20" height="20" fill="none" stroke="#B08D57" stroke-width="2"/>
-    <rect x="118" y="140" width="20" height="20" fill="none" stroke="#B08D57" stroke-width="2"/>
-    <rect x="156" y="140" width="20" height="20" fill="none" stroke="#B08D57" stroke-width="2"/>
-    <!-- Links -->
-    <line x1="100" y1="150" x2="118" y2="150" stroke="#B08D57" stroke-width="2"/>
-    <line x1="138" y1="150" x2="156" y2="150" stroke="#B08D57" stroke-width="2"/>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ParthenonChain Symbol">
+  <!-- Base -->
+  <rect x="32" y="204" width="192" height="14" rx="7" fill="#B08D57"/>
+
+  <!-- Temple -->
+  <!-- Pediment -->
+  <path d="M128 34 L228 68 L28 68 Z" fill="#B08D57"/>
+
+  <!-- Entablature -->
+  <rect x="40" y="72" width="176" height="14" rx="7" fill="#B08D57"/>
+  <rect x="52" y="90" width="152" height="12" rx="6" fill="#B08D57"/>
+
+  <!-- Columns (5) -->
+  <rect x="48"  y="104" width="18" height="100" rx="9" fill="#1F3A5F"/>
+  <rect x="88"  y="104" width="18" height="100" rx="9" fill="#1F3A5F"/>
+  <rect x="128" y="88"  width="18" height="116" rx="9" fill="#1F3A5F"/>
+  <rect x="168" y="104" width="18" height="100" rx="9" fill="#1F3A5F"/>
+  <rect x="208" y="104" width="18" height="100" rx="9" fill="#1F3A5F"/>
+
+  <!-- Capitals -->
+  <rect x="42"  y="96" width="30" height="10" rx="5" fill="#B08D57"/>
+  <rect x="82"  y="96" width="30" height="10" rx="5" fill="#B08D57"/>
+  <rect x="122" y="80" width="30" height="10" rx="5" fill="#B08D57"/>
+  <rect x="162" y="96" width="30" height="10" rx="5" fill="#B08D57"/>
+  <rect x="202" y="96" width="30" height="10" rx="5" fill="#B08D57"/>
+
+  <!-- Blockchain motif (3 linked squares, crisp, no opacity) -->
+  <g fill="none" stroke="#B08D57" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="78"  y="146" width="22" height="22" rx="6"/>
+    <rect x="117" y="146" width="22" height="22" rx="6"/>
+    <rect x="156" y="146" width="22" height="22" rx="6"/>
+    <path d="M100 157 H117"/>
+    <path d="M139 157 H156"/>
   </g>
 </svg>
