@@ -322,6 +322,16 @@ monitor.RecordBlockTime(time_ms);
 bool compliant = monitor.IsSLACompliant();
 ```
 
+## Verification Checklist
+
+You can validate that all advertised advanced feature modules are present and expose the documented core classes/APIs with:
+
+```bash
+./tools/testing/verify_advanced_features.sh
+```
+
+This check verifies module/header presence and key symbol definitions across performance, privacy, governance, smart-contract, developer-tooling, and enterprise feature sets.
+
 ## Building
 
 Add to CMakeLists.txt as needed. The implementation is modular and can be integrated incrementally.
