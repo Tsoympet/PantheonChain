@@ -145,7 +145,7 @@ jobs:
         Write-Host "Found OpenSSL at: $opensslRoot"
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
-          -DOPENSSL_ROOT_DIR="$opensslRoot" `
+          -DOPENSSL_ROOT_DIR=$opensslRoot `
           -GNinja
 
     - name: Build
