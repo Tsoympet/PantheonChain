@@ -141,6 +141,15 @@ class FirmwareVerifier {
     std::optional<FirmwareInfo> GetFirmwareInfo(const std::vector<uint8_t>& firmware_hash);
 
     /**
+     * Get firmware info by vendor and version
+     * @param vendor Vendor name
+     * @param version Firmware version
+     * @return Firmware info if found
+     */
+    std::optional<FirmwareInfo> GetFirmwareInfo(const std::string& vendor,
+                                                const std::string& version);
+
+    /**
      * Load vendor keys from file
      * @param filename Path to vendor keys file
      * @return true if loaded successfully
