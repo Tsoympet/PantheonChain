@@ -4,6 +4,7 @@
 #include "websocket_api.h"
 
 #include <algorithm>
+#include <ctime>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -14,15 +15,15 @@ namespace apis {
 
 class WebSocketAPI::Impl {
   public:
-    Impl(uint16_t port) : port_(port), running_(false), next_client_id_(1) {}
+    Impl(uint16_t port) : port_(port), running_(false), next_client_id_(1), listening_port_(0) {}
 
     bool Start() {
         if (running_) {
             return false;
         }
 
-        (void)port_;           // Placeholder until socket bind/listen is implemented
-        (void)next_client_id_;  // Placeholder until connection IDs are allocated
+        listening_port_ = port_;
+        next_client_id_ = 1;
 
         // In a full implementation, this would:
         // 1. Initialize WebSocket server
@@ -42,19 +43,22 @@ class WebSocketAPI::Impl {
         std::lock_guard<std::mutex> lock(mutex_);
         clients_.clear();
         subscriptions_.clear();
+        last_broadcast_message_.clear();
+        last_topic_message_.clear();
 
         running_ = false;
+        listening_port_ = 0;
     }
 
     void Broadcast(const std::string& message) {
         std::lock_guard<std::mutex> lock(mutex_);
+        last_broadcast_message_ = message;
 
         // In a real implementation, send to all connected WebSocket clients
         for (const auto& client : clients_) {
             // websocket_send(client.connection, message);
             (void)client;  // Suppress unused warning
         }
-        (void)message;  // Suppress unused warning (would be used in websocket_send)
     }
 
     void OnNewBlock(std::function<void(const std::string&)> callback) {
@@ -69,6 +73,17 @@ class WebSocketAPI::Impl {
 
     void Subscribe(uint64_t client_id, const std::string& topic) {
         std::lock_guard<std::mutex> lock(mutex_);
+        auto client_it =
+            std::find_if(clients_.begin(), clients_.end(),
+                         [client_id](const ClientInfo& client) { return client.id == client_id; });
+        if (client_it == clients_.end()) {
+            ClientInfo info;
+            info.id = client_id;
+            info.address = "";
+            info.connected_time = static_cast<uint64_t>(std::time(nullptr));
+            clients_.push_back(info);
+        }
+        next_client_id_ = std::max(next_client_id_, client_id + 1);
         subscriptions_[topic].push_back(client_id);
     }
 
@@ -80,6 +95,7 @@ class WebSocketAPI::Impl {
 
     void PublishToTopic(const std::string& topic, const std::string& message) {
         std::lock_guard<std::mutex> lock(mutex_);
+        last_topic_message_[topic] = message;
 
         auto it = subscriptions_.find(topic);
         if (it != subscriptions_.end()) {
@@ -91,7 +107,6 @@ class WebSocketAPI::Impl {
 
                 if (client_it != clients_.end()) {
                     // websocket_send(client_it->connection, message);
-                    (void)message;  // Suppress unused warning (would be used in websocket_send)
                 }
             }
         }
@@ -101,6 +116,8 @@ class WebSocketAPI::Impl {
         std::lock_guard<std::mutex> lock(mutex_);
         return clients_.size();
     }
+
+    bool IsRunning() const { return running_ && listening_port_ == port_; }
 
     void NotifyNewBlock(const std::string& block_data) {
         if (block_callback_) {
@@ -127,8 +144,11 @@ class WebSocketAPI::Impl {
     uint16_t port_;
     bool running_;
     uint64_t next_client_id_;
+    uint16_t listening_port_;
     std::vector<ClientInfo> clients_;
     std::map<std::string, std::vector<uint64_t>> subscriptions_;  // topic -> client_ids
+    std::string last_broadcast_message_;
+    std::map<std::string, std::string> last_topic_message_;
     std::function<void(const std::string&)> block_callback_;
     std::function<void(const std::string&)> tx_callback_;
     mutable std::mutex mutex_;
@@ -161,8 +181,7 @@ void WebSocketAPI::OnNewTransaction(std::function<void(const std::string&)> call
 }
 
 bool WebSocketAPI::IsRunning() const {
-    // Would access impl's running state
-    return false;  // Simplified
+    return impl_->IsRunning();
 }
 
 void WebSocketAPI::Subscribe(uint64_t client_id, const std::string& topic) {
