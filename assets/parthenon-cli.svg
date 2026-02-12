@@ -1,33 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Parthenon CLI - Command Line Interface Symbol -->
-  <!-- Design: Single column (minimal, direct) with prompt indicator -->
-  
-  <defs>
-    <style>
-      .primary { fill: #1F3A5F; }
-      .accent { fill: #B08D57; }
-    </style>
-  </defs>
-  
-  <!-- Terminal window frame (square) -->
-  <rect x="32" y="32" width="192" height="192" fill="none" stroke="#1F3A5F" stroke-width="4"/>
-  
-  <!-- Single prominent column (simplicity of CLI) -->
-  <g transform="translate(128, 128)">
-    <!-- Column -->
-    <rect x="-12" y="-48" width="24" height="96" class="primary"/>
-    
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parthenon CLI Icon">
+  <!-- Parthenon CLI (terminal-authentic version): column + >_ prompt -->
+
+  <!-- Terminal frame -->
+  <rect x="34" y="34" width="188" height="188" rx="16"
+        fill="none" stroke="#1F3A5F" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- Subtle terminal header line -->
+  <path d="M50 74 H206"
+        fill="none" stroke="#1F3A5F" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Core symbol -->
+  <g transform="translate(128 132)">
+    <!-- Doric column (minimal, strong silhouette) -->
+    <rect x="-13" y="-52" width="26" height="104" rx="10" fill="#1F3A5F"/>
+
     <!-- Capital -->
-    <rect x="-16" y="-52" width="32" height="4" class="accent"/>
-    
+    <rect x="-22" y="-60" width="44" height="12" rx="6" fill="#B08D57"/>
+
     <!-- Base -->
-    <rect x="-16" y="48" width="32" height="4" class="accent"/>
-    
-    <!-- Command prompt indicator: right angle (>) abstracted -->
-    <path d="M -48 -16 L -32 0 L -48 16" fill="none" stroke="#B08D57" stroke-width="3"/>
-    
-    <!-- Cursor/active indicator -->
-    <rect x="24" y="-4" width="16" height="8" class="accent"/>
+    <rect x="-26" y="50" width="52" height="12" rx="6" fill="#B08D57"/>
+
+    <!-- CLI prompt: ">" -->
+    <path d="M-70 -18 L-52 0 L-70 18"
+          fill="none"
+          stroke="#B08D57"
+          stroke-width="6"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+
+    <!-- CLI underscore "_" -->
+    <rect x="36" y="10" width="28" height="6" rx="3" fill="#B08D57"/>
   </g>
 </svg>
