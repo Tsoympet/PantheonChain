@@ -11,6 +11,14 @@
 #include <mutex>
 #include <optional>
 
+namespace {
+// Translation-unit scoped placeholder transport hook until a real WebSocket backend is wired in.
+void websocket_send(void* connection, const std::string& message) {
+    (void)connection;
+    (void)message;
+}
+}  // namespace
+
 namespace parthenon {
 namespace layer2 {
 namespace apis {
@@ -59,8 +67,8 @@ class WebSocketAPI::Impl {
 
         // In a real implementation, send to all connected WebSocket clients
         for (const auto& client : clients_) {
-            // websocket_send(client.connection, message);
-            (void)client;  // Suppress unused warning
+            // Transport stub until a real WebSocket backend is wired in.
+            websocket_send(client.connection, message);
         }
     }
 
@@ -87,6 +95,7 @@ class WebSocketAPI::Impl {
         if (existing_client_it == clients_.end()) {
             ClientInfo info;
             info.id = client_id;
+            info.connection = nullptr;
             info.address = "";
             const auto now = std::time(nullptr);
             info.connected_time =
@@ -122,7 +131,8 @@ class WebSocketAPI::Impl {
                                  [client_id](const ClientInfo& c) { return c.id == client_id; });
 
                 if (client_it != clients_.end()) {
-                    // websocket_send(client_it->connection, message);
+                    // Transport stub until a real WebSocket backend is wired in.
+                    websocket_send(client_it->connection, message);
                 }
             }
         }
@@ -170,7 +180,7 @@ class WebSocketAPI::Impl {
   private:
     struct ClientInfo {
         uint64_t id;
-        // void* connection; // WebSocket connection handle
+        void* connection;  // WebSocket connection handle
         std::string address;
         std::optional<uint64_t> connected_time;
     };
