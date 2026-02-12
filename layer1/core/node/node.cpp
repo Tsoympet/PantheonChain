@@ -347,11 +347,6 @@ void Node::RequestBlocks(const std::string& peer_id, uint32_t start_height, uint
 }
 
 bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
-    // Validate block structure
-    if (!block.IsValid()) {
-        return false;
-    }
-
     if (!chain_state_.ValidateBlock(block)) {
         std::cerr << "Block failed chain state validation" << std::endl;
         return false;
@@ -391,7 +386,8 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     }
 
     if (!chain_state_.ApplyBlock(block)) {
-        std::cerr << "Failed to update mining chain state" << std::endl;
+        std::cerr << "Warning: failed to update mining chain state; mining height may be stale"
+                  << std::endl;
     }
 
     // Store block to disk
@@ -436,17 +432,22 @@ void Node::HandleNewPeer(const std::string& peer_id) {
     if (colon_pos != std::string::npos) {
         address = peer_id.substr(0, colon_pos);
         auto port_str = peer_id.substr(colon_pos + 1);
-        try {
-            auto parsed_port = std::stoul(port_str);
-            if (parsed_port > 65535) {
-                std::cerr << "Peer port out of range for peer: " << peer_id << std::endl;
-                port = 0;
-            } else {
-                port = static_cast<uint16_t>(parsed_port);
-            }
-        } catch (...) {
-            std::cerr << "Failed to parse peer port for peer: " << peer_id << std::endl;
+        if (port_str.empty() || port_str.size() > 5) {
+            std::cerr << "Peer port out of range for peer: " << peer_id << std::endl;
             port = 0;
+        } else {
+            try {
+                auto parsed_port = std::stoul(port_str);
+                if (parsed_port > 65535) {
+                    std::cerr << "Peer port out of range for peer: " << peer_id << std::endl;
+                    port = 0;
+                } else {
+                    port = static_cast<uint16_t>(parsed_port);
+                }
+            } catch (...) {
+                std::cerr << "Failed to parse peer port for peer: " << peer_id << std::endl;
+                port = 0;
+            }
         }
     }
 
