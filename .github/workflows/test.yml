@@ -123,7 +123,20 @@ jobs:
 
     - name: Install dependencies
       run: |
-        choco install cmake ninja openssl -y
+        $packages = @(
+          @{ Name = "cmake"; Command = "cmake" },
+          @{ Name = "ninja"; Command = "ninja" },
+          @{ Name = "openssl"; Command = "openssl" }
+        )
+
+        foreach ($package in $packages) {
+          if (-not (Get-Command $package.Command -ErrorAction SilentlyContinue)) {
+            choco install $package.Name -y
+          }
+          else {
+            Write-Host "$($package.Command) already available; skipping Chocolatey install."
+          }
+        }
 
     - name: Configure CMake
       run: |
