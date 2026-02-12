@@ -253,8 +253,10 @@ static time_t ASN1_TIME_to_time_t(const ASN1_TIME* time) {
 
 #if defined(_WIN32)
     return _mkgmtime(&t);
-#else
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix__)
     return timegm(&t);
+#else
+    return mktime(&t);
 #endif
 }
 
@@ -266,7 +268,7 @@ static std::string FormatTime(time_t time_value) {
     localtime_r(&time_value, &tm_snapshot);
 #endif
     char buffer[64];
-    if (std::strftime(buffer, sizeof(buffer), "%c", &tm_snapshot) == 0) {
+    if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm_snapshot) == 0) {
         return {};
     }
     return std::string(buffer);
