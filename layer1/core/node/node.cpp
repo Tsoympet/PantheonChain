@@ -440,11 +440,12 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         address = peer_id.substr(0, colon_pos);
         auto port_str = peer_id.substr(colon_pos + 1);
         bool port_valid = false;
-        unsigned long parsed_port = 0;
+        uint32_t parsed_port = 0;
         if (!port_str.empty()) {
             try {
-                parsed_port = std::stoul(port_str);
-                if (parsed_port > 0 && parsed_port <= 65535) {
+                auto parsed_value = std::stoul(port_str);
+                if (parsed_value > 0 && parsed_value <= 65535) {
+                    parsed_port = static_cast<uint32_t>(parsed_value);
                     port = static_cast<uint16_t>(parsed_port);
                     port_valid = true;
                 }
