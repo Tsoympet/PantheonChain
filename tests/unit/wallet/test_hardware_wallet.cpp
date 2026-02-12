@@ -1,6 +1,9 @@
 // ParthenonChain - Hardware Wallet Unit Tests
 
 #include "wallet/hardware/hardware_wallet.h"
+#include "wallet/hardware/firmware_verification.h"
+#include "crypto/schnorr.h"
+#include "crypto/sha256.h"
 
 #include <cassert>
 #include <iostream>
@@ -66,12 +69,55 @@ void test_derivation_path_construction() {
     std::cout << "✓ Derivation path construction tests passed\n";
 }
 
+
+void test_firmware_signature_verification() {
+    using parthenon::crypto::Schnorr;
+    using parthenon::crypto::SHA256;
+
+    FirmwareVerifier verifier;
+
+    Schnorr::PrivateKey privkey{};
+    privkey[31] = 1;  // Deterministic valid key for tests
+
+    auto pubkey_opt = Schnorr::GetPublicKey(privkey);
+    assert(pubkey_opt.has_value());
+
+    std::vector<uint8_t> firmware = {0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02};
+    auto firmware_hash_arr = SHA256::Hash256(firmware);
+
+    auto signature_opt = Schnorr::Sign(privkey, firmware_hash_arr.data());
+    assert(signature_opt.has_value());
+
+    VendorKeys keys;
+    keys.vendor_name = "UnitTestVendor";
+    keys.public_keys.emplace_back(pubkey_opt->begin(), pubkey_opt->end());
+    verifier.AddVendorKeys(keys);
+
+    FirmwareInfo info;
+    info.vendor = "UnitTestVendor";
+    info.version = "1.0.0";
+    info.hash.assign(firmware_hash_arr.begin(), firmware_hash_arr.end());
+    info.signature.assign(signature_opt->begin(), signature_opt->end());
+    verifier.AddKnownFirmware(info);
+
+    auto result = verifier.VerifyFirmware(firmware, "UnitTestVendor");
+    assert(result.status == VerificationStatus::VALID);
+
+    // Tampered signature should be rejected
+    auto bad_sig = info.signature;
+    bad_sig[0] ^= 0x01;
+    assert(!verifier.VerifySignature(firmware, bad_sig, "UnitTestVendor"));
+
+    std::cout << "✓ Firmware Schnorr signature verification tests passed\n";
+}
+
 int main() {
     std::cout << "Running hardware wallet tests...\n\n";
 
     test_derivation_path_parsing();
     test_derivation_path_construction();
     test_hardware_wallet_manager();
+    test_firmware_signature_verification();
 
     std::cout << "\nAll hardware wallet tests passed!\n";
     return 0;
