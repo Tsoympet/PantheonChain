@@ -373,6 +373,8 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 ### 📚 Technical Documentation (For Developers)
 
 - 📖 **[Whitepaper](WHITEPAPER.md)** - Technical specification and design rationale
+- 💰 **[Tokenomics](docs/TOKENOMICS.md)** - Supply caps, issuance schedules, and token roles
+- 🗺️ **[Roadmap](docs/ROADMAP.md)** - Feature milestones and future priorities
 - 🏗️ **[Architecture](docs/ARCHITECTURE.md)** - System design and component overview
 - 🔐 **[Security Model](docs/SECURITY_MODEL.md)** - Security properties and threat model
 - 🚀 **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup instructions
@@ -536,7 +538,7 @@ Stay connected with the ParthenonChain community:
 - Advanced consensus mechanisms
 - Next-generation virtual machine architectures
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history and [docs/RELEASES.md](docs/RELEASES.md) for the full roadmap.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full roadmap, [CHANGELOG.md](CHANGELOG.md) for detailed version history, and [docs/RELEASES.md](docs/RELEASES.md) for release planning.
 
 ## Releases
 
