@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <ctime>
+#include <limits>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 
 namespace parthenon {
 namespace layer2 {
@@ -15,14 +17,16 @@ namespace apis {
 
 class WebSocketAPI::Impl {
   public:
-    Impl(uint16_t port) : port_(port), running_(false), next_client_id_(1), listening_port_(0) {}
+    Impl(uint16_t port) : port_(port), running_(false), next_client_id_(1) {}
 
     bool Start() {
         if (running_) {
             return false;
         }
 
-        listening_port_ = port_;
+        if (port_ == 0) {
+            return false;
+        }
         next_client_id_ = 1;
 
         // In a full implementation, this would:
@@ -47,7 +51,6 @@ class WebSocketAPI::Impl {
         last_topic_message_.clear();
 
         running_ = false;
-        listening_port_ = 0;
     }
 
     void Broadcast(const std::string& message) {
@@ -59,6 +62,11 @@ class WebSocketAPI::Impl {
             // websocket_send(client.connection, message);
             (void)client;  // Suppress unused warning
         }
+    }
+
+    std::string GetLastBroadcastMessage() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return last_broadcast_message_;
     }
 
     void OnNewBlock(std::function<void(const std::string&)> callback) {
@@ -73,17 +81,25 @@ class WebSocketAPI::Impl {
 
     void Subscribe(uint64_t client_id, const std::string& topic) {
         std::lock_guard<std::mutex> lock(mutex_);
-        auto client_it =
+        auto existing_client_it =
             std::find_if(clients_.begin(), clients_.end(),
                          [client_id](const ClientInfo& client) { return client.id == client_id; });
-        if (client_it == clients_.end()) {
+        if (existing_client_it == clients_.end()) {
             ClientInfo info;
             info.id = client_id;
             info.address = "";
-            info.connected_time = static_cast<uint64_t>(std::time(nullptr));
+            const auto now = std::time(nullptr);
+            info.connected_time =
+                (now < 0) ? std::nullopt : std::make_optional(static_cast<uint64_t>(now));
             clients_.push_back(info);
         }
-        next_client_id_ = std::max(next_client_id_, client_id + 1);
+        if (client_id >= next_client_id_) {
+            if (client_id == std::numeric_limits<uint64_t>::max()) {
+                next_client_id_ = client_id;
+            } else {
+                next_client_id_ = client_id + 1;
+            }
+        }
         subscriptions_[topic].push_back(client_id);
     }
 
@@ -112,12 +128,30 @@ class WebSocketAPI::Impl {
         }
     }
 
+    std::string GetLastTopicMessage(const std::string& topic) const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = last_topic_message_.find(topic);
+        if (it == last_topic_message_.end()) {
+            return "";
+        }
+        return it->second;
+    }
+
+    size_t GetSubscriptionCount(const std::string& topic) const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = subscriptions_.find(topic);
+        if (it == subscriptions_.end()) {
+            return 0;
+        }
+        return it->second.size();
+    }
+
     size_t GetConnectedClients() const {
         std::lock_guard<std::mutex> lock(mutex_);
         return clients_.size();
     }
 
-    bool IsRunning() const { return running_ && listening_port_ == port_; }
+    bool IsRunning() const { return running_; }
 
     void NotifyNewBlock(const std::string& block_data) {
         if (block_callback_) {
@@ -138,13 +172,12 @@ class WebSocketAPI::Impl {
         uint64_t id;
         // void* connection; // WebSocket connection handle
         std::string address;
-        uint64_t connected_time;
+        std::optional<uint64_t> connected_time;
     };
 
     uint16_t port_;
     bool running_;
     uint64_t next_client_id_;
-    uint16_t listening_port_;
     std::vector<ClientInfo> clients_;
     std::map<std::string, std::vector<uint64_t>> subscriptions_;  // topic -> client_ids
     std::string last_broadcast_message_;
@@ -172,6 +205,10 @@ void WebSocketAPI::Broadcast(const std::string& message) {
     impl_->Broadcast(message);
 }
 
+std::string WebSocketAPI::GetLastBroadcastMessage() const {
+    return impl_->GetLastBroadcastMessage();
+}
+
 void WebSocketAPI::OnNewBlock(std::function<void(const std::string&)> callback) {
     impl_->OnNewBlock(callback);
 }
@@ -194,6 +231,14 @@ void WebSocketAPI::Unsubscribe(uint64_t client_id, const std::string& topic) {
 
 void WebSocketAPI::PublishToTopic(const std::string& topic, const std::string& message) {
     impl_->PublishToTopic(topic, message);
+}
+
+std::string WebSocketAPI::GetLastTopicMessage(const std::string& topic) const {
+    return impl_->GetLastTopicMessage(topic);
+}
+
+size_t WebSocketAPI::GetSubscriptionCount(const std::string& topic) const {
+    return impl_->GetSubscriptionCount(topic);
 }
 
 size_t WebSocketAPI::GetConnectedClients() const {

@@ -12,14 +12,16 @@ namespace apis {
 
 class GraphQLAPI::Impl {
   public:
-    Impl(uint16_t port) : port_(port), running_(false), listening_port_(0) {}
+    Impl(uint16_t port) : port_(port), running_(false) {}
 
     bool Start() {
         if (running_) {
             return false;
         }
 
-        listening_port_ = port_;
+        if (port_ == 0) {
+            return false;
+        }
 
         // In a full implementation, this would:
         // 1. Initialize GraphQL schema
@@ -37,10 +39,9 @@ class GraphQLAPI::Impl {
 
         // Stop HTTP server
         running_ = false;
-        listening_port_ = 0;
     }
 
-    bool IsRunning() const { return running_ && listening_port_ == port_; }
+    bool IsRunning() const { return running_; }
 
     std::string HandleQuery(const std::string& query) {
         // Simple query parser (simplified version)
@@ -109,7 +110,6 @@ class GraphQLAPI::Impl {
 
     uint16_t port_;
     bool running_;
-    uint16_t listening_port_;
     std::function<std::string(const std::string&)> block_callback_;
     std::function<std::string(const std::string&)> tx_callback_;
     std::function<std::string(const std::string&)> contract_callback_;

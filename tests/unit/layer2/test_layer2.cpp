@@ -136,15 +136,40 @@ void test_layer2_apis() {
     assert(graphql_api.IsRunning());
     graphql_api.Stop();
     assert(!graphql_api.IsRunning());
+    assert(graphql_api.Start());
+    assert(graphql_api.IsRunning());
+    graphql_api.Stop();
+    assert(!graphql_api.IsRunning());
+
+    apis::GraphQLAPI invalid_graphql_api(0);
+    assert(!invalid_graphql_api.Start());
+    assert(!invalid_graphql_api.IsRunning());
 
     apis::WebSocketAPI websocket_api(8081);
     assert(!websocket_api.IsRunning());
     assert(websocket_api.Start());
+    assert(!websocket_api.Start());
     assert(websocket_api.IsRunning());
-    websocket_api.Subscribe(1, "blocks");
+    const uint64_t test_client_id = 1;
+    websocket_api.Subscribe(test_client_id, "blocks");
     assert(websocket_api.GetConnectedClients() == 1);
+    assert(websocket_api.GetSubscriptionCount("blocks") == 1);
+    websocket_api.Broadcast("ping");
+    assert(websocket_api.GetLastBroadcastMessage() == "ping");
+    websocket_api.PublishToTopic("blocks", "block-1");
+    assert(websocket_api.GetLastTopicMessage("blocks") == "block-1");
+    websocket_api.Stop();
+    assert(websocket_api.GetConnectedClients() == 0);
+    assert(websocket_api.GetSubscriptionCount("blocks") == 0);
+    assert(!websocket_api.IsRunning());
+    assert(websocket_api.Start());
+    assert(websocket_api.IsRunning());
     websocket_api.Stop();
     assert(!websocket_api.IsRunning());
+
+    apis::WebSocketAPI invalid_websocket_api(0);
+    assert(!invalid_websocket_api.Start());
+    assert(!invalid_websocket_api.IsRunning());
 
     std::cout << "Layer 2 API server tests passed!" << std::endl;
 }

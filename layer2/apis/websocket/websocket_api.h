@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
-#include <cstdint>
 
 namespace parthenon {
 namespace layer2 {
@@ -43,6 +43,11 @@ class WebSocketAPI {
     void Broadcast(const std::string& message);
 
     /**
+     * Get the last broadcast message
+     */
+    std::string GetLastBroadcastMessage() const;
+
+    /**
      * Subscribe callback for new blocks
      */
     void OnNewBlock(std::function<void(const std::string&)> callback);
@@ -66,6 +71,16 @@ class WebSocketAPI {
      * Publish message to specific topic
      */
     void PublishToTopic(const std::string& topic, const std::string& message);
+
+    /**
+     * Get the last message published for a topic
+     */
+    std::string GetLastTopicMessage(const std::string& topic) const;
+
+    /**
+     * Get number of subscriptions for a topic
+     */
+    size_t GetSubscriptionCount(const std::string& topic) const;
 
     /**
      * Get number of connected clients
