@@ -267,7 +267,7 @@ static std::string FormatTime(time_t time_value) {
 #endif
     char buffer[64];
     if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm_snapshot) == 0) {
-        return {};
+        return "Invalid time";
     }
     return std::string(buffer) + " UTC";
 }
