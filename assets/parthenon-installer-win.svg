@@ -1,33 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Windows Installer Icon -->
-  <!-- Design: Temple being constructed (installation process) -->
-  
-  <defs>
-    <style>
-      .primary { fill: #1F3A5F; }
-      .accent { fill: #B08D57; }
-    </style>
-  </defs>
-  
-  <!-- Four window panes (Windows logo abstraction) -->
-  <rect x="40" y="40" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
-  <rect x="136" y="40" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
-  <rect x="40" y="136" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
-  <rect x="136" y="136" width="80" height="80" fill="none" stroke="#1F3A5F" stroke-width="3"/>
-  
-  <!-- Temple structure in center -->
-  <g transform="translate(128, 128)">
-    <!-- Base (complete) -->
-    <rect x="-40" y="32" width="80" height="6" class="accent"/>
-    
-    <!-- Columns (partially built - installation in progress) -->
-    <rect x="-28" y="8" width="8" height="24" class="primary"/>
-    <rect x="-4" y="8" width="8" height="24" class="primary"/>
-    <rect x="20" y="8" width="8" height="24" class="primary" opacity="0.3"/>
-    
-    <!-- Architrave (partial) -->
-    <rect x="-32" y="4" width="48" height="4" class="accent"/>
-    <rect x="16" y="4" width="16" height="4" class="accent" opacity="0.3"/>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parthenon Windows Installer Icon">
+  <!-- Windows Installer: pane grid + temple assembling -->
+
+  <!-- Windows-like pane grid (structured, not logo copy) -->
+  <g fill="none" stroke="#1F3A5F" stroke-width="6" stroke-linejoin="round">
+    <rect x="34" y="34" width="84" height="84" rx="10"/>
+    <rect x="138" y="34" width="84" height="84" rx="10"/>
+    <rect x="34" y="138" width="84" height="84" rx="10"/>
+    <rect x="138" y="138" width="84" height="84" rx="10"/>
+  </g>
+
+  <!-- Temple being assembled (center overlay) -->
+  <g transform="translate(128 138)">
+    <!-- Completed base -->
+    <rect x="-54" y="44" width="108" height="12" rx="6" fill="#B08D57"/>
+
+    <!-- Completed columns -->
+    <rect x="-34" y="10" width="14" height="34" rx="7" fill="#1F3A5F"/>
+    <rect x="-8"  y="10" width="14" height="34" rx="7" fill="#1F3A5F"/>
+
+    <!-- Column under construction (outlined instead of faded) -->
+    <rect x="18" y="10" width="14" height="34" rx="7"
+          fill="none"
+          stroke="#1F3A5F"
+          stroke-width="4"/>
+
+    <!-- Installed capital -->
+    <rect x="-40" y="4" width="26" height="8" rx="4" fill="#B08D57"/>
+    <rect x="-14" y="4" width="26" height="8" rx="4" fill="#B08D57"/>
+
+    <!-- Capital pending (outline = installing) -->
+    <rect x="12" y="4" width="26" height="8" rx="4"
+          fill="none"
+          stroke="#B08D57"
+          stroke-width="4"/>
+
+    <!-- Architrave partial -->
+    <rect x="-44" y="-8" width="52" height="10" rx="5" fill="#B08D57"/>
+    <rect x="8" y="-8" width="36" height="10" rx="5"
+          fill="none"
+          stroke="#B08D57"
+          stroke-width="4"/>
   </g>
 </svg>
