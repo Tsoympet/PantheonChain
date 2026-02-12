@@ -314,7 +314,7 @@ For app store submissions, you'll need specific sizes:
 
 ## Current Status
 
-🟡 **Screenshots Pending** - This directory structure is ready, but actual screenshots need to be captured by running the mobile app on a device or simulator with a display environment.
+🟡 **Screenshots Pending** - Placeholder images are provided in this directory; replace them with real device or simulator captures when available.
 
 To contribute screenshots:
 1. Build and run the mobile app on iOS/Android
