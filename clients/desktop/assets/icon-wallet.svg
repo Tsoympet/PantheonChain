@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wallet icon">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .stroke { fill: none; stroke: #B08D57; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .fill { fill: #B08D57; }
+    ]]></style>
+  </defs>
+  <rect class="stroke" x="12" y="20" width="40" height="28" rx="4" />
+  <path class="stroke" d="M12 28 H52" />
+  <circle class="fill" cx="44" cy="36" r="3" />
+</svg>

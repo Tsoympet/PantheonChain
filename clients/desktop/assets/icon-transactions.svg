@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Transactions icon">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .stroke { fill: none; stroke: #B08D57; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .fill { fill: #B08D57; }
+    ]]></style>
+  </defs>
+  <circle class="fill" cx="16" cy="20" r="3" />
+  <circle class="fill" cx="16" cy="32" r="3" />
+  <circle class="fill" cx="16" cy="44" r="3" />
+  <path class="stroke" d="M24 20 H52" />
+  <path class="stroke" d="M24 32 H52" />
+  <path class="stroke" d="M24 44 H52" />
+</svg>

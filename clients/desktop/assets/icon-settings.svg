@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Settings icon">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .stroke { fill: none; stroke: #B08D57; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .fill { fill: #B08D57; }
+    ]]></style>
+  </defs>
+  <circle class="stroke" cx="32" cy="32" r="10" />
+  <circle class="fill" cx="32" cy="32" r="3" />
+  <path class="stroke" d="M32 6 V14" />
+  <path class="stroke" d="M32 50 V58" />
+  <path class="stroke" d="M6 32 H14" />
+  <path class="stroke" d="M50 32 H58" />
+  <path class="stroke" d="M14 14 L20 20" />
+  <path class="stroke" d="M44 44 L50 50" />
+  <path class="stroke" d="M44 20 L50 14" />
+  <path class="stroke" d="M14 50 L20 44" />
+</svg>

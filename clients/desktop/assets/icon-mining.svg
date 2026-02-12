@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mining icon">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .stroke { fill: none; stroke: #B08D57; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    ]]></style>
+  </defs>
+  <path class="stroke" d="M12 24 Q32 10 52 24" />
+  <path class="stroke" d="M32 24 L32 54" />
+  <path class="stroke" d="M26 32 L42 48" />
+</svg>

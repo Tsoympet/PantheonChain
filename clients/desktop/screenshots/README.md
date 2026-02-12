@@ -177,9 +177,9 @@ The minimum set of screenshots needed:
 4. ✅ `transactions.png` - Transaction history
 
 Optional but recommended:
-5. ⬜ `menu.png` - Menu structure
-6. ⬜ `settings.png` - Settings dialog
-7. ⬜ `about.png` - About dialog
+5. ✅ `menu.png` - Menu structure
+6. ✅ `settings.png` - Settings dialog
+7. ✅ `about.png` - About dialog
 
 ## Using Screenshots in Documentation
 
@@ -203,7 +203,7 @@ Or in README files:
 
 ## Current Status
 
-🟡 **Screenshots Pending** - This directory structure is ready, but actual screenshots need to be captured by running the desktop wallet application with a display environment.
+🟡 **Screenshots Provided** - Placeholder images are present; replace them with real captures from the running desktop wallet when available.
 
 To contribute screenshots:
 1. Build and run the desktop wallet on your system

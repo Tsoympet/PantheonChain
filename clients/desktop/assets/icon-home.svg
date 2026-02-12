@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Home icon">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .stroke { fill: none; stroke: #B08D57; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    ]]></style>
+  </defs>
+  <path class="stroke" d="M12 30 L32 14 L52 30" />
+  <rect class="stroke" x="18" y="30" width="28" height="22" rx="2" />
+  <rect class="stroke" x="28" y="38" width="8" height="14" rx="1" />
+</svg>

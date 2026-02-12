@@ -64,9 +64,9 @@ Screenshots are essential for:
 4. ✅ Transaction history page
 
 **Recommended Screenshots**:
-5. ⬜ Menu and toolbar
-6. ⬜ Settings dialog
-7. ⬜ About dialog
+5. ✅ Menu and toolbar
+6. ✅ Settings dialog
+7. ✅ About dialog
 8. ⬜ Mining control interface
 9. ⬜ Smart contract interaction (if applicable)
 

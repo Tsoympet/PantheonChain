@@ -9,6 +9,17 @@ Platform-specific icon formats:
 - **icon.ico** (Windows icon, multiple sizes: 16x16, 32x32, 48x48, 256x256)
 - **icon.icns** (macOS icon bundle)
 
+## UI Icons
+
+Navigation and action icons used in the desktop interface:
+- **icon-home.svg**
+- **icon-send.svg**
+- **icon-receive.svg**
+- **icon-transactions.svg**
+- **icon-mining.svg**
+- **icon-wallet.svg**
+- **icon-settings.svg**
+
 ## Generation
 
 These icon files are generated from the master SVG in `/assets/icon.svg`:
