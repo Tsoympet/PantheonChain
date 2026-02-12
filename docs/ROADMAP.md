@@ -37,7 +37,7 @@ The list below reflects features implemented in the v1.0.0 codebase across core 
 ✅ Interplanetary File System (IPFS) integration  
 ✅ Machine learning on-chain verification  
 
-See [docs/ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) and [docs/RELEASES.md](RELEASES.md) for implementation details and module status.
+See [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) and [RELEASES.md](RELEASES.md) for implementation details and module status.
 
 **🎉 Feature coverage complete - implementation present across planned modules 🎉**
 
