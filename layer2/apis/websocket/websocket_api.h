@@ -22,6 +22,8 @@ class WebSocketAPI {
     WebSocketAPI(uint16_t port = 8081);
     ~WebSocketAPI();
 
+    using SendHandler = std::function<void(void*, const std::string&)>;
+
     /**
      * Start the WebSocket server
      */
@@ -41,6 +43,11 @@ class WebSocketAPI {
      * Broadcast message to all connected clients
      */
     void Broadcast(const std::string& message);
+
+    /**
+     * Configure the transport handler used to send messages to clients
+     */
+    void SetSendHandler(const SendHandler& handler);
 
     /**
      * Get the last broadcast message

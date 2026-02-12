@@ -11,20 +11,14 @@
 #include <mutex>
 #include <optional>
 
-namespace {
-// Translation-unit scoped placeholder transport hook until a real WebSocket backend is wired in.
-void websocket_send(void* connection, const std::string& message) {
-    (void)connection;
-    (void)message;
-}
-}  // namespace
-
 namespace parthenon {
 namespace layer2 {
 namespace apis {
 
 class WebSocketAPI::Impl {
   public:
+    using SendHandler = WebSocketAPI::SendHandler;
+
     Impl(uint16_t port) : port_(port), running_(false), next_client_id_(1) {}
 
     bool Start() {
@@ -62,13 +56,22 @@ class WebSocketAPI::Impl {
     }
 
     void Broadcast(const std::string& message) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        last_broadcast_message_ = message;
+        std::vector<void*> connections;
+        SendHandler handler;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            last_broadcast_message_ = message;
+            handler = send_handler_;
+            connections.reserve(clients_.size());
+            for (const auto& client : clients_) {
+                connections.push_back(client.connection);
+            }
+        }
 
-        // In a real implementation, send to all connected WebSocket clients
-        for (const auto& client : clients_) {
-            // Transport stub until a real WebSocket backend is wired in.
-            websocket_send(client.connection, message);
+        if (handler) {
+            for (void* connection : connections) {
+                handler(connection, message);
+            }
         }
     }
 
@@ -119,21 +122,32 @@ class WebSocketAPI::Impl {
     }
 
     void PublishToTopic(const std::string& topic, const std::string& message) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        last_topic_message_[topic] = message;
+        std::vector<void*> connections;
+        SendHandler handler;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            last_topic_message_[topic] = message;
+            handler = send_handler_;
 
-        auto it = subscriptions_.find(topic);
-        if (it != subscriptions_.end()) {
-            for (uint64_t client_id : it->second) {
-                // Find client and send message
-                auto client_it =
-                    std::find_if(clients_.begin(), clients_.end(),
-                                 [client_id](const ClientInfo& c) { return c.id == client_id; });
+            auto it = subscriptions_.find(topic);
+            if (it != subscriptions_.end()) {
+                connections.reserve(it->second.size());
+                for (uint64_t client_id : it->second) {
+                    // Find client and send message
+                    auto client_it =
+                        std::find_if(clients_.begin(), clients_.end(),
+                                     [client_id](const ClientInfo& c) { return c.id == client_id; });
 
-                if (client_it != clients_.end()) {
-                    // Transport stub until a real WebSocket backend is wired in.
-                    websocket_send(client_it->connection, message);
+                    if (client_it != clients_.end()) {
+                        connections.push_back(client_it->connection);
+                    }
                 }
+            }
+        }
+
+        if (handler) {
+            for (void* connection : connections) {
+                handler(connection, message);
             }
         }
     }
@@ -162,6 +176,11 @@ class WebSocketAPI::Impl {
     }
 
     bool IsRunning() const { return running_; }
+
+    void SetSendHandler(const SendHandler& handler) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        send_handler_ = handler;
+    }
 
     void NotifyNewBlock(const std::string& block_data) {
         if (block_callback_) {
@@ -194,6 +213,7 @@ class WebSocketAPI::Impl {
     std::map<std::string, std::string> last_topic_message_;
     std::function<void(const std::string&)> block_callback_;
     std::function<void(const std::string&)> tx_callback_;
+    SendHandler send_handler_;
     mutable std::mutex mutex_;
 };
 
@@ -213,6 +233,10 @@ void WebSocketAPI::Stop() {
 
 void WebSocketAPI::Broadcast(const std::string& message) {
     impl_->Broadcast(message);
+}
+
+void WebSocketAPI::SetSendHandler(const SendHandler& handler) {
+    impl_->SetSendHandler(handler);
 }
 
 std::string WebSocketAPI::GetLastBroadcastMessage() const {

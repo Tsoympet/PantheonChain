@@ -150,14 +150,23 @@ void test_layer2_apis() {
     assert(websocket_api.Start());
     assert(!websocket_api.Start());
     assert(websocket_api.IsRunning());
+    std::vector<std::string> sent_messages;
+    websocket_api.SetSendHandler([&sent_messages](void* connection, const std::string& message) {
+        static_cast<void>(connection);
+        sent_messages.push_back(message);
+    });
     const uint64_t test_client_id = 1;
     websocket_api.Subscribe(test_client_id, "blocks");
     assert(websocket_api.GetConnectedClients() == 1);
     assert(websocket_api.GetSubscriptionCount("blocks") == 1);
     websocket_api.Broadcast("ping");
     assert(websocket_api.GetLastBroadcastMessage() == "ping");
+    assert(sent_messages.size() == 1);
+    assert(sent_messages.back() == "ping");
     websocket_api.PublishToTopic("blocks", "block-1");
     assert(websocket_api.GetLastTopicMessage("blocks") == "block-1");
+    assert(sent_messages.size() == 2);
+    assert(sent_messages.back() == "block-1");
     websocket_api.Stop();
     assert(websocket_api.GetConnectedClients() == 0);
     assert(websocket_api.GetSubscriptionCount("blocks") == 0);
