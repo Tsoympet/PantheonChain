@@ -2,6 +2,8 @@
 
 ## Current Release (v1.0.0)
 
+The list below reflects features implemented in the v1.0.0 codebase across core and optional modules. Component maturity ranges from production-ready to experimental depending on the module and configuration.
+
 ✅ Core blockchain with multi-asset UTXO  
 ✅ Schnorr signatures (BIP-340)  
 ✅ EVM-compatible smart contracts  
@@ -35,9 +37,9 @@
 ✅ Interplanetary File System (IPFS) integration  
 ✅ Machine learning on-chain verification  
 
-Implementation note: features listed above are included across core and optional modules; some components may be experimental or require additional configuration. See [docs/ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) and [docs/RELEASES.md](RELEASES.md) for implementation details.
+See [docs/ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) and [docs/RELEASES.md](RELEASES.md) for implementation details and module status.
 
-**🎉 Feature Complete - All planned features implemented! 🎉**
+**🎉 Feature coverage complete - implementation present across planned modules 🎉**
 
 ## Future Possibilities
 
