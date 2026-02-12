@@ -253,25 +253,23 @@ static time_t ASN1_TIME_to_time_t(const ASN1_TIME* time) {
 
 #if defined(_WIN32)
     return _mkgmtime(&t);
-#elif defined(__APPLE__) || defined(__linux__) || defined(__unix__)
-    return timegm(&t);
 #else
-    return mktime(&t);
+    return timegm(&t);
 #endif
 }
 
 static std::string FormatTime(time_t time_value) {
     std::tm tm_snapshot {};
 #if defined(_WIN32)
-    localtime_s(&tm_snapshot, &time_value);
+    gmtime_s(&tm_snapshot, &time_value);
 #else
-    localtime_r(&time_value, &tm_snapshot);
+    gmtime_r(&time_value, &tm_snapshot);
 #endif
     char buffer[64];
     if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm_snapshot) == 0) {
         return {};
     }
-    return std::string(buffer);
+    return std::string(buffer) + " UTC";
 }
 
 }  // namespace p2p
