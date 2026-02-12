@@ -1,41 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- macOS Installer Icon -->
-  <!-- Design: Temple with macOS-inspired circular form -->
-  
-  <defs>
-    <style>
-      .primary { fill: #1F3A5F; }
-      .accent { fill: #B08D57; }
-    </style>
-  </defs>
-  
-  <!-- Rounded square (macOS icon shape) -->
-  <rect x="32" y="32" width="192" height="192" rx="48" fill="none" stroke="#1F3A5F" stroke-width="4"/>
-  
-  <!-- Temple centered -->
-  <g transform="translate(128, 128)">
-    <!-- Base -->
-    <rect x="-48" y="48" width="96" height="6" class="accent"/>
-    
-    <!-- Three columns -->
-    <rect x="-32" y="8" width="10" height="40" class="primary"/>
-    <rect x="-5" y="8" width="10" height="40" class="primary"/>
-    <rect x="22" y="8" width="10" height="40" class="primary"/>
-    
-    <!-- Capitals -->
-    <rect x="-36" y="4" width="18" height="4" class="accent"/>
-    <rect x="-9" y="4" width="18" height="4" class="accent"/>
-    <rect x="18" y="4" width="18" height="4" class="accent"/>
-    
-    <!-- Architrave -->
-    <rect x="-40" y="0" width="80" height="4" class="accent"/>
-    
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parthenon macOS Installer Icon (Filled)">
+  <!-- macOS-style filled container version -->
+
+  <!-- Filled rounded square -->
+  <rect x="28" y="28" width="200" height="200" rx="48" fill="#1F3A5F"/>
+
+  <!-- Install glyph -->
+  <g transform="translate(128 82)" fill="none" stroke="#B08D57" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 -18 V10"/>
+    <path d="M-12 -2 L0 10 L12 -2"/>
+    <path d="M-26 24 H26"/>
+    <path d="M-26 24 V10"/>
+    <path d="M26 24 V10"/>
+  </g>
+
+  <!-- Temple mark -->
+  <g transform="translate(128 148)">
     <!-- Pediment -->
-    <path d="M 0 -28 L 48 0 L -48 0 Z" class="accent"/>
-    
-    <!-- Installation arrow pointing down -->
-    <path d="M 0 -48 L 0 -64" stroke="#B08D57" stroke-width="3"/>
-    <path d="M -8 -52 L 0 -48 L 8 -52" fill="none" stroke="#B08D57" stroke-width="3"/>
+    <path d="M0 -44 L56 -12 L-56 -12 Z" fill="#B08D57"/>
+
+    <!-- Entablature -->
+    <rect x="-58" y="-12" width="116" height="12" rx="6" fill="#B08D57"/>
+    <rect x="-48" y="2" width="96" height="10" rx="5" fill="#B08D57"/>
+
+    <!-- Columns -->
+    <rect x="-38" y="14" width="16" height="52" rx="8" fill="#B08D57"/>
+    <rect x="-8"  y="14" width="16" height="52" rx="8" fill="#B08D57"/>
+    <rect x="22"  y="14" width="16" height="52" rx="8" fill="#B08D57"/>
+
+    <!-- Capitals -->
+    <rect x="-44" y="8" width="28" height="10" rx="5" fill="#B08D57"/>
+    <rect x="-14" y="8" width="28" height="10" rx="5" fill="#B08D57"/>
+    <rect x="16"  y="8" width="28" height="10" rx="5" fill="#B08D57"/>
+
+    <!-- Base -->
+    <rect x="-64" y="68" width="128" height="12" rx="6" fill="#B08D57"/>
   </g>
 </svg>
