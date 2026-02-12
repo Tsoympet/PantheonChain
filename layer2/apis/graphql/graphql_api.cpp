@@ -19,7 +19,9 @@ class GraphQLAPI::Impl {
             return false;
         }
 
-        (void)port_;  // Placeholder until HTTP server wiring uses configured port
+        if (port_ == 0) {
+            return false;
+        }
 
         // In a full implementation, this would:
         // 1. Initialize GraphQL schema
@@ -38,6 +40,8 @@ class GraphQLAPI::Impl {
         // Stop HTTP server
         running_ = false;
     }
+
+    bool IsRunning() const { return running_; }
 
     std::string HandleQuery(const std::string& query) {
         // Simple query parser (simplified version)
@@ -130,8 +134,7 @@ std::string GraphQLAPI::HandleQuery(const std::string& query) {
 }
 
 bool GraphQLAPI::IsRunning() const {
-    // Access impl's running state (would need to add getter)
-    return false;  // Simplified
+    return impl_->IsRunning();
 }
 
 void GraphQLAPI::SetBlockCallback(std::function<std::string(const std::string&)> callback) {

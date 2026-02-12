@@ -1,3 +1,5 @@
+#include "layer2/apis/graphql/graphql_api.h"
+#include "layer2/apis/websocket/websocket_api.h"
 #include "layer2/bridges/channels/payment_channel.h"
 #include "layer2/bridges/htlc/htlc.h"
 #include "layer2/bridges/spv/spv_bridge.h"
@@ -124,12 +126,61 @@ void test_spv_merkle_proof() {
     std::cout << "SPV Merkle proof tests passed!" << std::endl;
 }
 
+void test_layer2_apis() {
+    std::cout << "Testing Layer 2 API servers..." << std::endl;
+
+    apis::GraphQLAPI graphql_api(8080);
+    assert(!graphql_api.IsRunning());
+    assert(graphql_api.Start());
+    assert(!graphql_api.Start());
+    assert(graphql_api.IsRunning());
+    graphql_api.Stop();
+    assert(!graphql_api.IsRunning());
+    assert(graphql_api.Start());
+    assert(graphql_api.IsRunning());
+    graphql_api.Stop();
+    assert(!graphql_api.IsRunning());
+
+    apis::GraphQLAPI invalid_graphql_api(0);
+    assert(!invalid_graphql_api.Start());
+    assert(!invalid_graphql_api.IsRunning());
+
+    apis::WebSocketAPI websocket_api(8081);
+    assert(!websocket_api.IsRunning());
+    assert(websocket_api.Start());
+    assert(!websocket_api.Start());
+    assert(websocket_api.IsRunning());
+    const uint64_t test_client_id = 1;
+    websocket_api.Subscribe(test_client_id, "blocks");
+    assert(websocket_api.GetConnectedClients() == 1);
+    assert(websocket_api.GetSubscriptionCount("blocks") == 1);
+    websocket_api.Broadcast("ping");
+    assert(websocket_api.GetLastBroadcastMessage() == "ping");
+    websocket_api.PublishToTopic("blocks", "block-1");
+    assert(websocket_api.GetLastTopicMessage("blocks") == "block-1");
+    websocket_api.Stop();
+    assert(websocket_api.GetConnectedClients() == 0);
+    assert(websocket_api.GetSubscriptionCount("blocks") == 0);
+    assert(!websocket_api.IsRunning());
+    assert(websocket_api.Start());
+    assert(websocket_api.IsRunning());
+    websocket_api.Stop();
+    assert(!websocket_api.IsRunning());
+
+    apis::WebSocketAPI invalid_websocket_api(0);
+    assert(!invalid_websocket_api.Start());
+    assert(!invalid_websocket_api.IsRunning());
+
+    std::cout << "Layer 2 API server tests passed!" << std::endl;
+}
+
 int main() {
     try {
         test_payment_channel();
         test_htlc();
         test_htlc_routing();
         test_spv_merkle_proof();
+        test_layer2_apis();
 
         std::cout << "\n✓ All Layer 2 tests passed!" << std::endl;
         return 0;
