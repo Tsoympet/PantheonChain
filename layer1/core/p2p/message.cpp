@@ -5,6 +5,7 @@
 
 #include "crypto/sha256.h"
 
+#include <cstddef>
 #include <cstring>
 #include <stdexcept>
 
@@ -33,29 +34,46 @@ static void WriteCompactSize(std::vector<uint8_t>& output, uint64_t size) {
     }
 }
 
-// Helper to read compact size
-static uint64_t ReadCompactSize(const uint8_t*& data) {
+// Helper to read compact size with bounds checking
+static bool ReadCompactSizeChecked(const uint8_t*& data, const uint8_t* end, uint64_t& size) {
+    if (data >= end) {
+        return false;
+    }
+
     uint8_t first = *data++;
     if (first < 253) {
-        return first;
-    } else if (first == 253) {
-        uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8);
-        data += 2;
-        return size;
-    } else if (first == 254) {
-        uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
-                        (static_cast<uint64_t>(data[2]) << 16) |
-                        (static_cast<uint64_t>(data[3]) << 24);
-        data += 4;
-        return size;
-    } else {
-        uint64_t size = 0;
-        for (int i = 0; i < 8; i++) {
-            size |= static_cast<uint64_t>(data[i]) << (8 * i);
-        }
-        data += 8;
-        return size;
+        size = first;
+        return true;
     }
+
+    if (first == 253) {
+        if (end - data < 2) {
+            return false;
+        }
+        size = data[0] | (static_cast<uint64_t>(data[1]) << 8);
+        data += 2;
+        return true;
+    }
+
+    if (first == 254) {
+        if (end - data < 4) {
+            return false;
+        }
+        size = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
+               (static_cast<uint64_t>(data[2]) << 16) | (static_cast<uint64_t>(data[3]) << 24);
+        data += 4;
+        return true;
+    }
+
+    if (end - data < 8) {
+        return false;
+    }
+    size = 0;
+    for (int i = 0; i < 8; i++) {
+        size |= static_cast<uint64_t>(data[i]) << (8 * i);
+    }
+    data += 8;
+    return true;
 }
 
 // MessageHeader
@@ -194,13 +212,18 @@ std::optional<VersionMessage> VersionMessage::Deserialize(const uint8_t* data, s
 
     VersionMessage msg;
     const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
 
     // Version
+    if (end - ptr < 4)
+        return std::nullopt;
     msg.version = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
                   (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
     ptr += 4;
 
     // Services
+    if (end - ptr < 8)
+        return std::nullopt;
     msg.services = 0;
     for (int i = 0; i < 8; i++) {
         msg.services |= static_cast<uint64_t>(ptr[i]) << (8 * i);
@@ -208,6 +231,8 @@ std::optional<VersionMessage> VersionMessage::Deserialize(const uint8_t* data, s
     ptr += 8;
 
     // Timestamp
+    if (end - ptr < 8)
+        return std::nullopt;
     msg.timestamp = 0;
     for (int i = 0; i < 8; i++) {
         msg.timestamp |= static_cast<int64_t>(ptr[i]) << (8 * i);
@@ -215,9 +240,13 @@ std::optional<VersionMessage> VersionMessage::Deserialize(const uint8_t* data, s
     ptr += 8;
 
     // Skip addr_recv and addr_from for now (52 bytes total)
+    if (end - ptr < 52)
+        return std::nullopt;
     ptr += 52;
 
     // Nonce
+    if (end - ptr < 8)
+        return std::nullopt;
     msg.nonce = 0;
     for (int i = 0; i < 8; i++) {
         msg.nonce |= static_cast<uint64_t>(ptr[i]) << (8 * i);
@@ -225,13 +254,17 @@ std::optional<VersionMessage> VersionMessage::Deserialize(const uint8_t* data, s
     ptr += 8;
 
     // User agent
-    uint64_t ua_len = ReadCompactSize(ptr);
-    if (ua_len > 256 || ptr + ua_len > data + len)
+    uint64_t ua_len = 0;
+    if (!ReadCompactSizeChecked(ptr, end, ua_len))
+        return std::nullopt;
+    if (ua_len > 256 || end - ptr < static_cast<ptrdiff_t>(ua_len))
         return std::nullopt;  // Bounds check
     msg.user_agent = std::string(reinterpret_cast<const char*>(ptr), ua_len);
     ptr += ua_len;
 
     // Start height
+    if (end - ptr < 4)
+        return std::nullopt;
     msg.start_height = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
                        (static_cast<uint32_t>(ptr[2]) << 16) |
                        (static_cast<uint32_t>(ptr[3]) << 24);
@@ -318,13 +351,16 @@ std::vector<uint8_t> InvMessage::Serialize() const {
 std::optional<InvMessage> InvMessage::Deserialize(const uint8_t* data, size_t len) {
     InvMessage msg;
     const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
 
-    uint64_t count = ReadCompactSize(ptr);
-    if (count > MAX_INV_SIZE)
+    uint64_t count = 0;
+    if (!ReadCompactSizeChecked(ptr, end, count))
+        return std::nullopt;
+    if (count > MAX_INV_SIZE || count > (len / 36))
         return std::nullopt;
 
     for (uint64_t i = 0; i < count; i++) {
-        if (ptr + 36 > data + len)
+        if (end - ptr < 36)
             return std::nullopt;
 
         auto inv = InvVect::Deserialize(ptr);
@@ -341,61 +377,185 @@ std::optional<InvMessage> InvMessage::Deserialize(const uint8_t* data, size_t le
 // AddrMessage
 
 std::vector<uint8_t> AddrMessage::Serialize() const {
-    throw std::logic_error("AddrMessage::Serialize not implemented");
+    std::vector<uint8_t> result;
+
+    WriteCompactSize(result, addresses.size());
+    for (const auto& addr : addresses) {
+        result.push_back(static_cast<uint8_t>(addr.time));
+        result.push_back(static_cast<uint8_t>(addr.time >> 8));
+        result.push_back(static_cast<uint8_t>(addr.time >> 16));
+        result.push_back(static_cast<uint8_t>(addr.time >> 24));
+
+        for (int i = 0; i < 8; i++) {
+            result.push_back(static_cast<uint8_t>(addr.services >> (8 * i)));
+        }
+
+        for (int i = 0; i < 16; i++) {
+            result.push_back(addr.ip[i]);
+        }
+
+        result.push_back(static_cast<uint8_t>(addr.port >> 8));
+        result.push_back(static_cast<uint8_t>(addr.port));
+    }
+
+    return result;
 }
 
 std::optional<AddrMessage> AddrMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("AddrMessage::Deserialize not implemented");
+    AddrMessage msg;
+    const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
+
+    uint64_t count = 0;
+    if (!ReadCompactSizeChecked(ptr, end, count))
+        return std::nullopt;
+    if (count > MAX_ADDR_TO_SEND)
+        return std::nullopt;
+
+    for (uint64_t i = 0; i < count; i++) {
+        if (end - ptr < 30)
+            return std::nullopt;
+
+        NetAddr addr;
+        addr.time = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
+                    (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
+        ptr += 4;
+
+        addr.services = 0;
+        for (int j = 0; j < 8; j++) {
+            addr.services |= static_cast<uint64_t>(ptr[j]) << (8 * j);
+        }
+        ptr += 8;
+
+        std::copy(ptr, ptr + 16, addr.ip);
+        ptr += 16;
+
+        addr.port = static_cast<uint16_t>((ptr[0] << 8) | ptr[1]);
+        ptr += 2;
+
+        msg.addresses.push_back(addr);
+    }
+
+    return msg;
 }
 
 // BlockMessage
 
 std::vector<uint8_t> BlockMessage::Serialize() const {
-    throw std::logic_error("BlockMessage::Serialize not implemented");
+    return block.Serialize();
 }
 
 std::optional<BlockMessage> BlockMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("BlockMessage::Deserialize not implemented");
+    auto block_opt = primitives::Block::Deserialize(data, len);
+    if (!block_opt)
+        return std::nullopt;
+
+    BlockMessage msg;
+    msg.block = *block_opt;
+    return msg;
 }
 
 // TxMessage
 
 std::vector<uint8_t> TxMessage::Serialize() const {
-    throw std::logic_error("TxMessage::Serialize not implemented");
+    return tx.Serialize();
 }
 
 std::optional<TxMessage> TxMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("TxMessage::Deserialize not implemented");
+    auto tx_opt = primitives::Transaction::Deserialize(data, len);
+    if (!tx_opt)
+        return std::nullopt;
+
+    TxMessage msg;
+    msg.tx = *tx_opt;
+    return msg;
 }
 
 // GetHeadersMessage
 
 std::vector<uint8_t> GetHeadersMessage::Serialize() const {
-    throw std::logic_error("GetHeadersMessage::Serialize not implemented");
+    std::vector<uint8_t> result;
+    result.push_back(static_cast<uint8_t>(version));
+    result.push_back(static_cast<uint8_t>(version >> 8));
+    result.push_back(static_cast<uint8_t>(version >> 16));
+    result.push_back(static_cast<uint8_t>(version >> 24));
+
+    WriteCompactSize(result, block_locator_hashes.size());
+    for (const auto& hash : block_locator_hashes) {
+        result.insert(result.end(), hash.begin(), hash.end());
+    }
+
+    result.insert(result.end(), hash_stop.begin(), hash_stop.end());
+    return result;
 }
 
 std::optional<GetHeadersMessage> GetHeadersMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("GetHeadersMessage::Deserialize not implemented");
+    GetHeadersMessage msg;
+    const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
+
+    if (end - ptr < 4)
+        return std::nullopt;
+
+    msg.version = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
+                  (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
+    ptr += 4;
+
+    uint64_t count = 0;
+    if (!ReadCompactSizeChecked(ptr, end, count))
+        return std::nullopt;
+    if (count > MAX_HEADERS_COUNT)
+        return std::nullopt;
+
+    if (end - ptr < static_cast<ptrdiff_t>(count * 32 + 32))
+        return std::nullopt;
+
+    msg.block_locator_hashes.reserve(count);
+    for (uint64_t i = 0; i < count; i++) {
+        std::array<uint8_t, 32> hash{};
+        std::copy(ptr, ptr + 32, hash.begin());
+        ptr += 32;
+        msg.block_locator_hashes.push_back(hash);
+    }
+
+    std::copy(ptr, ptr + 32, msg.hash_stop.begin());
+    return msg;
 }
 
 // HeadersMessage
 
 std::vector<uint8_t> HeadersMessage::Serialize() const {
-    throw std::logic_error("HeadersMessage::Serialize not implemented");
+    std::vector<uint8_t> result;
+    WriteCompactSize(result, headers.size());
+    for (const auto& header : headers) {
+        auto header_bytes = header.Serialize();
+        result.insert(result.end(), header_bytes.begin(), header_bytes.end());
+    }
+    return result;
 }
 
 std::optional<HeadersMessage> HeadersMessage::Deserialize(const uint8_t* data, size_t len) {
-    (void)data;
-    (void)len;
-    throw std::logic_error("HeadersMessage::Deserialize not implemented");
+    HeadersMessage msg;
+    const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
+
+    uint64_t count = 0;
+    if (!ReadCompactSizeChecked(ptr, end, count))
+        return std::nullopt;
+    if (count > MAX_HEADERS_COUNT)
+        return std::nullopt;
+
+    const size_t header_size = 104;
+    if (end - ptr < static_cast<ptrdiff_t>(count * header_size))
+        return std::nullopt;
+
+    msg.headers.reserve(count);
+    for (uint64_t i = 0; i < count; i++) {
+        msg.headers.push_back(primitives::BlockHeader::Deserialize(ptr));
+        ptr += header_size;
+    }
+
+    return msg;
 }
 
 // Helper functions
