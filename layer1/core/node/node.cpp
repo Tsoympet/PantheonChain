@@ -99,12 +99,12 @@ bool Node::Start() {
     std::cout << "Querying DNS seeds for peers..." << std::endl;
     network_->QueryDNSSeeds();
 
+    running_ = true;
+    is_syncing_ = true;
+
     // Start sync loop in background thread
     std::cout << "Starting background sync thread" << std::endl;
     sync_thread_ = std::thread(&Node::SyncLoop, this);
-
-    running_ = true;
-    is_syncing_ = true;
 
     std::cout << "Node started successfully" << std::endl;
     return true;
@@ -352,6 +352,10 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
         return false;
     }
 
+    if (!chain_state_.ValidateBlock(block)) {
+        return false;
+    }
+
     // Validate all transactions
     for (const auto& tx : block.transactions) {
         // Skip validation for coinbase (first transaction)
@@ -383,6 +387,10 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     chainstate::BlockUndo undo;
     if (!chain_->ConnectBlock(block, undo)) {
         return false;
+    }
+
+    if (!chain_state_.ApplyBlock(block)) {
+        std::cerr << "Failed to update mining chain state" << std::endl;
     }
 
     // Store block to disk
@@ -421,6 +429,37 @@ void Node::BroadcastTransaction(const primitives::Transaction& tx) {
 
 void Node::HandleNewPeer(const std::string& peer_id) {
     std::cout << "New peer connected: " << peer_id << std::endl;
+    auto colon_pos = peer_id.find(':');
+    std::string address = peer_id;
+    uint16_t port = 0;
+    if (colon_pos != std::string::npos) {
+        address = peer_id.substr(0, colon_pos);
+        auto port_str = peer_id.substr(colon_pos + 1);
+        try {
+            port = static_cast<uint16_t>(std::stoul(port_str));
+        } catch (...) {
+            port = 0;
+        }
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto last_seen = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count());
+
+    auto it = peers_.find(peer_id);
+    if (it == peers_.end()) {
+        PeerInfo info;
+        info.address = address;
+        info.port = port;
+        info.version = 1;
+        info.height = 0;
+        info.is_connected = true;
+        info.last_seen = last_seen;
+        peers_[peer_id] = info;
+    } else {
+        it->second.is_connected = true;
+        it->second.last_seen = last_seen;
+    }
     // Update sync target based on peer height
     // In production: Query peer for their best block height
 }
@@ -429,24 +468,14 @@ void Node::HandleBlockReceived(const std::string& peer_id, const primitives::Blo
     std::cout << "Received block from " << peer_id << std::endl;
 
     // Process the block
-    if (ProcessBlock(block, peer_id)) {
-        // Notify callbacks
-        for (const auto& callback : block_callbacks_) {
-            callback(block);
-        }
-    }
+    ProcessBlock(block, peer_id);
 }
 
 void Node::HandleTxReceived(const std::string& peer_id, const primitives::Transaction& tx) {
     std::cout << "Received transaction from " << peer_id << std::endl;
 
     // Submit to mempool
-    if (SubmitTransaction(tx)) {
-        // Notify callbacks
-        for (const auto& callback : tx_callbacks_) {
-            callback(tx);
-        }
-    }
+    SubmitTransaction(tx);
 }
 
 void Node::HandleInvReceived(const std::string& peer_id, const p2p::InvMessage& inv) {
@@ -527,16 +556,12 @@ void Node::StartMining(const std::vector<uint8_t>& coinbase_pubkey, size_t num_t
             num_threads = 1;
     }
 
-    // Note: Miner initialization would require passing chainstate
-    // For now, mining is not fully integrated with the node
-    // TODO: Create miner with proper chainstate reference
-    // miner_ = std::make_unique<mining::Miner>(chainstate, coinbase_pubkey);
+    miner_ = std::make_unique<mining::Miner>(chain_state_, coinbase_pubkey_);
 
     is_mining_ = true;
     total_hashes_ = 0;
 
     std::cout << "Starting mining with " << num_threads << " threads" << std::endl;
-    std::cout << "NOTE: Mining integration with node is pending full implementation" << std::endl;
 
     // Start mining threads
     for (size_t i = 0; i < num_threads; ++i) {

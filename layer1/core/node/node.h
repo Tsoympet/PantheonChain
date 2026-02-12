@@ -198,6 +198,7 @@ class Node {
 
     // Core components
     std::unique_ptr<chainstate::Chain> chain_;
+    chainstate::ChainState chain_state_;
     std::unique_ptr<mempool::Mempool> mempool_;
 
     // Peer management
