@@ -21,7 +21,7 @@ echo "=== Verifying checksums from: $CHECKSUMS_FILE ==="
 SHA256_SECTION=$(awk '/^# SHA-256/,/^# SHA-512/' "$CHECKSUMS_FILE" | grep -v "^#" | grep -v "^$")
 
 # Verify SHA-256
-echo "$SHA256_SECTION" | while read hash file; do
+echo "$SHA256_SECTION" | while read -r hash file; do
     if [ -f "$file" ]; then
         echo -n "Verifying SHA-256: $file ... "
         calculated=$(sha256sum "$file" | awk '{print $1}')
@@ -42,7 +42,7 @@ done
 SHA512_SECTION=$(awk '/^# SHA-512/,EOF' "$CHECKSUMS_FILE" | grep -v "^#" | grep -v "^$")
 
 # Verify SHA-512
-echo "$SHA512_SECTION" | while read hash file; do
+echo "$SHA512_SECTION" | while read -r hash file; do
     if [ -f "$file" ]; then
         echo -n "Verifying SHA-512: $file ... "
         calculated=$(sha512sum "$file" | awk '{print $1}')

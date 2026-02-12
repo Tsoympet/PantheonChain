@@ -17,9 +17,11 @@ OUTPUT_FILE="parthenon-${VERSION}-checksums.txt"
 rm -f "$OUTPUT_FILE"
 
 # Generate SHA-256 checksums
-echo "# ParthenonChain ${VERSION} - SHA-256 Checksums" > "$OUTPUT_FILE"
-echo "# Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
+{
+    echo "# ParthenonChain ${VERSION} - SHA-256 Checksums"
+    echo "# Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+    echo ""
+} > "$OUTPUT_FILE"
 
 for file in "$@"; do
     if [ -f "$file" ]; then
@@ -28,9 +30,11 @@ for file in "$@"; do
     fi
 done
 
-echo "" >> "$OUTPUT_FILE"
-echo "# SHA-512 Checksums" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
+{
+    echo ""
+    echo "# SHA-512 Checksums"
+    echo ""
+} >> "$OUTPUT_FILE"
 
 # Generate SHA-512 checksums
 for file in "$@"; do
