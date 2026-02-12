@@ -140,17 +140,35 @@ jobs:
 
     - name: Configure CMake
       run: |
-        $opensslCandidates = @()
-        $opensslCandidates += Get-ChildItem -Path $env:ProgramFiles -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue
-        $programFilesX86 = ${env:ProgramFiles(x86)}
-        if ($programFilesX86) {
-          $opensslCandidates += Get-ChildItem -Path $programFilesX86 -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue
+        refreshenv
+
+        $opensslPaths = @(
+          "$env:ProgramFiles\OpenSSL-Win64",
+          "$env:ProgramFiles\OpenSSL",
+          "${env:ProgramFiles(x86)}\OpenSSL-Win64",
+          "${env:ProgramFiles(x86)}\OpenSSL"
+        )
+
+        $opensslRoot = $opensslPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+        if (-not $opensslRoot) {
+          $opensslCandidates = @()
+          $opensslCandidates += Get-ChildItem -Path $env:ProgramFiles -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue
+          $programFilesX86 = ${env:ProgramFiles(x86)}
+          if ($programFilesX86) {
+            $opensslCandidates += Get-ChildItem -Path $programFilesX86 -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue
+          }
+          $opensslRoot = $opensslCandidates | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
         }
-        $opensslRoot = $opensslCandidates | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
-        if (-not $opensslRoot) { throw 'OpenSSL installation not found in Program Files.' }
+
+        if (-not $opensslRoot) {
+          throw 'OpenSSL installation not found. Available paths checked: ' + ($opensslPaths -join ', ')
+        }
+
+        Write-Host "Using OpenSSL at: $opensslRoot"
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
-          -DOPENSSL_ROOT_DIR=$opensslRoot `
+          -DOPENSSL_ROOT_DIR="$opensslRoot" `
           -GNinja
 
     - name: Build
