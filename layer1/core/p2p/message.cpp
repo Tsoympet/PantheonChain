@@ -6,6 +6,7 @@
 #include "crypto/sha256.h"
 
 #include <cstring>
+#include <stdexcept>
 
 namespace parthenon {
 namespace p2p {
@@ -340,61 +341,61 @@ std::optional<InvMessage> InvMessage::Deserialize(const uint8_t* data, size_t le
 // AddrMessage
 
 std::vector<uint8_t> AddrMessage::Serialize() const {
-    return {};
+    throw std::logic_error("AddrMessage::Serialize not implemented");
 }
 
 std::optional<AddrMessage> AddrMessage::Deserialize(const uint8_t* data, size_t len) {
     (void)data;
     (void)len;
-    return AddrMessage{};
+    throw std::logic_error("AddrMessage::Deserialize not implemented");
 }
 
 // BlockMessage
 
 std::vector<uint8_t> BlockMessage::Serialize() const {
-    return {};
+    throw std::logic_error("BlockMessage::Serialize not implemented");
 }
 
 std::optional<BlockMessage> BlockMessage::Deserialize(const uint8_t* data, size_t len) {
     (void)data;
     (void)len;
-    return std::nullopt;
+    throw std::logic_error("BlockMessage::Deserialize not implemented");
 }
 
 // TxMessage
 
 std::vector<uint8_t> TxMessage::Serialize() const {
-    return {};
+    throw std::logic_error("TxMessage::Serialize not implemented");
 }
 
 std::optional<TxMessage> TxMessage::Deserialize(const uint8_t* data, size_t len) {
     (void)data;
     (void)len;
-    return std::nullopt;
+    throw std::logic_error("TxMessage::Deserialize not implemented");
 }
 
 // GetHeadersMessage
 
 std::vector<uint8_t> GetHeadersMessage::Serialize() const {
-    return {};
+    throw std::logic_error("GetHeadersMessage::Serialize not implemented");
 }
 
 std::optional<GetHeadersMessage> GetHeadersMessage::Deserialize(const uint8_t* data, size_t len) {
     (void)data;
     (void)len;
-    return std::nullopt;
+    throw std::logic_error("GetHeadersMessage::Deserialize not implemented");
 }
 
 // HeadersMessage
 
 std::vector<uint8_t> HeadersMessage::Serialize() const {
-    return {};
+    throw std::logic_error("HeadersMessage::Serialize not implemented");
 }
 
 std::optional<HeadersMessage> HeadersMessage::Deserialize(const uint8_t* data, size_t len) {
     (void)data;
     (void)len;
-    return std::nullopt;
+    throw std::logic_error("HeadersMessage::Deserialize not implemented");
 }
 
 // Helper functions

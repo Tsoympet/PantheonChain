@@ -5,6 +5,8 @@
 #include "rpc/rpc_server.h"
 
 #include <cassert>
+#include <chrono>
+#include <filesystem>
 #include <iostream>
 
 using namespace parthenon;
@@ -27,7 +29,11 @@ void TestStopMethodWithoutNode() {
 void TestStopMethodWithNode() {
     std::cout << "Test: stop method with node" << std::endl;
 
-    node::Node node("/tmp/parthenon-rpc-test", 0);
+    const auto unique_suffix =
+        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    const auto temp_dir =
+        std::filesystem::temp_directory_path() / ("parthenon-rpc-test-" + unique_suffix);
+    node::Node node(temp_dir.string(), 0);
     rpc::RPCServer server;
     server.SetNode(&node);
 
@@ -38,6 +44,9 @@ void TestStopMethodWithNode() {
     auto response = server.HandleRequest(request);
     assert(!response.IsError());
     assert(response.result == "\"Node stopping\"");
+
+    std::error_code cleanup_error;
+    std::filesystem::remove_all(temp_dir, cleanup_error);
 
     std::cout << "  ✓ Passed (stop response)" << std::endl;
 }
