@@ -3,6 +3,7 @@
 
 #include "transaction.h"
 
+#include <cstddef>
 #include <cstring>
 #include <map>
 #include <set>
@@ -56,6 +57,43 @@ uint64_t ReadCompactSize(const uint8_t*& input) {
     }
 }
 
+static bool ReadCompactSizeChecked(const uint8_t*& input, const uint8_t* end, uint64_t& size) {
+    if (input >= end) {
+        return false;
+    }
+
+    uint8_t first = *input++;
+    if (first < 253) {
+        size = first;
+        return true;
+    } else if (first == 253) {
+        if (end - input < 2) {
+            return false;
+        }
+        size = input[0] | (static_cast<uint64_t>(input[1]) << 8);
+        input += 2;
+        return true;
+    } else if (first == 254) {
+        if (end - input < 4) {
+            return false;
+        }
+        size = input[0] | (static_cast<uint64_t>(input[1]) << 8) |
+               (static_cast<uint64_t>(input[2]) << 16) | (static_cast<uint64_t>(input[3]) << 24);
+        input += 4;
+        return true;
+    } else {
+        if (end - input < 8) {
+            return false;
+        }
+        size = 0;
+        for (int i = 0; i < 8; i++) {
+            size |= static_cast<uint64_t>(input[i]) << (i * 8);
+        }
+        input += 8;
+        return true;
+    }
+}
+
 // OutPoint serialization
 void OutPoint::Serialize(std::vector<uint8_t>& output) const {
     // 32 bytes txid
@@ -95,13 +133,22 @@ void TxInput::Serialize(std::vector<uint8_t>& output) const {
     output.push_back(static_cast<uint8_t>(sequence >> 24));
 }
 
-TxInput TxInput::Deserialize(const uint8_t*& input) {
+std::optional<TxInput> TxInput::Deserialize(const uint8_t*& input, const uint8_t* end) {
     TxInput result;
 
+    if (end - input < 36) {
+        return std::nullopt;
+    }
     result.prevout = OutPoint::Deserialize(input);
     input += 36;  // 32 + 4
 
-    uint64_t script_len = ReadCompactSize(input);
+    uint64_t script_len = 0;
+    if (!ReadCompactSizeChecked(input, end, script_len)) {
+        return std::nullopt;
+    }
+    if (end - input < static_cast<ptrdiff_t>(script_len + 4)) {
+        return std::nullopt;
+    }
     result.signature_script.resize(script_len);
     std::copy(input, input + script_len, result.signature_script.begin());
     input += script_len;
@@ -126,13 +173,22 @@ void TxOutput::Serialize(std::vector<uint8_t>& output) const {
     output.insert(output.end(), pubkey_script.begin(), pubkey_script.end());
 }
 
-TxOutput TxOutput::Deserialize(const uint8_t*& input) {
+std::optional<TxOutput> TxOutput::Deserialize(const uint8_t*& input, const uint8_t* end) {
     TxOutput result;
 
+    if (end - input < 9) {
+        return std::nullopt;
+    }
     result.value = AssetAmount::Deserialize(input);
     input += 9;
 
-    uint64_t script_len = ReadCompactSize(input);
+    uint64_t script_len = 0;
+    if (!ReadCompactSizeChecked(input, end, script_len)) {
+        return std::nullopt;
+    }
+    if (end - input < static_cast<ptrdiff_t>(script_len)) {
+        return std::nullopt;
+    }
     result.pubkey_script.resize(script_len);
     std::copy(input, input + script_len, result.pubkey_script.begin());
     input += script_len;
@@ -181,36 +237,57 @@ std::optional<Transaction> Transaction::Deserialize(const uint8_t* data, size_t 
 
     Transaction tx;
     const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
 
     // Version
+    if (end - ptr < 4) {
+        return std::nullopt;
+    }
     tx.version = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
                  (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
     ptr += 4;
 
     // Input count
-    uint64_t input_count = ReadCompactSize(ptr);
+    uint64_t input_count = 0;
+    if (!ReadCompactSizeChecked(ptr, end, input_count)) {
+        return std::nullopt;
+    }
     if (input_count > 100000)
         return std::nullopt;  // Sanity check
 
     // Inputs
     for (uint64_t i = 0; i < input_count; i++) {
-        tx.inputs.push_back(TxInput::Deserialize(ptr));
+        auto input_opt = TxInput::Deserialize(ptr, end);
+        if (!input_opt) {
+            return std::nullopt;
+        }
+        tx.inputs.push_back(*input_opt);
     }
 
     // Output count
-    uint64_t output_count = ReadCompactSize(ptr);
+    uint64_t output_count = 0;
+    if (!ReadCompactSizeChecked(ptr, end, output_count)) {
+        return std::nullopt;
+    }
     if (output_count > 100000)
         return std::nullopt;  // Sanity check
 
     // Outputs
     for (uint64_t i = 0; i < output_count; i++) {
-        tx.outputs.push_back(TxOutput::Deserialize(ptr));
+        auto output_opt = TxOutput::Deserialize(ptr, end);
+        if (!output_opt) {
+            return std::nullopt;
+        }
+        tx.outputs.push_back(*output_opt);
     }
 
     // Locktime
+    if (end - ptr < 4) {
+        return std::nullopt;
+    }
     tx.locktime = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
                   (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
-
+    ptr += 4;
     return tx;
 }
 
