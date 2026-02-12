@@ -347,6 +347,11 @@ void Node::RequestBlocks(const std::string& peer_id, uint32_t start_height, uint
 }
 
 bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
+    // Validate block structure
+    if (!block.IsValid()) {
+        return false;
+    }
+
     if (!chain_state_.ValidateBlock(block)) {
         std::cerr << "Block failed chain state validation" << std::endl;
         return false;
@@ -477,14 +482,18 @@ void Node::HandleBlockReceived(const std::string& peer_id, const primitives::Blo
     std::cout << "Received block from " << peer_id << std::endl;
 
     // Process the block
-    ProcessBlock(block, peer_id);
+    if (!ProcessBlock(block, peer_id)) {
+        return;
+    }
 }
 
 void Node::HandleTxReceived(const std::string& peer_id, const primitives::Transaction& tx) {
     std::cout << "Received transaction from " << peer_id << std::endl;
 
     // Submit to mempool
-    SubmitTransaction(tx);
+    if (!SubmitTransaction(tx)) {
+        return;
+    }
 }
 
 void Node::HandleInvReceived(const std::string& peer_id, const p2p::InvMessage& inv) {
