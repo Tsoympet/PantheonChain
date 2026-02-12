@@ -135,6 +135,9 @@ jobs:
           "C:\Program Files (x86)\OpenSSL-Win64",
           "C:\Program Files (x86)\OpenSSL"
         )
+        if ($env:OPENSSL_ROOT_DIR) {
+          $opensslLocations = @($env:OPENSSL_ROOT_DIR) + $opensslLocations
+        }
         
         $opensslRoot = $opensslLocations | Where-Object { Test-Path $_ } | Select-Object -First 1
         
