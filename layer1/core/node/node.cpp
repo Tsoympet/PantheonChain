@@ -184,7 +184,7 @@ void Node::AddPeer(const std::string& address, uint16_t port) {
     PeerInfo info;
     info.address = address;
     info.port = port;
-    info.version = 1;
+    info.version = kDefaultPeerVersion;
     info.height = 0;
     info.is_connected = false;
     info.last_seen = 0;
@@ -438,10 +438,10 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         address = peer_id.substr(0, colon_pos);
         auto port_str = peer_id.substr(colon_pos + 1);
         bool port_valid = false;
-        if (!port_str.empty() && port_str.size() <= 5) {
+        if (!port_str.empty()) {
             try {
                 auto parsed_port = std::stoul(port_str);
-                if (parsed_port <= 65535) {
+                if (parsed_port > 0 && parsed_port <= 65535) {
                     port = static_cast<uint16_t>(parsed_port);
                     port_valid = true;
                 }
@@ -465,7 +465,7 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         PeerInfo info;
         info.address = address;
         info.port = port;
-        info.version = 1;
+        info.version = kDefaultPeerVersion;
         info.height = 0;
         info.is_connected = true;
         info.last_seen = last_seen;

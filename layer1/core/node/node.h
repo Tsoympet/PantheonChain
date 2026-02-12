@@ -192,6 +192,8 @@ class Node {
     void SyncWalletWithChain();
 
   private:
+    static constexpr uint32_t kDefaultPeerVersion = 1;
+
     std::string data_dir_;
     uint16_t port_;
     bool running_;
