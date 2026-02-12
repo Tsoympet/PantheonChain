@@ -432,22 +432,22 @@ void Node::HandleNewPeer(const std::string& peer_id) {
     if (colon_pos != std::string::npos) {
         address = peer_id.substr(0, colon_pos);
         auto port_str = peer_id.substr(colon_pos + 1);
-        if (port_str.empty() || port_str.size() > 5) {
-            std::cerr << "Peer port out of range for peer: " << peer_id << std::endl;
-            port = 0;
-        } else {
+        bool port_valid = false;
+        if (!port_str.empty() && port_str.size() <= 5) {
             try {
                 auto parsed_port = std::stoul(port_str);
-                if (parsed_port > 65535) {
-                    std::cerr << "Peer port out of range for peer: " << peer_id << std::endl;
-                    port = 0;
-                } else {
+                if (parsed_port <= 65535) {
                     port = static_cast<uint16_t>(parsed_port);
+                    port_valid = true;
                 }
             } catch (...) {
-                std::cerr << "Failed to parse peer port for peer: " << peer_id << std::endl;
-                port = 0;
+                port_valid = false;
             }
+        }
+
+        if (!port_valid) {
+            std::cerr << "Invalid peer port for peer: " << peer_id << std::endl;
+            port = 0;
         }
     }
 
