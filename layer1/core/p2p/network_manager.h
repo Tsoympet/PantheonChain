@@ -20,6 +20,7 @@
 #endif
 
 #include <atomic>
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <memory>
@@ -28,7 +29,6 @@
 #include <set>
 #include <thread>
 #include <vector>
-#include <cstddef>
 
 namespace parthenon {
 namespace p2p {

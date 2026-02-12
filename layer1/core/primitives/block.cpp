@@ -5,10 +5,53 @@
 
 #include "consensus/difficulty.h"
 
+#include <cstddef>
 #include <cstring>
 
 namespace parthenon {
 namespace primitives {
+
+static bool ReadCompactSizeChecked(const uint8_t*& input, const uint8_t* end, uint64_t& size) {
+    if (input >= end) {
+        return false;
+    }
+
+    uint8_t first = *input++;
+    if (first < 253) {
+        size = first;
+        return true;
+    }
+
+    if (first == 253) {
+        if (end - input < 2) {
+            return false;
+        }
+        size = input[0] | (static_cast<uint64_t>(input[1]) << 8);
+        input += 2;
+        return true;
+    }
+
+    if (first == 254) {
+        if (end - input < 4) {
+            return false;
+        }
+        size = input[0] | (static_cast<uint64_t>(input[1]) << 8) |
+               (static_cast<uint64_t>(input[2]) << 16) | (static_cast<uint64_t>(input[3]) << 24);
+        input += 4;
+        return true;
+    }
+
+    if (end - input < 8) {
+        return false;
+    }
+
+    size = 0;
+    for (int i = 0; i < 8; i++) {
+        size |= static_cast<uint64_t>(input[i]) << (i * 8);
+    }
+    input += 8;
+    return true;
+}
 
 // BlockHeader methods
 std::vector<uint8_t> BlockHeader::Serialize() const {
@@ -174,19 +217,23 @@ std::optional<Block> Block::Deserialize(const uint8_t* data, size_t len) {
 
     Block block;
     const uint8_t* ptr = data;
+    const uint8_t* end = data + len;
 
     // Header (104 bytes with EVM fields)
     block.header = BlockHeader::Deserialize(ptr);
     ptr += 104;  // Extended header size
 
     // Transaction count
-    uint64_t tx_count = ReadCompactSize(ptr);
+    uint64_t tx_count = 0;
+    if (!ReadCompactSizeChecked(ptr, end, tx_count)) {
+        return std::nullopt;
+    }
     if (tx_count == 0 || tx_count > 1000000)
         return std::nullopt;  // Sanity check
 
     // Transactions
     for (uint64_t i = 0; i < tx_count; i++) {
-        size_t remaining = len - static_cast<size_t>(ptr - data);
+        size_t remaining = static_cast<size_t>(end - ptr);
         auto tx = Transaction::Deserialize(ptr, remaining);
         if (!tx)
             return std::nullopt;
@@ -194,6 +241,8 @@ std::optional<Block> Block::Deserialize(const uint8_t* data, size_t len) {
 
         // Advance pointer (simplified - need to track actual bytes read)
         auto tx_bytes = tx->Serialize();
+        if (tx_bytes.size() > remaining)
+            return std::nullopt;
         ptr += tx_bytes.size();
     }
 

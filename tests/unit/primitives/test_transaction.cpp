@@ -46,8 +46,9 @@ void TestTxOutput() {
 
     // Deserialize
     const uint8_t* ptr = serialized.data();
-    TxOutput output2 = TxOutput::Deserialize(ptr);
-    assert(output == output2);
+    auto output2 = TxOutput::Deserialize(ptr, serialized.data() + serialized.size());
+    assert(output2.has_value());
+    assert(output == *output2);
 
     std::cout << "  ✓ Passed" << std::endl;
 }

@@ -43,6 +43,7 @@ jobs:
       run: |
         cmake -B build \
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DPARTHENON_REQUIRE_REAL_DEPS=ON \
           -GNinja
 
     - name: Build
@@ -79,6 +80,7 @@ jobs:
       run: |
         cmake -B build \
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DPARTHENON_REQUIRE_REAL_DEPS=ON \
           -GNinja
 
     - name: Build
@@ -149,6 +151,7 @@ jobs:
         Write-Host "Found OpenSSL at: $opensslRoot"
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
+          -DPARTHENON_REQUIRE_REAL_DEPS=ON `
           -DOPENSSL_ROOT_DIR=$opensslRoot `
           -GNinja
 

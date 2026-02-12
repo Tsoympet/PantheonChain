@@ -71,7 +71,7 @@ struct TxInput {
     void Serialize(std::vector<uint8_t>& output) const;
 
     // Deserialize input
-    static TxInput Deserialize(const uint8_t*& input);
+    static std::optional<TxInput> Deserialize(const uint8_t*& input, const uint8_t* end);
 };
 
 /**
@@ -97,7 +97,7 @@ struct TxOutput {
     void Serialize(std::vector<uint8_t>& output) const;
 
     // Deserialize output
-    static TxOutput Deserialize(const uint8_t*& input);
+    static std::optional<TxOutput> Deserialize(const uint8_t*& input, const uint8_t* end);
 };
 
 /**
