@@ -129,8 +129,6 @@ jobs:
 
     - name: Configure CMake
       run: |
-        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
-        
         $opensslLocations = @(
           "C:\Program Files\OpenSSL-Win64",
           "C:\Program Files\OpenSSL",
