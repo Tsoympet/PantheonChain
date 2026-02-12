@@ -353,6 +353,7 @@ bool Node::ValidateAndApplyBlock(const primitives::Block& block) {
     }
 
     if (!chain_state_.ValidateBlock(block)) {
+        std::cerr << "Block failed chain state validation" << std::endl;
         return false;
     }
 
@@ -436,8 +437,15 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         address = peer_id.substr(0, colon_pos);
         auto port_str = peer_id.substr(colon_pos + 1);
         try {
-            port = static_cast<uint16_t>(std::stoul(port_str));
+            auto parsed_port = std::stoul(port_str);
+            if (parsed_port > 65535) {
+                std::cerr << "Peer port out of range for peer: " << peer_id << std::endl;
+                port = 0;
+            } else {
+                port = static_cast<uint16_t>(parsed_port);
+            }
         } catch (...) {
+            std::cerr << "Failed to parse peer port for peer: " << peer_id << std::endl;
             port = 0;
         }
     }
