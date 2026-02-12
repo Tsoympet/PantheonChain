@@ -279,7 +279,7 @@ void TestHeadersMessages() {
     get_headers.hash_stop.fill(0x00);
 
     auto get_headers_bytes = get_headers.Serialize();
-    std::vector<uint8_t> expected = {0x71, 0x11, 0x01, 0x00, 0x01};
+    std::vector<uint8_t> expected = {0x71, 0x11, 0x01, 0x00, 0x01};  // 70001 LE + locator count
     expected.insert(expected.end(), locator.begin(), locator.end());
     expected.insert(expected.end(), get_headers.hash_stop.begin(), get_headers.hash_stop.end());
     assert(get_headers_bytes == expected);

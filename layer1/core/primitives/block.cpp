@@ -47,7 +47,7 @@ static bool ReadCompactSizeChecked(const uint8_t*& input, const uint8_t* end, ui
 
     size = 0;
     for (int i = 0; i < 8; i++) {
-        size |= static_cast<uint64_t>(input[i]) << (8 * i);
+        size |= static_cast<uint64_t>(input[i]) << (i * 8);
     }
     input += 8;
     return true;
