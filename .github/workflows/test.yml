@@ -125,8 +125,7 @@ jobs:
       run: |
         $packages = @(
           @{ Name = "cmake"; Command = "cmake" },
-          @{ Name = "ninja"; Command = "ninja" },
-          @{ Name = "openssl"; Command = "openssl" }
+          @{ Name = "ninja"; Command = "ninja" }
         )
 
         foreach ($package in $packages) {
@@ -137,6 +136,8 @@ jobs:
             Write-Host "$($package.Command) already available; skipping Chocolatey install."
           }
         }
+
+        choco install openssl -y
 
     - name: Configure CMake
       run: |
