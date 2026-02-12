@@ -22,7 +22,8 @@ namespace p2p {
 
 // PeerConnection implementation
 
-PeerConnection::PeerConnection(int socket_fd, const std::string& address, uint16_t port)
+PeerConnection::PeerConnection(int socket_fd, const std::string& address, uint16_t port,
+                               uint32_t network_magic)
     : socket_fd_(socket_fd),
       address_(address),
       port_(port),
@@ -31,7 +32,7 @@ PeerConnection::PeerConnection(int socket_fd, const std::string& address, uint16
       height_(0),
       services_(0),
       nonce_(0),
-      network_magic_(NetworkMagic::MAINNET) {
+      network_magic_(network_magic) {
     // Generate random nonce for this connection
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -433,7 +434,8 @@ void NetworkManager::AcceptLoop() {
                 continue;
             }
 
-            auto peer = std::make_unique<PeerConnection>(client_socket, address, port);
+            auto peer =
+                std::make_unique<PeerConnection>(client_socket, address, port, network_magic_);
             peers_[peer_id] = std::move(peer);
         }
 
@@ -520,7 +522,7 @@ void NetworkManager::AddPeer(const std::string& address, uint16_t port) {
 void NetworkManager::ConnectOutbound(const std::string& address, uint16_t port) {
     std::string peer_id = MakePeerId(address, port);
 
-    auto peer = std::make_unique<PeerConnection>(-1, address, port);
+    auto peer = std::make_unique<PeerConnection>(-1, address, port, network_magic_);
     if (!peer->Connect()) {
         std::cerr << "Failed to connect to " << address << ":" << port << std::endl;
         return;
