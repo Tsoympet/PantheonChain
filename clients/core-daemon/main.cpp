@@ -2,14 +2,31 @@
 // Copyright (c) 2024 ParthenonChain Developers
 // Distributed under the MIT software license
 
+#include "node/node.h"
+#include "rpc/rpc_server.h"
+#include "wallet/wallet.h"
+
+#include <openssl/rand.h>
+
+#include <array>
 #include <atomic>
+#include <cerrno>
 #include <csignal>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
+#include <optional>
 #include <string>
 #include <thread>
+
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 namespace parthenon {
 
@@ -86,40 +103,98 @@ class Node {
   private:
     Config config_;
     std::atomic<bool> running_{false};
-    std::thread network_thread_;
-    std::thread validation_thread_;
-    std::thread rpc_thread_;
+    std::unique_ptr<node::Node> core_node_;
+    std::shared_ptr<wallet::Wallet> wallet_;
+    std::unique_ptr<rpc::RPCServer> rpc_server_;
 
-    void NetworkLoop() {
-        std::cout << "[Network] Thread started on port " << config_.network_port << std::endl;
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-        std::cout << "[Network] Thread stopped" << std::endl;
-    }
+    static std::optional<std::array<uint8_t, 32>> LoadOrGenerateWalletSeed(
+        const std::filesystem::path& data_dir, std::string& error_message) {
+        const auto seed_path = data_dir / "wallet.seed";
+        std::array<uint8_t, 32> seed{};
 
-    void ValidationLoop() {
-        std::cout << "[Validation] Thread started" << std::endl;
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (std::filesystem::exists(seed_path)) {
+            std::ifstream seed_file(seed_path, std::ios::binary);
+            if (!seed_file) {
+                error_message = "Failed to load wallet seed from " + seed_path.string() + ": " +
+                                std::strerror(errno);
+                return std::nullopt;
+            }
+            seed_file.read(reinterpret_cast<char*>(seed.data()),
+                           static_cast<std::streamsize>(seed.size()));
+            if (seed_file.gcount() != static_cast<std::streamsize>(seed.size())) {
+                error_message = "Wallet seed at " + seed_path.string() +
+                                " is invalid (expected 32 bytes)";
+                return std::nullopt;
+            }
+            return seed;
         }
-        std::cout << "[Validation] Thread stopped" << std::endl;
-    }
 
-    void RPCLoop() {
-        if (!config_.rpc_enabled)
-            return;
-        std::cout << "[RPC] Server started on port " << config_.rpc_port << std::endl;
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (RAND_status() != 1) {
+            if (RAND_poll() != 1) {
+                error_message = "OpenSSL random number generator not seeded; check system entropy";
+                return std::nullopt;
+            }
         }
-        std::cout << "[RPC] Server stopped" << std::endl;
+
+        if (RAND_bytes(seed.data(), static_cast<int>(seed.size())) != 1) {
+            error_message =
+                "Failed to generate wallet seed; OpenSSL RAND_bytes failed (check installation)";
+            return std::nullopt;
+        }
+#ifndef _WIN32
+        const int seed_fd =
+            ::open(seed_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        if (seed_fd == -1) {
+            error_message = "Failed to create wallet seed at " + seed_path.string() + ": " +
+                            std::strerror(errno);
+            return std::nullopt;
+        }
+        const auto bytes_written = ::write(seed_fd, seed.data(), seed.size());
+        if (bytes_written != static_cast<ssize_t>(seed.size())) {
+            error_message = "Failed to save wallet seed at " + seed_path.string() +
+                            "; check disk space and permissions";
+            ::close(seed_fd);
+            return std::nullopt;
+        }
+        ::close(seed_fd);
+#else
+        std::ofstream seed_file(seed_path, std::ios::binary | std::ios::trunc);
+        if (!seed_file) {
+            error_message = "Failed to create wallet seed at " + seed_path.string() + ": " +
+                            std::strerror(errno);
+            return std::nullopt;
+        }
+
+        std::error_code permissions_error;
+        std::filesystem::permissions(seed_path,
+                                     std::filesystem::perms::owner_read |
+                                         std::filesystem::perms::owner_write,
+                                     std::filesystem::perm_options::replace, permissions_error);
+        if (permissions_error) {
+            std::cerr << "Warning: Failed to set wallet.seed permissions: "
+                      << permissions_error.message() << std::endl;
+        }
+
+        seed_file.write(reinterpret_cast<const char*>(seed.data()),
+                        static_cast<std::streamsize>(seed.size()));
+        if (!seed_file) {
+            error_message = "Failed to save wallet seed at " + seed_path.string() +
+                            "; check disk space and permissions";
+            return std::nullopt;
+        }
+#endif
+        return seed;
     }
 
   public:
     explicit Node(const Config& config) : config_(config) {}
 
     bool Start() {
+        if (running_.load()) {
+            std::cerr << "Node already running" << std::endl;
+            return false;
+        }
+
         std::cout << "=== ParthenonChain Node Starting ===" << std::endl;
         std::cout << "Data directory: " << config_.data_dir << std::endl;
         std::cout << "Network port: " << config_.network_port << std::endl;
@@ -129,34 +204,86 @@ class Node {
         }
         std::cout << "Mining: " << (config_.mining_enabled ? "enabled" : "disabled") << std::endl;
 
-        running_ = true;
-
-        network_thread_ = std::thread(&Node::NetworkLoop, this);
-        validation_thread_ = std::thread(&Node::ValidationLoop, this);
-        if (config_.rpc_enabled) {
-            rpc_thread_ = std::thread(&Node::RPCLoop, this);
+        try {
+            std::filesystem::create_directories(config_.data_dir);
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to prepare data directory: " << e.what() << std::endl;
+            return false;
         }
 
+        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port);
+
+        std::string seed_error;
+        auto seed = LoadOrGenerateWalletSeed(config_.data_dir, seed_error);
+        if (!seed) {
+            std::cerr << seed_error << std::endl;
+            return false;
+        }
+        wallet_ = std::make_shared<wallet::Wallet>(*seed);
+
+        if (!core_node_->Start()) {
+            std::cerr << "Failed to start core node" << std::endl;
+            return false;
+        }
+
+        core_node_->AttachWallet(wallet_);
+
+        if (config_.rpc_enabled) {
+            rpc_server_ = std::make_unique<rpc::RPCServer>(config_.rpc_port);
+            rpc_server_->SetNode(core_node_.get());
+            rpc_server_->SetWallet(wallet_.get());
+            if (!rpc_server_->Start()) {
+                std::cerr << "Failed to start RPC server" << std::endl;
+                core_node_->Stop();
+                return false;
+            }
+        }
+
+        if (config_.mining_enabled) {
+            auto mining_address = wallet_->GenerateAddress("mining");
+            if (mining_address.pubkey.empty()) {
+                std::cerr << "Failed to generate mining address" << std::endl;
+                if (rpc_server_ && rpc_server_->IsRunning()) {
+                    rpc_server_->Stop();
+                }
+                if (core_node_) {
+                    core_node_->Stop();
+                }
+                return false;
+            }
+            core_node_->StartMining(mining_address.pubkey);
+        }
+
+        running_ = true;
         std::cout << "=== Node Started Successfully ===" << std::endl;
         return true;
     }
 
     void Stop() {
+        const bool node_running = core_node_ && core_node_->IsRunning();
+        const bool rpc_running = rpc_server_ && rpc_server_->IsRunning();
+        if (!running_.load() && !node_running && !rpc_running) {
+            return;
+        }
         std::cout << "\n=== Shutting Down Node ===" << std::endl;
         running_ = false;
 
-        if (network_thread_.joinable())
-            network_thread_.join();
-        if (validation_thread_.joinable())
-            validation_thread_.join();
-        if (rpc_thread_.joinable())
-            rpc_thread_.join();
+        if (rpc_server_ && rpc_server_->IsRunning()) {
+            rpc_server_->Stop();
+        }
+        if (core_node_) {
+            core_node_->Stop();
+        }
 
         std::cout << "=== Node Stopped ===" << std::endl;
     }
 
     void WaitForShutdown() {
         while (running_) {
+            if (core_node_ && !core_node_->IsRunning()) {
+                running_ = false;
+                break;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }

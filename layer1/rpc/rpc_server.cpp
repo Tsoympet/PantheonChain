@@ -169,6 +169,7 @@ void RPCServer::InitializeStandardMethods() {
                    [this](const RPCRequest& req) { return HandleGetNewAddress(req); });
     RegisterMethod("sendtoaddress",
                    [this](const RPCRequest& req) { return HandleSendToAddress(req); });
+    RegisterMethod("stop", [this](const RPCRequest& req) { return HandleStop(req); });
 }
 
 RPCResponse RPCServer::HandleGetInfo(const RPCRequest& req) {
@@ -548,6 +549,20 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
         response.error = "Failed to send: " + std::string(e.what());
     }
 
+    return response;
+}
+
+RPCResponse RPCServer::HandleStop(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+
+    if (!node_) {
+        response.error = "Node not initialized";
+        return response;
+    }
+
+    node_->Stop();
+    response.result = "\"Node stopping\"";
     return response;
 }
 

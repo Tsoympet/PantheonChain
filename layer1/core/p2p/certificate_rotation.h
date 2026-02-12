@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <ctime>
 #include <functional>
 #include <string>

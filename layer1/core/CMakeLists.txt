@@ -180,11 +180,18 @@ else()
 endif()
 
 # P2P library
+find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
+
 add_library(parthenon_p2p STATIC
     p2p/protocol.cpp
     p2p/message.cpp
+    p2p/network_manager.cpp
     p2p/peer_database.cpp
     p2p/peer_discovery.cpp
+    p2p/tls_connection.cpp
+    p2p/zero_copy_network.cpp
+    p2p/certificate_rotation.cpp
 )
 
 target_include_directories(parthenon_p2p PUBLIC
@@ -194,6 +201,9 @@ target_include_directories(parthenon_p2p PUBLIC
 target_link_libraries(parthenon_p2p PUBLIC
     parthenon_primitives
     parthenon_crypto
+    Threads::Threads
+    OpenSSL::SSL
+    OpenSSL::Crypto
 )
 
 # Link WinSock library on Windows for networking support

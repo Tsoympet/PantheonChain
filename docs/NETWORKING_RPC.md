@@ -35,6 +35,7 @@ Client (Desktop/Mobile/CLI)
 5. `sendrawtransaction` - Submit signed transaction to mempool
 6. `getnewaddress` - Generate new wallet address
 7. `sendtoaddress` - Create, sign, and broadcast transaction
+8. `stop` - Shut down the running daemon
 
 ### Implementation Details
 

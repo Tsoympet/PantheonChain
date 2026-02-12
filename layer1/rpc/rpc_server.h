@@ -131,6 +131,7 @@ class RPCServer {
     RPCResponse HandleSendTransaction(const RPCRequest& req);
     RPCResponse HandleGetNewAddress(const RPCRequest& req);
     RPCResponse HandleSendToAddress(const RPCRequest& req);
+    RPCResponse HandleStop(const RPCRequest& req);
 };
 
 }  // namespace rpc
