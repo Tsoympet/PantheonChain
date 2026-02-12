@@ -1,40 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Parthenond - Full Node Daemon Symbol -->
-  <!-- Design: Solid temple structure (always running, foundational) -->
-  
-  <defs>
-    <style>
-      .primary { fill: #1F3A5F; }
-      .accent { fill: #B08D57; }
-    </style>
-  </defs>
-  
-  <!-- Outer circle (node boundary) -->
-  <circle cx="128" cy="128" r="112" fill="none" stroke="#1F3A5F" stroke-width="4"/>
-  
-  <!-- Inner temple structure - solid (daemon is always active) -->
-  <g transform="translate(128, 128)">
-    <!-- Base -->
-    <rect x="-64" y="64" width="128" height="8" class="accent"/>
-    
-    <!-- Three solid columns (stability) -->
-    <rect x="-48" y="0" width="12" height="64" class="primary"/>
-    <rect x="-6" y="0" width="12" height="64" class="primary"/>
-    <rect x="36" y="0" width="12" height="64" class="primary"/>
-    
-    <!-- Capitals -->
-    <rect x="-52" y="-4" width="20" height="4" class="accent"/>
-    <rect x="-10" y="-4" width="20" height="4" class="accent"/>
-    <rect x="32" y="-4" width="20" height="4" class="accent"/>
-    
-    <!-- Architrave -->
-    <rect x="-56" y="-8" width="112" height="8" class="accent"/>
-    
+<svg width="256" height="256" viewBox="0 0 256 256"
+     xmlns="http://www.w3.org/2000/svg"
+     role="img"
+     aria-label="Parthenond Full Node Icon">
+
+  <!-- Node boundary ring -->
+  <circle cx="128" cy="128" r="108"
+          fill="none"
+          stroke="#1F3A5F"
+          stroke-width="6"/>
+
+  <!-- Temple (solid / always-on structure) -->
+  <g transform="translate(128 132)">
     <!-- Pediment -->
-    <path d="M 0 -48 L 64 -8 L -64 -8 Z" class="accent"/>
-    
-    <!-- Core indicator (active node) - small circle -->
-    <circle cx="0" cy="32" r="6" class="accent"/>
+    <path d="M0 -52 L70 -14 L-70 -14 Z" fill="#B08D57"/>
+
+    <!-- Entablature -->
+    <rect x="-72" y="-14" width="144" height="14" rx="7" fill="#B08D57"/>
+    <rect x="-60" y="4" width="120" height="12" rx="6" fill="#B08D57"/>
+
+    <!-- Columns (3 strong supports) -->
+    <rect x="-44" y="16" width="16" height="56" rx="8" fill="#1F3A5F"/>
+    <rect x="-8"  y="16" width="16" height="56" rx="8" fill="#1F3A5F"/>
+    <rect x="28"  y="16" width="16" height="56" rx="8" fill="#1F3A5F"/>
+
+    <!-- Capitals -->
+    <rect x="-50" y="10" width="28" height="10" rx="5" fill="#B08D57"/>
+    <rect x="-14" y="10" width="28" height="10" rx="5" fill="#B08D57"/>
+    <rect x="22"  y="10" width="28" height="10" rx="5" fill="#B08D57"/>
+
+    <!-- Base -->
+    <rect x="-80" y="74" width="160" height="12" rx="6" fill="#B08D57"/>
+
+    <!-- Active core indicator -->
+    <circle cx="0" cy="44" r="6" fill="#B08D57"/>
   </g>
 </svg>
