@@ -337,6 +337,66 @@ std::optional<InvMessage> InvMessage::Deserialize(const uint8_t* data, size_t le
     return msg;
 }
 
+// AddrMessage
+
+std::vector<uint8_t> AddrMessage::Serialize() const {
+    return {};
+}
+
+std::optional<AddrMessage> AddrMessage::Deserialize(const uint8_t* data, size_t len) {
+    (void)data;
+    (void)len;
+    return AddrMessage{};
+}
+
+// BlockMessage
+
+std::vector<uint8_t> BlockMessage::Serialize() const {
+    return {};
+}
+
+std::optional<BlockMessage> BlockMessage::Deserialize(const uint8_t* data, size_t len) {
+    (void)data;
+    (void)len;
+    return std::nullopt;
+}
+
+// TxMessage
+
+std::vector<uint8_t> TxMessage::Serialize() const {
+    return {};
+}
+
+std::optional<TxMessage> TxMessage::Deserialize(const uint8_t* data, size_t len) {
+    (void)data;
+    (void)len;
+    return std::nullopt;
+}
+
+// GetHeadersMessage
+
+std::vector<uint8_t> GetHeadersMessage::Serialize() const {
+    return {};
+}
+
+std::optional<GetHeadersMessage> GetHeadersMessage::Deserialize(const uint8_t* data, size_t len) {
+    (void)data;
+    (void)len;
+    return std::nullopt;
+}
+
+// HeadersMessage
+
+std::vector<uint8_t> HeadersMessage::Serialize() const {
+    return {};
+}
+
+std::optional<HeadersMessage> HeadersMessage::Deserialize(const uint8_t* data, size_t len) {
+    (void)data;
+    (void)len;
+    return std::nullopt;
+}
+
 // Helper functions
 
 uint32_t CalculateChecksum(const std::vector<uint8_t>& payload) {

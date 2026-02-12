@@ -8,6 +8,9 @@ add_executable(parthenond
 
 target_link_libraries(parthenond PRIVATE
     Threads::Threads
+    parthenon_node
+    parthenon_wallet
+    parthenon_rpc
 )
 
 target_compile_features(parthenond PRIVATE cxx_std_17)

@@ -2,12 +2,20 @@
 // Copyright (c) 2024 ParthenonChain Developers
 // Distributed under the MIT software license
 
+#include "node/node.h"
+#include "rpc/rpc_server.h"
+#include "wallet/wallet.h"
+
+#include <array>
 #include <atomic>
 #include <csignal>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
+#include <random>
 #include <string>
 #include <thread>
 
@@ -86,40 +94,28 @@ class Node {
   private:
     Config config_;
     std::atomic<bool> running_{false};
-    std::thread network_thread_;
-    std::thread validation_thread_;
-    std::thread rpc_thread_;
+    std::unique_ptr<node::Node> core_node_;
+    std::shared_ptr<wallet::Wallet> wallet_;
+    std::unique_ptr<rpc::RPCServer> rpc_server_;
 
-    void NetworkLoop() {
-        std::cout << "[Network] Thread started on port " << config_.network_port << std::endl;
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+    static std::array<uint8_t, 32> GenerateWalletSeed() {
+        std::array<uint8_t, 32> seed{};
+        std::random_device rd;
+        std::uniform_int_distribution<int> dist(0, 255);
+        for (auto& byte : seed) {
+            byte = static_cast<uint8_t>(dist(rd));
         }
-        std::cout << "[Network] Thread stopped" << std::endl;
-    }
-
-    void ValidationLoop() {
-        std::cout << "[Validation] Thread started" << std::endl;
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-        std::cout << "[Validation] Thread stopped" << std::endl;
-    }
-
-    void RPCLoop() {
-        if (!config_.rpc_enabled)
-            return;
-        std::cout << "[RPC] Server started on port " << config_.rpc_port << std::endl;
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-        std::cout << "[RPC] Server stopped" << std::endl;
+        return seed;
     }
 
   public:
     explicit Node(const Config& config) : config_(config) {}
 
     bool Start() {
+        if (running_.load()) {
+            return false;
+        }
+
         std::cout << "=== ParthenonChain Node Starting ===" << std::endl;
         std::cout << "Data directory: " << config_.data_dir << std::endl;
         std::cout << "Network port: " << config_.network_port << std::endl;
@@ -129,34 +125,67 @@ class Node {
         }
         std::cout << "Mining: " << (config_.mining_enabled ? "enabled" : "disabled") << std::endl;
 
-        running_ = true;
-
-        network_thread_ = std::thread(&Node::NetworkLoop, this);
-        validation_thread_ = std::thread(&Node::ValidationLoop, this);
-        if (config_.rpc_enabled) {
-            rpc_thread_ = std::thread(&Node::RPCLoop, this);
+        try {
+            std::filesystem::create_directories(config_.data_dir);
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to prepare data directory: " << e.what() << std::endl;
+            return false;
         }
 
+        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port);
+        wallet_ = std::make_shared<wallet::Wallet>(GenerateWalletSeed());
+
+        if (!core_node_->Start()) {
+            std::cerr << "Failed to start core node" << std::endl;
+            return false;
+        }
+
+        core_node_->AttachWallet(wallet_);
+
+        if (config_.rpc_enabled) {
+            rpc_server_ = std::make_unique<rpc::RPCServer>(config_.rpc_port);
+            rpc_server_->SetNode(core_node_.get());
+            rpc_server_->SetWallet(wallet_.get());
+            if (!rpc_server_->Start()) {
+                std::cerr << "Failed to start RPC server" << std::endl;
+                core_node_->Stop();
+                return false;
+            }
+        }
+
+        if (config_.mining_enabled) {
+            auto mining_address = wallet_->GenerateAddress("mining");
+            core_node_->StartMining(mining_address.pubkey);
+        }
+
+        running_ = true;
         std::cout << "=== Node Started Successfully ===" << std::endl;
         return true;
     }
 
     void Stop() {
+        if (!running_.load() && (!core_node_ || !core_node_->IsRunning())) {
+            return;
+        }
         std::cout << "\n=== Shutting Down Node ===" << std::endl;
         running_ = false;
 
-        if (network_thread_.joinable())
-            network_thread_.join();
-        if (validation_thread_.joinable())
-            validation_thread_.join();
-        if (rpc_thread_.joinable())
-            rpc_thread_.join();
+        if (rpc_server_ && rpc_server_->IsRunning()) {
+            rpc_server_->Stop();
+        }
+        if (core_node_) {
+            core_node_->Stop();
+        }
 
         std::cout << "=== Node Stopped ===" << std::endl;
     }
 
     void WaitForShutdown() {
         while (running_) {
+            if (core_node_ && !core_node_->IsRunning()) {
+                running_ = false;
+                break;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }

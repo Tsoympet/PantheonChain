@@ -13,6 +13,7 @@ target_link_libraries(parthenon_node PUBLIC
     parthenon_chainstate
     parthenon_validation
     parthenon_mempool
+    parthenon_mining
     parthenon_p2p
     parthenon_primitives
     parthenon_storage
