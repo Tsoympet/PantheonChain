@@ -88,14 +88,14 @@ bool RingVerifier::Verify(const RingSignature& signature, const std::vector<uint
         hasher.Write(message.data(), message.size());
         hasher.Write(signature.ring[i].data(), signature.ring[i].size());
         
-        // TODO: Use hash in actual cryptographic verification
         std::array<uint8_t, 32> hash = hasher.Finalize();
-        (void)hash;  // Intentionally unused in simplified implementation
-        
-        // Check that signature contains non-zero data
+
+        // Simplified deterministic verification:
+        // signature is expected to contain hash duplicated in two halves.
         bool valid = true;
-        for (uint8_t byte : signature.signatures[i]) {
-            if (byte == 0) {
+        for (size_t j = 0; j < 32; ++j) {
+            if (signature.signatures[i][j] != hash[j] ||
+                signature.signatures[i][j + 32] != hash[j]) {
                 valid = false;
                 break;
             }
