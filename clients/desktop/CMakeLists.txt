@@ -24,6 +24,7 @@ if(DEFINED PARTHENON_QT_TARGET_PREFIX)
     set(CMAKE_AUTOUIC ON)
 
     add_executable(parthenon-qt
+        assets/resources.qrc
         src/main.cpp
         src/mainwindow.cpp
         src/mainwindow.h
