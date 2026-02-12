@@ -77,7 +77,6 @@ class CertificateRotation {
     CertificateInfo current_cert_;
     std::function<void(const CertificateInfo&)> callback_;
     bool running_ = false;
-    void* rotation_thread_ = nullptr;
 
     void RotationLoop();
     bool LoadCertificate(const std::string& cert_path, const std::string& key_path);
