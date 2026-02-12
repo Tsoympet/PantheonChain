@@ -1,31 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- DRACHMA Token - Medium of Exchange -->
-  <!-- Design: Circle with exchange/flow arrows (Δ Delta geometry) -->
-  
-  <defs>
-    <style>
-      .coin { fill: #2A2A2E; }
-      .symbol { fill: #F5F5F2; }
-    </style>
-  </defs>
-  
-  <!-- Outer coin circle -->
-  <circle cx="128" cy="128" r="100" class="coin"/>
-  
-  <!-- Inner border circle -->
-  <circle cx="128" cy="128" r="88" fill="none" stroke="#F5F5F2" stroke-width="2"/>
-  
-  <!-- Delta (Δ) - geometric triangle representing change/flow -->
-  <path d="M 128 80 L 176 160 L 80 160 Z" fill="none" stroke="#F5F5F2" stroke-width="8"/>
-  
-  <!-- Four directional arrows (exchange in all directions) -->
-  <!-- Top arrow -->
-  <path d="M 128 32 L 128 52 M 120 44 L 128 32 L 136 44" fill="none" stroke="#F5F5F2" stroke-width="2"/>
-  <!-- Bottom arrow -->
-  <path d="M 128 204 L 128 224 M 120 212 L 128 224 L 136 212" fill="none" stroke="#F5F5F2" stroke-width="2"/>
-  <!-- Left arrow -->
-  <path d="M 32 128 L 52 128 M 44 120 L 32 128 L 44 136" fill="none" stroke="#F5F5F2" stroke-width="2"/>
-  <!-- Right arrow -->
-  <path d="M 204 128 L 224 128 M 212 120 L 224 128 L 212 136" fill="none" stroke="#F5F5F2" stroke-width="2"/>
+<svg width="256" height="256" viewBox="0 0 256 256"
+     xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="DRACHMA Token (Brand Edition)">
+
+  <!-- Coin -->
+  <circle cx="128" cy="128" r="104" fill="#1F3A5F"/>
+
+  <!-- Rim -->
+  <circle cx="128" cy="128" r="92" fill="none" stroke="#B08D57" stroke-width="3"/>
+
+  <!-- Delta -->
+  <path d="M128 76 L184 172 H72 Z"
+        fill="none"
+        stroke="#B08D57"
+        stroke-width="10"
+        stroke-linejoin="round"
+        stroke-linecap="round"/>
+
+  <!-- Exchange arrows -->
+  <g fill="none" stroke="#B08D57" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 34 V52"/>
+    <path d="M118 44 L128 34 L138 44"/>
+
+    <path d="M128 204 V222"/>
+    <path d="M118 212 L128 222 L138 212"/>
+
+    <path d="M34 128 H52"/>
+    <path d="M44 118 L34 128 L44 138"/>
+
+    <path d="M204 128 H222"/>
+    <path d="M212 118 L222 128 L212 138"/>
+  </g>
 </svg>
