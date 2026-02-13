@@ -123,6 +123,7 @@ class ConfigParser {
             mode_opt = node::NetworkMode::MAINNET;
         }
 
+        config.network = node::NetworkModeToString(*mode_opt);
         const auto params = node::GetNetworkParams(*mode_opt);
         if (!config.network_port_configured) {
             config.network_port = static_cast<int>(params.default_p2p_port);
@@ -249,6 +250,12 @@ class Node {
         }
 
         const auto parsed_mode = node::ParseNetworkMode(config_.network);
+        if (!parsed_mode.has_value()) {
+            std::cerr << "Invalid internal network mode '" << config_.network
+                      << "' after config parsing" << std::endl;
+            return false;
+        }
+        const auto network_mode = *parsed_mode;
         const auto network_mode = parsed_mode.value_or(node::NetworkMode::MAINNET);
         if (!parsed_mode.has_value()) {
             std::cerr << "Unknown network mode '" << config_.network
