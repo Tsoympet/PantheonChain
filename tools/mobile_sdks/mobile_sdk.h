@@ -29,12 +29,12 @@ struct NetworkConfig {
  * Transaction data
  */
 struct Transaction {
-    std::string from;
+    std::string from;               // Optional; leave empty for wallet-managed inputs
     std::string to;
     uint64_t amount;
     std::string asset;             // "TALN", "DRM", or "OBL"
     std::string memo;
-    uint64_t fee;
+    uint64_t fee;                  // Optional; 0 uses node default fee policy
     std::vector<uint8_t> signature;
     
     Transaction() : amount(0), asset("TALN"), fee(0) {}
@@ -147,7 +147,7 @@ public:
     ~MobileClient();
     
     /**
-     * Get balance for address
+     * Get balance for wallet (address filtering requires address-indexed RPC support)
      */
     using BalanceCallback = std::function<void(std::optional<Balance>, std::optional<std::string>)>;
     void GetBalance(const std::string& address, BalanceCallback callback);

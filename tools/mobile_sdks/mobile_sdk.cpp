@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <deque>
 #include <mutex>
 #include <optional>
@@ -81,7 +82,7 @@ bool ParseMnemonicEntropy(const std::string& mnemonic, std::vector<uint8_t>& ent
     std::string hex;
     hex.reserve(mnemonic.size());
     for (char c : mnemonic) {
-        if (std::isspace(static_cast<unsigned char>(c)) != 0) {
+        if (std::isspace(static_cast<unsigned char>(c))) {
             continue;
         }
         if (!std::isxdigit(static_cast<unsigned char>(c))) {
@@ -186,7 +187,7 @@ std::optional<ParsedEndpoint> ParseEndpoint(const std::string& endpoint, std::st
     constexpr const char* kHttpsPrefix = "https://";
 
     if (url.rfind(kHttpsPrefix, 0) == 0) {
-        error = "HTTPS endpoints are not supported in the mobile SDK";
+        error = "HTTPS endpoints are not supported in the mobile SDK; use a trusted local endpoint";
         return std::nullopt;
     }
 
@@ -473,6 +474,8 @@ bool DecryptStorage(const std::array<uint8_t, kStorageKeySize>& key,
     const size_t encrypted_len = ciphertext.size() - kStorageNonceSize - kStorageTagSize;
     const uint8_t* encrypted = ciphertext.data() + kStorageNonceSize;
     const uint8_t* tag = ciphertext.data() + kStorageNonceSize + encrypted_len;
+    std::array<uint8_t, kStorageTagSize> tag_copy{};
+    std::copy(tag, tag + kStorageTagSize, tag_copy.begin());
 
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     if (!ctx) {
@@ -505,7 +508,7 @@ bool DecryptStorage(const std::array<uint8_t, kStorageKeySize>& key,
             }
         }
         if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, static_cast<int>(kStorageTagSize),
-                                const_cast<uint8_t*>(tag)) != 1) {
+                                tag_copy.data()) != 1) {
             break;
         }
         if (EVP_DecryptFinal_ex(ctx, decrypted.data() + out_len, &final_len) != 1) {
@@ -880,8 +883,10 @@ void MobileClient::SubscribeToBlocks(BlockCallback callback) {
                         std::string hash = block_info->value("hash", "");
                         try {
                             callback(height, hash);
+                        } catch (const std::exception& e) {
+                            std::cerr << "Block subscription callback error: " << e.what() << std::endl;
                         } catch (...) {
-                            // Ignore callback errors to keep subscription alive.
+                            std::cerr << "Block subscription callback error: unknown exception" << std::endl;
                         }
                     }
                 }
@@ -939,8 +944,10 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
                             entry.asset = "UNKNOWN";
                             try {
                                 callback(entry);
+                            } catch (const std::exception& e) {
+                                std::cerr << "Address subscription callback error: " << e.what() << std::endl;
                             } catch (...) {
-                                // Ignore callback errors to keep subscription alive.
+                                std::cerr << "Address subscription callback error: unknown exception" << std::endl;
                             }
                         }
                     }
