@@ -379,6 +379,7 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 - 🔐 **[Security Model](docs/SECURITY_MODEL.md)** - Security properties and threat model
 - 🚀 **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup instructions
 - 📚 **[API Reference](docs/NETWORKING_RPC.md)** - RPC commands and network protocol
+- 🛟 **[Operations Runbook](docs/OPERATIONS_RUNBOOK.md)** - Deployment, recovery, and incident procedures
 - 🔧 **[Advanced Features](docs/ADVANCED_FEATURES.md)** - DRM, smart contracts, and more
 - 📝 **[Changelog](CHANGELOG.md)** - Version history and release notes
 
