@@ -278,6 +278,7 @@ class Node {
             rpc_server_ = std::make_unique<rpc::RPCServer>(config_.rpc_port);
             rpc_server_->SetNode(core_node_.get());
             rpc_server_->SetWallet(wallet_.get());
+            rpc_server_->ConfigureBasicAuth(config_.rpc_user, config_.rpc_password);
             if (!rpc_server_->Start()) {
                 std::cerr << "Failed to start RPC server" << std::endl;
                 core_node_->Stop();
