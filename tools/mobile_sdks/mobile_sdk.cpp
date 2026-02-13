@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <deque>
 #include <mutex>
 #include <optional>
 #include <sstream>
@@ -38,6 +39,7 @@ constexpr size_t kStorageKeySize = 32;
 constexpr size_t kStorageNonceSize = 12;
 constexpr size_t kStorageTagSize = 16;
 constexpr uint64_t kMaxTransactionScanBlocks = 1000;
+constexpr size_t kMaxSeenTransactions = 10000;
 
 using json = nlohmann::json;
 
@@ -557,9 +559,7 @@ std::unique_ptr<Wallet> Wallet::FromMnemonic(const std::string& mnemonic) {
 
     auto privkey = DerivePrivateKey(entropy);
     if (!crypto::Schnorr::ValidatePrivateKey(privkey)) {
-        if (!PopulatePrivateKey(privkey)) {
-            return nullptr;
-        }
+        return nullptr;
     }
 
     auto pubkey_opt = crypto::Schnorr::GetPublicKey(privkey);
@@ -582,9 +582,7 @@ std::unique_ptr<Wallet> Wallet::FromPrivateKey(const std::vector<uint8_t>& priva
     std::copy(private_key.begin(), private_key.end(), privkey.begin());
 
     if (!crypto::Schnorr::ValidatePrivateKey(privkey)) {
-        if (!PopulatePrivateKey(privkey)) {
-            return nullptr;
-        }
+        return nullptr;
     }
 
     auto pubkey_opt = crypto::Schnorr::GetPublicKey(privkey);
@@ -781,7 +779,10 @@ void MobileClient::GetTransactionHistory(const std::string& address, uint32_t li
     }
 
     uint64_t height = *height_opt;
-    for (uint64_t current = height; current > 0 && history.size() < limit; --current) {
+    uint64_t scanned = 0;
+    for (uint64_t current = height;
+         current > 0 && history.size() < limit && scanned < kMaxTransactionScanBlocks;
+         --current, ++scanned) {
         auto block_info = FetchBlockInfo(impl_->config_, current, error);
         if (!block_info || !block_info->is_object() || !block_info->contains("tx")) {
             continue;
@@ -877,7 +878,10 @@ void MobileClient::SubscribeToBlocks(BlockCallback callback) {
                     auto block_info = FetchBlockInfo(config, height, error);
                     if (block_info && block_info->is_object()) {
                         std::string hash = block_info->value("hash", "");
-                        callback(height, hash);
+                        try {
+                            callback(height, hash);
+                        } catch (...) {
+                        }
                     }
                 }
                 last_height = *current_height_opt;
@@ -892,52 +896,57 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
         return;
     }
     std::lock_guard<std::mutex> lock(impl_->subscription_mutex_);
-    impl_->subscriptions_.emplace_back(
-        [config = impl_->config_, running = &impl_->running_, watch_address = address, callback]() {
-            if (watch_address.empty()) {
-                return;
-            }
-            std::string error;
-            uint64_t last_height = 0;
-            auto height_opt = FetchBlockHeight(config, error);
-            if (height_opt) {
-                last_height = *height_opt;
-            }
+    impl_->subscriptions_.emplace_back([config = impl_->config_, running = &impl_->running_, callback]() {
+        std::string error;
+        uint64_t last_height = 0;
+        auto height_opt = FetchBlockHeight(config, error);
+        if (height_opt) {
+            last_height = *height_opt;
+        }
 
-            std::unordered_set<std::string> seen_tx;
+        std::unordered_set<std::string> seen_tx;
+        std::deque<std::string> seen_order;
 
-            while (running->load()) {
-                auto current_height_opt = FetchBlockHeight(config, error);
-                if (current_height_opt) {
-                    for (uint64_t height = last_height + 1; height <= *current_height_opt; ++height) {
-                        auto block_info = FetchBlockInfo(config, height, error);
-                        if (!block_info || !block_info->is_object() || !block_info->contains("tx")) {
+        while (running->load()) {
+            auto current_height_opt = FetchBlockHeight(config, error);
+            if (current_height_opt) {
+                for (uint64_t height = last_height + 1; height <= *current_height_opt; ++height) {
+                    auto block_info = FetchBlockInfo(config, height, error);
+                    if (!block_info || !block_info->is_object() || !block_info->contains("tx")) {
+                        continue;
+                    }
+
+                    const uint64_t confirmations = *current_height_opt - height + 1;
+                    const uint64_t timestamp = block_info->value("timestamp", 0ULL);
+
+                    for (const auto& txid : (*block_info)["tx"]) {
+                        if (!txid.is_string()) {
                             continue;
                         }
-
-                        const uint64_t confirmations = *current_height_opt - height + 1;
-                        const uint64_t timestamp = block_info->value("timestamp", 0ULL);
-
-                        for (const auto& txid : (*block_info)["tx"]) {
-                            if (!txid.is_string()) {
-                                continue;
+                        const auto id = txid.get<std::string>();
+                        if (seen_tx.insert(id).second) {
+                            seen_order.push_back(id);
+                            if (seen_order.size() > kMaxSeenTransactions) {
+                                seen_tx.erase(seen_order.front());
+                                seen_order.pop_front();
                             }
-                            const auto id = txid.get<std::string>();
-                            if (seen_tx.insert(id).second) {
-                                TransactionHistory entry;
-                                entry.txid = id;
-                                entry.timestamp = timestamp;
-                                entry.status = "confirmed";
-                                entry.confirmations = static_cast<uint32_t>(confirmations);
-                                entry.asset = "UNKNOWN";
+                            TransactionHistory entry;
+                            entry.txid = id;
+                            entry.timestamp = timestamp;
+                            entry.status = "confirmed";
+                            entry.confirmations = static_cast<uint32_t>(confirmations);
+                            entry.asset = "UNKNOWN";
+                            try {
                                 callback(entry);
+                            } catch (...) {
                             }
                         }
                     }
-                    last_height = *current_height_opt;
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(kDefaultPollIntervalMs));
+                last_height = *current_height_opt;
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(kDefaultPollIntervalMs));
+        }
     });
 }
 
