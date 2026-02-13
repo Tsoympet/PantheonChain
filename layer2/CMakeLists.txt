@@ -11,6 +11,8 @@ add_library(layer2
     apis/websocket/websocket_api.cpp
     dex/dex.cpp
     rollups/zk_rollup.cpp
+    rollups/optimistic_rollup.cpp
+    plasma/plasma_chain.cpp
 )
 
 target_include_directories(layer2 PUBLIC

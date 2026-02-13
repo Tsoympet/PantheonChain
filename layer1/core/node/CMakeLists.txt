@@ -2,6 +2,7 @@
 
 add_library(parthenon_node STATIC
     node.cpp
+    chainparams.cpp
 )
 
 target_include_directories(parthenon_node PUBLIC

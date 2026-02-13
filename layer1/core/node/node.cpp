@@ -2,6 +2,8 @@
 
 #include "node.h"
 
+#include "chainparams.h"
+#include "consensus/genesis.h"
 #include "validation/validation.h"
 
 #include <chrono>
@@ -12,10 +14,25 @@
 namespace parthenon {
 namespace node {
 
-Node::Node(const std::string& data_dir, uint16_t port)
+
+consensus::NetworkType ToConsensusNetworkType(NetworkMode mode) {
+    switch (mode) {
+        case NetworkMode::MAINNET:
+            return consensus::NetworkType::MAINNET;
+        case NetworkMode::TESTNET:
+            return consensus::NetworkType::TESTNET;
+        case NetworkMode::REGTEST:
+            return consensus::NetworkType::REGTEST;
+    }
+    return consensus::NetworkType::MAINNET;
+}
+
+
+Node::Node(const std::string& data_dir, uint16_t port, NetworkMode network_mode)
     : data_dir_(data_dir),
       port_(port),
       running_(false),
+      network_mode_(network_mode),
       is_syncing_(false),
       sync_target_height_(0),
       is_mining_(false),
@@ -27,8 +44,8 @@ Node::Node(const std::string& data_dir, uint16_t port)
     block_storage_ = std::make_unique<storage::BlockStorage>();
     utxo_storage_ = std::make_unique<storage::UTXOStorage>();
 
-    // Initialize P2P network manager
-    network_ = std::make_unique<p2p::NetworkManager>(port, p2p::NetworkMagic::MAINNET);
+    const auto params = GetNetworkParams(network_mode_);
+    network_ = std::make_unique<p2p::NetworkManager>(port, params.magic);
 }
 
 Node::~Node() {
@@ -40,7 +57,10 @@ bool Node::Start() {
         return false;
     }
 
-    std::cout << "Starting ParthenonChain node on port " << port_ << std::endl;
+    const auto params = GetNetworkParams(network_mode_);
+
+    std::cout << "Starting ParthenonChain node on port " << port_
+              << " (" << params.name << ")" << std::endl;
 
     // Open block storage database
     std::string block_db_path = data_dir_ + "/blocks";
@@ -62,6 +82,30 @@ bool Node::Start() {
     // Load blockchain height from storage
     uint32_t stored_height = block_storage_->GetHeight();
     std::cout << "Loaded blockchain height: " << stored_height << std::endl;
+
+    const auto consensus_network = ToConsensusNetworkType(network_mode_);
+    if (stored_height >= 1) {
+        auto genesis_block = block_storage_->GetBlockByHeight(1);
+        if (!genesis_block) {
+            std::cerr << "Chainstate inconsistency: stored height >= 1 but missing block at height 1"
+                      << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+
+        if (!consensus::IsExpectedGenesisBlock(*genesis_block, consensus_network)) {
+            std::cerr << "Genesis mismatch for selected network mode; refusing to start" << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+    } else {
+        auto expected_genesis_hash = consensus::GetGenesisHash(consensus_network);
+        std::cout << "No stored blocks yet; expected genesis hash for this network starts with "
+                  << std::hex << static_cast<int>(expected_genesis_hash[0])
+                  << static_cast<int>(expected_genesis_hash[1]) << std::dec << std::endl;
+    }
 
     // Set up network callbacks
     network_->SetOnNewPeer([this](const std::string& peer_id) { HandleNewPeer(peer_id); });
@@ -92,13 +136,16 @@ bool Node::Start() {
     }
     std::cout << "P2P network started on port " << port_ << std::endl;
 
-    // Add DNS seeds for peer discovery
-    network_->AddDNSSeed("seed.pantheonchain.io", 8333);
-    network_->AddDNSSeed("seed2.pantheonchain.io", 8333);
-
-    // Query DNS seeds for initial peers
-    std::cout << "Querying DNS seeds for peers..." << std::endl;
-    network_->QueryDNSSeeds();
+    // Add DNS seeds for peer discovery by network mode
+    if (params.dns_discovery_enabled) {
+        for (const auto& seed : params.dns_seeds) {
+            network_->AddDNSSeed(seed.host, seed.port);
+        }
+        std::cout << "Querying " << params.name << " DNS seeds for peers..." << std::endl;
+        network_->QueryDNSSeeds();
+    } else {
+        std::cout << params.name << " mode: skipping DNS seed discovery" << std::endl;
+    }
 
     running_.store(true);
     is_syncing_.store(true);
