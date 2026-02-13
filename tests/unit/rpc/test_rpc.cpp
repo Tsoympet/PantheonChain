@@ -51,11 +51,31 @@ void TestStopMethodWithNode() {
     std::cout << "  ✓ Passed (stop response)" << std::endl;
 }
 
+
+void TestBasicAuthConfiguration() {
+    std::cout << "Test: basic auth configuration" << std::endl;
+
+    rpc::RPCServer server;
+    assert(!server.IsAuthenticationEnabled());
+
+    server.ConfigureBasicAuth("rpcuser", "rpcpass");
+    assert(server.IsAuthenticationEnabled());
+
+    // base64("rpcuser:rpcpass") = cnBjdXNlcjpycGNwYXNz
+    assert(server.IsAuthorized("Basic cnBjdXNlcjpycGNwYXNz"));
+    assert(server.IsAuthorized("basic cnBjdXNlcjpycGNwYXNz"));
+    assert(!server.IsAuthorized("Basic invalid"));
+    assert(!server.IsAuthorized("Bearer token"));
+
+    std::cout << "  ✓ Passed (auth checks)" << std::endl;
+}
+
 int main() {
     std::cout << "=== RPC Server Tests ===" << std::endl;
 
     TestStopMethodWithoutNode();
     TestStopMethodWithNode();
+    TestBasicAuthConfiguration();
 
     std::cout << "✓ All RPC server tests passed!" << std::endl;
     return 0;

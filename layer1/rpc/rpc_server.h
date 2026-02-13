@@ -108,6 +108,22 @@ class RPCServer {
      */
     void ConfigureRateLimit(uint32_t requests_per_window, uint32_t window_seconds);
 
+    /**
+     * Configure optional HTTP Basic authentication.
+     * Authentication is enabled only when both user and password are non-empty.
+     */
+    void ConfigureBasicAuth(const std::string& user, const std::string& password);
+
+    /**
+     * Check whether authentication is enabled.
+     */
+    bool IsAuthenticationEnabled() const;
+
+    /**
+     * Validate an Authorization header value against configured credentials.
+     */
+    bool IsAuthorized(const std::string& authorization_header) const;
+
   private:
     uint16_t port_;
     bool running_;
@@ -119,6 +135,10 @@ class RPCServer {
     
     // Rate limiting
     std::unique_ptr<RateLimiter> rate_limiter_;
+
+    // Optional Basic auth credentials
+    std::string auth_user_;
+    std::string auth_password_;
 
     // Initialize standard RPC methods
     void InitializeStandardMethods();
