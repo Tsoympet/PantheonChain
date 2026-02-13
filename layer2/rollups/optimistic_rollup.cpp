@@ -290,6 +290,10 @@ bool RollupVerifier::VerifyBatch(const RollupBatch& batch) const {
         }
     }
 
+    if (!roots_differ) {
+        return false;
+    }
+
     // Verify signature exists
     if (batch.operator_signature.empty()) {
         return false;
