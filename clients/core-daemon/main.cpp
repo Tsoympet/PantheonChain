@@ -40,6 +40,7 @@ struct Config {
     int rpc_port = 8332;
     std::string rpc_user = "";
     std::string rpc_password = "";
+    bool rpc_allow_unauthenticated = false;
     std::string data_dir = "./data";
     std::string log_level = "info";
     bool mining_enabled = false;
@@ -98,6 +99,8 @@ class ConfigParser {
                 config.rpc_user = value;
             else if (key == "rpc.password")
                 config.rpc_password = value;
+            else if (key == "rpc.allow_unauthenticated")
+                config.rpc_allow_unauthenticated = (value == "true" || value == "1");
             else if (key == "data_dir")
                 config.data_dir = value;
             else if (key == "log_level")
@@ -275,6 +278,23 @@ class Node {
         core_node_->AttachWallet(wallet_);
 
         if (config_.rpc_enabled) {
+            const bool has_rpc_user = !config_.rpc_user.empty();
+            const bool has_rpc_password = !config_.rpc_password.empty();
+            if (!config_.rpc_allow_unauthenticated && (!has_rpc_user || !has_rpc_password)) {
+                std::cerr << "Refusing to start RPC server without credentials. "
+                          << "Set rpc.user and rpc.password, or set "
+                          << "rpc.allow_unauthenticated=true for local development only."
+                          << std::endl;
+                core_node_->Stop();
+                return false;
+            }
+
+            if (config_.rpc_allow_unauthenticated && (!has_rpc_user || !has_rpc_password)) {
+                std::cerr << "Warning: RPC authentication disabled via "
+                          << "rpc.allow_unauthenticated=true; use only in trusted environments."
+                          << std::endl;
+            }
+
             rpc_server_ = std::make_unique<rpc::RPCServer>(config_.rpc_port);
             rpc_server_->SetNode(core_node_.get());
             rpc_server_->SetWallet(wallet_.get());
