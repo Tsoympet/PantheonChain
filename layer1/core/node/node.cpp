@@ -537,7 +537,7 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         info.address = address;
         info.port = port;
         info.version = kDefaultPeerVersion;
-        info.height = 0;
+        info.height = GetHeight();
         info.is_connected = true;
         info.last_seen = last_seen;
         peers_[peer_id] = info;
@@ -545,8 +545,22 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         it->second.is_connected = true;
         it->second.last_seen = last_seen;
     }
-    // Update sync target based on peer height
-    // In production: Query peer for their best block height
+    RecomputeSyncTarget();
+}
+
+void Node::RecomputeSyncTarget() {
+    uint32_t best_height = GetHeight();
+    for (const auto& [id, info] : peers_) {
+        (void)id;
+        if (info.is_connected && info.height > best_height) {
+            best_height = info.height;
+        }
+    }
+
+    sync_target_height_ = best_height;
+    if (sync_target_height_ > GetHeight()) {
+        is_syncing_.store(true);
+    }
 }
 
 void Node::HandleBlockReceived(const std::string& peer_id, const primitives::Block& block) {
