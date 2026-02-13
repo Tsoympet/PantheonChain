@@ -3,6 +3,7 @@
 #include "node.h"
 
 #include "chainparams.h"
+#include "consensus/genesis.h"
 #include "validation/validation.h"
 
 #include <chrono>
@@ -12,6 +13,20 @@
 
 namespace parthenon {
 namespace node {
+
+
+consensus::NetworkType ToConsensusNetworkType(NetworkMode mode) {
+    switch (mode) {
+        case NetworkMode::MAINNET:
+            return consensus::NetworkType::MAINNET;
+        case NetworkMode::TESTNET:
+            return consensus::NetworkType::TESTNET;
+        case NetworkMode::REGTEST:
+            return consensus::NetworkType::REGTEST;
+    }
+    return consensus::NetworkType::MAINNET;
+}
+
 
 Node::Node(const std::string& data_dir, uint16_t port, NetworkMode network_mode)
     : data_dir_(data_dir),
@@ -97,6 +112,30 @@ bool Node::Start() {
     // Load blockchain height from storage
     uint32_t stored_height = block_storage_->GetHeight();
     std::cout << "Loaded blockchain height: " << stored_height << std::endl;
+
+    const auto consensus_network = ToConsensusNetworkType(network_mode_);
+    if (stored_height >= 1) {
+        auto genesis_block = block_storage_->GetBlockByHeight(1);
+        if (!genesis_block) {
+            std::cerr << "Chainstate inconsistency: stored height >= 1 but missing block at height 1"
+                      << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+
+        if (!consensus::IsExpectedGenesisBlock(*genesis_block, consensus_network)) {
+            std::cerr << "Genesis mismatch for selected network mode; refusing to start" << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+    } else {
+        auto expected_genesis_hash = consensus::GetGenesisHash(consensus_network);
+        std::cout << "No stored blocks yet; expected genesis hash for this network starts with "
+                  << std::hex << static_cast<int>(expected_genesis_hash[0])
+                  << static_cast<int>(expected_genesis_hash[1]) << std::dec << std::endl;
+    }
 
     // Set up network callbacks
     network_->SetOnNewPeer([this](const std::string& peer_id) { HandleNewPeer(peer_id); });

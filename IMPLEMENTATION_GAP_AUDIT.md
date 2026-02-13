@@ -72,6 +72,13 @@ These claims conflict with current source reality (see sections below).
 
 ### Current state
 
+- A new `layer1/core/consensus/genesis.cpp` module now exists with deterministic per-network genesis construction helpers, but it is not yet fully wired into node startup/chainstate bootstrapping.
+- `docs/GENESIS.md` still contains placeholders such as `[To be mined]`, `[calculated]`, and “will be calculated”.
+- `Chain` initialization/reset paths still do not enforce canonical hardcoded genesis insertion at process startup.
+
+### What must be done
+
+1. Complete integration of genesis module into node bootstrap and chainstate initialization path.
 - Documentation references `layer1/core/consensus/genesis.cpp`, but this file does not exist.
 - `docs/GENESIS.md` still contains placeholders such as `[To be mined]`, `[calculated]`, and “will be calculated”.
 - `Chain` initialization/reset paths do not show a canonical hardcoded genesis block insertion flow.

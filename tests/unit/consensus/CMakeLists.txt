@@ -29,3 +29,10 @@ target_link_libraries(test_determinism PRIVATE
     parthenon_primitives
 )
 add_test(NAME test_determinism COMMAND test_determinism)
+
+add_executable(test_genesis test_genesis.cpp)
+target_link_libraries(test_genesis PRIVATE
+    parthenon_consensus
+    parthenon_primitives
+)
+add_test(NAME test_genesis COMMAND test_genesis)
