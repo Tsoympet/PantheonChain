@@ -84,16 +84,18 @@ if (( ${#archive_candidates[@]} > 0 )); then
   fi
 
   manifest_ignore_re='^[[:space:]]*(#|$)'
-  # 64-char hex hash + two spaces + path (single or multi-char, no leading/trailing whitespace).
+  # 64-char hex hash + two spaces + path (single char or multi-char without leading/trailing whitespace).
   manifest_entry_re='^[0-9a-fA-F]{64}[[:space:]]{2}([^[:space:]].*[^[:space:]]|[^[:space:]])$'
   invalid_entries=()
   manifest_paths=()
+  manifest_entries=()
   while IFS= read -r line; do
     if [[ "$line" =~ $manifest_ignore_re ]]; then
       continue
     fi
     if [[ "$line" =~ $manifest_entry_re ]]; then
       manifest_paths+=("${BASH_REMATCH[1]}")
+      manifest_entries+=("$line")
     else
       invalid_entries+=("$line")
     fi
@@ -123,7 +125,7 @@ if (( ${#archive_candidates[@]} > 0 )); then
     exit 1
   fi
 
-  if ! checksum_output=$(sha256sum -c <(grep -v -E "$manifest_ignore_re" "$archive_manifest") 2>&1); then
+  if ! checksum_output=$(printf '%s\n' "${manifest_entries[@]}" | sha256sum -c - 2>&1); then
     echo "ERROR: vendored archive checksum verification failed."
     echo "$checksum_output"
     exit 1
