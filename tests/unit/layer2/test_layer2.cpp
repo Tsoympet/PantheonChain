@@ -238,6 +238,8 @@ void test_rollup_lifecycle() {
 void test_zk_rollup_lifecycle_and_exit() {
     std::cout << "Testing ZK-rollup lifecycle and exit..." << std::endl;
 
+    constexpr uint64_t kExitAmount = 25;
+
     rollups::ZKRollup rollup;
     rollups::ZKRollupProver prover;
     rollups::ZKRollupVerifier verifier(&rollup);
@@ -268,7 +270,7 @@ void test_zk_rollup_lifecycle_and_exit() {
     auto merkle_proof = state.GetMerkleProof(account);
     auto merkle_root = state.GetStateRoot();
 
-    auto exit_inputs = BuildExitInputs(account, 25);
+    auto exit_inputs = BuildExitInputs(account, kExitAmount);
     parthenon::privacy::zksnark::ZKProver exit_prover(rollup.GetProofParameters());
     ExitCircuit circuit(exit_inputs);
     auto proof_opt = exit_prover.GenerateProof(circuit, exit_inputs);
@@ -277,7 +279,7 @@ void test_zk_rollup_lifecycle_and_exit() {
     rollups::ZKRollupExitManager exit_manager(rollup.GetProofParameters());
     rollups::ZKRollupExitManager::ExitRequest request;
     request.account = account;
-    request.amount = 25;
+    request.amount = kExitAmount;
     request.merkle_root = merkle_root;
     request.merkle_proof = merkle_proof;
     request.ownership_proof = *proof_opt;

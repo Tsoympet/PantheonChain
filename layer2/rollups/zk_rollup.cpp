@@ -483,8 +483,7 @@ ZKRollupProver::GenerateBatchProof(const ZKRollupBatch& batch) {
 
 privacy::zksnark::ZKProof
 ZKRollupProver::GenerateTransferProof(const ZKTransaction& tx,
-                                      const std::vector<uint8_t>& witness) {
-    (void)witness;
+                                      [[maybe_unused]] const std::vector<uint8_t>& witness) {
     auto inputs = SerializeTransactionInputs(tx);
     RollupCircuit circuit(inputs);
     privacy::zksnark::ZKProver prover(params_);

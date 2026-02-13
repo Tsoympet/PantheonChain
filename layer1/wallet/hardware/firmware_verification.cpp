@@ -467,8 +467,13 @@ bool FirmwareVerifier::LoadFirmwareDatabase(const std::string& filename) {
 bool FirmwareVerifier::UpdateFirmwareDatabase(const std::string& url) {
     std::string path = url;
     constexpr const char* kFilePrefix = "file://";
+    if (path.rfind("http://", 0) == 0 || path.rfind("https://", 0) == 0) {
+        return false;
+    }
     if (path.rfind(kFilePrefix, 0) == 0) {
         path = path.substr(std::strlen(kFilePrefix));
+    } else if (path.find("://") != std::string::npos) {
+        return false;
     }
 
     if (path.empty()) {

@@ -339,7 +339,7 @@ std::optional<json> RpcRequest(const NetworkConfig& config, const std::string& m
 
     if (response.contains("error")) {
         const auto& err = response["error"];
-        if (response["error"].is_object() && response["error"].contains("message")) {
+        if (err.is_object() && err.contains("message")) {
             error = err["message"].get<std::string>();
         } else {
             error = err.get<std::string>();
