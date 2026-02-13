@@ -71,6 +71,36 @@ bool StartsWithCaseInsensitive(const std::string& value, const std::string& pref
 }
 
 
+
+std::string TrimAsciiWhitespace(const std::string& value) {
+    size_t start = 0;
+    while (start < value.size() &&
+           std::isspace(static_cast<unsigned char>(value[start])) != 0) {
+        ++start;
+    }
+
+    size_t end = value.size();
+    while (end > start &&
+           std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
+        --end;
+    }
+
+    return value.substr(start, end - start);
+}
+
+bool ConstantTimeEquals(const std::string& lhs, const std::string& rhs) {
+    const size_t max_len = std::max(lhs.size(), rhs.size());
+    unsigned char diff = static_cast<unsigned char>(lhs.size() ^ rhs.size());
+
+    for (size_t i = 0; i < max_len; ++i) {
+        const unsigned char l = i < lhs.size() ? static_cast<unsigned char>(lhs[i]) : 0;
+        const unsigned char r = i < rhs.size() ? static_cast<unsigned char>(rhs[i]) : 0;
+        diff |= static_cast<unsigned char>(l ^ r);
+    }
+
+    return diff == 0;
+}
+
 std::string ExtractAuthorizationHeader(const httplib::Request& req) {
 #ifdef CPP_HTTPLIB_STUB_H
     (void)req;
@@ -125,10 +155,10 @@ bool RPCServer::Start() {
     std::cout << "Starting RPC server on port " << port_ << std::endl;
 
     // Create HTTP server
-    auto server = std::make_shared<httplib::Server>();
+    http_server_ = std::make_shared<httplib::Server>();
 
     // Set up POST endpoint for JSON-RPC
-    server->Post("/", [this](const httplib::Request& req, httplib::Response& res) {
+    http_server_->Post("/", [this](const httplib::Request& req, httplib::Response& res) {
         try {
             // Extract client IP for rate limiting
             std::string client_ip = req.remote_addr;
@@ -204,25 +234,35 @@ bool RPCServer::Start() {
     });
 
     // Start server in background thread
-    std::thread([server, this]() {
-        std::cout << "RPC HTTP server listening on port " << port_ << std::endl;
-        server->listen("127.0.0.1", port_);
-    }).detach();
-
     running_ = true;
+    server_thread_ = std::thread([this]() {
+        std::cout << "RPC HTTP server listening on port " << port_ << std::endl;
+        if (http_server_) {
+            http_server_->listen("127.0.0.1", port_);
+        }
+    });
     std::cout << "RPC server started successfully" << std::endl;
 
     return true;
 }
 
 void RPCServer::Stop() {
-    if (!running_) {
+    if (!running_ && !server_thread_.joinable()) {
         return;
     }
 
     std::cout << "Stopping RPC server..." << std::endl;
-    // Note: cpp-httplib server will stop when server object is destroyed
     running_ = false;
+
+    if (http_server_) {
+        http_server_->stop();
+    }
+
+    if (server_thread_.joinable()) {
+        server_thread_.join();
+    }
+
+    http_server_.reset();
     std::cout << "RPC server stopped" << std::endl;
 }
 
@@ -252,6 +292,9 @@ bool RPCServer::IsAuthorized(const std::string& authorization_header) const {
         return false;
     }
 
+    const auto provided_token = TrimAsciiWhitespace(authorization_header.substr(6));
+    const auto expected_token = Base64Encode(auth_user_ + ":" + auth_password_);
+    return ConstantTimeEquals(provided_token, expected_token);
     const auto provided_token = authorization_header.substr(6);
     const auto expected_token = Base64Encode(auth_user_ + ":" + auth_password_);
     return provided_token == expected_token;

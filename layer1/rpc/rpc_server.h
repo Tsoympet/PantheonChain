@@ -10,8 +10,13 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 
 // Forward declarations
+namespace httplib {
+class Server;
+}
+
 namespace parthenon {
 namespace node {
 class Node;
@@ -139,6 +144,10 @@ class RPCServer {
     // Optional Basic auth credentials
     std::string auth_user_;
     std::string auth_password_;
+
+    // HTTP server lifecycle state
+    std::shared_ptr<httplib::Server> http_server_;
+    std::thread server_thread_;
 
     // Initialize standard RPC methods
     void InitializeStandardMethods();
