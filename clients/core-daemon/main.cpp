@@ -349,6 +349,16 @@ class Node {
             return false;
         }
         const auto network_mode = *parsed_mode;
+        }
+        const auto network_mode = *parsed_mode;
+        }
+        const auto network_mode = *parsed_mode;
+        const auto network_mode = parsed_mode.value_or(node::NetworkMode::MAINNET);
+        if (!parsed_mode.has_value()) {
+            std::cerr << "Unknown network mode '" << config_.network
+                      << "', defaulting to mainnet (supported: mainnet/testnet/regtest)"
+                      << std::endl;
+        }
         std::cout << "Selected network: " << node::NetworkModeToString(network_mode)
                   << std::endl;
 
