@@ -155,6 +155,15 @@ void TestSendToAddressRejectsInvalidAmountAndHex() {
     assert(bad_address_response.IsError());
     assert(!bad_address_response.error.empty());
 
+    rpc::RPCRequest bad_asset_request;
+    bad_asset_request.method = "sendtoaddress";
+    bad_asset_request.id = "6";
+    bad_asset_request.params = R"(["0011", "1", 99])";
+
+    auto bad_asset_response = server.HandleRequest(bad_asset_request);
+    assert(bad_asset_response.IsError());
+    assert(!bad_asset_response.error.empty());
+
     std::error_code cleanup_error;
     std::filesystem::remove_all(temp_dir, cleanup_error);
 

@@ -8,6 +8,9 @@
 #include <cstring>
 #include <iostream>
 
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
 #ifdef __x86_64__
 #include <cpuid.h>
 #include <wmmintrin.h>  // AES-NI
@@ -36,24 +39,72 @@ bool HardwareAES::Encrypt(const std::vector<uint8_t>& plaintext, std::vector<uin
         return false;
     }
 
-    // Resize output
-    ciphertext.resize(plaintext.size());
+    // Serialized encrypted payload format:
+    // [12-byte nonce][ciphertext bytes][16-byte GCM tag]
+    constexpr size_t kNonceSize = 12;
+    constexpr size_t kTagSize = 16;
 
-#ifdef __x86_64__
-    // Use AES-NI instructions for hardware acceleration
-    // This is a simplified implementation - production would use full AES-256-GCM
+    std::array<uint8_t, kNonceSize> nonce{};
+    if (RAND_bytes(nonce.data(), static_cast<int>(nonce.size())) != 1) {
+        return false;
+    }
 
-    // For now, use OpenSSL fallback (AES-NI automatically used by OpenSSL)
-    // Real implementation would use _mm_aesenc_si128() intrinsics
+    EVP_CIPHER_CTX* raw_ctx = EVP_CIPHER_CTX_new();
+    if (raw_ctx == nullptr) {
+        return false;
+    }
 
-    // Placeholder: Copy data (replace with actual AES-NI implementation)
-    std::memcpy(ciphertext.data(), plaintext.data(), plaintext.size());
+    bool ok = false;
+    int out_len = 0;
+    int final_len = 0;
+    std::array<uint8_t, kTagSize> tag{};
 
-    return true;
-#else
-    std::cerr << "AES-NI only available on x86_64\n";
-    return false;
-#endif
+    do {
+        if (EVP_EncryptInit_ex(raw_ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {
+            break;
+        }
+
+        if (EVP_CIPHER_CTX_ctrl(raw_ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(kNonceSize), nullptr) !=
+            1) {
+            break;
+        }
+
+        if (EVP_EncryptInit_ex(raw_ctx, nullptr, nullptr, key_.data(), nonce.data()) != 1) {
+            break;
+        }
+
+        std::vector<uint8_t> encrypted(plaintext.size());
+        if (plaintext.size() > 0) {
+            if (EVP_EncryptUpdate(raw_ctx,
+                                  encrypted.data(),
+                                  &out_len,
+                                  plaintext.data(),
+                                  static_cast<int>(plaintext.size())) != 1) {
+                break;
+            }
+        }
+
+        if (EVP_EncryptFinal_ex(raw_ctx, encrypted.data() + out_len, &final_len) != 1) {
+            break;
+        }
+
+        if (EVP_CIPHER_CTX_ctrl(raw_ctx, EVP_CTRL_GCM_GET_TAG, static_cast<int>(kTagSize), tag.data()) != 1) {
+            break;
+        }
+
+        encrypted.resize(static_cast<size_t>(out_len + final_len));
+
+        ciphertext.clear();
+        ciphertext.reserve(kNonceSize + encrypted.size() + kTagSize);
+        ciphertext.insert(ciphertext.end(), nonce.begin(), nonce.end());
+        ciphertext.insert(ciphertext.end(), encrypted.begin(), encrypted.end());
+        ciphertext.insert(ciphertext.end(), tag.begin(), tag.end());
+
+        ok = true;
+    } while (false);
+
+    EVP_CIPHER_CTX_free(raw_ctx);
+    return ok;
 }
 
 bool HardwareAES::Decrypt(const std::vector<uint8_t>& ciphertext, std::vector<uint8_t>& plaintext) {
@@ -61,15 +112,67 @@ bool HardwareAES::Decrypt(const std::vector<uint8_t>& ciphertext, std::vector<ui
         return false;
     }
 
-    plaintext.resize(ciphertext.size());
+    constexpr size_t kNonceSize = 12;
+    constexpr size_t kTagSize = 16;
+    if (ciphertext.size() < (kNonceSize + kTagSize)) {
+        return false;
+    }
 
-#ifdef __x86_64__
-    // Use _mm_aesdec_si128() for decryption
-    std::memcpy(plaintext.data(), ciphertext.data(), ciphertext.size());
-    return true;
-#else
-    return false;
-#endif
+    const uint8_t* nonce = ciphertext.data();
+    const size_t encrypted_len = ciphertext.size() - kNonceSize - kTagSize;
+    const uint8_t* encrypted = ciphertext.data() + kNonceSize;
+    const uint8_t* tag = ciphertext.data() + kNonceSize + encrypted_len;
+
+    EVP_CIPHER_CTX* raw_ctx = EVP_CIPHER_CTX_new();
+    if (raw_ctx == nullptr) {
+        return false;
+    }
+
+    bool ok = false;
+    int out_len = 0;
+    int final_len = 0;
+    std::vector<uint8_t> decrypted(encrypted_len);
+
+    do {
+        if (EVP_DecryptInit_ex(raw_ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {
+            break;
+        }
+
+        if (EVP_CIPHER_CTX_ctrl(raw_ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(kNonceSize), nullptr) !=
+            1) {
+            break;
+        }
+
+        if (EVP_DecryptInit_ex(raw_ctx, nullptr, nullptr, key_.data(), nonce) != 1) {
+            break;
+        }
+
+        if (encrypted_len > 0) {
+            if (EVP_DecryptUpdate(raw_ctx,
+                                  decrypted.data(),
+                                  &out_len,
+                                  encrypted,
+                                  static_cast<int>(encrypted_len)) != 1) {
+                break;
+            }
+        }
+
+        if (EVP_CIPHER_CTX_ctrl(raw_ctx, EVP_CTRL_GCM_SET_TAG, static_cast<int>(kTagSize),
+                                const_cast<uint8_t*>(tag)) != 1) {
+            break;
+        }
+
+        if (EVP_DecryptFinal_ex(raw_ctx, decrypted.data() + out_len, &final_len) != 1) {
+            break;
+        }
+
+        decrypted.resize(static_cast<size_t>(out_len + final_len));
+        plaintext = std::move(decrypted);
+        ok = true;
+    } while (false);
+
+    EVP_CIPHER_CTX_free(raw_ctx);
+    return ok;
 }
 
 bool HardwareAES::IsAvailable() {

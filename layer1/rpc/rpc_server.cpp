@@ -714,6 +714,11 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
         primitives::AssetID asset_id = primitives::AssetID::TALANTON;
         if (params.size() >= 3) {
             int asset_int = params[2].get<int>();
+            if (asset_int < static_cast<int>(primitives::AssetID::TALANTON) ||
+                asset_int > static_cast<int>(primitives::AssetID::OBOLOS)) {
+                response.error = "Invalid asset ID";
+                return response;
+            }
             asset_id = static_cast<primitives::AssetID>(asset_int);
         }
 

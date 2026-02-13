@@ -1,5 +1,7 @@
 # Layer 1 Core - Cryptography and Primitives
 
+find_package(OpenSSL REQUIRED)
+
 # Crypto library
 add_library(parthenon_crypto STATIC
     crypto/sha256.cpp
@@ -16,6 +18,7 @@ target_include_directories(parthenon_crypto PUBLIC
 
 target_link_libraries(parthenon_crypto PUBLIC
     secp256k1
+    OpenSSL::Crypto
 )
 
 # Set strict compiler flags for consensus code
@@ -182,7 +185,6 @@ endif()
 
 # P2P library
 find_package(Threads REQUIRED)
-find_package(OpenSSL REQUIRED)
 
 add_library(parthenon_p2p STATIC
     p2p/protocol.cpp
