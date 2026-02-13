@@ -123,6 +123,7 @@ class ConfigParser {
             mode_opt = node::NetworkMode::MAINNET;
         }
 
+        config.network = node::NetworkModeToString(*mode_opt);
         const auto params = node::GetNetworkParams(*mode_opt);
         if (!config.network_port_configured) {
             config.network_port = static_cast<int>(params.default_p2p_port);
@@ -248,16 +249,15 @@ class Node {
             return false;
         }
 
-        auto network_mode = node::ParseNetworkMode(config_.network).value_or(node::NetworkMode::MAINNET);
-
-        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port,
-                                                  network_mode);
-        node::NetworkMode network_mode = node::NetworkMode::MAINNET;
-        if (config_.network == "testnet") {
-            network_mode = node::NetworkMode::TESTNET;
-        } else if (config_.network == "regtest") {
-            network_mode = node::NetworkMode::REGTEST;
+        const auto parsed_mode = node::ParseNetworkMode(config_.network);
+        if (!parsed_mode.has_value()) {
+            std::cerr << "Invalid internal network mode '" << config_.network
+                      << "' after config parsing" << std::endl;
+            return false;
         }
+        const auto network_mode = *parsed_mode;
+        std::cout << "Selected network: " << node::NetworkModeToString(network_mode)
+                  << std::endl;
 
         core_node_ =
             std::make_unique<node::Node>(config_.data_dir, config_.network_port, network_mode);

@@ -2,6 +2,9 @@
 
 #include "p2p/protocol.h"
 
+#include <algorithm>
+#include <cctype>
+
 namespace parthenon {
 namespace node {
 
@@ -47,13 +50,18 @@ NetworkParams GetNetworkParams(NetworkMode mode) {
 
 
 std::optional<NetworkMode> ParseNetworkMode(const std::string& mode_name) {
-    if (mode_name == "mainnet") {
+    std::string normalized = mode_name;
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+
+    if (normalized == "mainnet" || normalized == "main" || normalized == "mainet") {
         return NetworkMode::MAINNET;
     }
-    if (mode_name == "testnet") {
+    if (normalized == "testnet" || normalized == "test") {
         return NetworkMode::TESTNET;
     }
-    if (mode_name == "regtest") {
+    if (normalized == "regtest" || normalized == "reg") {
         return NetworkMode::REGTEST;
     }
     return std::nullopt;
