@@ -295,6 +295,9 @@ bool RPCServer::IsAuthorized(const std::string& authorization_header) const {
     const auto provided_token = TrimAsciiWhitespace(authorization_header.substr(6));
     const auto expected_token = Base64Encode(auth_user_ + ":" + auth_password_);
     return ConstantTimeEquals(provided_token, expected_token);
+    const auto provided_token = authorization_header.substr(6);
+    const auto expected_token = Base64Encode(auth_user_ + ":" + auth_password_);
+    return provided_token == expected_token;
 }
 
 RPCResponse RPCServer::HandleRequest(const RPCRequest& request,

@@ -67,6 +67,7 @@ void TestBasicAuthConfiguration() {
     assert(server.IsAuthorized("Basic   cnBjdXNlcjpycGNwYXNz   "));
     assert(!server.IsAuthorized("Basic invalid"));
     assert(!server.IsAuthorized("Basic cnBjdXNlcjpycGNwYXN6"));
+    assert(!server.IsAuthorized("Basic invalid"));
     assert(!server.IsAuthorized("Bearer token"));
 
     std::cout << "  ✓ Passed (auth checks)" << std::endl;
