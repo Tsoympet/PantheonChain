@@ -85,7 +85,7 @@ bool ParseMnemonicEntropy(const std::string& mnemonic, std::vector<uint8_t>& ent
         if (!std::isxdigit(static_cast<unsigned char>(c))) {
             return false;
         }
-        hex.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+        hex.push_back(c);
     }
 
     if (hex.empty() || (hex.size() % 2) != 0) {
@@ -95,9 +95,27 @@ bool ParseMnemonicEntropy(const std::string& mnemonic, std::vector<uint8_t>& ent
     entropy.clear();
     entropy.reserve(hex.size() / 2);
     for (size_t i = 0; i < hex.size(); i += 2) {
-        const auto high = static_cast<uint8_t>(std::isdigit(hex[i]) ? hex[i] - '0' : hex[i] - 'a' + 10);
-        const auto low = static_cast<uint8_t>(std::isdigit(hex[i + 1]) ? hex[i + 1] - '0'
-                                                                       : hex[i + 1] - 'a' + 10);
+        uint8_t high = 0;
+        uint8_t low = 0;
+        auto to_nibble = [](char value, uint8_t& nibble) {
+            if (value >= '0' && value <= '9') {
+                nibble = static_cast<uint8_t>(value - '0');
+                return true;
+            }
+            if (value >= 'a' && value <= 'f') {
+                nibble = static_cast<uint8_t>(value - 'a' + 10);
+                return true;
+            }
+            if (value >= 'A' && value <= 'F') {
+                nibble = static_cast<uint8_t>(value - 'A' + 10);
+                return true;
+            }
+            return false;
+        };
+
+        if (!to_nibble(hex[i], high) || !to_nibble(hex[i + 1], low)) {
+            return false;
+        }
         entropy.push_back(static_cast<uint8_t>((high << 4) | low));
     }
     return true;
@@ -515,9 +533,7 @@ std::unique_ptr<Wallet> Wallet::Generate() {
 
     auto privkey = DerivePrivateKey(entropy);
     if (!crypto::Schnorr::ValidatePrivateKey(privkey)) {
-        if (!PopulatePrivateKey(privkey)) {
-            return nullptr;
-        }
+        return nullptr;
     }
 
     auto pubkey_opt = crypto::Schnorr::GetPublicKey(privkey);
@@ -597,12 +613,10 @@ std::vector<uint8_t> Wallet::SignTransaction(const Transaction& tx) {
         reinterpret_cast<const uint8_t*>(payload.str().data()), payload.str().size());
 
     crypto::Schnorr::PrivateKey privkey{};
-    if (private_key_.size() == privkey.size()) {
-        std::copy(private_key_.begin(), private_key_.end(), privkey.begin());
-    } else {
-        auto fallback = crypto::SHA256::Hash256(private_key_);
-        std::copy(fallback.begin(), fallback.end(), privkey.begin());
+    if (private_key_.size() != privkey.size()) {
+        return {};
     }
+    std::copy(private_key_.begin(), private_key_.end(), privkey.begin());
 
     std::array<uint8_t, 32> aux_rand{};
     const uint8_t* aux_ptr = nullptr;
@@ -622,12 +636,10 @@ std::vector<uint8_t> Wallet::SignMessage(const std::string& message) {
         crypto::SHA256::Hash256(reinterpret_cast<const uint8_t*>(message.data()), message.size());
 
     crypto::Schnorr::PrivateKey privkey{};
-    if (private_key_.size() == privkey.size()) {
-        std::copy(private_key_.begin(), private_key_.end(), privkey.begin());
-    } else {
-        auto fallback = crypto::SHA256::Hash256(private_key_);
-        std::copy(fallback.begin(), fallback.end(), privkey.begin());
+    if (private_key_.size() != privkey.size()) {
+        return {};
     }
+    std::copy(private_key_.begin(), private_key_.end(), privkey.begin());
 
     std::array<uint8_t, 32> aux_rand{};
     const uint8_t* aux_ptr = nullptr;
@@ -664,7 +676,7 @@ public:
             }
         }
     }
-    
+
     NetworkConfig config_;
     std::atomic<bool> running_;
     std::mutex subscription_mutex_;
@@ -679,7 +691,8 @@ MobileClient::~MobileClient() = default;
 
 void MobileClient::GetBalance(const std::string& address, BalanceCallback callback) {
     if (!address.empty()) {
-        callback(std::nullopt, "Address-specific balance queries are not supported by the RPC endpoint");
+        callback(std::nullopt,
+                 "Address filtering is not supported; pass an empty string to query wallet balances");
         return;
     }
     std::string error;
@@ -751,7 +764,7 @@ void MobileClient::SendTransaction(const Transaction& tx, TransactionCallback ca
 
 void MobileClient::GetTransactionHistory(const std::string& address, uint32_t limit, HistoryCallback callback) {
     if (!address.empty()) {
-        callback({}, "Address-specific transaction history is not supported by the RPC endpoint");
+        callback({}, "Address filtering is not supported; pass an empty string for wallet history");
         return;
     }
     std::string error;
@@ -887,44 +900,44 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
             std::string error;
             uint64_t last_height = 0;
             auto height_opt = FetchBlockHeight(config, error);
-        if (height_opt) {
-            last_height = *height_opt;
-        }
+            if (height_opt) {
+                last_height = *height_opt;
+            }
 
-        std::unordered_set<std::string> seen_tx;
+            std::unordered_set<std::string> seen_tx;
 
-        while (running->load()) {
-            auto current_height_opt = FetchBlockHeight(config, error);
-            if (current_height_opt) {
-                for (uint64_t height = last_height + 1; height <= *current_height_opt; ++height) {
-                    auto block_info = FetchBlockInfo(config, height, error);
-                    if (!block_info || !block_info->is_object() || !block_info->contains("tx")) {
-                        continue;
-                    }
-
-                    const uint64_t confirmations = *current_height_opt - height + 1;
-                    const uint64_t timestamp = block_info->value("timestamp", 0ULL);
-
-                    for (const auto& txid : (*block_info)["tx"]) {
-                        if (!txid.is_string()) {
+            while (running->load()) {
+                auto current_height_opt = FetchBlockHeight(config, error);
+                if (current_height_opt) {
+                    for (uint64_t height = last_height + 1; height <= *current_height_opt; ++height) {
+                        auto block_info = FetchBlockInfo(config, height, error);
+                        if (!block_info || !block_info->is_object() || !block_info->contains("tx")) {
                             continue;
                         }
-                        const auto id = txid.get<std::string>();
-                        if (seen_tx.insert(id).second) {
-                            TransactionHistory entry;
-                            entry.txid = id;
-                            entry.timestamp = timestamp;
-                            entry.status = "confirmed";
-                            entry.confirmations = static_cast<uint32_t>(confirmations);
-                            entry.asset = "UNKNOWN";
-                            callback(entry);
+
+                        const uint64_t confirmations = *current_height_opt - height + 1;
+                        const uint64_t timestamp = block_info->value("timestamp", 0ULL);
+
+                        for (const auto& txid : (*block_info)["tx"]) {
+                            if (!txid.is_string()) {
+                                continue;
+                            }
+                            const auto id = txid.get<std::string>();
+                            if (seen_tx.insert(id).second) {
+                                TransactionHistory entry;
+                                entry.txid = id;
+                                entry.timestamp = timestamp;
+                                entry.status = "confirmed";
+                                entry.confirmations = static_cast<uint32_t>(confirmations);
+                                entry.asset = "UNKNOWN";
+                                callback(entry);
+                            }
                         }
                     }
+                    last_height = *current_height_opt;
                 }
-                last_height = *current_height_opt;
+                std::this_thread::sleep_for(std::chrono::milliseconds(kDefaultPollIntervalMs));
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(kDefaultPollIntervalMs));
-        }
     });
 }
 
