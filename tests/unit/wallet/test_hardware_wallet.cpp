@@ -1,9 +1,10 @@
 // ParthenonChain - Hardware Wallet Unit Tests
 
-#include "wallet/hardware/hardware_wallet.h"
-#include "wallet/hardware/firmware_verification.h"
 #include "crypto/schnorr.h"
 #include "crypto/sha256.h"
+
+#include "wallet/hardware/firmware_verification.h"
+#include "wallet/hardware/hardware_wallet.h"
 
 #include <cassert>
 #include <iostream>
@@ -69,7 +70,6 @@ void test_derivation_path_construction() {
     std::cout << "✓ Derivation path construction tests passed\n";
 }
 
-
 void test_firmware_signature_verification() {
     using parthenon::crypto::Schnorr;
     using parthenon::crypto::SHA256;
@@ -111,7 +111,6 @@ void test_firmware_signature_verification() {
     std::cout << "✓ Firmware Schnorr signature verification tests passed\n";
 }
 
-
 void test_firmware_version_tracking() {
     FirmwareVerifier verifier;
 
@@ -149,6 +148,132 @@ void test_firmware_version_tracking() {
     std::cout << "✓ Firmware version tracking tests passed\n";
 }
 
+void test_firmware_key_rotation_and_revocation() {
+    using parthenon::crypto::Schnorr;
+    using parthenon::crypto::SHA256;
+
+    FirmwareVerifier verifier;
+
+    Schnorr::PrivateKey key1{};
+    key1[31] = 0x10;
+    Schnorr::PrivateKey key2{};
+    key2[31] = 0x20;
+
+    auto pubkey1_opt = Schnorr::GetPublicKey(key1);
+    auto pubkey2_opt = Schnorr::GetPublicKey(key2);
+    assert(pubkey1_opt.has_value());
+    assert(pubkey2_opt.has_value());
+
+    VendorKeys keys;
+    keys.vendor_name = "RotateVendor";
+    keys.public_keys.emplace_back(pubkey1_opt->begin(), pubkey1_opt->end());
+    keys.public_keys.emplace_back(pubkey2_opt->begin(), pubkey2_opt->end());
+    verifier.AddVendorKeys(keys);
+
+    std::vector<uint8_t> firmware = {0xAA, 0xBB, 0xCC, 0xDD};
+    auto firmware_hash_arr = SHA256::Hash256(firmware);
+
+    auto signature1_opt = Schnorr::Sign(key1, firmware_hash_arr.data());
+    assert(signature1_opt.has_value());
+
+    FirmwareInfo info;
+    info.vendor = "RotateVendor";
+    info.version = "1.0.0";
+    info.hash.assign(firmware_hash_arr.begin(), firmware_hash_arr.end());
+    info.signature.assign(signature1_opt->begin(), signature1_opt->end());
+    verifier.AddKnownFirmware(info);
+
+    auto result = verifier.VerifyFirmware(firmware, "RotateVendor");
+    assert(result.status == VerificationStatus::VALID);
+
+    verifier.RevokeVendorKey("RotateVendor",
+                             std::vector<uint8_t>(pubkey1_opt->begin(), pubkey1_opt->end()));
+    auto revoked_result = verifier.VerifyFirmware(firmware, "RotateVendor");
+    assert(revoked_result.status == VerificationStatus::INVALID_SIGNATURE);
+
+    auto signature2_opt = Schnorr::Sign(key2, firmware_hash_arr.data());
+    assert(signature2_opt.has_value());
+    info.signature.assign(signature2_opt->begin(), signature2_opt->end());
+    verifier.AddKnownFirmware(info);
+
+    auto rotated_result = verifier.VerifyFirmware(firmware, "RotateVendor");
+    assert(rotated_result.status == VerificationStatus::VALID);
+
+    std::cout << "✓ Firmware key rotation and revocation tests passed\n";
+}
+
+void test_firmware_security_advisory_revocation() {
+    using parthenon::crypto::Schnorr;
+    using parthenon::crypto::SHA256;
+
+    FirmwareVerifier verifier;
+
+    Schnorr::PrivateKey key{};
+    key[31] = 0x33;
+    auto pubkey_opt = Schnorr::GetPublicKey(key);
+    assert(pubkey_opt.has_value());
+
+    VendorKeys keys;
+    keys.vendor_name = "AdvisoryVendor";
+    keys.public_keys.emplace_back(pubkey_opt->begin(), pubkey_opt->end());
+    verifier.AddVendorKeys(keys);
+
+    std::vector<uint8_t> firmware = {0x10, 0x20, 0x30};
+    auto firmware_hash_arr = SHA256::Hash256(firmware);
+    auto signature_opt = Schnorr::Sign(key, firmware_hash_arr.data());
+    assert(signature_opt.has_value());
+
+    FirmwareInfo info;
+    info.vendor = "AdvisoryVendor";
+    info.version = "2.0.0";
+    info.hash.assign(firmware_hash_arr.begin(), firmware_hash_arr.end());
+    info.signature.assign(signature_opt->begin(), signature_opt->end());
+    verifier.AddKnownFirmware(info);
+    verifier.AddSecurityAdvisory("AdvisoryVendor", "2.0.0", "CVE-2026-0001");
+
+    auto result = verifier.VerifyFirmware(firmware, "AdvisoryVendor");
+    assert(result.status == VerificationStatus::EXPIRED);
+
+    std::cout << "✓ Firmware advisory revocation tests passed\n";
+}
+
+void test_firmware_anti_rollback_checks() {
+    using parthenon::crypto::Schnorr;
+    using parthenon::crypto::SHA256;
+
+    FirmwareVerifier verifier;
+
+    Schnorr::PrivateKey key{};
+    key[31] = 0x44;
+    auto pubkey_opt = Schnorr::GetPublicKey(key);
+    assert(pubkey_opt.has_value());
+
+    VendorKeys keys;
+    keys.vendor_name = "RollbackVendor";
+    keys.public_keys.emplace_back(pubkey_opt->begin(), pubkey_opt->end());
+    verifier.AddVendorKeys(keys);
+
+    std::vector<uint8_t> firmware = {0x01, 0x02, 0x03, 0x04};
+    auto firmware_hash_arr = SHA256::Hash256(firmware);
+    auto signature_opt = Schnorr::Sign(key, firmware_hash_arr.data());
+    assert(signature_opt.has_value());
+
+    FirmwareInfo info;
+    info.vendor = "RollbackVendor";
+    info.version = "1.0.0";
+    info.hash.assign(firmware_hash_arr.begin(), firmware_hash_arr.end());
+    info.signature.assign(signature_opt->begin(), signature_opt->end());
+    verifier.AddKnownFirmware(info);
+
+    auto rollback_result = verifier.VerifyFirmwareUpdate(firmware, "RollbackVendor", "1.2.0");
+    assert(rollback_result.status == VerificationStatus::EXPIRED);
+
+    auto valid_result = verifier.VerifyFirmwareUpdate(firmware, "RollbackVendor", "0.9.0");
+    assert(valid_result.status == VerificationStatus::VALID);
+
+    std::cout << "✓ Firmware anti-rollback tests passed\n";
+}
+
 int main() {
     std::cout << "Running hardware wallet tests...\n\n";
 
@@ -157,6 +282,9 @@ int main() {
     test_hardware_wallet_manager();
     test_firmware_signature_verification();
     test_firmware_version_tracking();
+    test_firmware_key_rotation_and_revocation();
+    test_firmware_security_advisory_revocation();
+    test_firmware_anti_rollback_checks();
 
     std::cout << "\nAll hardware wallet tests passed!\n";
     return 0;
