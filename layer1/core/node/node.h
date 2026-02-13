@@ -51,6 +51,15 @@ struct SyncStatus {
 };
 
 /**
+ * Runtime network selection for node startup.
+ */
+enum class NetworkMode {
+    MAINNET,
+    TESTNET,
+    REGTEST,
+};
+
+/**
  * Node manages blockchain state and peer connections
  */
 class Node {
@@ -60,7 +69,8 @@ class Node {
      * @param data_dir Directory for blockchain data
      * @param port P2P listening port
      */
-    Node(const std::string& data_dir, uint16_t port = 8333);
+    Node(const std::string& data_dir, uint16_t port = 8333,
+         NetworkMode network_mode = NetworkMode::MAINNET);
     ~Node();
 
     /**
@@ -197,6 +207,7 @@ class Node {
     std::string data_dir_;
     uint16_t port_;
     std::atomic<bool> running_;
+    NetworkMode network_mode_;
 
     // Core components
     std::unique_ptr<chainstate::Chain> chain_;

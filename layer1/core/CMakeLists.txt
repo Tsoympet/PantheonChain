@@ -81,6 +81,7 @@ endif()
 add_library(parthenon_consensus STATIC
     consensus/difficulty.cpp
     consensus/issuance.cpp
+    consensus/genesis.cpp
 )
 
 target_include_directories(parthenon_consensus PUBLIC

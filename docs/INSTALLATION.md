@@ -289,6 +289,8 @@ rpc.enabled=true
 rpc.port=8332
 rpc.user=yourusername
 rpc.password=CHANGE_THIS_TO_STRONG_PASSWORD
+# Dev-only escape hatch (NOT recommended for production):
+# rpc.allow_unauthenticated=true
 
 # Data
 data_dir=~/.parthenon/data
@@ -470,6 +472,7 @@ type %APPDATA%\ParthenonChain\debug.log
 
 - Ensure `rpc.enabled=true`
 - Check `rpc.user` and `rpc.password` are set
+- By default, daemon refuses unauthenticated RPC unless `rpc.allow_unauthenticated=true`
 - Verify firewall allows port 8332 (localhost only)
 
 ## Getting Help

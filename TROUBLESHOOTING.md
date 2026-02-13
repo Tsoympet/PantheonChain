@@ -378,6 +378,8 @@ parthenond -daemon
 rpc.enabled=true
 rpc.user=yourusername
 rpc.password=yourpassword
+# Optional dev-only override:
+# rpc.allow_unauthenticated=true
 ```
 
 **Check RPC port**:
@@ -396,6 +398,12 @@ curl --user username:password --data-binary '{"jsonrpc":"1.0","method":"getinfo"
 **Problem**: RPC credentials incorrect.
 
 **Solution**: Check `parthenond.conf` username and password match what you're using in the RPC call.
+
+### "Refusing to start RPC server without credentials"
+
+**Problem**: RPC is enabled but `rpc.user`/`rpc.password` are missing.
+
+**Solution**: Set both values in `parthenond.conf`. For local development only, you can set `rpc.allow_unauthenticated=true`.
 
 ### "Connection refused" error
 

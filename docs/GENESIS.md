@@ -9,16 +9,16 @@ The ParthenonChain genesis block is the foundation of the blockchain.
 ```
 Version: 1
 Previous Block: 0x0000000000000000000000000000000000000000000000000000000000000000
-Merkle Root: [Calculated from coinbase transaction]
+Merkle Root: Deterministically calculated from the single genesis coinbase transaction
 Timestamp: 1704067200 (2024-01-01 00:00:00 UTC)
-Bits: 0x1d00ffff (Difficulty 1)
-Nonce: [To be mined]
+Bits: 0x1d00ffff (Difficulty 1) for mainnet/testnet, 0x207fffff for regtest
+Nonce: 0 (as currently defined in `consensus/genesis.cpp`)
 ```
 
 ### Block Hash
 
 ```
-0x[Will be calculated after mining]
+Computed deterministically by `GetGenesisHash(NetworkType)` from the serialized genesis header
 ```
 
 ### Coinbase Transaction
@@ -71,25 +71,10 @@ This is the same starting difficulty as Bitcoin, corresponding to:
 - Target: `0x00000000ffff0000000000000000000000000000000000000000000000000000`
 - Difficulty: 1
 
-### Mining the Genesis Block
+### Genesis Construction
 
-The genesis block must be mined to meet the difficulty target:
-
-```cpp
-BlockHeader genesis_header = {
-    .version = 1,
-    .prev_block = {0},  // All zeros
-    .merkle_root = CalculateMerkleRoot(coinbase_tx),
-    .timestamp = 1704067200,
-    .bits = 0x1d00ffff,
-    .nonce = 0  // Start at 0, increment until valid
-};
-
-// Mine until hash meets target
-while (!ValidatePoW(genesis_header)) {
-    genesis_header.nonce++;
-}
-```
+The current implementation constructs genesis deterministically per network via
+`GetGenesisParams(...)` and `GetGenesisBlock(...)` in `layer1/core/consensus/genesis.cpp`.
 
 ## Genesis State
 
@@ -109,7 +94,7 @@ Initial state root is the Merkle root of the genesis UTXO set.
 GenesisParams mainnet_genesis = {
     .timestamp = 1704067200,
     .bits = 0x1d00ffff,
-    .nonce = [calculated],
+    .nonce = 0,
     .coinbase_message = "ParthenonChain Genesis - 2024-01-01",
     .talanton_output = 50 * COIN,
     .drachma_output = 97.619 * COIN,
@@ -123,7 +108,7 @@ GenesisParams mainnet_genesis = {
 GenesisParams testnet_genesis = {
     .timestamp = 1704067200,
     .bits = 0x1d00ffff,  // Same starting difficulty
-    .nonce = [different from mainnet],
+    .nonce = 0,
     .coinbase_message = "ParthenonChain Testnet Genesis - 2024-01-01",
     // Same output amounts
 };
@@ -204,48 +189,13 @@ The genesis block marks the birth of ParthenonChain. Its timestamp and message a
 
 ## Technical Implementation
 
-Genesis block is defined in `layer1/core/consensus/genesis.cpp`:
+Genesis block logic is implemented in `layer1/core/consensus/genesis.cpp` and
+exposed through:
 
-```cpp
-Block GetGenesisBlock(NetworkType network) {
-    Block genesis;
-    
-    // Build coinbase transaction
-    Transaction coinbase;
-    coinbase.version = 1;
-    coinbase.locktime = 0;
-    
-    // Input: Coinbase
-    TxInput input;
-    input.prev_tx = {0};
-    input.prev_index = 0xFFFFFFFF;
-    const char* msg = "ParthenonChain Genesis - 2024-01-01";
-    input.script_sig.assign(msg, msg + strlen(msg));
-    coinbase.inputs.push_back(input);
-    
-    // Outputs: One for each asset
-    TxOutput tal_out, drm_out, obl_out;
-    tal_out.amount = 50 * COIN;
-    tal_out.asset = TALANTON;
-    drm_out.amount = 97.619 * COIN;
-    drm_out.asset = DRACHMA;
-    obl_out.amount = 145.238 * COIN;
-    obl_out.asset = OBOLOS;
-    
-    coinbase.outputs = {tal_out, drm_out, obl_out};
-    
-    // Build block
-    genesis.transactions.push_back(coinbase);
-    genesis.header.version = 1;
-    genesis.header.prev_block = {0};
-    genesis.header.merkle_root = CalculateMerkleRoot(genesis.transactions);
-    genesis.header.timestamp = 1704067200;
-    genesis.header.bits = 0x1d00ffff;
-    genesis.header.nonce = GetGenesisNonce(network);
-    
-    return genesis;
-}
-```
+- `GetGenesisParams(NetworkType)`
+- `GetGenesisBlock(NetworkType)`
+- `GetGenesisHash(NetworkType)`
+- `IsExpectedGenesisBlock(const Block&, NetworkType)`
 
 ## Conclusion
 
