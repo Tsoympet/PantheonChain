@@ -31,6 +31,7 @@ struct GenesisParams {
 GenesisParams GetGenesisParams(NetworkType network);
 primitives::Block GetGenesisBlock(NetworkType network);
 std::array<uint8_t, 32> GetGenesisHash(NetworkType network);
+std::array<uint8_t, 32> GetExpectedGenesisHash(NetworkType network);
 bool IsExpectedGenesisBlock(const primitives::Block& block, NetworkType network);
 
 }  // namespace consensus
