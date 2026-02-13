@@ -43,6 +43,14 @@ bool ChainState::ValidateBlock(const primitives::Block& block) const {
         return false;
     }
 
+    if (height_ == 0) {
+        if (block.header.prev_block_hash != std::array<uint8_t, 32>{}) {
+            return false;
+        }
+    } else if (block.header.prev_block_hash != tip_hash_) {
+        return false;
+    }
+
     // Validate coinbase rewards
     auto coinbase_outputs = GetCoinbaseOutputs(coinbase);
 
@@ -88,6 +96,7 @@ bool ChainState::ApplyBlock(const primitives::Block& block) {
 
     // Update height
     height_++;
+    tip_hash_ = block.GetHash();
 
     // Update total supplies from coinbase
     const auto& coinbase = block.transactions[0];
