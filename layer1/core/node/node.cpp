@@ -7,6 +7,7 @@
 #include "validation/validation.h"
 
 #include <chrono>
+#include <charconv>
 #include <iostream>
 #include <stdexcept>
 #include <thread>
@@ -26,6 +27,22 @@ consensus::NetworkType ToConsensusNetworkType(NetworkMode mode) {
             return consensus::NetworkType::REGTEST;
     }
     return consensus::NetworkType::MAINNET;
+}
+
+bool TryParsePeerPort(const std::string& value, uint16_t& port) {
+    if (value.empty()) {
+        return false;
+    }
+
+    uint32_t parsed = 0;
+    auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), parsed);
+    if (ec != std::errc{} || ptr != value.data() + value.size() || parsed == 0 ||
+        parsed > 65535) {
+        return false;
+    }
+
+    port = static_cast<uint16_t>(parsed);
+    return true;
 }
 
 }  // namespace
@@ -505,22 +522,7 @@ void Node::HandleNewPeer(const std::string& peer_id) {
     if (colon_pos != std::string::npos) {
         address = peer_id.substr(0, colon_pos);
         auto port_str = peer_id.substr(colon_pos + 1);
-        bool port_valid = false;
-        if (!port_str.empty()) {
-            try {
-                auto parsed_value = std::stoul(port_str);
-                if (parsed_value > 0 && parsed_value <= 65535) {
-                    port = static_cast<uint16_t>(parsed_value);
-                    port_valid = true;
-                }
-            } catch (const std::invalid_argument&) {
-                port_valid = false;
-            } catch (const std::out_of_range&) {
-                port_valid = false;
-            }
-        }
-
-        if (!port_valid) {
+        if (!TryParsePeerPort(port_str, port)) {
             std::cerr << "Invalid peer port '" << port_str << "' for peer: " << peer_id
                       << std::endl;
             port = 0;
