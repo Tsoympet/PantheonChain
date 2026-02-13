@@ -64,7 +64,7 @@ for path in "${required_submodules[@]}"; do
   fi
 done
 
-archive_manifest="scripts/ci/vendored_archives.sha256"
+archive_manifest="$ROOT_DIR/scripts/ci/vendored_archives.sha256"
 archive_candidates=()
 while IFS= read -r -d '' tracked_file; do
   case "$tracked_file" in
