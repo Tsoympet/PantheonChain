@@ -76,6 +76,8 @@ done < <(git ls-files -z)
 if (( ${#archive_candidates[@]} > 0 )); then
   if [[ ! -f "$archive_manifest" ]]; then
     echo "ERROR: vendored archive(s) detected but checksum manifest '$archive_manifest' is missing."
+    echo "Detected archives:"
+    printf ' - %s\n' "${archive_candidates[@]}"
     echo "Add sha256 checksums for each archive before continuing."
     exit 1
   fi
