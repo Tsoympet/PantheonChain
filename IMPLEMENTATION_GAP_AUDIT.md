@@ -79,6 +79,13 @@ These claims conflict with current source reality (see sections below).
 ### What must be done
 
 1. Complete integration of genesis module into node bootstrap and chainstate initialization path.
+- Documentation references `layer1/core/consensus/genesis.cpp`, but this file does not exist.
+- `docs/GENESIS.md` still contains placeholders such as `[To be mined]`, `[calculated]`, and “will be calculated”.
+- `Chain` initialization/reset paths do not show a canonical hardcoded genesis block insertion flow.
+
+### What must be done
+
+1. Implement a canonical genesis creation/validation module.
 2. Hardcode and test **network-specific genesis hashes** (mainnet/testnet/regtest).
 3. Add chain parameter registry (`chainparams`) and enforce it consistently across consensus, P2P, wallet, and RPC.
 4. Add startup invariant checks: running network must match configured genesis + magic + port profile.
