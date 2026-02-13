@@ -50,6 +50,33 @@ struct Config {
 };
 
 class ConfigParser {
+  private:
+    static bool TryParseInt(const std::string& value, int& out) {
+        try {
+            size_t parsed_chars = 0;
+            const int parsed_value = std::stoi(value, &parsed_chars);
+            if (parsed_chars != value.size()) {
+                return false;
+            }
+            out = parsed_value;
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+
+    static bool TryParsePort(const std::string& value, int& out) {
+        int parsed = 0;
+        if (!TryParseInt(value, parsed)) {
+            return false;
+        }
+        if (parsed <= 0 || parsed > 65535) {
+            return false;
+        }
+        out = parsed;
+        return true;
+    }
+
   public:
     static Config Parse(const std::string& filepath) {
         Config config;
@@ -80,20 +107,46 @@ class ConfigParser {
             value.erase(value.find_last_not_of(" \t") + 1);
 
             if (key == "network.port") {
-                config.network_port = std::stoi(value);
-                config.network_port_configured = true;
+                int parsed_port = 0;
+                if (!TryParsePort(value, parsed_port)) {
+                    std::cerr << "Warning: Invalid network.port '" << value
+                              << "'; keeping default/network-derived value" << std::endl;
+                } else {
+                    config.network_port = parsed_port;
+                    config.network_port_configured = true;
+                }
             }
-            else if (key == "network.max_connections")
-                config.max_connections = std::stoi(value);
-            else if (key == "network.timeout")
-                config.network_timeout = std::stoi(value);
+            else if (key == "network.max_connections") {
+                int parsed_connections = 0;
+                if (!TryParseInt(value, parsed_connections) || parsed_connections <= 0) {
+                    std::cerr << "Warning: Invalid network.max_connections '" << value
+                              << "'; keeping default" << std::endl;
+                } else {
+                    config.max_connections = parsed_connections;
+                }
+            }
+            else if (key == "network.timeout") {
+                int parsed_timeout = 0;
+                if (!TryParseInt(value, parsed_timeout) || parsed_timeout <= 0) {
+                    std::cerr << "Warning: Invalid network.timeout '" << value
+                              << "'; keeping default" << std::endl;
+                } else {
+                    config.network_timeout = parsed_timeout;
+                }
+            }
             else if (key == "network.mode")
                 config.network = value;
             else if (key == "rpc.enabled")
                 config.rpc_enabled = (value == "true" || value == "1");
             else if (key == "rpc.port") {
-                config.rpc_port = std::stoi(value);
-                config.rpc_port_configured = true;
+                int parsed_port = 0;
+                if (!TryParsePort(value, parsed_port)) {
+                    std::cerr << "Warning: Invalid rpc.port '" << value
+                              << "'; keeping default/network-derived value" << std::endl;
+                } else {
+                    config.rpc_port = parsed_port;
+                    config.rpc_port_configured = true;
+                }
             }
             else if (key == "rpc.user")
                 config.rpc_user = value;
@@ -254,6 +307,8 @@ class Node {
             std::cerr << "Invalid internal network mode '" << config_.network
                       << "' after config parsing" << std::endl;
             return false;
+        }
+        const auto network_mode = *parsed_mode;
         }
         const auto network_mode = *parsed_mode;
         const auto network_mode = parsed_mode.value_or(node::NetworkMode::MAINNET);
