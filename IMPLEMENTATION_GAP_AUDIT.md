@@ -70,7 +70,54 @@ These claims conflict with current source reality (see sections below).
 
 ## 6) Genesis and chain parameterization gaps
 
+### What must be done
+
+1. Initialize and pin real third-party dependencies (submodules or vendored verified versions).
+2. Require reproducible dependency bootstrap in CI (hash-pinned, deterministic).
+3. Ensure any packaging/release pipeline hard-fails if stub paths are selected.
+
+## 5) P2P wire protocol and networking completeness
+
 ### Current state
+
+- P2P message implementation file is currently in a broken, duplicated state (build blocker).
+- Node startup hardcodes mainnet magic in constructor path.
+- DNS seeds are hardcoded and no environment-specific network profile selection path is evident in node startup flow.
+
+### What must be done
+
+1. Finalize message codec correctness and compatibility vectors.
+2. Implement explicit runtime chain selection (`mainnet`, `testnet`, `regtest`) with isolated:
+   - magic bytes,
+   - default ports,
+   - seed lists,
+   - address prefixes,
+   - consensus params.
+3. Add peer handshake compatibility/integration tests and network-fuzz tests.
+
+## 6) Genesis and chain parameterization gaps
+
+### Current state
+
+- A new `layer1/core/consensus/genesis.cpp` module now exists with deterministic per-network genesis construction helpers, but it is not yet fully wired into node startup/chainstate bootstrapping.
+- `docs/GENESIS.md` still contains placeholders such as `[To be mined]`, `[calculated]`, and “will be calculated”.
+- `Chain` initialization/reset paths still do not enforce canonical hardcoded genesis insertion at process startup.
+
+### What must be done
+
+1. Complete integration of genesis module into node bootstrap and chainstate initialization path.
+- Documentation references `layer1/core/consensus/genesis.cpp`, but this file does not exist.
+- `docs/GENESIS.md` still contains placeholders such as `[To be mined]`, `[calculated]`, and “will be calculated”.
+- `Chain` initialization/reset paths do not show a canonical hardcoded genesis block insertion flow.
+
+### What must be done
+
+1. Implement a canonical genesis creation/validation module.
+2. Hardcode and test **network-specific genesis hashes** (mainnet/testnet/regtest).
+3. Add chain parameter registry (`chainparams`) and enforce it consistently across consensus, P2P, wallet, and RPC.
+4. Add startup invariant checks: running network must match configured genesis + magic + port profile.
+
+## 7) Cryptography and wallet security placeholders
 
 - A new `layer1/core/consensus/genesis.cpp` module now exists with deterministic per-network genesis construction helpers, but it is not yet fully wired into node startup/chainstate bootstrapping.
 - `docs/GENESIS.md` still contains placeholders such as `[To be mined]`, `[calculated]`, and “will be calculated”.
