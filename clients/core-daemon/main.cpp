@@ -84,6 +84,21 @@ class ConfigParser {
         return false;
     }
 
+    static std::string SanitizeScalarValue(const std::string& raw_value) {
+        std::string value = raw_value;
+        const auto comment_pos = value.find('#');
+        if (comment_pos != std::string::npos) {
+            value = value.substr(0, comment_pos);
+        }
+
+        const auto first_non_space = value.find_first_not_of(" \t\n\r");
+        if (first_non_space == std::string::npos) {
+            return "";
+        }
+        const auto last_non_space = value.find_last_not_of(" \t\n\r");
+        return value.substr(first_non_space, last_non_space - first_non_space + 1);
+    }
+
     static bool TryParsePort(const std::string& value, int& out) {
         int parsed = 0;
         if (!TryParseInt(value, parsed)) {
@@ -125,8 +140,12 @@ class ConfigParser {
             value.erase(0, value.find_first_not_of(" \t"));
             value.erase(value.find_last_not_of(" \t") + 1);
 
+            const std::string scalar_value = SanitizeScalarValue(value);
+
             if (key == "network.port") {
                 int parsed_port = 0;
+                if (!TryParsePort(scalar_value, parsed_port)) {
+                    std::cerr << "Warning: Invalid network.port '" << scalar_value
                 if (!TryParsePort(value, parsed_port)) {
                     std::cerr << "Warning: Invalid network.port '" << value
                               << "'; keeping default/network-derived value" << std::endl;
@@ -137,6 +156,8 @@ class ConfigParser {
             }
             else if (key == "network.max_connections") {
                 int parsed_connections = 0;
+                if (!TryParseInt(scalar_value, parsed_connections) || parsed_connections <= 0) {
+                    std::cerr << "Warning: Invalid network.max_connections '" << scalar_value
                 if (!TryParseInt(value, parsed_connections) || parsed_connections <= 0) {
                     std::cerr << "Warning: Invalid network.max_connections '" << value
                               << "'; keeping default" << std::endl;
@@ -146,6 +167,8 @@ class ConfigParser {
             }
             else if (key == "network.timeout") {
                 int parsed_timeout = 0;
+                if (!TryParseInt(scalar_value, parsed_timeout) || parsed_timeout <= 0) {
+                    std::cerr << "Warning: Invalid network.timeout '" << scalar_value
                 if (!TryParseInt(value, parsed_timeout) || parsed_timeout <= 0) {
                     std::cerr << "Warning: Invalid network.timeout '" << value
                               << "'; keeping default" << std::endl;
@@ -154,6 +177,11 @@ class ConfigParser {
                 }
             }
             else if (key == "network.mode")
+                config.network = scalar_value;
+            else if (key == "rpc.enabled") {
+                bool parsed_enabled = config.rpc_enabled;
+                if (!TryParseBool(scalar_value, parsed_enabled)) {
+                    std::cerr << "Warning: Invalid rpc.enabled '" << scalar_value
                 config.network = value;
             else if (key == "rpc.enabled") {
                 bool parsed_enabled = config.rpc_enabled;
@@ -166,6 +194,8 @@ class ConfigParser {
             }
             else if (key == "rpc.port") {
                 int parsed_port = 0;
+                if (!TryParsePort(scalar_value, parsed_port)) {
+                    std::cerr << "Warning: Invalid rpc.port '" << scalar_value
                 if (!TryParsePort(value, parsed_port)) {
                     std::cerr << "Warning: Invalid rpc.port '" << value
                               << "'; keeping default/network-derived value" << std::endl;
@@ -180,6 +210,8 @@ class ConfigParser {
                 config.rpc_password = value;
             else if (key == "rpc.allow_unauthenticated") {
                 bool parsed_allow_unauthenticated = config.rpc_allow_unauthenticated;
+                if (!TryParseBool(scalar_value, parsed_allow_unauthenticated)) {
+                    std::cerr << "Warning: Invalid rpc.allow_unauthenticated '" << scalar_value
                 if (!TryParseBool(value, parsed_allow_unauthenticated)) {
                     std::cerr << "Warning: Invalid rpc.allow_unauthenticated '" << value
                               << "'; keeping default" << std::endl;
@@ -193,6 +225,8 @@ class ConfigParser {
                 config.log_level = value;
             else if (key == "mining.enabled") {
                 bool parsed_mining_enabled = config.mining_enabled;
+                if (!TryParseBool(scalar_value, parsed_mining_enabled)) {
+                    std::cerr << "Warning: Invalid mining.enabled '" << scalar_value
                 if (!TryParseBool(value, parsed_mining_enabled)) {
                     std::cerr << "Warning: Invalid mining.enabled '" << value
                               << "'; keeping default" << std::endl;
@@ -347,6 +381,8 @@ class Node {
             std::cerr << "Invalid internal network mode '" << config_.network
                       << "' after config parsing" << std::endl;
             return false;
+        }
+        const auto network_mode = *parsed_mode;
         }
         const auto network_mode = *parsed_mode;
         }
