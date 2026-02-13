@@ -85,7 +85,7 @@ if (( ${#archive_candidates[@]} > 0 )); then
 
   manifest_ignore_re='^[[:space:]]*(#|$)'
   # 64-char hex hash + whitespace + path (trimmed leading/trailing whitespace).
-  manifest_entry_re='^[0-9a-fA-F]{64}[[:space:]]+([^[:space:]](.*[^[:space:]])?)$'
+  manifest_entry_re='^[0-9a-fA-F]{64}[[:space:]]+([^[:space:]].*[^[:space:]]|[^[:space:]])$'
   invalid_entries=()
   manifest_paths=()
   while IFS= read -r line; do
