@@ -17,6 +17,7 @@ production-complete across all subsystems.
 - Genesis helpers and expected-hash checks were added.
 - Canonical/non-canonical parsing checks were improved in wire/protocol and block parsing paths.
 - Storage and RPC parsing hardening was added with tests.
+- Firmware verification now includes revocation/rotation and anti-rollback validation tests.
 
 ## High-value work remaining
 
@@ -46,7 +47,6 @@ What is now in place:
 Remaining:
 - Replace remaining placeholder/mock behavior in firmware trust/update paths with
   production-grade implementations.
-- Add revocation/rotation and anti-rollback verification tests.
 
 ### 3) Mobile SDK productionization
 
@@ -82,7 +82,6 @@ All items below should be true before claiming full production readiness:
 Remaining:
 - Replace placeholder/mock behavior in hardware crypto and firmware trust/update paths with
   production-grade implementations.
-- Add revocation/rotation and anti-rollback verification tests.
 
 ### 3) Mobile SDK productionization
 

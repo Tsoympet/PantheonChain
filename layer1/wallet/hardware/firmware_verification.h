@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -84,6 +85,17 @@ class FirmwareVerifier {
                                       const std::string& vendor);
 
     /**
+     * Verify firmware update and enforce anti-rollback checks
+     * @param device_firmware Firmware data read from device
+     * @param vendor Vendor name (e.g., "Ledger", "Trezor")
+     * @param current_version Current firmware version installed on device
+     * @return Verification result
+     */
+    VerificationResult VerifyFirmwareUpdate(const std::vector<uint8_t>& device_firmware,
+                                            const std::string& vendor,
+                                            const std::string& current_version);
+
+    /**
      * Verify firmware hash against known database
      * @param firmware_hash SHA-256 hash of firmware
      * @param vendor Vendor name
@@ -128,10 +140,26 @@ class FirmwareVerifier {
     void AddVendorKeys(const VendorKeys& vendor_keys);
 
     /**
+     * Revoke a vendor public key (key rotation)
+     * @param vendor Vendor name
+     * @param public_key Vendor public key to revoke
+     */
+    void RevokeVendorKey(const std::string& vendor, const std::vector<uint8_t>& public_key);
+
+    /**
      * Add known firmware to database
      * @param firmware_info Firmware information
      */
     void AddKnownFirmware(const FirmwareInfo& firmware_info);
+
+    /**
+     * Add security advisory for a specific firmware version
+     * @param vendor Vendor name
+     * @param version Firmware version
+     * @param advisory Advisory description or ID
+     */
+    void AddSecurityAdvisory(const std::string& vendor, const std::string& version,
+                             const std::string& advisory);
 
     /**
      * Get firmware info by hash
@@ -174,11 +202,14 @@ class FirmwareVerifier {
     std::map<std::string, VendorKeys> vendor_keys_;
     std::map<std::vector<uint8_t>, FirmwareInfo> known_firmware_;
     std::map<std::string, std::map<std::string, std::vector<std::string>>> security_advisories_;
+    std::map<std::string, std::set<std::vector<uint8_t>>> revoked_vendor_keys_;
 
     std::vector<uint8_t> ComputeHash(const std::vector<uint8_t>& data);
     bool VerifySchnorrSignature(const std::vector<uint8_t>& message,
                                 const std::vector<uint8_t>& signature,
                                 const std::vector<uint8_t>& public_key);
+    bool IsVendorKeyRevoked(const std::string& vendor,
+                            const std::vector<uint8_t>& public_key) const;
 };
 
 /**
@@ -213,6 +244,16 @@ class FirmwareUpdateManager {
      */
     VerificationResult VerifyUpdate(const std::vector<uint8_t>& firmware,
                                     const std::string& vendor);
+
+    /**
+     * Verify downloaded firmware before update with anti-rollback checks
+     * @param firmware Firmware data
+     * @param vendor Vendor name
+     * @param current_version Current firmware version installed on device
+     * @return Verification result
+     */
+    VerificationResult VerifyUpdate(const std::vector<uint8_t>& firmware, const std::string& vendor,
+                                    const std::string& current_version);
 
     /**
      * Install firmware update to device

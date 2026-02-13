@@ -20,7 +20,8 @@ bool ParseSemVer(const std::string& version, std::array<int, 3>& out) {
 
     while (std::getline(ss, token, '.')) {
         if (idx >= 3 || token.empty() ||
-            !std::all_of(token.begin(), token.end(), [](unsigned char c) { return std::isdigit(c) != 0; })) {
+            !std::all_of(token.begin(), token.end(),
+                         [](unsigned char c) { return std::isdigit(c) != 0; })) {
             return false;
         }
         out[idx++] = std::stoi(token);
@@ -54,7 +55,6 @@ int CompareSemVer(const std::string& lhs, const std::string& rhs) {
 }
 
 }  // namespace
-
 
 namespace parthenon {
 namespace wallet {
@@ -142,6 +142,39 @@ VerificationResult FirmwareVerifier::VerifyFirmware(const std::vector<uint8_t>& 
     return result;
 }
 
+VerificationResult
+FirmwareVerifier::VerifyFirmwareUpdate(const std::vector<uint8_t>& device_firmware,
+                                       const std::string& vendor,
+                                       const std::string& current_version) {
+    auto result = VerifyFirmware(device_firmware, vendor);
+    if (result.status != VerificationStatus::VALID) {
+        return result;
+    }
+
+    if (result.firmware_info.version.empty()) {
+        result.status = VerificationStatus::ERROR;
+        result.message = "Firmware version missing for rollback check";
+        return result;
+    }
+
+    std::array<int, 3> current{};
+    std::array<int, 3> candidate{};
+    if (!ParseSemVer(current_version, current) ||
+        !ParseSemVer(result.firmware_info.version, candidate)) {
+        result.status = VerificationStatus::ERROR;
+        result.message = "Invalid firmware version format";
+        return result;
+    }
+
+    if (CompareSemVer(result.firmware_info.version, current_version) < 0) {
+        result.status = VerificationStatus::EXPIRED;
+        result.message = "Firmware rollback detected";
+        result.is_latest_version = false;
+    }
+
+    return result;
+}
+
 bool FirmwareVerifier::VerifyHash(const std::vector<uint8_t>& firmware_hash,
                                   const std::string& vendor, const std::string& version) {
     auto firmware_info_opt = GetFirmwareInfo(firmware_hash);
@@ -166,6 +199,9 @@ bool FirmwareVerifier::VerifySignature(const std::vector<uint8_t>& firmware,
 
     // Try all vendor public keys (for key rotation support)
     for (const auto& pubkey : it->second.public_keys) {
+        if (IsVendorKeyRevoked(vendor, pubkey)) {
+            continue;
+        }
         if (VerifySchnorrSignature(firmware_hash, signature, pubkey)) {
             return true;
         }
@@ -222,8 +258,18 @@ void FirmwareVerifier::AddVendorKeys(const VendorKeys& vendor_keys) {
     vendor_keys_[vendor_keys.vendor_name] = vendor_keys;
 }
 
+void FirmwareVerifier::RevokeVendorKey(const std::string& vendor,
+                                       const std::vector<uint8_t>& public_key) {
+    revoked_vendor_keys_[vendor].insert(public_key);
+}
+
 void FirmwareVerifier::AddKnownFirmware(const FirmwareInfo& firmware_info) {
     known_firmware_[firmware_info.hash] = firmware_info;
+}
+
+void FirmwareVerifier::AddSecurityAdvisory(const std::string& vendor, const std::string& version,
+                                           const std::string& advisory) {
+    security_advisories_[vendor][version].push_back(advisory);
 }
 
 std::optional<FirmwareInfo>
@@ -235,8 +281,8 @@ FirmwareVerifier::GetFirmwareInfo(const std::vector<uint8_t>& firmware_hash) {
     return it->second;
 }
 
-std::optional<FirmwareInfo>
-FirmwareVerifier::GetFirmwareInfo(const std::string& vendor, const std::string& version) {
+std::optional<FirmwareInfo> FirmwareVerifier::GetFirmwareInfo(const std::string& vendor,
+                                                              const std::string& version) {
     for (const auto& [hash, info] : known_firmware_) {
         (void)hash;
         if (info.vendor == vendor && info.version == version) {
@@ -284,6 +330,15 @@ bool FirmwareVerifier::VerifySchnorrSignature(const std::vector<uint8_t>& messag
     return crypto::Schnorr::Verify(schnorr_pubkey, message.data(), schnorr_signature);
 }
 
+bool FirmwareVerifier::IsVendorKeyRevoked(const std::string& vendor,
+                                          const std::vector<uint8_t>& public_key) const {
+    auto vendor_it = revoked_vendor_keys_.find(vendor);
+    if (vendor_it == revoked_vendor_keys_.end()) {
+        return false;
+    }
+    return vendor_it->second.find(public_key) != vendor_it->second.end();
+}
+
 // FirmwareUpdateManager implementation
 std::optional<FirmwareInfo>
 FirmwareUpdateManager::CheckForUpdates(const std::string& vendor,
@@ -315,6 +370,12 @@ FirmwareUpdateManager::DownloadFirmware([[maybe_unused]] const std::string& vend
 VerificationResult FirmwareUpdateManager::VerifyUpdate(const std::vector<uint8_t>& firmware,
                                                        const std::string& vendor) {
     return verifier_.VerifyFirmware(firmware, vendor);
+}
+
+VerificationResult FirmwareUpdateManager::VerifyUpdate(const std::vector<uint8_t>& firmware,
+                                                       const std::string& vendor,
+                                                       const std::string& current_version) {
+    return verifier_.VerifyFirmwareUpdate(firmware, vendor, current_version);
 }
 
 bool FirmwareUpdateManager::InstallUpdate([[maybe_unused]] const std::vector<uint8_t>& device_id,
