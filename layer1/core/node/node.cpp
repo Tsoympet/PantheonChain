@@ -31,6 +31,21 @@ Node::Node(const std::string& data_dir, uint16_t port, NetworkMode network_mode)
 
     const auto params = GetNetworkParams(network_mode_);
     network_ = std::make_unique<p2p::NetworkManager>(port, params.magic);
+    // Initialize P2P network manager using selected network mode
+    uint32_t network_magic = p2p::NetworkMagic::MAINNET;
+    switch (network_mode_) {
+        case NetworkMode::MAINNET:
+            network_magic = p2p::NetworkMagic::MAINNET;
+            break;
+        case NetworkMode::TESTNET:
+            network_magic = p2p::NetworkMagic::TESTNET;
+            break;
+        case NetworkMode::REGTEST:
+            network_magic = p2p::NetworkMagic::REGTEST;
+            break;
+    }
+
+    network_ = std::make_unique<p2p::NetworkManager>(port, network_magic);
 }
 
 Node::~Node() {
@@ -46,6 +61,21 @@ bool Node::Start() {
 
     std::cout << "Starting ParthenonChain node on port " << port_
               << " (" << params.name << ")" << std::endl;
+    const char* network_name = "mainnet";
+    switch (network_mode_) {
+        case NetworkMode::MAINNET:
+            network_name = "mainnet";
+            break;
+        case NetworkMode::TESTNET:
+            network_name = "testnet";
+            break;
+        case NetworkMode::REGTEST:
+            network_name = "regtest";
+            break;
+    }
+
+    std::cout << "Starting ParthenonChain node on port " << port_
+              << " (" << network_name << ")" << std::endl;
 
     // Open block storage database
     std::string block_db_path = data_dir_ + "/blocks";
@@ -106,6 +136,18 @@ bool Node::Start() {
         network_->QueryDNSSeeds();
     } else {
         std::cout << params.name << " mode: skipping DNS seed discovery" << std::endl;
+    if (network_mode_ == NetworkMode::MAINNET) {
+        network_->AddDNSSeed("seed.pantheonchain.io", 8333);
+        network_->AddDNSSeed("seed2.pantheonchain.io", 8333);
+
+        std::cout << "Querying DNS seeds for peers..." << std::endl;
+        network_->QueryDNSSeeds();
+    } else if (network_mode_ == NetworkMode::TESTNET) {
+        network_->AddDNSSeed("testnet-seed.pantheonchain.io", 18333);
+        std::cout << "Querying testnet DNS seeds for peers..." << std::endl;
+        network_->QueryDNSSeeds();
+    } else {
+        std::cout << "Regtest mode: skipping DNS seed discovery" << std::endl;
     }
 
     running_.store(true);
