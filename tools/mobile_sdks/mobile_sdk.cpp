@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iomanip>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <thread>
 #include <unordered_set>
@@ -36,6 +37,7 @@ constexpr size_t kMnemonicWordSize = 4;
 constexpr size_t kStorageKeySize = 32;
 constexpr size_t kStorageNonceSize = 12;
 constexpr size_t kStorageTagSize = 16;
+constexpr uint64_t kMaxTransactionScanBlocks = 1000;
 
 using json = nlohmann::json;
 
@@ -134,6 +136,23 @@ std::string DeriveAddress(const std::vector<uint8_t>& pubkey) {
     std::ostringstream ss;
     ss << "ptn1q" << BytesToHex(hash.data(), kAddressHashBytes);
     return ss.str();
+}
+
+std::optional<int> AssetIdFor(std::string asset) {
+    std::transform(asset.begin(), asset.end(), asset.begin(), [](unsigned char c) {
+        return static_cast<char>(std::toupper(c));
+    });
+
+    if (asset == "TALANTON" || asset == "TALN") {
+        return 0;
+    }
+    if (asset == "DRACHMA" || asset == "DRM") {
+        return 1;
+    }
+    if (asset == "OBOLOS" || asset == "OBL") {
+        return 2;
+    }
+    return std::nullopt;
 }
 
 std::optional<ParsedEndpoint> ParseEndpoint(const std::string& endpoint, std::string& error) {
@@ -322,7 +341,7 @@ std::filesystem::path StorageRoot() {
         home = std::getenv("USERPROFILE");
     }
     std::filesystem::path root = home ? std::filesystem::path(home) : std::filesystem::temp_directory_path();
-    return root / ".pantheon_mobile_sdk";
+    return root / ".parthenon_mobile_sdk";
 }
 
 std::filesystem::path StorageKeyPath() {
@@ -490,7 +509,7 @@ std::unique_ptr<Wallet> Wallet::Generate() {
     auto wallet = std::unique_ptr<Wallet>(new Wallet());
     std::vector<uint8_t> entropy(32);
     if (!FillRandomBytes(entropy.data(), entropy.size())) {
-        entropy = std::vector<uint8_t>(32, 0);
+        return nullptr;
     }
     wallet->mnemonic_ = FormatMnemonic(entropy);
 
@@ -517,7 +536,7 @@ std::unique_ptr<Wallet> Wallet::FromMnemonic(const std::string& mnemonic) {
     wallet->mnemonic_ = mnemonic;
     std::vector<uint8_t> entropy;
     if (!ParseMnemonicEntropy(mnemonic, entropy)) {
-        entropy.assign(mnemonic.begin(), mnemonic.end());
+        return nullptr;
     }
 
     auto privkey = DerivePrivateKey(entropy);
@@ -541,12 +560,10 @@ std::unique_ptr<Wallet> Wallet::FromMnemonic(const std::string& mnemonic) {
 std::unique_ptr<Wallet> Wallet::FromPrivateKey(const std::vector<uint8_t>& private_key) {
     auto wallet = std::unique_ptr<Wallet>(new Wallet());
     crypto::Schnorr::PrivateKey privkey{};
-    if (private_key.size() == privkey.size()) {
-        std::copy(private_key.begin(), private_key.end(), privkey.begin());
-    } else {
-        auto hash = crypto::SHA256::Hash256(private_key);
-        std::copy(hash.begin(), hash.end(), privkey.begin());
+    if (private_key.size() != privkey.size()) {
+        return nullptr;
     }
+    std::copy(private_key.begin(), private_key.end(), privkey.begin());
 
     if (!crypto::Schnorr::ValidatePrivateKey(privkey)) {
         if (!PopulatePrivateKey(privkey)) {
@@ -661,7 +678,10 @@ MobileClient::MobileClient(const NetworkConfig& config)
 MobileClient::~MobileClient() = default;
 
 void MobileClient::GetBalance(const std::string& address, BalanceCallback callback) {
-    [[maybe_unused]] const std::string& addr = address;
+    if (!address.empty()) {
+        callback(std::nullopt, "Address-specific balance queries are not supported by the RPC endpoint");
+        return;
+    }
     std::string error;
     Balance balance;
     const std::vector<std::pair<std::string, uint64_t*>> assets = {
@@ -698,10 +718,22 @@ void MobileClient::GetBalance(const std::string& address, BalanceCallback callba
 
 void MobileClient::SendTransaction(const Transaction& tx, TransactionCallback callback) {
     std::string error;
-    json params = json::array({tx.asset, tx.to, tx.amount});
-    if (!tx.memo.empty()) {
-        params.push_back(tx.memo);
+    if (!tx.from.empty()) {
+        callback(std::nullopt, "Sender selection is managed by the node wallet; 'from' is not supported");
+        return;
     }
+    if (tx.fee > 0) {
+        callback(std::nullopt, "Custom fees are not supported by the RPC endpoint");
+        return;
+    }
+
+    auto asset_id = AssetIdFor(tx.asset);
+    if (!asset_id) {
+        callback(std::nullopt, "Unsupported asset type");
+        return;
+    }
+
+    json params = json::array({tx.to, tx.amount, *asset_id});
 
     auto result = RpcRequest(impl_->config_, "sendtoaddress", params, error);
     if (!result) {
@@ -718,7 +750,10 @@ void MobileClient::SendTransaction(const Transaction& tx, TransactionCallback ca
 }
 
 void MobileClient::GetTransactionHistory(const std::string& address, uint32_t limit, HistoryCallback callback) {
-    [[maybe_unused]] const std::string& addr = address;
+    if (!address.empty()) {
+        callback({}, "Address-specific transaction history is not supported by the RPC endpoint");
+        return;
+    }
     std::string error;
     std::vector<TransactionHistory> history;
     if (limit == 0) {
@@ -770,7 +805,7 @@ void MobileClient::GetTransaction(const std::string& txid, TxInfoCallback callba
         return;
     }
 
-    const uint64_t max_scan = 1000;
+    const uint64_t max_scan = kMaxTransactionScanBlocks;
     uint64_t height = *height_opt;
     uint64_t scanned = 0;
     for (uint64_t current = height; current > 0 && scanned < max_scan; --current, ++scanned) {
@@ -804,12 +839,12 @@ void MobileClient::GetTransaction(const std::string& txid, TxInfoCallback callba
 
 void MobileClient::CallContract(const ContractCall& call, ContractCallCallback callback) {
     [[maybe_unused]] const ContractCall& c = call;
-    callback(std::nullopt, "Contract calls are not supported by the current RPC endpoint");
+    callback(std::nullopt, "Contract calls are not supported by the current SDK implementation");
 }
 
 void MobileClient::DeployContract(const std::vector<uint8_t>& bytecode, TransactionCallback callback) {
     [[maybe_unused]] const std::vector<uint8_t>& code = bytecode;
-    callback(std::nullopt, "Contract deployment is not supported by the current RPC endpoint");
+    callback(std::nullopt, "Contract deployment is not supported by the current SDK implementation");
 }
 
 void MobileClient::SubscribeToBlocks(BlockCallback callback) {
@@ -840,12 +875,18 @@ void MobileClient::SubscribeToBlocks(BlockCallback callback) {
 }
 
 void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallback callback) {
-    [[maybe_unused]] const std::string& addr = address;
+    if (address.empty()) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(impl_->subscription_mutex_);
-    impl_->subscriptions_.emplace_back([config = impl_->config_, running = &impl_->running_, callback]() {
-        std::string error;
-        uint64_t last_height = 0;
-        auto height_opt = FetchBlockHeight(config, error);
+    impl_->subscriptions_.emplace_back(
+        [config = impl_->config_, running = &impl_->running_, watch_address = address, callback]() {
+            if (watch_address.empty()) {
+                return;
+            }
+            std::string error;
+            uint64_t last_height = 0;
+            auto height_opt = FetchBlockHeight(config, error);
         if (height_opt) {
             last_height = *height_opt;
         }
@@ -889,7 +930,7 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
 
 void MobileClient::EstimateGas(const Transaction& tx, GasEstimateCallback callback) {
     [[maybe_unused]] const Transaction& transaction = tx;
-    callback(std::nullopt, "Gas estimation is not supported by the current RPC endpoint");
+    callback(std::nullopt, "Gas estimation is not supported by the current SDK implementation");
 }
 
 void MobileClient::GetNetworkStatus(NetworkStatusCallback callback) {
