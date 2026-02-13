@@ -39,6 +39,8 @@ class Server {
         return true;
     }
 
+    void stop() {}
+
   private:
     std::vector<Handler> handlers_;
 };

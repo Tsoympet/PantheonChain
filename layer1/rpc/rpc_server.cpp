@@ -9,6 +9,8 @@
 #include "wallet/wallet.h"
 
 #include <httplib.h>
+#include <algorithm>
+#include <cctype>
 #include <iomanip>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -16,6 +18,80 @@
 #include <thread>
 
 using json = nlohmann::json;
+
+namespace {
+
+std::string Base64Encode(const std::string& input) {
+    static const char table[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    std::string encoded;
+    encoded.reserve(((input.size() + 2) / 3) * 4);
+
+    size_t i = 0;
+    while (i + 3 <= input.size()) {
+        const uint32_t chunk = (static_cast<uint32_t>(static_cast<unsigned char>(input[i])) << 16) |
+                               (static_cast<uint32_t>(static_cast<unsigned char>(input[i + 1])) << 8) |
+                               static_cast<uint32_t>(static_cast<unsigned char>(input[i + 2]));
+        encoded.push_back(table[(chunk >> 18) & 0x3F]);
+        encoded.push_back(table[(chunk >> 12) & 0x3F]);
+        encoded.push_back(table[(chunk >> 6) & 0x3F]);
+        encoded.push_back(table[chunk & 0x3F]);
+        i += 3;
+    }
+
+    const size_t remaining = input.size() - i;
+    if (remaining == 1) {
+        const uint32_t chunk = static_cast<uint32_t>(static_cast<unsigned char>(input[i])) << 16;
+        encoded.push_back(table[(chunk >> 18) & 0x3F]);
+        encoded.push_back(table[(chunk >> 12) & 0x3F]);
+        encoded.push_back('=');
+        encoded.push_back('=');
+    } else if (remaining == 2) {
+        const uint32_t chunk = (static_cast<uint32_t>(static_cast<unsigned char>(input[i])) << 16) |
+                               (static_cast<uint32_t>(static_cast<unsigned char>(input[i + 1])) << 8);
+        encoded.push_back(table[(chunk >> 18) & 0x3F]);
+        encoded.push_back(table[(chunk >> 12) & 0x3F]);
+        encoded.push_back(table[(chunk >> 6) & 0x3F]);
+        encoded.push_back('=');
+    }
+
+    return encoded;
+}
+
+bool StartsWithCaseInsensitive(const std::string& value, const std::string& prefix) {
+    if (value.size() < prefix.size()) {
+        return false;
+    }
+
+    return std::equal(prefix.begin(), prefix.end(), value.begin(), [](char lhs, char rhs) {
+        return std::tolower(static_cast<unsigned char>(lhs)) ==
+               std::tolower(static_cast<unsigned char>(rhs));
+    });
+}
+
+
+std::string ExtractAuthorizationHeader(const httplib::Request& req) {
+#ifdef CPP_HTTPLIB_STUB_H
+    (void)req;
+    return "";
+#else
+    if (req.has_header("Authorization")) {
+        return req.get_header_value("Authorization");
+    }
+    return "";
+#endif
+}
+
+void SetAuthChallengeHeader(httplib::Response& res) {
+#ifdef CPP_HTTPLIB_STUB_H
+    (void)res;
+#else
+    res.set_header("WWW-Authenticate", "Basic realm=\"parthenon-rpc\"");
+#endif
+}
+
+}  // namespace
 
 namespace parthenon {
 namespace rpc {
@@ -49,10 +125,10 @@ bool RPCServer::Start() {
     std::cout << "Starting RPC server on port " << port_ << std::endl;
 
     // Create HTTP server
-    auto server = std::make_shared<httplib::Server>();
+    http_server_ = std::make_shared<httplib::Server>();
 
     // Set up POST endpoint for JSON-RPC
-    server->Post("/", [this](const httplib::Request& req, httplib::Response& res) {
+    http_server_->Post("/", [this](const httplib::Request& req, httplib::Response& res) {
         try {
             // Extract client IP for rate limiting
             std::string client_ip = req.remote_addr;
@@ -67,6 +143,21 @@ bool RPCServer::Start() {
                 res.status = 429;  // Too Many Requests
                 res.set_content(error_response.dump(), "application/json");
                 return;
+            }
+
+            if (IsAuthenticationEnabled()) {
+                const auto auth_header = ExtractAuthorizationHeader(req);
+                if (!IsAuthorized(auth_header)) {
+                    json error_response;
+                    error_response["jsonrpc"] = "2.0";
+                    error_response["error"] = {{"code", -32600},
+                                               {"message", "Authentication required"}};
+                    error_response["id"] = nullptr;
+                    res.status = 401;
+                    SetAuthChallengeHeader(res);
+                    res.set_content(error_response.dump(), "application/json");
+                    return;
+                }
             }
 
             // Parse JSON-RPC request
@@ -113,25 +204,35 @@ bool RPCServer::Start() {
     });
 
     // Start server in background thread
-    std::thread([server, this]() {
-        std::cout << "RPC HTTP server listening on port " << port_ << std::endl;
-        server->listen("127.0.0.1", port_);
-    }).detach();
-
     running_ = true;
+    server_thread_ = std::thread([this]() {
+        std::cout << "RPC HTTP server listening on port " << port_ << std::endl;
+        if (http_server_) {
+            http_server_->listen("127.0.0.1", port_);
+        }
+    });
     std::cout << "RPC server started successfully" << std::endl;
 
     return true;
 }
 
 void RPCServer::Stop() {
-    if (!running_) {
+    if (!running_ && !server_thread_.joinable()) {
         return;
     }
 
     std::cout << "Stopping RPC server..." << std::endl;
-    // Note: cpp-httplib server will stop when server object is destroyed
     running_ = false;
+
+    if (http_server_) {
+        http_server_->stop();
+    }
+
+    if (server_thread_.joinable()) {
+        server_thread_.join();
+    }
+
+    http_server_.reset();
     std::cout << "RPC server stopped" << std::endl;
 }
 
@@ -141,6 +242,29 @@ void RPCServer::RegisterMethod(const std::string& method, RPCHandler handler) {
 
 void RPCServer::ConfigureRateLimit(uint32_t requests_per_window, uint32_t window_seconds) {
     rate_limiter_ = std::make_unique<RateLimiter>(requests_per_window, window_seconds);
+}
+
+void RPCServer::ConfigureBasicAuth(const std::string& user, const std::string& password) {
+    auth_user_ = user;
+    auth_password_ = password;
+}
+
+bool RPCServer::IsAuthenticationEnabled() const {
+    return !auth_user_.empty() && !auth_password_.empty();
+}
+
+bool RPCServer::IsAuthorized(const std::string& authorization_header) const {
+    if (!IsAuthenticationEnabled()) {
+        return true;
+    }
+
+    if (!StartsWithCaseInsensitive(authorization_header, "Basic ")) {
+        return false;
+    }
+
+    const auto provided_token = authorization_header.substr(6);
+    const auto expected_token = Base64Encode(auth_user_ + ":" + auth_password_);
+    return provided_token == expected_token;
 }
 
 RPCResponse RPCServer::HandleRequest(const RPCRequest& request,

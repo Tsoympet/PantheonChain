@@ -24,6 +24,7 @@ Edit `parthenond.conf` to configure the node:
 - `rpc.port` - RPC server port (default: 8332)
 - `rpc.user` - RPC username
 - `rpc.password` - RPC password (CHANGE THIS!)
+- `rpc.allow_unauthenticated` - Allow RPC without credentials (default: false; dev-only)
 
 ### Data Settings
 - `data_dir` - Blockchain data directory (default: ./data)
