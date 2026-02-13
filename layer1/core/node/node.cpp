@@ -14,6 +14,7 @@
 namespace parthenon {
 namespace node {
 
+namespace {
 
 consensus::NetworkType ToConsensusNetworkType(NetworkMode mode) {
     switch (mode) {
@@ -26,6 +27,8 @@ consensus::NetworkType ToConsensusNetworkType(NetworkMode mode) {
     }
     return consensus::NetworkType::MAINNET;
 }
+
+}  // namespace
 
 
 Node::Node(const std::string& data_dir, uint16_t port, NetworkMode network_mode)
@@ -46,21 +49,6 @@ Node::Node(const std::string& data_dir, uint16_t port, NetworkMode network_mode)
 
     const auto params = GetNetworkParams(network_mode_);
     network_ = std::make_unique<p2p::NetworkManager>(port, params.magic);
-    // Initialize P2P network manager using selected network mode
-    uint32_t network_magic = p2p::NetworkMagic::MAINNET;
-    switch (network_mode_) {
-        case NetworkMode::MAINNET:
-            network_magic = p2p::NetworkMagic::MAINNET;
-            break;
-        case NetworkMode::TESTNET:
-            network_magic = p2p::NetworkMagic::TESTNET;
-            break;
-        case NetworkMode::REGTEST:
-            network_magic = p2p::NetworkMagic::REGTEST;
-            break;
-    }
-
-    network_ = std::make_unique<p2p::NetworkManager>(port, network_magic);
 }
 
 Node::~Node() {
@@ -76,21 +64,6 @@ bool Node::Start() {
 
     std::cout << "Starting ParthenonChain node on port " << port_
               << " (" << params.name << ")" << std::endl;
-    const char* network_name = "mainnet";
-    switch (network_mode_) {
-        case NetworkMode::MAINNET:
-            network_name = "mainnet";
-            break;
-        case NetworkMode::TESTNET:
-            network_name = "testnet";
-            break;
-        case NetworkMode::REGTEST:
-            network_name = "regtest";
-            break;
-    }
-
-    std::cout << "Starting ParthenonChain node on port " << port_
-              << " (" << network_name << ")" << std::endl;
 
     // Open block storage database
     std::string block_db_path = data_dir_ + "/blocks";
@@ -131,10 +104,26 @@ bool Node::Start() {
             return false;
         }
     } else {
-        auto expected_genesis_hash = consensus::GetGenesisHash(consensus_network);
-        std::cout << "No stored blocks yet; expected genesis hash for this network starts with "
-                  << std::hex << static_cast<int>(expected_genesis_hash[0])
-                  << static_cast<int>(expected_genesis_hash[1]) << std::dec << std::endl;
+        const auto genesis_block = consensus::GetGenesisBlock(consensus_network);
+        const auto genesis_hash = consensus::GetExpectedGenesisHash(consensus_network);
+
+        if (!block_storage_->StoreBlock(genesis_block, 1)) {
+            std::cerr << "Failed to store genesis block for selected network" << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+
+        if (!block_storage_->UpdateChainTip(1, genesis_hash)) {
+            std::cerr << "Failed to update chain tip metadata for genesis block" << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+
+        std::cout << "Initialized storage with " << params.name << " genesis block (hash prefix: "
+                  << std::hex << static_cast<int>(genesis_hash[0])
+                  << static_cast<int>(genesis_hash[1]) << std::dec << ")" << std::endl;
     }
 
     // Set up network callbacks
@@ -175,18 +164,6 @@ bool Node::Start() {
         network_->QueryDNSSeeds();
     } else {
         std::cout << params.name << " mode: skipping DNS seed discovery" << std::endl;
-    if (network_mode_ == NetworkMode::MAINNET) {
-        network_->AddDNSSeed("seed.pantheonchain.io", 8333);
-        network_->AddDNSSeed("seed2.pantheonchain.io", 8333);
-
-        std::cout << "Querying DNS seeds for peers..." << std::endl;
-        network_->QueryDNSSeeds();
-    } else if (network_mode_ == NetworkMode::TESTNET) {
-        network_->AddDNSSeed("testnet-seed.pantheonchain.io", 18333);
-        std::cout << "Querying testnet DNS seeds for peers..." << std::endl;
-        network_->QueryDNSSeeds();
-    } else {
-        std::cout << "Regtest mode: skipping DNS seed discovery" << std::endl;
     }
 
     running_.store(true);
@@ -560,7 +537,7 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         info.address = address;
         info.port = port;
         info.version = kDefaultPeerVersion;
-        info.height = 0;
+        info.height = GetHeight();
         info.is_connected = true;
         info.last_seen = last_seen;
         peers_[peer_id] = info;
@@ -568,8 +545,22 @@ void Node::HandleNewPeer(const std::string& peer_id) {
         it->second.is_connected = true;
         it->second.last_seen = last_seen;
     }
-    // Update sync target based on peer height
-    // In production: Query peer for their best block height
+    RecomputeSyncTarget();
+}
+
+void Node::RecomputeSyncTarget() {
+    uint32_t best_height = GetHeight();
+    for (const auto& [id, info] : peers_) {
+        (void)id;
+        if (info.is_connected && info.height > best_height) {
+            best_height = info.height;
+        }
+    }
+
+    sync_target_height_ = best_height;
+    if (sync_target_height_ > GetHeight()) {
+        is_syncing_.store(true);
+    }
 }
 
 void Node::HandleBlockReceived(const std::string& peer_id, const primitives::Block& block) {

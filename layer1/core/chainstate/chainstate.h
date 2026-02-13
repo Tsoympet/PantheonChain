@@ -19,7 +19,7 @@ namespace chainstate {
  */
 class ChainState {
   public:
-    ChainState() : height_(0), total_supply_() {
+    ChainState() : height_(0), tip_hash_{}, total_supply_() {
         // Initialize all asset supplies to zero
         total_supply_[primitives::AssetID::TALANTON] = 0;
         total_supply_[primitives::AssetID::DRACHMA] = 0;
@@ -30,6 +30,11 @@ class ChainState {
      * Get current blockchain height
      */
     uint64_t GetHeight() const { return height_; }
+
+    /**
+     * Get current tip hash (zero hash if no blocks)
+     */
+    std::array<uint8_t, 32> GetTipHash() const { return tip_hash_; }
 
     /**
      * Get total supply for an asset
@@ -69,6 +74,7 @@ class ChainState {
      */
     void Reset() {
         height_ = 0;
+        tip_hash_.fill(0);
         total_supply_[primitives::AssetID::TALANTON] = 0;
         total_supply_[primitives::AssetID::DRACHMA] = 0;
         total_supply_[primitives::AssetID::OBOLOS] = 0;
@@ -76,6 +82,7 @@ class ChainState {
 
   private:
     uint64_t height_;
+    std::array<uint8_t, 32> tip_hash_;
     std::map<primitives::AssetID, uint64_t> total_supply_;
 
     /**
