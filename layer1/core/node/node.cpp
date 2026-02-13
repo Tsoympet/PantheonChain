@@ -12,10 +12,11 @@
 namespace parthenon {
 namespace node {
 
-Node::Node(const std::string& data_dir, uint16_t port)
+Node::Node(const std::string& data_dir, uint16_t port, NetworkMode network_mode)
     : data_dir_(data_dir),
       port_(port),
       running_(false),
+      network_mode_(network_mode),
       is_syncing_(false),
       sync_target_height_(0),
       is_mining_(false),
@@ -27,8 +28,21 @@ Node::Node(const std::string& data_dir, uint16_t port)
     block_storage_ = std::make_unique<storage::BlockStorage>();
     utxo_storage_ = std::make_unique<storage::UTXOStorage>();
 
-    // Initialize P2P network manager
-    network_ = std::make_unique<p2p::NetworkManager>(port, p2p::NetworkMagic::MAINNET);
+    // Initialize P2P network manager using selected network mode
+    uint32_t network_magic = p2p::NetworkMagic::MAINNET;
+    switch (network_mode_) {
+        case NetworkMode::MAINNET:
+            network_magic = p2p::NetworkMagic::MAINNET;
+            break;
+        case NetworkMode::TESTNET:
+            network_magic = p2p::NetworkMagic::TESTNET;
+            break;
+        case NetworkMode::REGTEST:
+            network_magic = p2p::NetworkMagic::REGTEST;
+            break;
+    }
+
+    network_ = std::make_unique<p2p::NetworkManager>(port, network_magic);
 }
 
 Node::~Node() {
@@ -40,7 +54,21 @@ bool Node::Start() {
         return false;
     }
 
-    std::cout << "Starting ParthenonChain node on port " << port_ << std::endl;
+    const char* network_name = "mainnet";
+    switch (network_mode_) {
+        case NetworkMode::MAINNET:
+            network_name = "mainnet";
+            break;
+        case NetworkMode::TESTNET:
+            network_name = "testnet";
+            break;
+        case NetworkMode::REGTEST:
+            network_name = "regtest";
+            break;
+    }
+
+    std::cout << "Starting ParthenonChain node on port " << port_
+              << " (" << network_name << ")" << std::endl;
 
     // Open block storage database
     std::string block_db_path = data_dir_ + "/blocks";
@@ -92,13 +120,20 @@ bool Node::Start() {
     }
     std::cout << "P2P network started on port " << port_ << std::endl;
 
-    // Add DNS seeds for peer discovery
-    network_->AddDNSSeed("seed.pantheonchain.io", 8333);
-    network_->AddDNSSeed("seed2.pantheonchain.io", 8333);
+    // Add DNS seeds for peer discovery by network mode
+    if (network_mode_ == NetworkMode::MAINNET) {
+        network_->AddDNSSeed("seed.pantheonchain.io", 8333);
+        network_->AddDNSSeed("seed2.pantheonchain.io", 8333);
 
-    // Query DNS seeds for initial peers
-    std::cout << "Querying DNS seeds for peers..." << std::endl;
-    network_->QueryDNSSeeds();
+        std::cout << "Querying DNS seeds for peers..." << std::endl;
+        network_->QueryDNSSeeds();
+    } else if (network_mode_ == NetworkMode::TESTNET) {
+        network_->AddDNSSeed("testnet-seed.pantheonchain.io", 18333);
+        std::cout << "Querying testnet DNS seeds for peers..." << std::endl;
+        network_->QueryDNSSeeds();
+    } else {
+        std::cout << "Regtest mode: skipping DNS seed discovery" << std::endl;
+    }
 
     running_.store(true);
     is_syncing_.store(true);
