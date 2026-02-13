@@ -4,7 +4,6 @@
 
 #include <iomanip>
 #include <leveldb/write_batch.h>
-#include <sstream>
 
 namespace parthenon {
 namespace storage {
@@ -45,51 +44,12 @@ std::string BlockStorage::HashKey(const std::array<uint8_t, 32>& hash) {
 }
 
 std::string BlockStorage::SerializeBlock(const primitives::Block& block) {
-    // Simple serialization (in production, use proper binary format)
-    std::ostringstream oss;
-
-    // Serialize header
-    oss.write(reinterpret_cast<const char*>(&block.header.version), sizeof(block.header.version));
-    oss.write(reinterpret_cast<const char*>(block.header.prev_block_hash.data()), 32);
-    oss.write(reinterpret_cast<const char*>(block.header.merkle_root.data()), 32);
-    oss.write(reinterpret_cast<const char*>(&block.header.timestamp),
-              sizeof(block.header.timestamp));
-    oss.write(reinterpret_cast<const char*>(&block.header.bits), sizeof(block.header.bits));
-    oss.write(reinterpret_cast<const char*>(&block.header.nonce), sizeof(block.header.nonce));
-
-    // Serialize transaction count
-    uint32_t tx_count = static_cast<uint32_t>(block.transactions.size());
-    oss.write(reinterpret_cast<const char*>(&tx_count), sizeof(tx_count));
-
-    // Note: Full transaction serialization would go here
-    // For now, we store the count to maintain structure
-
-    return oss.str();
+    const auto bytes = block.Serialize();
+    return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 }
 
 std::optional<primitives::Block> BlockStorage::DeserializeBlock(const std::string& data) {
-    if (data.size() < sizeof(primitives::BlockHeader) + sizeof(uint32_t)) {
-        return std::nullopt;
-    }
-
-    std::istringstream iss(data);
-    primitives::Block block;
-
-    // Deserialize header
-    iss.read(reinterpret_cast<char*>(&block.header.version), sizeof(block.header.version));
-    iss.read(reinterpret_cast<char*>(block.header.prev_block_hash.data()), 32);
-    iss.read(reinterpret_cast<char*>(block.header.merkle_root.data()), 32);
-    iss.read(reinterpret_cast<char*>(&block.header.timestamp), sizeof(block.header.timestamp));
-    iss.read(reinterpret_cast<char*>(&block.header.bits), sizeof(block.header.bits));
-    iss.read(reinterpret_cast<char*>(&block.header.nonce), sizeof(block.header.nonce));
-
-    // Deserialize transaction count
-    uint32_t tx_count;
-    iss.read(reinterpret_cast<char*>(&tx_count), sizeof(tx_count));
-
-    // Note: Full transaction deserialization would go here
-
-    return block;
+    return primitives::Block::Deserialize(reinterpret_cast<const uint8_t*>(data.data()), data.size());
 }
 
 bool BlockStorage::StoreBlock(const primitives::Block& block, uint32_t height) {
