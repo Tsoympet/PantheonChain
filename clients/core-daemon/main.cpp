@@ -395,6 +395,8 @@ class Node {
         const auto network_mode = *parsed_mode;
         }
         const auto network_mode = *parsed_mode;
+        }
+        const auto network_mode = *parsed_mode;
         const auto network_mode = parsed_mode.value_or(node::NetworkMode::MAINNET);
         if (!parsed_mode.has_value()) {
             std::cerr << "Unknown network mode '" << config_.network
