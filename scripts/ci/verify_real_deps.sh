@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Repository root for dependency verification.
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
@@ -86,7 +87,9 @@ if (( ${#archive_candidates[@]} > 0 )); then
   invalid_entries=()
   manifest_paths=()
   while IFS= read -r line; do
-    [[ "$line" =~ $manifest_ignore_re ]] && continue
+    if [[ "$line" =~ $manifest_ignore_re ]]; then
+      continue
+    fi
     if [[ "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]+([^[:space:]].*)$ ]]; then
       manifest_paths+=("${BASH_REMATCH[1]}")
     else
