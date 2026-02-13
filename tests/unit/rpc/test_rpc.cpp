@@ -3,6 +3,7 @@
 
 #include "node/node.h"
 #include "rpc/rpc_server.h"
+#include "wallet/wallet.h"
 
 #include <cassert>
 #include <chrono>
@@ -93,6 +94,73 @@ void TestServerStartStopLifecycle() {
     std::cout << "  ✓ Passed (lifecycle)" << std::endl;
 }
 
+void TestSendRawTransactionRejectsInvalidHex() {
+    std::cout << "Test: sendrawtransaction rejects invalid hex" << std::endl;
+
+    const auto unique_suffix =
+        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    const auto temp_dir =
+        std::filesystem::temp_directory_path() / ("parthenon-rpc-test-raw-" + unique_suffix);
+
+    node::Node node(temp_dir.string(), 0);
+    rpc::RPCServer server;
+    server.SetNode(&node);
+
+    rpc::RPCRequest request;
+    request.method = "sendrawtransaction";
+    request.id = "3";
+    request.params = R"(["zz11"] )";
+
+    auto response = server.HandleRequest(request);
+    assert(response.IsError());
+    assert(!response.error.empty());
+
+    std::error_code cleanup_error;
+    std::filesystem::remove_all(temp_dir, cleanup_error);
+
+    std::cout << "  ✓ Passed (invalid hex)" << std::endl;
+}
+
+void TestSendToAddressRejectsInvalidAmountAndHex() {
+    std::cout << "Test: sendtoaddress rejects invalid amount/address" << std::endl;
+
+    const auto unique_suffix =
+        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    const auto temp_dir =
+        std::filesystem::temp_directory_path() / ("parthenon-rpc-test-sendto-" + unique_suffix);
+
+    node::Node node(temp_dir.string(), 0);
+    std::array<uint8_t, 32> seed{};
+    wallet::Wallet wallet(seed);
+
+    rpc::RPCServer server;
+    server.SetNode(&node);
+    server.SetWallet(&wallet);
+
+    rpc::RPCRequest bad_amount_request;
+    bad_amount_request.method = "sendtoaddress";
+    bad_amount_request.id = "4";
+    bad_amount_request.params = R"(["0011", "not-a-number"])";
+
+    auto bad_amount_response = server.HandleRequest(bad_amount_request);
+    assert(bad_amount_response.IsError());
+    assert(!bad_amount_response.error.empty());
+
+    rpc::RPCRequest bad_address_request;
+    bad_address_request.method = "sendtoaddress";
+    bad_address_request.id = "5";
+    bad_address_request.params = R"(["nothex", "1"])";
+
+    auto bad_address_response = server.HandleRequest(bad_address_request);
+    assert(bad_address_response.IsError());
+    assert(!bad_address_response.error.empty());
+
+    std::error_code cleanup_error;
+    std::filesystem::remove_all(temp_dir, cleanup_error);
+
+    std::cout << "  ✓ Passed (invalid amount/address)" << std::endl;
+}
+
 int main() {
     std::cout << "=== RPC Server Tests ===" << std::endl;
 
@@ -100,6 +168,8 @@ int main() {
     TestStopMethodWithNode();
     TestBasicAuthConfiguration();
     TestServerStartStopLifecycle();
+    TestSendRawTransactionRejectsInvalidHex();
+    TestSendToAddressRejectsInvalidAmountAndHex();
 
     std::cout << "✓ All RPC server tests passed!" << std::endl;
     return 0;
