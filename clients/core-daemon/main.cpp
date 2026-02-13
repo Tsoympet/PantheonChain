@@ -248,16 +248,15 @@ class Node {
             return false;
         }
 
-        auto network_mode = node::ParseNetworkMode(config_.network).value_or(node::NetworkMode::MAINNET);
-
-        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port,
-                                                  network_mode);
-        node::NetworkMode network_mode = node::NetworkMode::MAINNET;
-        if (config_.network == "testnet") {
-            network_mode = node::NetworkMode::TESTNET;
-        } else if (config_.network == "regtest") {
-            network_mode = node::NetworkMode::REGTEST;
+        const auto parsed_mode = node::ParseNetworkMode(config_.network);
+        const auto network_mode = parsed_mode.value_or(node::NetworkMode::MAINNET);
+        if (!parsed_mode.has_value()) {
+            std::cerr << "Unknown network mode '" << config_.network
+                      << "', defaulting to mainnet (supported: mainnet/testnet/regtest)"
+                      << std::endl;
         }
+        std::cout << "Selected network: " << node::NetworkModeToString(network_mode)
+                  << std::endl;
 
         core_node_ =
             std::make_unique<node::Node>(config_.data_dir, config_.network_port, network_mode);
