@@ -2,11 +2,75 @@
 
 #include "utxo_storage.h"
 
+#include <charconv>
+#include <cctype>
 #include <leveldb/write_batch.h>
 #include <sstream>
 
 namespace parthenon {
 namespace storage {
+
+namespace {
+
+bool TryParseUint32(const std::string& value, uint32_t& out) {
+    if (value.empty()) {
+        return false;
+    }
+
+    uint32_t parsed = 0;
+    auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), parsed);
+    if (ec != std::errc{} || ptr != value.data() + value.size()) {
+        return false;
+    }
+
+    out = parsed;
+    return true;
+}
+
+bool TryParseUint64(const std::string& value, uint64_t& out) {
+    if (value.empty()) {
+        return false;
+    }
+
+    uint64_t parsed = 0;
+    auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), parsed);
+    if (ec != std::errc{} || ptr != value.data() + value.size()) {
+        return false;
+    }
+
+    out = parsed;
+    return true;
+}
+
+bool TryParseHexByte(const char high, const char low, uint8_t& out) {
+    auto to_nibble = [](const char c, uint8_t& nibble) {
+        const unsigned char uc = static_cast<unsigned char>(c);
+        if (std::isdigit(uc)) {
+            nibble = static_cast<uint8_t>(c - '0');
+            return true;
+        }
+        if (c >= 'a' && c <= 'f') {
+            nibble = static_cast<uint8_t>(10 + (c - 'a'));
+            return true;
+        }
+        if (c >= 'A' && c <= 'F') {
+            nibble = static_cast<uint8_t>(10 + (c - 'A'));
+            return true;
+        }
+        return false;
+    };
+
+    uint8_t hi = 0;
+    uint8_t lo = 0;
+    if (!to_nibble(high, hi) || !to_nibble(low, lo)) {
+        return false;
+    }
+
+    out = static_cast<uint8_t>((hi << 4) | lo);
+    return true;
+}
+
+}  // namespace
 
 bool UTXOStorage::Open(const std::string& db_path) {
     leveldb::Options options;
@@ -164,18 +228,30 @@ bool UTXOStorage::LoadUTXOSet(chainstate::UTXOSet& utxo_set) {
         }
 
         // Extract txid (skip 'u' prefix)
+        const size_t underscore_pos = key.find('_', 65);
+        if (underscore_pos == std::string::npos || underscore_pos <= 64) {
+            continue;
+        }
+
         std::array<uint8_t, 32> txid{};
+        bool txid_valid = true;
         for (size_t i = 0; i < 32; i++) {
-            std::string byte_str = key.substr(1 + i * 2, 2);
-            txid[i] = static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16));
+            uint8_t byte = 0;
+            if (!TryParseHexByte(key[1 + i * 2], key[1 + i * 2 + 1], byte)) {
+                txid_valid = false;
+                break;
+            }
+            txid[i] = byte;
+        }
+        if (!txid_valid) {
+            continue;
         }
 
         // Extract vout (after underscore)
-        size_t underscore_pos = key.find('_', 65);
-        if (underscore_pos == std::string::npos) {
+        uint32_t vout = 0;
+        if (!TryParseUint32(key.substr(underscore_pos + 1), vout)) {
             continue;
         }
-        uint32_t vout = static_cast<uint32_t>(std::stoul(key.substr(underscore_pos + 1)));
 
         // Deserialize output
         auto output = DeserializeOutput(it->value().ToString());
@@ -238,7 +314,12 @@ uint64_t UTXOStorage::GetUTXOCount() {
         return 0;
     }
 
-    return std::stoull(value);
+    uint64_t count = 0;
+    if (!TryParseUint64(value, count)) {
+        return 0;
+    }
+
+    return count;
 }
 
 }  // namespace storage

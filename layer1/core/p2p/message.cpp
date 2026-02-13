@@ -51,6 +51,9 @@ std::optional<uint64_t> ReadCompactSizeChecked(const uint8_t*& data, const uint8
             return std::nullopt;
         }
         const uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8);
+        if (size < 253) {
+            return std::nullopt;
+        }
         data += 2;
         return size;
     }
@@ -62,6 +65,9 @@ std::optional<uint64_t> ReadCompactSizeChecked(const uint8_t*& data, const uint8
         const uint64_t size = data[0] | (static_cast<uint64_t>(data[1]) << 8) |
                               (static_cast<uint64_t>(data[2]) << 16) |
                               (static_cast<uint64_t>(data[3]) << 24);
+        if (size <= 0xFFFF) {
+            return std::nullopt;
+        }
         data += 4;
         return size;
     }
@@ -73,6 +79,9 @@ std::optional<uint64_t> ReadCompactSizeChecked(const uint8_t*& data, const uint8
     uint64_t size = 0;
     for (int i = 0; i < 8; ++i) {
         size |= static_cast<uint64_t>(data[i]) << (8 * i);
+    }
+    if (size <= 0xFFFFFFFFULL) {
+        return std::nullopt;
     }
     data += 8;
     return size;
