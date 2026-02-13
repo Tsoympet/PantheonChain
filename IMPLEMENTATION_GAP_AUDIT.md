@@ -58,7 +58,8 @@ and a missing closing brace at end of file.
 - `layer1/core/p2p/message.cpp` compiles in Debug and the unit test target in
   `tests/unit/p2p/test_p2p.cpp` builds successfully.
 - Network parameters are defined in `layer1/core/node/chainparams.cpp`, but `Node` still duplicates
-  network-magic and DNS seed configuration inside `Node::Start()`.
+  network-magic and DNS seed configuration inside `Node::Start()` (see Section 3 for the build-break
+  details).
 
 ### What must be done
 
@@ -73,7 +74,7 @@ and a missing closing brace at end of file.
 - `layer1/core/consensus/genesis.cpp` implements deterministic per-network genesis generation and
   `tests/unit/consensus/test_genesis.cpp` exercises the helper APIs.
 - `docs/GENESIS.md` now describes the deterministic genesis construction; placeholder markers like
-  `[To be mined]` and `[calculated]` are not present in the current file.
+  `[To be mined]` and `[calculated]` have been replaced with concrete values.
 - `Node::Start()` validates stored genesis blocks but does not insert the canonical genesis block
   into empty storage/chainstate on first startup.
 
