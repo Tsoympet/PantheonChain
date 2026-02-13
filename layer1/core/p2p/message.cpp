@@ -166,6 +166,7 @@ std::optional<MessageHeader> MessageHeader::Deserialize(const uint8_t* data) {
     data += 4;
 
     std::memcpy(header.command, data, 12);
+    header.command[11] = '\0';
     data += 12;
 
     header.length = data[0] | (static_cast<uint32_t>(data[1]) << 8) |
@@ -621,6 +622,10 @@ std::vector<uint8_t> CreateNetworkMessage(uint32_t magic, const char* command,
         command_length = sizeof(header.command) - 1;
     }
     std::memcpy(header.command, command, command_length);
+
+    if (payload.size() > MAX_MESSAGE_SIZE) {
+        return {};
+    }
 
     header.length = static_cast<uint32_t>(payload.size());
     header.checksum = CalculateChecksum(payload);

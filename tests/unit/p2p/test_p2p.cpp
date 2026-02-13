@@ -449,6 +449,40 @@ void TestTxAndBlockMessages() {
     std::cout << "  ✓ Passed (tx/block messages)" << std::endl;
 }
 
+
+void TestRejectMessageAndCommandSafety() {
+    std::cout << "Test: Reject message and command safety" << std::endl;
+
+    RejectMessage reject;
+    reject.message = "tx";
+    reject.ccode = 0x10;
+    reject.reason = "invalid";
+    reject.data = {0xAA, 0xBB, 0xCC};
+
+    auto encoded = reject.Serialize();
+    auto decoded = RejectMessage::Deserialize(encoded.data(), encoded.size());
+    assert(decoded.has_value());
+    assert(decoded->message == "tx");
+    assert(decoded->ccode == 0x10);
+    assert(decoded->reason == "invalid");
+    assert(decoded->data.size() == 3);
+
+    // Command names longer than header command buffer should be safely truncated.
+    std::vector<uint8_t> payload(8, 0x01);
+    auto msg = CreateNetworkMessage(NetworkMagic::MAINNET, "averyverylongcommandname", payload);
+    assert(!msg.empty());
+    auto header = MessageHeader::Deserialize(msg.data());
+    assert(header.has_value());
+    assert(std::strlen(header->command) <= 11);
+
+    // Oversized payloads must be rejected.
+    std::vector<uint8_t> huge(MAX_MESSAGE_SIZE + 1, 0x00);
+    auto oversized = CreateNetworkMessage(NetworkMagic::MAINNET, "ping", huge);
+    assert(oversized.empty());
+
+    std::cout << "  ✓ Passed (reject/command safety)" << std::endl;
+}
+
 int main() {
     std::cout << "=== P2P Protocol Tests ===" << std::endl;
 
@@ -465,6 +499,7 @@ int main() {
     TestGetHeadersMessage();
     TestHeadersMessage();
     TestTxAndBlockMessages();
+    TestRejectMessageAndCommandSafety();
 
     std::cout << "\n✓ All P2P tests passed!" << std::endl;
     return 0;
