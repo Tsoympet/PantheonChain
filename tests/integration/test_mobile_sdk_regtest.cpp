@@ -203,7 +203,7 @@ class RpcServer {
         if (method == "getblockcount") {
             response["result"] = state_.block_height;
         } else if (method == "getblock") {
-            if (!params.is_array() || params.empty() || !params[0].is_number_unsigned()) {
+            if (!params.is_array() || params.empty() || !params[0].is_number()) {
                 response["error"] = {{"message", "Invalid params"}};
             } else {
                 uint64_t height = params[0].get<uint64_t>();

@@ -76,7 +76,6 @@ std::optional<ZKProof> ZKProver::GenerateProof(Circuit& circuit,
     // In production, this would use a zk-SNARK library like libsnark
     ZKProof proof;
     proof.proof_type = 1;  // Type 1: Transfer proof
-    proof.public_inputs = witness;
 
     std::vector<uint8_t> verification_material;
     AppendUint32(verification_material, params_.circuit_size);
