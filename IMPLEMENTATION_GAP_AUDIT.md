@@ -77,6 +77,42 @@ Remaining:
 
 All items below should be true before claiming full production readiness:
 
+**Status:** Not complete.
+
+Remaining:
+- Replace placeholder/mock behavior in hardware crypto and firmware trust/update paths with
+  production-grade implementations.
+- Add revocation/rotation and anti-rollback verification tests.
+
+### 3) Mobile SDK productionization
+
+**Status:** Not complete.
+
+Remaining:
+- Replace dummy wallet derivation/signing/network/subscription/storage behavior with production
+  implementations.
+- Add end-to-end SDK tests against local/regtest infrastructure.
+
+### 4) Layer2 proof/rollup hardening
+
+**Status:** Not complete.
+
+Remaining:
+- Replace placeholder proving logic with integrated proof generation/verification backend.
+- Add lifecycle tests (batching, challenge/fraud flows, finalization/exit paths).
+
+### 5) Operational hardening
+
+**Status:** Partially documented.
+
+Remaining:
+- Complete operator-grade lifecycle/recovery/deployment runbooks.
+- Include backup/restore drills, key compromise handling, and release incident procedures.
+
+## Definition of done for “production-ready”
+
+All items below should be true before claiming full production readiness:
+
 1. Reproducible release build with real dependencies only and deterministic bootstrap.
 2. No consensus/network-critical placeholder logic.
 3. Full network profile invariants enforced at startup (genesis + magic + ports + seed profile).
