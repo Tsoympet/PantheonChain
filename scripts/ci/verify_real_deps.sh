@@ -81,9 +81,12 @@ if (( ${#archive_candidates[@]} > 0 )); then
   fi
 
   invalid_entries=()
+  manifest_paths=()
   while IFS= read -r line; do
-    [[ -z "$line" ]] && continue
-    if [[ ! "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]{2}.+ ]]; then
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    if [[ "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]{2}([^[:space:]].*)$ ]]; then
+      manifest_paths+=("${BASH_REMATCH[1]}")
+    else
       invalid_entries+=("$line")
     fi
   done < "$archive_manifest"
@@ -94,7 +97,6 @@ if (( ${#archive_candidates[@]} > 0 )); then
     exit 1
   fi
 
-  mapfile -t manifest_paths < <(awk 'NF >= 2 {print $2}' "$archive_manifest" | sort -u)
   missing_entries=()
   for archive in "${archive_candidates[@]}"; do
     if ! printf '%s\n' "${manifest_paths[@]}" | grep -Fxq "$archive"; then
