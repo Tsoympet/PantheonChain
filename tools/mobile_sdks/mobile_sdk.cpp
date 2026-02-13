@@ -363,13 +363,15 @@ std::optional<uint64_t> FetchBlockHeight(const NetworkConfig& config, std::strin
     if (result->is_number()) {
         return result->get<uint64_t>();
     }
-    auto as_string = result->get<std::string>();
-    if (!as_string.empty()) {
-        try {
-            return static_cast<uint64_t>(std::stoull(as_string));
-        } catch (...) {
-            error = "Invalid block height response";
-            return std::nullopt;
+    if (result->is_string()) {
+        auto as_string = result->get<std::string>();
+        if (!as_string.empty()) {
+            try {
+                return static_cast<uint64_t>(std::stoull(as_string));
+            } catch (...) {
+                error = "Invalid block height response";
+                return std::nullopt;
+            }
         }
     }
     error = "Unexpected block height response";
@@ -746,7 +748,7 @@ void MobileClient::GetBalance(const std::string& address, BalanceCallback callba
 
         if ((*result)["balance"].is_number()) {
             *entry.second = (*result)["balance"].get<uint64_t>();
-        } else {
+        } else if ((*result)["balance"].is_string()) {
             auto value = (*result)["balance"].get<std::string>();
             if (value.empty()) {
                 callback(std::nullopt, "Invalid balance value");
@@ -758,6 +760,9 @@ void MobileClient::GetBalance(const std::string& address, BalanceCallback callba
                 callback(std::nullopt, "Invalid balance value");
                 return;
             }
+        } else {
+            callback(std::nullopt, "Invalid balance value");
+            return;
         }
     }
 
@@ -792,10 +797,12 @@ void MobileClient::SendTransaction(const Transaction& tx, TransactionCallback ca
         return;
     }
 
-    auto txid = result->get<std::string>();
-    if (!txid.empty()) {
-        callback(txid, std::nullopt);
-        return;
+    if (result->is_string()) {
+        auto txid = result->get<std::string>();
+        if (!txid.empty()) {
+            callback(txid, std::nullopt);
+            return;
+        }
     }
 
     callback(std::nullopt, "Unexpected transaction response");
@@ -837,6 +844,9 @@ void MobileClient::GetTransactionHistory(const std::string& address, uint32_t li
             continue;
         }
         for (size_t i = 0; i < tx_list.size(); ++i) {
+            if (!tx_list[i].is_string()) {
+                continue;
+            }
             auto id = tx_list[i].get<std::string>();
             if (id.empty()) {
                 continue;
@@ -882,6 +892,9 @@ void MobileClient::GetTransaction(const std::string& txid, TxInfoCallback callba
             continue;
         }
         for (size_t i = 0; i < tx_list.size(); ++i) {
+            if (!tx_list[i].is_string()) {
+                continue;
+            }
             auto id = tx_list[i].get<std::string>();
             if (id.empty()) {
                 continue;
@@ -978,6 +991,9 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
                         continue;
                     }
                     for (size_t i = 0; i < tx_list.size(); ++i) {
+                        if (!tx_list[i].is_string()) {
+                            continue;
+                        }
                         const auto id = tx_list[i].get<std::string>();
                         if (id.empty()) {
                             continue;
