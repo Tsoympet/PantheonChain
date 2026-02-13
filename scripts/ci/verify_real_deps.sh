@@ -90,7 +90,7 @@ if (( ${#archive_candidates[@]} > 0 )); then
     if [[ "$line" =~ $manifest_ignore_re ]]; then
       continue
     fi
-    if [[ "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]+([^[:space:]].*)$ ]]; then
+    if [[ "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]+([^[:space:]](.*[^[:space:]])?)$ ]]; then
       manifest_paths+=("${BASH_REMATCH[1]}")
     else
       invalid_entries+=("$line")
@@ -121,10 +121,12 @@ if (( ${#archive_candidates[@]} > 0 )); then
     exit 1
   fi
 
-  if ! (cd "$ROOT_DIR" && sha256sum -c <(grep -v -E "$manifest_ignore_re" "$archive_manifest")); then
+  if ! checksum_output=$(cd "$ROOT_DIR" && sha256sum -c <(grep -v -E "$manifest_ignore_re" "$archive_manifest") 2>&1); then
     echo "ERROR: vendored archive checksum verification failed."
+    echo "$checksum_output"
     exit 1
   fi
+  echo "$checksum_output"
 fi
 
 echo "Dependency pinning check passed: required real dependencies are pinned via git submodules."
