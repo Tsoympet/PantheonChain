@@ -27,6 +27,9 @@ static bool ReadCompactSizeChecked(const uint8_t*& input, const uint8_t* end, ui
             return false;
         }
         size = input[0] | (static_cast<uint64_t>(input[1]) << 8);
+        if (size < 253) {
+            return false;
+        }
         input += 2;
         return true;
     }
@@ -37,6 +40,9 @@ static bool ReadCompactSizeChecked(const uint8_t*& input, const uint8_t* end, ui
         }
         size = input[0] | (static_cast<uint64_t>(input[1]) << 8) |
                (static_cast<uint64_t>(input[2]) << 16) | (static_cast<uint64_t>(input[3]) << 24);
+        if (size <= 0xFFFF) {
+            return false;
+        }
         input += 4;
         return true;
     }
@@ -48,6 +54,9 @@ static bool ReadCompactSizeChecked(const uint8_t*& input, const uint8_t* end, ui
     size = 0;
     for (int i = 0; i < 8; i++) {
         size |= static_cast<uint64_t>(input[i]) << (i * 8);
+    }
+    if (size <= 0xFFFFFFFFULL) {
+        return false;
     }
     input += 8;
     return true;
@@ -244,6 +253,10 @@ std::optional<Block> Block::Deserialize(const uint8_t* data, size_t len) {
         if (tx_bytes.size() > remaining)
             return std::nullopt;
         ptr += tx_bytes.size();
+    }
+
+    if (ptr != end) {
+        return std::nullopt;
     }
 
     return block;
