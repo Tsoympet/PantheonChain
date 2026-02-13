@@ -51,11 +51,54 @@ void TestStopMethodWithNode() {
     std::cout << "  ✓ Passed (stop response)" << std::endl;
 }
 
+
+void TestBasicAuthConfiguration() {
+    std::cout << "Test: basic auth configuration" << std::endl;
+
+    rpc::RPCServer server;
+    assert(!server.IsAuthenticationEnabled());
+
+    server.ConfigureBasicAuth("rpcuser", "rpcpass");
+    assert(server.IsAuthenticationEnabled());
+
+    // base64("rpcuser:rpcpass") = cnBjdXNlcjpycGNwYXNz
+    assert(server.IsAuthorized("Basic cnBjdXNlcjpycGNwYXNz"));
+    assert(server.IsAuthorized("basic cnBjdXNlcjpycGNwYXNz"));
+    assert(server.IsAuthorized("Basic   cnBjdXNlcjpycGNwYXNz   "));
+    assert(!server.IsAuthorized("Basic invalid"));
+    assert(!server.IsAuthorized("Basic cnBjdXNlcjpycGNwYXN6"));
+    assert(!server.IsAuthorized("Bearer token"));
+
+    std::cout << "  ✓ Passed (auth checks)" << std::endl;
+}
+
+
+void TestServerStartStopLifecycle() {
+    std::cout << "Test: rpc server start/stop lifecycle" << std::endl;
+
+    rpc::RPCServer server(0);
+    assert(server.Start());
+    assert(server.IsRunning());
+
+    server.Stop();
+    assert(!server.IsRunning());
+
+    // Ensure server can be started again after a clean stop.
+    assert(server.Start());
+    assert(server.IsRunning());
+    server.Stop();
+    assert(!server.IsRunning());
+
+    std::cout << "  ✓ Passed (lifecycle)" << std::endl;
+}
+
 int main() {
     std::cout << "=== RPC Server Tests ===" << std::endl;
 
     TestStopMethodWithoutNode();
     TestStopMethodWithNode();
+    TestBasicAuthConfiguration();
+    TestServerStartStopLifecycle();
 
     std::cout << "✓ All RPC server tests passed!" << std::endl;
     return 0;

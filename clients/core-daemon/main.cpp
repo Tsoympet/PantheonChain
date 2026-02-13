@@ -2,6 +2,7 @@
 // Copyright (c) 2024 ParthenonChain Developers
 // Distributed under the MIT software license
 
+#include "node/chainparams.h"
 #include "node/node.h"
 #include "rpc/rpc_server.h"
 #include "wallet/wallet.h"
@@ -9,6 +10,7 @@
 #include <openssl/rand.h>
 
 #include <array>
+#include <cctype>
 #include <atomic>
 #include <cerrno>
 #include <csignal>
@@ -38,9 +40,13 @@ struct Config {
     int rpc_port = 8332;
     std::string rpc_user = "";
     std::string rpc_password = "";
+    bool rpc_allow_unauthenticated = false;
     std::string data_dir = "./data";
     std::string log_level = "info";
     bool mining_enabled = false;
+    std::string network = "mainnet";
+    bool network_port_configured = false;
+    bool rpc_port_configured = false;
 };
 
 class ConfigParser {
@@ -73,26 +79,56 @@ class ConfigParser {
             value.erase(0, value.find_first_not_of(" \t"));
             value.erase(value.find_last_not_of(" \t") + 1);
 
-            if (key == "network.port")
+            if (key == "network.port") {
                 config.network_port = std::stoi(value);
+                config.network_port_configured = true;
+            }
             else if (key == "network.max_connections")
                 config.max_connections = std::stoi(value);
             else if (key == "network.timeout")
                 config.network_timeout = std::stoi(value);
+            else if (key == "network.mode")
+                config.network = value;
             else if (key == "rpc.enabled")
                 config.rpc_enabled = (value == "true" || value == "1");
-            else if (key == "rpc.port")
+            else if (key == "rpc.port") {
                 config.rpc_port = std::stoi(value);
+                config.rpc_port_configured = true;
+            }
             else if (key == "rpc.user")
                 config.rpc_user = value;
             else if (key == "rpc.password")
                 config.rpc_password = value;
+            else if (key == "rpc.allow_unauthenticated")
+                config.rpc_allow_unauthenticated = (value == "true" || value == "1");
             else if (key == "data_dir")
                 config.data_dir = value;
             else if (key == "log_level")
                 config.log_level = value;
             else if (key == "mining.enabled")
                 config.mining_enabled = (value == "true" || value == "1");
+        }
+
+
+        // Normalize and validate network mode
+        for (auto& ch : config.network) {
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+
+        auto mode_opt = node::ParseNetworkMode(config.network);
+        if (!mode_opt) {
+            std::cerr << "Warning: Unknown network.mode '" << config.network
+                      << "', defaulting to mainnet" << std::endl;
+            config.network = "mainnet";
+            mode_opt = node::NetworkMode::MAINNET;
+        }
+
+        const auto params = node::GetNetworkParams(*mode_opt);
+        if (!config.network_port_configured) {
+            config.network_port = static_cast<int>(params.default_p2p_port);
+        }
+        if (!config.rpc_port_configured) {
+            config.rpc_port = static_cast<int>(params.default_rpc_port);
         }
 
         return config;
@@ -197,6 +233,7 @@ class Node {
 
         std::cout << "=== ParthenonChain Node Starting ===" << std::endl;
         std::cout << "Data directory: " << config_.data_dir << std::endl;
+        std::cout << "Network mode: " << config_.network << std::endl;
         std::cout << "Network port: " << config_.network_port << std::endl;
         std::cout << "RPC enabled: " << (config_.rpc_enabled ? "yes" : "no") << std::endl;
         if (config_.rpc_enabled) {
@@ -211,7 +248,10 @@ class Node {
             return false;
         }
 
-        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port);
+        auto network_mode = node::ParseNetworkMode(config_.network).value_or(node::NetworkMode::MAINNET);
+
+        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port,
+                                                  network_mode);
 
         std::string seed_error;
         auto seed = LoadOrGenerateWalletSeed(config_.data_dir, seed_error);
@@ -229,9 +269,27 @@ class Node {
         core_node_->AttachWallet(wallet_);
 
         if (config_.rpc_enabled) {
+            const bool has_rpc_user = !config_.rpc_user.empty();
+            const bool has_rpc_password = !config_.rpc_password.empty();
+            if (!config_.rpc_allow_unauthenticated && (!has_rpc_user || !has_rpc_password)) {
+                std::cerr << "Refusing to start RPC server without credentials. "
+                          << "Set rpc.user and rpc.password, or set "
+                          << "rpc.allow_unauthenticated=true for local development only."
+                          << std::endl;
+                core_node_->Stop();
+                return false;
+            }
+
+            if (config_.rpc_allow_unauthenticated && (!has_rpc_user || !has_rpc_password)) {
+                std::cerr << "Warning: RPC authentication disabled via "
+                          << "rpc.allow_unauthenticated=true; use only in trusted environments."
+                          << std::endl;
+            }
+
             rpc_server_ = std::make_unique<rpc::RPCServer>(config_.rpc_port);
             rpc_server_->SetNode(core_node_.get());
             rpc_server_->SetWallet(wallet_.get());
+            rpc_server_->ConfigureBasicAuth(config_.rpc_user, config_.rpc_password);
             if (!rpc_server_->Start()) {
                 std::cerr << "Failed to start RPC server" << std::endl;
                 core_node_->Stop();
