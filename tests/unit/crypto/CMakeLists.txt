@@ -19,3 +19,13 @@ target_link_libraries(test_schnorr PRIVATE
 )
 
 add_test(NAME test_schnorr COMMAND test_schnorr)
+
+add_executable(test_hardware_crypto
+    test_hardware_crypto.cpp
+)
+
+target_link_libraries(test_hardware_crypto PRIVATE
+    parthenon_crypto
+)
+
+add_test(NAME test_hardware_crypto COMMAND test_hardware_crypto)
