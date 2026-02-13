@@ -852,12 +852,12 @@ void MobileClient::GetTransaction(const std::string& txid, TxInfoCallback callba
 }
 
 void MobileClient::CallContract(const ContractCall& call, ContractCallCallback callback) {
-    [[maybe_unused]] const ContractCall& c = call;
+    (void)call;
     callback(std::nullopt, "Contract calls are not supported by the current SDK implementation");
 }
 
 void MobileClient::DeployContract(const std::vector<uint8_t>& bytecode, TransactionCallback callback) {
-    [[maybe_unused]] const std::vector<uint8_t>& code = bytecode;
+    (void)bytecode;
     callback(std::nullopt, "Contract deployment is not supported by the current SDK implementation");
 }
 
@@ -881,6 +881,7 @@ void MobileClient::SubscribeToBlocks(BlockCallback callback) {
                         try {
                             callback(height, hash);
                         } catch (...) {
+                            // Ignore callback errors to keep subscription alive.
                         }
                     }
                 }
@@ -939,6 +940,7 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
                             try {
                                 callback(entry);
                             } catch (...) {
+                                // Ignore callback errors to keep subscription alive.
                             }
                         }
                     }
@@ -951,7 +953,7 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
 }
 
 void MobileClient::EstimateGas(const Transaction& tx, GasEstimateCallback callback) {
-    [[maybe_unused]] const Transaction& transaction = tx;
+    (void)tx;
     callback(std::nullopt, "Gas estimation is not supported by the current SDK implementation");
 }
 
