@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrading to 1.0.0
 
-This is the first production-ready release with complete core blockchain functionality.
+This is the first public release with core blockchain functionality; production readiness work remains in progress.
 
 For new installations, see [INSTALLATION.md](docs/INSTALLATION.md).
 

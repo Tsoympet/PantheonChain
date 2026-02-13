@@ -9,7 +9,7 @@ ParthenonChain is designed as a **layered blockchain system** with strict separa
 1. **Determinism**: All consensus code produces identical results across all nodes
 2. **Layer Separation**: Clear boundaries between Layer 1 (consensus) and Layer 2 (extensions)
 3. **Security First**: Cryptographic primitives and validation logic are rigorously tested
-4. **Production Ready**: No placeholders, no shortcuts - complete implementations only
+4. **Production Readiness**: In progress; refer to the implementation gap audit for remaining work
 
 ## High-Level Architecture
 

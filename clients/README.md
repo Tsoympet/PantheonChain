@@ -390,4 +390,4 @@ For issues or questions:
 
 ---
 
-**All clients are production-ready and actively maintained.**
+**Clients are under active development; see the implementation gap audit for readiness status.**

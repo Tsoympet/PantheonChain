@@ -2,7 +2,7 @@
 
 ## Current Release (v1.0.0)
 
-The list below reflects features implemented in the v1.0.0 codebase across core and optional modules. Component maturity ranges from production-ready to experimental depending on the module and configuration.
+The list below reflects planned and partially implemented features in the v1.0.0 codebase across core and optional modules. Component maturity ranges from in-progress to experimental depending on the module and configuration; see the implementation gap audit for current readiness.
 
 ✅ Core blockchain with multi-asset UTXO  
 ✅ Schnorr signatures (BIP-340)  
@@ -39,7 +39,7 @@ The list below reflects features implemented in the v1.0.0 codebase across core 
 
 See [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) and [RELEASES.md](RELEASES.md) for implementation details and module status.
 
-**🎉 Feature coverage complete - implementation present across planned modules 🎉**
+**🚧 Feature coverage in progress - see the implementation gap audit for current status 🚧**
 
 ## Future Possibilities
 

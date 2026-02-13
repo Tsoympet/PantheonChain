@@ -74,14 +74,14 @@
 
 ## Overview
 
-ParthenonChain is a production-grade Layer-1 blockchain implementing **SHA-256d Proof-of-Work** consensus with a **multi-asset UTXO ledger**, **Schnorr signatures**, and **EVM-compatible smart contracts**. Built for security, determinism, and extensibility, ParthenonChain combines proven cryptographic foundations with modern blockchain features.
+ParthenonChain is a production-focused Layer-1 blockchain implementing **SHA-256d Proof-of-Work** consensus with a **multi-asset UTXO ledger**, **Schnorr signatures**, and **EVM-compatible smart contracts**. Built for security, determinism, and extensibility, ParthenonChain combines proven cryptographic foundations with modern blockchain features. Production readiness status is tracked in [IMPLEMENTATION_GAP_AUDIT.md](IMPLEMENTATION_GAP_AUDIT.md).
 
 ### What Makes ParthenonChain Different?
 
 - 🏛️ **Three Native Tokens**: TALANTON (store of value), DRACHMA (medium of exchange), and OBOLOS (smart contract gas)
 - 🔐 **Schnorr Signatures**: BIP-340 implementation for privacy, efficiency, and signature aggregation
 - ⚡ **EVM Compatibility**: Run Solidity smart contracts with OBOLOS token for gas
-- 🎯 **Production-Ready**: Complete implementation with no placeholders, comprehensive testing
+- 🎯 **Production Readiness**: In progress; see the implementation gap audit for remaining work
 - 📊 **Layered Architecture**: Clear separation between consensus-critical (Layer 1) and optional (Layer 2) components
 
 ## Key Features

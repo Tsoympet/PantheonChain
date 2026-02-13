@@ -9,7 +9,7 @@
 
 ## Abstract
 
-ParthenonChain is a production-grade Layer-1 blockchain implementing SHA-256d Proof-of-Work consensus with a multi-asset UTXO ledger, Schnorr signatures, and EVM-compatible smart contracts. The system features three native tokens (TALANTON, DRACHMA, OBOLOS) with fixed supply schedules, deterministic execution, and strict layer separation between consensus-critical components and optional extensions. This whitepaper presents the technical architecture, cryptographic foundations, economic model, and security properties of ParthenonChain.
+ParthenonChain is a production-focused Layer-1 blockchain implementing SHA-256d Proof-of-Work consensus with a multi-asset UTXO ledger, Schnorr signatures, and EVM-compatible smart contracts. The system features three native tokens (TALANTON, DRACHMA, OBOLOS) with fixed supply schedules, deterministic execution, and strict layer separation between consensus-critical components and optional extensions. Production readiness status is tracked in `IMPLEMENTATION_GAP_AUDIT.md`. This whitepaper presents the technical architecture, cryptographic foundations, economic model, and security properties of ParthenonChain.
 
 ---
 
@@ -22,7 +22,7 @@ Modern blockchain systems face a trilemma between decentralization, security, an
 1. **Deterministic consensus** - Bitcoin-compatible Proof-of-Work with predictable block validation
 2. **Multi-asset model** - Native support for multiple tokens without smart contract overhead
 3. **Layer separation** - Clear boundaries between consensus-critical (Layer 1) and optional (Layer 2) components
-4. **Production-ready implementation** - No placeholders, complete cryptographic primitives, comprehensive testing
+4. **Production readiness** - In progress; see `IMPLEMENTATION_GAP_AUDIT.md` for remaining work
 
 ### 1.2 Key Features
 
@@ -37,7 +37,7 @@ Modern blockchain systems face a trilemma between decentralization, security, an
 
 1. **Determinism First** - All consensus code produces identical results across nodes
 2. **Security by Design** - Cryptographic rigor and defense in depth
-3. **Production Quality** - Complete implementations, no shortcuts
+3. **Production Readiness** - In progress; tracked in `IMPLEMENTATION_GAP_AUDIT.md`
 4. **Composability** - Clean interfaces between system components
 
 ---
