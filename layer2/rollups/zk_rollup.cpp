@@ -60,7 +60,7 @@ std::array<uint8_t, 32> HashBytes(const std::vector<uint8_t>& data) {
 }
 
 std::array<uint8_t, 32> HashPair(std::array<uint8_t, 32> left, std::array<uint8_t, 32> right) {
-    // Order siblings lexicographically so each tree level hashes pairs deterministically.
+    // Order siblings lexicographically for deterministic hashing in this simplified tree (value-sorted pairs).
     if (std::lexicographical_compare(right.begin(), right.end(), left.begin(), left.end())) {
         std::swap(left, right);
     }

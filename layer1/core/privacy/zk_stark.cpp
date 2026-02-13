@@ -22,6 +22,7 @@ std::array<uint8_t, 32> HashVector(const std::vector<uint8_t>& data) {
 }
 
 std::array<uint8_t, 32> HashPair(std::array<uint8_t, 32> left, std::array<uint8_t, 32> right) {
+    // Sort pair values for deterministic hashing in this simplified Merkle commitment.
     if (std::lexicographical_compare(right.begin(), right.end(), left.begin(), left.end())) {
         std::swap(left, right);
     }

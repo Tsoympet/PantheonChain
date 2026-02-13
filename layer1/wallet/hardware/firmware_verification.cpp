@@ -585,6 +585,7 @@ bool BootloaderVerifier::VerifyBootloader(const std::vector<uint8_t>& bootloader
         return false;
     }
 
+    // Minimal integrity check for test environments; production should verify vendor signatures.
     auto hash = crypto::SHA256::Hash256(bootloader_data);
     return std::any_of(hash.begin(), hash.end(), [](uint8_t byte) { return byte != 0; });
 }
@@ -615,6 +616,7 @@ bool BootloaderVerifier::VerifySecureBoot(const std::vector<uint8_t>& device_id)
     if (device_id.empty()) {
         return false;
     }
+    // Placeholder attestation check for tests until device APIs are available.
     return std::any_of(device_id.begin(), device_id.end(), [](uint8_t byte) { return byte != 0; });
 }
 

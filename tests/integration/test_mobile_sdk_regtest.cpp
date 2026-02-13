@@ -288,6 +288,16 @@ int main() {
     assert(!balance_error.has_value());
     assert(balance->taln == 1000);
 
+    std::optional<Balance> address_balance;
+    std::optional<std::string> address_error;
+    client.GetBalance(wallet->GetAddress(),
+                      [&](std::optional<Balance> result, std::optional<std::string> error) {
+                          address_balance = result;
+                          address_error = error;
+                      });
+    assert(!address_balance.has_value());
+    assert(address_error.has_value());
+
     Transaction tx;
     tx.to = wallet->GetAddress();
     tx.amount = 42;
