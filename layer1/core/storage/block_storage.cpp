@@ -2,11 +2,33 @@
 
 #include "block_storage.h"
 
+#include <charconv>
 #include <iomanip>
 #include <leveldb/write_batch.h>
 
 namespace parthenon {
 namespace storage {
+
+namespace {
+
+bool TryParseUint32(const std::string& value, uint32_t& out) {
+    if (value.empty()) {
+        return false;
+    }
+
+    uint32_t parsed = 0;
+    const char* begin = value.data();
+    const char* end = value.data() + value.size();
+    auto [ptr, ec] = std::from_chars(begin, end, parsed);
+    if (ec != std::errc{} || ptr != end) {
+        return false;
+    }
+
+    out = parsed;
+    return true;
+}
+
+}  // namespace
 
 bool BlockStorage::Open(const std::string& db_path) {
     leveldb::Options options;
@@ -108,7 +130,11 @@ std::optional<primitives::Block> BlockStorage::GetBlockByHash(const std::array<u
     }
 
     // Then get block by height
-    uint32_t height = static_cast<uint32_t>(std::stoul(height_str));
+    uint32_t height = 0;
+    if (!TryParseUint32(height_str, height)) {
+        return std::nullopt;
+    }
+
     return GetBlockByHeight(height);
 }
 
@@ -124,7 +150,12 @@ uint32_t BlockStorage::GetHeight() {
         return 0;
     }
 
-    return static_cast<uint32_t>(std::stoul(value));
+    uint32_t height = 0;
+    if (!TryParseUint32(value, height)) {
+        return 0;
+    }
+
+    return height;
 }
 
 bool BlockStorage::UpdateChainTip(uint32_t height, const std::array<uint8_t, 32>& best_hash) {
