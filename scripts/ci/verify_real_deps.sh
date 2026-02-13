@@ -80,7 +80,21 @@ if (( ${#archive_candidates[@]} > 0 )); then
     exit 1
   fi
 
-  mapfile -t manifest_paths < <(awk '{print $2}' "$archive_manifest" | sort -u)
+  invalid_entries=()
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    if [[ ! "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]{2}.+ ]]; then
+      invalid_entries+=("$line")
+    fi
+  done < "$archive_manifest"
+
+  if (( ${#invalid_entries[@]} > 0 )); then
+    echo "ERROR: checksum manifest contains invalid entries:"
+    printf ' - %s\n' "${invalid_entries[@]}"
+    exit 1
+  fi
+
+  mapfile -t manifest_paths < <(awk 'NF >= 2 {print $2}' "$archive_manifest" | sort -u)
   missing_entries=()
   for archive in "${archive_candidates[@]}"; do
     if ! printf '%s\n' "${manifest_paths[@]}" | grep -Fxq "$archive"; then
@@ -94,7 +108,10 @@ if (( ${#archive_candidates[@]} > 0 )); then
     exit 1
   fi
 
-  (cd "$ROOT_DIR" && sha256sum -c "$archive_manifest")
+  if ! (cd "$ROOT_DIR" && sha256sum -c "$archive_manifest"); then
+    echo "ERROR: vendored archive checksum verification failed."
+    exit 1
+  fi
 fi
 
 echo "Dependency pinning check passed: required real dependencies are pinned via git submodules."
