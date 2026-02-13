@@ -104,10 +104,26 @@ bool Node::Start() {
             return false;
         }
     } else {
-        auto expected_genesis_hash = consensus::GetGenesisHash(consensus_network);
-        std::cout << "No stored blocks yet; expected genesis hash for this network starts with "
-                  << std::hex << static_cast<int>(expected_genesis_hash[0])
-                  << static_cast<int>(expected_genesis_hash[1]) << std::dec << std::endl;
+        const auto genesis_block = consensus::GetGenesisBlock(consensus_network);
+        const auto genesis_hash = consensus::GetExpectedGenesisHash(consensus_network);
+
+        if (!block_storage_->StoreBlock(genesis_block, 1)) {
+            std::cerr << "Failed to store genesis block for selected network" << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+
+        if (!block_storage_->UpdateChainTip(1, genesis_hash)) {
+            std::cerr << "Failed to update chain tip metadata for genesis block" << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+
+        std::cout << "Initialized storage with " << params.name << " genesis block (hash prefix: "
+                  << std::hex << static_cast<int>(genesis_hash[0])
+                  << static_cast<int>(genesis_hash[1]) << std::dec << ")" << std::endl;
     }
 
     // Set up network callbacks
