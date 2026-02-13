@@ -65,6 +65,25 @@ class ConfigParser {
         }
     }
 
+    static bool TryParseBool(const std::string& value, bool& out) {
+        std::string normalized = value;
+        for (auto& ch : normalized) {
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+
+        if (normalized == "1" || normalized == "true" || normalized == "yes" ||
+            normalized == "on") {
+            out = true;
+            return true;
+        }
+        if (normalized == "0" || normalized == "false" || normalized == "no" ||
+            normalized == "off") {
+            out = false;
+            return true;
+        }
+        return false;
+    }
+
     static bool TryParsePort(const std::string& value, int& out) {
         int parsed = 0;
         if (!TryParseInt(value, parsed)) {
@@ -136,8 +155,15 @@ class ConfigParser {
             }
             else if (key == "network.mode")
                 config.network = value;
-            else if (key == "rpc.enabled")
-                config.rpc_enabled = (value == "true" || value == "1");
+            else if (key == "rpc.enabled") {
+                bool parsed_enabled = config.rpc_enabled;
+                if (!TryParseBool(value, parsed_enabled)) {
+                    std::cerr << "Warning: Invalid rpc.enabled '" << value
+                              << "'; keeping default" << std::endl;
+                } else {
+                    config.rpc_enabled = parsed_enabled;
+                }
+            }
             else if (key == "rpc.port") {
                 int parsed_port = 0;
                 if (!TryParsePort(value, parsed_port)) {
@@ -152,14 +178,28 @@ class ConfigParser {
                 config.rpc_user = value;
             else if (key == "rpc.password")
                 config.rpc_password = value;
-            else if (key == "rpc.allow_unauthenticated")
-                config.rpc_allow_unauthenticated = (value == "true" || value == "1");
+            else if (key == "rpc.allow_unauthenticated") {
+                bool parsed_allow_unauthenticated = config.rpc_allow_unauthenticated;
+                if (!TryParseBool(value, parsed_allow_unauthenticated)) {
+                    std::cerr << "Warning: Invalid rpc.allow_unauthenticated '" << value
+                              << "'; keeping default" << std::endl;
+                } else {
+                    config.rpc_allow_unauthenticated = parsed_allow_unauthenticated;
+                }
+            }
             else if (key == "data_dir")
                 config.data_dir = value;
             else if (key == "log_level")
                 config.log_level = value;
-            else if (key == "mining.enabled")
-                config.mining_enabled = (value == "true" || value == "1");
+            else if (key == "mining.enabled") {
+                bool parsed_mining_enabled = config.mining_enabled;
+                if (!TryParseBool(value, parsed_mining_enabled)) {
+                    std::cerr << "Warning: Invalid mining.enabled '" << value
+                              << "'; keeping default" << std::endl;
+                } else {
+                    config.mining_enabled = parsed_mining_enabled;
+                }
+            }
         }
 
 
@@ -307,6 +347,8 @@ class Node {
             std::cerr << "Invalid internal network mode '" << config_.network
                       << "' after config parsing" << std::endl;
             return false;
+        }
+        const auto network_mode = *parsed_mode;
         }
         const auto network_mode = *parsed_mode;
         }
