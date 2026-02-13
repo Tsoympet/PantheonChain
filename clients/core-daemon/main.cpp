@@ -2,6 +2,7 @@
 // Copyright (c) 2024 ParthenonChain Developers
 // Distributed under the MIT software license
 
+#include "node/chainparams.h"
 #include "node/node.h"
 #include "rpc/rpc_server.h"
 #include "wallet/wallet.h"
@@ -9,6 +10,7 @@
 #include <openssl/rand.h>
 
 #include <array>
+#include <cctype>
 #include <atomic>
 #include <cerrno>
 #include <csignal>
@@ -42,6 +44,8 @@ struct Config {
     std::string log_level = "info";
     bool mining_enabled = false;
     std::string network = "mainnet";
+    bool network_port_configured = false;
+    bool rpc_port_configured = false;
 };
 
 class ConfigParser {
@@ -74,8 +78,10 @@ class ConfigParser {
             value.erase(0, value.find_first_not_of(" \t"));
             value.erase(value.find_last_not_of(" \t") + 1);
 
-            if (key == "network.port")
+            if (key == "network.port") {
                 config.network_port = std::stoi(value);
+                config.network_port_configured = true;
+            }
             else if (key == "network.max_connections")
                 config.max_connections = std::stoi(value);
             else if (key == "network.timeout")
@@ -84,8 +90,10 @@ class ConfigParser {
                 config.network = value;
             else if (key == "rpc.enabled")
                 config.rpc_enabled = (value == "true" || value == "1");
-            else if (key == "rpc.port")
+            else if (key == "rpc.port") {
                 config.rpc_port = std::stoi(value);
+                config.rpc_port_configured = true;
+            }
             else if (key == "rpc.user")
                 config.rpc_user = value;
             else if (key == "rpc.password")
@@ -96,6 +104,28 @@ class ConfigParser {
                 config.log_level = value;
             else if (key == "mining.enabled")
                 config.mining_enabled = (value == "true" || value == "1");
+        }
+
+
+        // Normalize and validate network mode
+        for (auto& ch : config.network) {
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+
+        auto mode_opt = node::ParseNetworkMode(config.network);
+        if (!mode_opt) {
+            std::cerr << "Warning: Unknown network.mode '" << config.network
+                      << "', defaulting to mainnet" << std::endl;
+            config.network = "mainnet";
+            mode_opt = node::NetworkMode::MAINNET;
+        }
+
+        const auto params = node::GetNetworkParams(*mode_opt);
+        if (!config.network_port_configured) {
+            config.network_port = static_cast<int>(params.default_p2p_port);
+        }
+        if (!config.rpc_port_configured) {
+            config.rpc_port = static_cast<int>(params.default_rpc_port);
         }
 
         return config;
@@ -215,6 +245,10 @@ class Node {
             return false;
         }
 
+        auto network_mode = node::ParseNetworkMode(config_.network).value_or(node::NetworkMode::MAINNET);
+
+        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port,
+                                                  network_mode);
         node::NetworkMode network_mode = node::NetworkMode::MAINNET;
         if (config_.network == "testnet") {
             network_mode = node::NetworkMode::TESTNET;

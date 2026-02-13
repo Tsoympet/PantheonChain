@@ -2,6 +2,7 @@
 
 #include "node.h"
 
+#include "chainparams.h"
 #include "validation/validation.h"
 
 #include <chrono>
@@ -28,6 +29,8 @@ Node::Node(const std::string& data_dir, uint16_t port, NetworkMode network_mode)
     block_storage_ = std::make_unique<storage::BlockStorage>();
     utxo_storage_ = std::make_unique<storage::UTXOStorage>();
 
+    const auto params = GetNetworkParams(network_mode_);
+    network_ = std::make_unique<p2p::NetworkManager>(port, params.magic);
     // Initialize P2P network manager using selected network mode
     uint32_t network_magic = p2p::NetworkMagic::MAINNET;
     switch (network_mode_) {
@@ -54,6 +57,10 @@ bool Node::Start() {
         return false;
     }
 
+    const auto params = GetNetworkParams(network_mode_);
+
+    std::cout << "Starting ParthenonChain node on port " << port_
+              << " (" << params.name << ")" << std::endl;
     const char* network_name = "mainnet";
     switch (network_mode_) {
         case NetworkMode::MAINNET:
@@ -121,6 +128,14 @@ bool Node::Start() {
     std::cout << "P2P network started on port " << port_ << std::endl;
 
     // Add DNS seeds for peer discovery by network mode
+    if (params.dns_discovery_enabled) {
+        for (const auto& seed : params.dns_seeds) {
+            network_->AddDNSSeed(seed.host, seed.port);
+        }
+        std::cout << "Querying " << params.name << " DNS seeds for peers..." << std::endl;
+        network_->QueryDNSSeeds();
+    } else {
+        std::cout << params.name << " mode: skipping DNS seed discovery" << std::endl;
     if (network_mode_ == NetworkMode::MAINNET) {
         network_->AddDNSSeed("seed.pantheonchain.io", 8333);
         network_->AddDNSSeed("seed2.pantheonchain.io", 8333);

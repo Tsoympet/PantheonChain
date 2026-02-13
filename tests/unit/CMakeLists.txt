@@ -12,3 +12,5 @@ add_subdirectory(settlement)
 add_subdirectory(layer2)
 add_subdirectory(wallet)
 add_subdirectory(rpc)
+
+add_subdirectory(node)
