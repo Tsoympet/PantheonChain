@@ -41,6 +41,7 @@ struct Config {
     std::string data_dir = "./data";
     std::string log_level = "info";
     bool mining_enabled = false;
+    std::string network = "mainnet";
 };
 
 class ConfigParser {
@@ -79,6 +80,8 @@ class ConfigParser {
                 config.max_connections = std::stoi(value);
             else if (key == "network.timeout")
                 config.network_timeout = std::stoi(value);
+            else if (key == "network.mode")
+                config.network = value;
             else if (key == "rpc.enabled")
                 config.rpc_enabled = (value == "true" || value == "1");
             else if (key == "rpc.port")
@@ -197,6 +200,7 @@ class Node {
 
         std::cout << "=== ParthenonChain Node Starting ===" << std::endl;
         std::cout << "Data directory: " << config_.data_dir << std::endl;
+        std::cout << "Network mode: " << config_.network << std::endl;
         std::cout << "Network port: " << config_.network_port << std::endl;
         std::cout << "RPC enabled: " << (config_.rpc_enabled ? "yes" : "no") << std::endl;
         if (config_.rpc_enabled) {
@@ -211,7 +215,15 @@ class Node {
             return false;
         }
 
-        core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port);
+        node::NetworkMode network_mode = node::NetworkMode::MAINNET;
+        if (config_.network == "testnet") {
+            network_mode = node::NetworkMode::TESTNET;
+        } else if (config_.network == "regtest") {
+            network_mode = node::NetworkMode::REGTEST;
+        }
+
+        core_node_ =
+            std::make_unique<node::Node>(config_.data_dir, config_.network_port, network_mode);
 
         std::string seed_error;
         auto seed = LoadOrGenerateWalletSeed(config_.data_dir, seed_error);
