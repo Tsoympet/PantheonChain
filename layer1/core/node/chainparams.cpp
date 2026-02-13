@@ -2,6 +2,9 @@
 
 #include "p2p/protocol.h"
 
+#include <algorithm>
+#include <cctype>
+
 namespace parthenon {
 namespace node {
 
@@ -45,15 +48,26 @@ NetworkParams GetNetworkParams(NetworkMode mode) {
                          true};
 }
 
-
 std::optional<NetworkMode> ParseNetworkMode(const std::string& mode_name) {
-    if (mode_name == "mainnet") {
+    const auto first_non_space = mode_name.find_first_not_of(" \t\n\r");
+    if (first_non_space == std::string::npos) {
+        return std::nullopt;
+    }
+    const auto last_non_space = mode_name.find_last_not_of(" \t\n\r");
+
+    std::string normalized =
+        mode_name.substr(first_non_space, last_non_space - first_non_space + 1);
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+
+    if (normalized == "mainnet" || normalized == "main" || normalized == "mainet") {
         return NetworkMode::MAINNET;
     }
-    if (mode_name == "testnet") {
+    if (normalized == "testnet" || normalized == "test") {
         return NetworkMode::TESTNET;
     }
-    if (mode_name == "regtest") {
+    if (normalized == "regtest" || normalized == "reg") {
         return NetworkMode::REGTEST;
     }
     return std::nullopt;

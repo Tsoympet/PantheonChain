@@ -227,6 +227,39 @@ void TestBlockValidation() {
     std::cout << "  ✓ Passed" << std::endl;
 }
 
+void TestBlockDeserializeRejectsTrailingAndNonCanonicalData() {
+    std::cout << "Test: Block deserialize rejects non-canonical/trailing data" << std::endl;
+
+    Block block;
+    block.header.version = 1;
+    block.header.timestamp = 1234567890;
+    block.header.bits = 0x1d00ffff;
+    block.header.nonce = 100;
+
+    Transaction coinbase;
+    coinbase.version = 1;
+    TxInput input;
+    input.prevout.txid = std::array<uint8_t, 32>{};
+    input.prevout.vout = 0xFFFFFFFF;
+    coinbase.inputs.push_back(input);
+    coinbase.outputs.push_back(TxOutput(AssetID::TALANTON, 5000000000, std::vector<uint8_t>(32, 0xCD)));
+    block.transactions.push_back(coinbase);
+    block.header.merkle_root = block.CalculateMerkleRoot();
+
+    auto encoded = block.Serialize();
+
+    auto with_trailing = encoded;
+    with_trailing.push_back(0x00);
+    assert(!Block::Deserialize(with_trailing.data(), with_trailing.size()).has_value());
+
+    auto noncanonical_count = encoded;
+    noncanonical_count[104] = 0xfd;
+    noncanonical_count.insert(noncanonical_count.begin() + 105, {0x01, 0x00});
+    assert(!Block::Deserialize(noncanonical_count.data(), noncanonical_count.size()).has_value());
+
+    std::cout << "  ✓ Passed" << std::endl;
+}
+
 int main() {
     std::cout << "========================================" << std::endl;
     std::cout << "ParthenonChain Block Test Suite" << std::endl;
@@ -240,6 +273,7 @@ int main() {
         TestGenesisBlock();
         TestBlockSerialization();
         TestBlockValidation();
+        TestBlockDeserializeRejectsTrailingAndNonCanonicalData();
 
         std::cout << std::endl;
         std::cout << "========================================" << std::endl;
