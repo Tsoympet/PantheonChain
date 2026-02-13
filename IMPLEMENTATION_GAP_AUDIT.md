@@ -24,7 +24,7 @@ These claims conflict with current source reality (see sections below).
 
 ### Current state
 
-`cmake --build build-debug -j2` fails in `layer1/core/node/node.cpp` because `Node::Start()`
+`cmake --build build-debug` fails in `layer1/core/node/node.cpp` because `Node::Start()`
 contains duplicated network manager initialization and a duplicated DNS seed branch that leaves
 the function body unterminated. The compiler reports `qualified-id in declaration before '(' token`
 and a missing closing brace at end of file.
@@ -72,7 +72,8 @@ and a missing closing brace at end of file.
 
 - `layer1/core/consensus/genesis.cpp` implements deterministic per-network genesis generation and
   `tests/unit/consensus/test_genesis.cpp` exercises the helper APIs.
-- `docs/GENESIS.md` now describes the deterministic genesis construction without placeholders.
+- `docs/GENESIS.md` now describes the deterministic genesis construction; placeholder markers like
+  `[To be mined]` and `[calculated]` are not present in the current file.
 - `Node::Start()` validates stored genesis blocks but does not insert the canonical genesis block
   into empty storage/chainstate on first startup.
 
