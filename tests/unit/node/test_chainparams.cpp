@@ -31,7 +31,14 @@ void TestNetworkModeParsing() {
     assert(ParseNetworkMode("mainnet").has_value());
     assert(ParseNetworkMode("testnet").has_value());
     assert(ParseNetworkMode("regtest").has_value());
-    assert(!ParseNetworkMode("MAINNET").has_value());
+    assert(ParseNetworkMode("MAINNET").has_value());
+    assert(ParseNetworkMode("  testnet").has_value());
+    assert(ParseNetworkMode("regtest  	").has_value());
+    assert(!ParseNetworkMode("   	").has_value());
+    assert(ParseNetworkMode("main").has_value());
+    assert(ParseNetworkMode("mainet").has_value());
+    assert(ParseNetworkMode("test").has_value());
+    assert(ParseNetworkMode("reg").has_value());
     assert(!ParseNetworkMode("unknown").has_value());
 
     assert(std::string(NetworkModeToString(NetworkMode::MAINNET)) == "mainnet");

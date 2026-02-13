@@ -137,6 +137,7 @@ void TestApplyMultipleBlocks() {
         assert(state.ValidateBlock(block));
         assert(state.ApplyBlock(block));
         prev_hash = block.GetHash();
+        assert(state.GetTipHash() == prev_hash);
     }
 
     // Height should be 10
@@ -150,6 +151,25 @@ void TestApplyMultipleBlocks() {
     assert(state.GetTotalSupply(AssetID::TALANTON) == expected_taln);
 
     std::cout << "  ✓ Passed (multiple blocks applied)" << std::endl;
+}
+
+void TestRejectWrongPreviousHash() {
+    std::cout << "Test: Reject wrong previous hash linkage" << std::endl;
+
+    ChainState state;
+
+    std::array<uint8_t, 32> zero_hash{};
+    Block genesis = CreateBlock(0, zero_hash);
+    assert(state.ApplyBlock(genesis));
+
+    std::array<uint8_t, 32> wrong_prev{};
+    wrong_prev[0] = 0x42;
+    Block invalid_next = CreateBlock(1, wrong_prev);
+
+    assert(!state.ValidateBlock(invalid_next));
+    assert(!state.ApplyBlock(invalid_next));
+
+    std::cout << "  ✓ Passed (wrong prev hash rejected)" << std::endl;
 }
 
 void TestRejectInvalidCoinbase() {
@@ -226,12 +246,15 @@ void TestResetState() {
     }
 
     assert(state.GetHeight() == 5);
+    assert(state.GetTipHash() == prev_hash);
 
     // Reset
     state.Reset();
 
     // Should be back to initial state
     assert(state.GetHeight() == 0);
+    const std::array<uint8_t, 32> zero_hash{};
+    assert(state.GetTipHash() == zero_hash);
     assert(state.GetTotalSupply(AssetID::TALANTON) == 0);
     assert(state.GetTotalSupply(AssetID::DRACHMA) == 0);
     assert(state.GetTotalSupply(AssetID::OBOLOS) == 0);
@@ -246,6 +269,7 @@ int main() {
     TestApplyGenesisBlock();
     TestApplyMultipleBlocks();
     TestRejectInvalidCoinbase();
+    TestRejectWrongPreviousHash();
     TestSupplyCapEnforcement();
     TestResetState();
 

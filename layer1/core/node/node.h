@@ -255,6 +255,7 @@ class Node {
     void HandleTxReceived(const std::string& peer_id, const primitives::Transaction& tx);
     void HandleInvReceived(const std::string& peer_id, const p2p::InvMessage& inv);
     void HandleGetDataReceived(const std::string& peer_id, const p2p::GetDataMessage& msg);
+    void RecomputeSyncTarget();
 };
 
 }  // namespace node
