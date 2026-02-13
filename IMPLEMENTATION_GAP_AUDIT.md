@@ -10,6 +10,9 @@ The highest-risk blockers are:
 1. **Current Debug build fails** in `layer1/core/p2p/message.cpp` due to duplicate/unfinished code paths.
 2. **Release builds require real dependencies** (good safety gate), but repository state currently lacks required real submodules, so production build cannot be generated.
 3. **Genesis + chain-parameter implementation is incomplete** relative to docs (docs reference files and values that are not implemented in code).
+1. **Current Debug build fails** in `layer1/core/node/node.cpp` due to duplicated network/DNS seed logic that leaves `Node::Start()` unterminated.
+2. **Release builds require real dependencies** (good safety gate), but repository state currently lacks required real submodules, so production build cannot be generated.
+3. **Genesis + chain-parameterization is partially integrated**: genesis helpers exist, but canonical genesis insertion and network invariants are not enforced at startup.
 4. Multiple security-critical modules still use simplified or placeholder behavior (hardware crypto, hardware wallet firmware flow, mobile SDK, rollup proving/proof checks).
 
 ## 2) Project claims vs implementation status
@@ -34,6 +37,18 @@ These claims conflict with current source reality (see sections below).
 1. Repair `layer1/core/p2p/message.cpp` into a single coherent implementation per message type.
 2. Add compilation CI gates for both Debug and Release-like configurations.
 3. Add targeted unit tests for all message serializers/deserializers and malformed payload handling.
+`cmake --build build-debug` fails in `layer1/core/node/node.cpp` because `Node::Start()`
+contains duplicated network manager initialization and a duplicated DNS seed branch that leaves
+the function body unterminated. The compiler reports `qualified-id in declaration before '(' token`
+and a missing closing brace at end of file.
+
+### What must be done
+
+1. Consolidate `Node` network initialization to a single `NetworkManager` setup and remove the
+   duplicated DNS seed block so the function closes properly.
+2. Keep chainparams-driven network selection as the single source of truth for magic/ports/seeds.
+3. Add compilation CI gates for both Debug and Release-like configurations.
+4. Add targeted unit/integration tests for node startup and network mode selection.
 
 ## 4) Dependencies and production build gating
 
@@ -67,6 +82,17 @@ These claims conflict with current source reality (see sections below).
    - address prefixes,
    - consensus params.
 3. Add peer handshake compatibility/integration tests and network-fuzz tests.
+- `layer1/core/p2p/message.cpp` compiles in Debug and the unit test target in
+  `tests/unit/p2p/test_p2p.cpp` builds successfully.
+- Network parameters are defined in `layer1/core/node/chainparams.cpp`, but `Node` still duplicates
+  network-magic and DNS seed configuration inside `Node::Start()` (see Section 3 for the build-break
+  details).
+
+### What must be done
+
+1. Consolidate network selection so chainparams defines magic, ports, and DNS seed lists in one place.
+2. Add peer handshake compatibility/integration tests and network-fuzz tests.
+3. Validate message codec handling with malformed payload tests per message type.
 
 ## 6) Genesis and chain parameterization gaps
 
@@ -82,6 +108,18 @@ These claims conflict with current source reality (see sections below).
 2. Hardcode and test **network-specific genesis hashes** (mainnet/testnet/regtest).
 3. Add chain parameter registry (`chainparams`) and enforce it consistently across consensus, P2P, wallet, and RPC.
 4. Add startup invariant checks: running network must match configured genesis + magic + port profile.
+- `layer1/core/consensus/genesis.cpp` implements deterministic per-network genesis generation and
+  `tests/unit/consensus/test_genesis.cpp` exercises the helper APIs.
+- `docs/GENESIS.md` now describes the deterministic genesis construction; placeholder markers like
+  `[To be mined]` and `[calculated]` have been replaced with concrete values.
+- `Node::Start()` validates stored genesis blocks but does not insert the canonical genesis block
+  into empty storage/chainstate on first startup.
+
+### What must be done
+
+1. Insert and persist the canonical genesis block in chainstate/storage when no blocks exist.
+2. Enforce startup invariants so the selected network mode matches genesis hash + magic + port profile.
+3. Keep chainparams usage consistent across consensus, P2P, wallet, and RPC.
 
 ## 7) Cryptography and wallet security placeholders
 
@@ -128,6 +166,27 @@ These claims conflict with current source reality (see sections below).
 ### What must be done
 
 1. Either integrate optimistic/plasma modules into build + tests or explicitly mark/archive as experimental.
+
+### What must be done
+
+1. Implement standards-compliant key management and mnemonic derivation with secure entropy.
+2. Implement authenticated RPC transport and robust error handling.
+3. Implement real event subscriptions with reconnect/backoff.
+4. Integrate real platform secure storage adapters.
+5. Add end-to-end SDK tests against local/regtest node.
+
+## 9) Layer2 implementation and build wiring gaps
+
+### Current state
+
+- `layer2/CMakeLists.txt` builds `zk_rollup.cpp`, `optimistic_rollup.cpp`, and `plasma_chain.cpp`.
+- `layer2/rollups/zk_rollup.cpp` contains explicit “In production” placeholders for proofs/compression/merkle logic.
+- `optimistic_rollup.cpp` and `plasma_chain.cpp` still use simplified verification/compression logic without
+  real fraud-proof or exit validation flows.
+
+### What must be done
+
+1. Decide which L2 modules are production targets and mark any experimental ones explicitly in docs/tests.
 2. Replace proof placeholders with audited proving/verification backend integration.
 3. Add end-to-end L2 lifecycle tests (batch creation, challenge/fraud flow, exits, finalization).
 
@@ -192,6 +251,22 @@ These claims conflict with current source reality (see sections below).
 - Build blocker: `layer1/core/p2p/message.cpp`
 - Node startup/network selection: `layer1/core/node/node.cpp`
 - Genesis doc/implementation mismatch: `docs/GENESIS.md` and missing `layer1/core/consensus/genesis.cpp`
+1. **P0:** Fix `layer1/core/node/node.cpp` build break and consolidate network selection/seed logic.
+2. **P0:** Bootstrap real dependencies and make Release CI green end-to-end.
+3. **P0:** Insert canonical genesis into chainstate/storage and enforce network invariants at startup.
+4. **P1:** Replace crypto/hardware wallet placeholders with secure implementations.
+5. **P1:** Complete Layer2 integration strategy (ship or explicitly de-scope modules).
+6. **P2:** Harden RPC/node operations and publish full testnet→mainnet launch runbook.
+
+---
+
+## Evidence sources used in this audit
+
+- Root build/dependency behavior: `CMakeLists.txt`
+- Build blocker: `layer1/core/node/node.cpp`
+- Network parameters: `layer1/core/node/chainparams.cpp`
+- Genesis implementation + tests: `layer1/core/consensus/genesis.cpp`, `tests/unit/consensus/test_genesis.cpp`
+- Genesis documentation: `docs/GENESIS.md`
 - Crypto/hardware placeholders: `layer1/core/crypto/hardware_crypto.cpp`
 - Hardware wallet firmware placeholder flows: `layer1/wallet/hardware/firmware_verification.cpp`, `layer1/wallet/hardware/hardware_wallet.cpp`
 - Mobile SDK placeholder behavior: `tools/mobile_sdks/mobile_sdk.cpp`

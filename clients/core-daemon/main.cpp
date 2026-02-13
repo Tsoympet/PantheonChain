@@ -249,6 +249,15 @@ class Node {
 
         core_node_ = std::make_unique<node::Node>(config_.data_dir, config_.network_port,
                                                   network_mode);
+        node::NetworkMode network_mode = node::NetworkMode::MAINNET;
+        if (config_.network == "testnet") {
+            network_mode = node::NetworkMode::TESTNET;
+        } else if (config_.network == "regtest") {
+            network_mode = node::NetworkMode::REGTEST;
+        }
+
+        core_node_ =
+            std::make_unique<node::Node>(config_.data_dir, config_.network_port, network_mode);
 
         std::string seed_error;
         auto seed = LoadOrGenerateWalletSeed(config_.data_dir, seed_error);
