@@ -10,6 +10,7 @@
 
 #include <httplib.h>
 #include <algorithm>
+#include <charconv>
 #include <cctype>
 #include <iomanip>
 #include <iostream>
@@ -119,6 +120,65 @@ void SetAuthChallengeHeader(httplib::Response& res) {
 #else
     res.set_header("WWW-Authenticate", "Basic realm=\"parthenon-rpc\"");
 #endif
+}
+
+bool TryParseHexByte(char high, char low, uint8_t& out) {
+    auto to_nibble = [](char c, uint8_t& nibble) {
+        if (c >= '0' && c <= '9') {
+            nibble = static_cast<uint8_t>(c - '0');
+            return true;
+        }
+        if (c >= 'a' && c <= 'f') {
+            nibble = static_cast<uint8_t>(10 + c - 'a');
+            return true;
+        }
+        if (c >= 'A' && c <= 'F') {
+            nibble = static_cast<uint8_t>(10 + c - 'A');
+            return true;
+        }
+        return false;
+    };
+
+    uint8_t hi = 0;
+    uint8_t lo = 0;
+    if (!to_nibble(high, hi) || !to_nibble(low, lo)) {
+        return false;
+    }
+
+    out = static_cast<uint8_t>((hi << 4) | lo);
+    return true;
+}
+
+bool TryParseHexString(const std::string& hex, std::vector<uint8_t>& out) {
+    if (hex.size() % 2 != 0) {
+        return false;
+    }
+
+    out.clear();
+    out.reserve(hex.size() / 2);
+    for (size_t i = 0; i < hex.size(); i += 2) {
+        uint8_t byte = 0;
+        if (!TryParseHexByte(hex[i], hex[i + 1], byte)) {
+            return false;
+        }
+        out.push_back(byte);
+    }
+    return true;
+}
+
+bool TryParseUint64Decimal(const std::string& value, uint64_t& out) {
+    if (value.empty()) {
+        return false;
+    }
+
+    uint64_t parsed = 0;
+    auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), parsed);
+    if (ec != std::errc{} || ptr != value.data() + value.size()) {
+        return false;
+    }
+
+    out = parsed;
+    return true;
 }
 
 }  // namespace
@@ -295,9 +355,6 @@ bool RPCServer::IsAuthorized(const std::string& authorization_header) const {
     const auto provided_token = TrimAsciiWhitespace(authorization_header.substr(6));
     const auto expected_token = Base64Encode(auth_user_ + ":" + auth_password_);
     return ConstantTimeEquals(provided_token, expected_token);
-    const auto provided_token = authorization_header.substr(6);
-    const auto expected_token = Base64Encode(auth_user_ + ":" + auth_password_);
-    return provided_token == expected_token;
 }
 
 RPCResponse RPCServer::HandleRequest(const RPCRequest& request,
@@ -552,17 +609,9 @@ RPCResponse RPCServer::HandleSendTransaction(const RPCRequest& req) {
         }
 
         std::vector<uint8_t> tx_bytes;
-        tx_bytes.reserve(tx_hex.length() / 2);
-
-        for (size_t i = 0; i < tx_hex.length(); i += 2) {
-            std::string byte_str = tx_hex.substr(i, 2);
-            try {
-                uint8_t byte = static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16));
-                tx_bytes.push_back(byte);
-            } catch (...) {
-                response.error = "Invalid hex character in transaction";
-                return response;
-            }
+        if (!TryParseHexString(tx_hex, tx_bytes)) {
+            response.error = "Invalid hex character in transaction";
+            return response;
         }
 
         // Deserialize transaction from bytes
@@ -655,7 +704,10 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
         if (params[1].is_number()) {
             amount = params[1].get<uint64_t>();
         } else {
-            amount = std::stoull(params[1].get<std::string>());
+            if (!TryParseUint64Decimal(params[1].get<std::string>(), amount)) {
+                response.error = "Invalid amount";
+                return response;
+            }
         }
 
         // Parse asset ID (default to TALANTON)
@@ -667,9 +719,9 @@ RPCResponse RPCServer::HandleSendToAddress(const RPCRequest& req) {
 
         // Convert address hex to pubkey
         std::vector<uint8_t> recipient_pubkey;
-        for (size_t i = 0; i < address_hex.length(); i += 2) {
-            std::string byte_str = address_hex.substr(i, 2);
-            recipient_pubkey.push_back(static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16)));
+        if (!TryParseHexString(address_hex, recipient_pubkey)) {
+            response.error = "Invalid recipient address hex";
+            return response;
         }
 
         // Create output
