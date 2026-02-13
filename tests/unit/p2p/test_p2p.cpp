@@ -201,8 +201,8 @@ void TestVersionMessage() {
     std::cout << "  ✓ Passed (version message)" << std::endl;
 }
 
-void TestAddrMessage() {
-    std::cout << "Test: Addr message" << std::endl;
+void TestAddrMessageRoundTrip() {
+    std::cout << "Test: Addr message (round-trip)" << std::endl;
 
     AddrMessage addr_msg;
     NetAddr addr;
@@ -339,8 +339,8 @@ void TestNetworkMessageCreation() {
     std::cout << "  ✓ Passed (message creation)" << std::endl;
 }
 
-void TestAddrMessage() {
-    std::cout << "Test: Addr message" << std::endl;
+void TestAddrMessageExtended() {
+    std::cout << "Test: Addr message (extended)" << std::endl;
 
     AddrMessage addr_msg;
     NetAddr addr1;
@@ -457,11 +457,11 @@ int main() {
     TestPingPongMessage();
     TestInvMessage();
     TestVersionMessage();
-    TestAddrMessage();
+    TestAddrMessageRoundTrip();
     TestBlockAndTxMessages();
     TestHeadersMessages();
     TestNetworkMessageCreation();
-    TestAddrMessage();
+    TestAddrMessageExtended();
     TestGetHeadersMessage();
     TestHeadersMessage();
     TestTxAndBlockMessages();

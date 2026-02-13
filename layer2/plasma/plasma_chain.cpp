@@ -188,9 +188,14 @@ bool PlasmaChain::VerifyMerkleProof(const std::array<uint8_t, 32>& tx_hash,
         return false;
     }
 
-    // In production, this would properly verify the Merkle path
-    // For now, basic validation
-    return true;
+    const bool tx_hash_non_zero =
+        std::any_of(tx_hash.begin(), tx_hash.end(), [](uint8_t b) { return b != 0; });
+    const bool root_non_zero =
+        std::any_of(merkle_root.begin(), merkle_root.end(), [](uint8_t b) { return b != 0; });
+
+    // In production, this would properly verify the Merkle path.
+    // For now, require minimally sane non-empty inputs.
+    return tx_hash_non_zero && root_non_zero;
 }
 
 // PlasmaOperator Implementation

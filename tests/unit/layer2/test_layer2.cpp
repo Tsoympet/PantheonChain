@@ -3,6 +3,8 @@
 #include "layer2/bridges/channels/payment_channel.h"
 #include "layer2/bridges/htlc/htlc.h"
 #include "layer2/bridges/spv/spv_bridge.h"
+#include "layer2/plasma/plasma_chain.h"
+#include "layer2/rollups/optimistic_rollup.h"
 
 #include <cassert>
 #include <iostream>
@@ -126,6 +128,46 @@ void test_spv_merkle_proof() {
     std::cout << "SPV Merkle proof tests passed!" << std::endl;
 }
 
+
+
+void test_optimistic_rollup_and_plasma() {
+    std::cout << "Testing optimistic rollup and plasma..." << std::endl;
+
+    rollups::OptimisticRollup rollup;
+    rollups::RollupTx tx;
+    tx.from = std::vector<uint8_t>(32, 0x01);
+    tx.to = std::vector<uint8_t>(32, 0x02);
+    tx.signature = std::vector<uint8_t>(64, 0x03);
+    tx.tx_hash[0] = 0xAA;
+    assert(rollup.AddTransaction(tx));
+
+    auto batch = rollup.CreateBatch();
+    batch.state_root_after[0] = 0x55;
+    batch.batch_id = 1;
+    assert(rollup.SubmitBatch(batch));
+    assert(rollup.GetBatch(1).has_value());
+
+    auto compressed = rollup.CompressBatch(batch);
+    auto decompressed = rollup.DecompressBatch(compressed);
+    assert(decompressed.has_value());
+
+    plasma::PlasmaChain chain;
+    plasma::PlasmaOperator op(&chain);
+    plasma::PlasmaTx ptx;
+    ptx.sender = std::vector<uint8_t>(32, 0x0A);
+    ptx.recipient = std::vector<uint8_t>(32, 0x0B);
+    ptx.amount = 100;
+    ptx.signature = std::vector<uint8_t>(64, 0x0C);
+    ptx.tx_hash[0] = 0x22;
+    assert(chain.AddTransaction(ptx));
+
+    auto block = op.CreateBlock();
+    assert(chain.SubmitBlock(block));
+    assert(chain.GetBlock(block.block_number).has_value());
+
+    std::cout << "Optimistic rollup/plasma tests passed!" << std::endl;
+}
+
 void test_layer2_apis() {
     std::cout << "Testing Layer 2 API servers..." << std::endl;
 
@@ -189,6 +231,7 @@ int main() {
         test_htlc();
         test_htlc_routing();
         test_spv_merkle_proof();
+        test_optimistic_rollup_and_plasma();
         test_layer2_apis();
 
         std::cout << "\n✓ All Layer 2 tests passed!" << std::endl;
