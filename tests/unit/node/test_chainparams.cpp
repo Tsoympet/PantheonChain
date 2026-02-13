@@ -32,6 +32,9 @@ void TestNetworkModeParsing() {
     assert(ParseNetworkMode("testnet").has_value());
     assert(ParseNetworkMode("regtest").has_value());
     assert(ParseNetworkMode("MAINNET").has_value());
+    assert(ParseNetworkMode("  testnet").has_value());
+    assert(ParseNetworkMode("regtest  	").has_value());
+    assert(!ParseNetworkMode("   	").has_value());
     assert(ParseNetworkMode("main").has_value());
     assert(ParseNetworkMode("mainet").has_value());
     assert(ParseNetworkMode("test").has_value());
