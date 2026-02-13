@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Repository root for dependency verification.
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
@@ -62,5 +63,74 @@ for path in "${required_submodules[@]}"; do
     exit 1
   fi
 done
+
+archive_manifest="$ROOT_DIR/scripts/ci/vendored_archives.sha256"
+archive_candidates=()
+while IFS= read -r -d '' tracked_file; do
+  case "$tracked_file" in
+    *.tar.gz|*.tgz|*.zip|*.tar.xz|*.tar.bz2)
+      archive_candidates+=("$tracked_file")
+      ;;
+  esac
+done < <(git ls-files -z)
+
+if (( ${#archive_candidates[@]} > 0 )); then
+  if [[ ! -f "$archive_manifest" ]]; then
+    echo "ERROR: vendored archive(s) detected but checksum manifest '$archive_manifest' is missing."
+    echo "Detected archives:"
+    printf ' - %s\n' "${archive_candidates[@]}"
+    echo "Add sha256 checksums for each archive before continuing."
+    exit 1
+  fi
+
+  manifest_ignore_re='^[[:space:]]*(#|$)'
+  # 64-char hex hash + two spaces + path (single char or multi-char without leading/trailing whitespace).
+  manifest_entry_re='^[0-9a-fA-F]{64}[[:space:]]{2}([^[:space:]].*[^[:space:]]|[^[:space:]])$'
+  invalid_entries=()
+  manifest_paths=()
+  manifest_entries=()
+  while IFS= read -r line; do
+    if [[ "$line" =~ $manifest_ignore_re ]]; then
+      continue
+    fi
+    if [[ "$line" =~ $manifest_entry_re ]]; then
+      manifest_paths+=("${BASH_REMATCH[1]}")
+      manifest_entries+=("$line")
+    else
+      invalid_entries+=("$line")
+    fi
+  done < "$archive_manifest"
+
+  if (( ${#invalid_entries[@]} > 0 )); then
+    echo "ERROR: checksum manifest contains invalid entries:"
+    printf ' - %s\n' "${invalid_entries[@]}"
+    exit 1
+  fi
+
+  declare -A manifest_lookup=()
+  for manifest_path in "${manifest_paths[@]}"; do
+    manifest_lookup["$manifest_path"]=1
+  done
+
+  missing_entries=()
+  for archive in "${archive_candidates[@]}"; do
+    if [[ -z "${manifest_lookup[$archive]+x}" ]]; then
+      missing_entries+=("$archive")
+    fi
+  done
+
+  if (( ${#missing_entries[@]} > 0 )); then
+    echo "ERROR: checksum manifest is missing entries for vendored archives:"
+    printf ' - %s\n' "${missing_entries[@]}"
+    exit 1
+  fi
+
+  if ! checksum_output=$(printf '%s\n' "${manifest_entries[@]}" | sha256sum -c - 2>&1); then
+    echo "ERROR: vendored archive checksum verification failed."
+    echo "$checksum_output"
+    exit 1
+  fi
+  echo "$checksum_output"
+fi
 
 echo "Dependency pinning check passed: required real dependencies are pinned via git submodules."
