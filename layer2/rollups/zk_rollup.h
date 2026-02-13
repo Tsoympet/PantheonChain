@@ -145,6 +145,11 @@ class ZKRollup {
     uint64_t GetCurrentBatchId() const { return current_batch_id_; }
 
     /**
+     * Get proof parameters
+     */
+    const privacy::zksnark::ProofParameters& GetProofParameters() const { return proof_params_; }
+
+    /**
      * Compress batch data (more efficient than optimistic rollup)
      */
     std::vector<uint8_t> CompressBatch(const ZKRollupBatch& batch) const;
@@ -239,6 +244,9 @@ class ZKRollupVerifier {
  */
 class ZKRollupExitManager {
   public:
+    ZKRollupExitManager();
+    explicit ZKRollupExitManager(const privacy::zksnark::ProofParameters& params);
+
     struct ExitRequest {
         std::vector<uint8_t> account;
         uint64_t amount;
@@ -273,6 +281,7 @@ class ZKRollupExitManager {
 
   private:
     std::map<std::vector<uint8_t>, ExitRequest> pending_exits_;
+    privacy::zksnark::ProofParameters proof_params_;
 };
 
 }  // namespace rollups

@@ -23,6 +23,7 @@ struct FirmwareInfo {
     std::string version;             // e.g., "2.1.0"
     std::vector<uint8_t> hash;       // SHA-256 hash of firmware
     std::vector<uint8_t> signature;  // Vendor signature
+    std::vector<uint8_t> image;      // Optional firmware image blob
     uint64_t build_timestamp;
     std::string release_notes_url;
 

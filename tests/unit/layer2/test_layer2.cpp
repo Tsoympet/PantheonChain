@@ -5,11 +5,36 @@
 #include "layer2/bridges/spv/spv_bridge.h"
 #include "layer2/plasma/plasma_chain.h"
 #include "layer2/rollups/optimistic_rollup.h"
+#include "layer2/rollups/zk_rollup.h"
+#include "privacy/zk_snark.h"
 
 #include <cassert>
 #include <iostream>
 
 using namespace parthenon::layer2;
+
+namespace {
+
+std::vector<uint8_t> BuildExitInputs(const std::vector<uint8_t>& account, uint64_t amount) {
+    std::vector<uint8_t> inputs = account;
+    const auto* bytes = reinterpret_cast<const uint8_t*>(&amount);
+    inputs.insert(inputs.end(), bytes, bytes + sizeof(uint64_t));
+    return inputs;
+}
+
+class ExitCircuit : public parthenon::privacy::zksnark::Circuit {
+  public:
+    explicit ExitCircuit(std::vector<uint8_t> inputs) : inputs_(std::move(inputs)) {}
+
+    size_t GetConstraintCount() const override { return inputs_.size() + 1; }
+    size_t GetInputCount() const override { return inputs_.size(); }
+    bool Synthesize() override { return !inputs_.empty(); }
+
+  private:
+    std::vector<uint8_t> inputs_;
+};
+
+}  // namespace
 
 void test_payment_channel() {
     std::cout << "Testing payment channels..." << std::endl;
@@ -168,6 +193,100 @@ void test_optimistic_rollup_and_plasma() {
     std::cout << "Optimistic rollup/plasma tests passed!" << std::endl;
 }
 
+void test_rollup_lifecycle() {
+    std::cout << "Testing rollup lifecycle..." << std::endl;
+
+    rollups::OptimisticRollup rollup;
+    rollup.SetChallengePeriod(0);
+
+    rollups::RollupTx tx;
+    tx.from = std::vector<uint8_t>(32, 0x11);
+    tx.to = std::vector<uint8_t>(32, 0x22);
+    tx.signature = std::vector<uint8_t>(64, 0x33);
+    tx.tx_hash[0] = 0x44;
+    assert(rollup.AddTransaction(tx));
+
+    auto batch = rollup.CreateBatch();
+    batch.state_root_after[0] = 0x55;
+    batch.batch_id = 1;
+    assert(rollup.SubmitBatch(batch));
+
+    rollups::FraudProof proof;
+    proof.batch_id = 1;
+    proof.disputed_tx_index = 0;
+    proof.claimed_state_root = batch.state_root_after;
+    proof.correct_state_root = batch.state_root_before;
+    proof.witness_data = {0x01, 0x02};
+    assert(rollup.SubmitFraudProof(proof));
+    assert(!rollup.FinalizeBatch(1));
+
+    rollups::RollupTx tx2;
+    tx2.from = std::vector<uint8_t>(32, 0x44);
+    tx2.to = std::vector<uint8_t>(32, 0x55);
+    tx2.signature = std::vector<uint8_t>(64, 0x66);
+    tx2.tx_hash[0] = 0x77;
+    assert(rollup.AddTransaction(tx2));
+
+    auto batch2 = rollup.CreateBatch();
+    batch2.state_root_after[0] = 0x88;
+    assert(rollup.SubmitBatch(batch2));
+    assert(rollup.FinalizeBatch(batch2.batch_id));
+
+    std::cout << "Rollup lifecycle tests passed!" << std::endl;
+}
+
+void test_zk_rollup_lifecycle_and_exit() {
+    std::cout << "Testing ZK-rollup lifecycle and exit..." << std::endl;
+
+    rollups::ZKRollup rollup;
+    rollups::ZKRollupProver prover;
+    rollups::ZKRollupVerifier verifier(&rollup);
+
+    rollups::ZKTransaction tx;
+    tx.tx_hash[0] = 0x10;
+    tx.nullifier[0] = 0x20;
+    tx.commitment[0] = 0x30;
+    tx.transfer_proof = prover.GenerateTransferProof(tx, {});
+    assert(rollup.AddTransaction(tx));
+
+    auto batch = rollup.CreateBatch();
+    batch.validity_proof = prover.GenerateBatchProof(batch);
+    assert(rollup.SubmitBatch(batch));
+    assert(verifier.VerifyBatchProof(batch));
+    assert(rollup.FinalizeBatch(batch.batch_id));
+
+    auto compressed = rollup.CompressBatch(batch);
+    auto decompressed = rollup.DecompressBatch(compressed);
+    assert(decompressed.has_value());
+    assert(decompressed->batch_id == batch.batch_id);
+    assert(decompressed->transaction_hashes.size() == batch.transaction_hashes.size());
+
+    rollups::ZKRollupState state;
+    assert(state.ApplyTransaction(tx));
+
+    std::vector<uint8_t> account(tx.nullifier.begin(), tx.nullifier.end());
+    auto merkle_proof = state.GetMerkleProof(account);
+    auto merkle_root = state.GetStateRoot();
+
+    auto exit_inputs = BuildExitInputs(account, 25);
+    parthenon::privacy::zksnark::ZKProver exit_prover(rollup.GetProofParameters());
+    ExitCircuit circuit(exit_inputs);
+    auto proof_opt = exit_prover.GenerateProof(circuit, exit_inputs);
+    assert(proof_opt.has_value());
+
+    rollups::ZKRollupExitManager exit_manager(rollup.GetProofParameters());
+    rollups::ZKRollupExitManager::ExitRequest request;
+    request.account = account;
+    request.amount = 25;
+    request.merkle_root = merkle_root;
+    request.merkle_proof = merkle_proof;
+    request.ownership_proof = *proof_opt;
+    assert(exit_manager.RequestExit(request));
+    assert(exit_manager.ProcessExit(account));
+
+    std::cout << "ZK-rollup lifecycle/exit tests passed!" << std::endl;
+}
+
 void test_layer2_apis() {
     std::cout << "Testing Layer 2 API servers..." << std::endl;
 
@@ -232,6 +351,8 @@ int main() {
         test_htlc_routing();
         test_spv_merkle_proof();
         test_optimistic_rollup_and_plasma();
+        test_rollup_lifecycle();
+        test_zk_rollup_lifecycle_and_exit();
         test_layer2_apis();
 
         std::cout << "\n✓ All Layer 2 tests passed!" << std::endl;

@@ -1,0 +1,19 @@
+# Tools and SDK libraries
+
+find_package(OpenSSL REQUIRED)
+find_package(Threads REQUIRED)
+
+add_library(parthenon_mobile_sdk STATIC
+    mobile_sdks/mobile_sdk.cpp
+)
+
+target_include_directories(parthenon_mobile_sdk PUBLIC
+    ${CMAKE_SOURCE_DIR}/tools/mobile_sdks
+    ${CMAKE_SOURCE_DIR}/layer1/core
+)
+
+target_link_libraries(parthenon_mobile_sdk PUBLIC
+    parthenon_crypto
+    OpenSSL::Crypto
+    Threads::Threads
+)

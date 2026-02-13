@@ -5,7 +5,10 @@
 #include "crypto/schnorr.h"
 #include "crypto/sha256.h"
 
-#include <boost/asio.hpp>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <nlohmann/json.hpp>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -138,7 +141,7 @@ crypto::Schnorr::PrivateKey DerivePrivateKey(const std::vector<uint8_t>& entropy
     return privkey;
 }
 
-bool PopulatePrivateKey(crypto::Schnorr::PrivateKey& privkey) {
+[[maybe_unused]] bool PopulatePrivateKey(crypto::Schnorr::PrivateKey& privkey) {
     std::array<uint8_t, crypto::Schnorr::PRIVATE_KEY_SIZE> random_bytes{};
     for (int attempt = 0; attempt < 10; ++attempt) {
         if (!FillRandomBytes(random_bytes.data(), random_bytes.size())) {
@@ -220,69 +223,91 @@ std::optional<ParsedEndpoint> ParseEndpoint(const std::string& endpoint, std::st
 
 std::optional<std::string> HttpPost(const ParsedEndpoint& endpoint, const std::string& body,
                                     std::string& error) {
-    try {
-        boost::asio::io_context io;
-        boost::asio::ip::tcp::resolver resolver(io);
-        boost::asio::ip::tcp::socket socket(io);
+    addrinfo hints{};
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
 
-        auto endpoints = resolver.resolve(endpoint.host, endpoint.port);
-        boost::asio::connect(socket, endpoints);
-
-        std::ostringstream request;
-        request << "POST " << endpoint.path << " HTTP/1.1\r\n";
-        request << "Host: " << endpoint.host << "\r\n";
-        request << "Content-Type: application/json\r\n";
-        request << "Connection: close\r\n";
-        request << "Content-Length: " << body.size() << "\r\n\r\n";
-        request << body;
-
-        boost::asio::write(socket, boost::asio::buffer(request.str()));
-
-        boost::asio::streambuf response;
-        boost::system::error_code ec;
-        boost::asio::read(socket, response, ec);
-        if (ec && ec != boost::asio::error::eof) {
-            error = ec.message();
-            return std::nullopt;
-        }
-
-        std::istream response_stream(&response);
-        std::string http_version;
-        unsigned int status_code = 0;
-        response_stream >> http_version >> status_code;
-        std::string status_message;
-        std::getline(response_stream, status_message);
-
-        if (!response_stream || http_version.rfind("HTTP/", 0) != 0) {
-            error = "Invalid HTTP response";
-            return std::nullopt;
-        }
-
-        if (status_code < 200 || status_code >= 300) {
-            error = "HTTP error: " + std::to_string(status_code);
-            return std::nullopt;
-        }
-
-        std::string header;
-        while (std::getline(response_stream, header) && header != "\r") {
-        }
-
-        std::string response_body((std::istreambuf_iterator<char>(response_stream)),
-                                  std::istreambuf_iterator<char>());
-        return response_body;
-    } catch (const std::exception& e) {
-        error = e.what();
+    addrinfo* result = nullptr;
+    if (getaddrinfo(endpoint.host.c_str(), endpoint.port.c_str(), &hints, &result) != 0) {
+        error = "Failed to resolve RPC endpoint";
         return std::nullopt;
     }
+
+    int sock = -1;
+    for (addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
+        sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sock == -1) {
+            continue;
+        }
+        if (connect(sock, rp->ai_addr, rp->ai_addrlen) == 0) {
+            break;
+        }
+        close(sock);
+        sock = -1;
+    }
+    freeaddrinfo(result);
+
+    if (sock == -1) {
+        error = "Unable to connect to RPC endpoint";
+        return std::nullopt;
+    }
+
+    std::ostringstream request;
+    request << "POST " << endpoint.path << " HTTP/1.1\r\n";
+    request << "Host: " << endpoint.host << "\r\n";
+    request << "Content-Type: application/json\r\n";
+    request << "Connection: close\r\n";
+    request << "Content-Length: " << body.size() << "\r\n\r\n";
+    request << body;
+    std::string request_data = request.str();
+
+    ssize_t sent = 0;
+    while (sent < static_cast<ssize_t>(request_data.size())) {
+        ssize_t chunk = send(sock, request_data.data() + sent, request_data.size() - sent, 0);
+        if (chunk <= 0) {
+            close(sock);
+            error = "Failed to send RPC request";
+            return std::nullopt;
+        }
+        sent += chunk;
+    }
+
+    std::string response;
+    char buffer[4096];
+    ssize_t bytes = 0;
+    while ((bytes = recv(sock, buffer, sizeof(buffer), 0)) > 0) {
+        response.append(buffer, static_cast<size_t>(bytes));
+    }
+    close(sock);
+
+    if (response.empty()) {
+        error = "Empty RPC response";
+        return std::nullopt;
+    }
+
+    auto header_end = response.find("\r\n\r\n");
+    if (header_end == std::string::npos) {
+        error = "Invalid HTTP response";
+        return std::nullopt;
+    }
+
+    std::istringstream response_stream(response.substr(0, header_end));
+    std::string http_version;
+    unsigned int status_code = 0;
+    response_stream >> http_version >> status_code;
+    if (http_version.rfind("HTTP/", 0) != 0) {
+        error = "Invalid HTTP response";
+        return std::nullopt;
+    }
+    if (status_code < 200 || status_code >= 300) {
+        error = "HTTP error: " + std::to_string(status_code);
+        return std::nullopt;
+    }
+
+    return response.substr(header_end + 4);
 }
 
 std::optional<json> ParseRpcResult(const json& result) {
-    if (result.is_string()) {
-        auto parsed = json::parse(result.get<std::string>(), nullptr, false);
-        if (!parsed.is_discarded()) {
-            return parsed;
-        }
-    }
     return result;
 }
 
@@ -304,19 +329,20 @@ std::optional<json> RpcRequest(const NetworkConfig& config, const std::string& m
         return std::nullopt;
     }
 
-    auto response = json::parse(*response_body, nullptr, false);
-    if (response.is_discarded()) {
+    json response;
+    try {
+        response = json::parse(*response_body);
+    } catch (const std::exception&) {
         error = "Invalid JSON-RPC response";
         return std::nullopt;
     }
 
-    if (response.contains("error") && !response["error"].is_null()) {
+    if (response.contains("error")) {
+        const auto& err = response["error"];
         if (response["error"].is_object() && response["error"].contains("message")) {
-            error = response["error"]["message"].get<std::string>();
-        } else if (response["error"].is_string()) {
-            error = response["error"].get<std::string>();
+            error = err["message"].get<std::string>();
         } else {
-            error = response["error"].dump();
+            error = err.get<std::string>();
         }
         return std::nullopt;
     }
@@ -334,12 +360,13 @@ std::optional<uint64_t> FetchBlockHeight(const NetworkConfig& config, std::strin
     if (!result) {
         return std::nullopt;
     }
-    if (result->is_number_unsigned()) {
+    if (result->is_number()) {
         return result->get<uint64_t>();
     }
-    if (result->is_string()) {
+    auto as_string = result->get<std::string>();
+    if (!as_string.empty()) {
         try {
-            return static_cast<uint64_t>(std::stoull(result->get<std::string>()));
+            return static_cast<uint64_t>(std::stoull(as_string));
         } catch (...) {
             error = "Invalid block height response";
             return std::nullopt;
@@ -704,7 +731,9 @@ void MobileClient::GetBalance(const std::string& address, BalanceCallback callba
         {"OBOLOS", &balance.obl}};
 
     for (const auto& entry : assets) {
-        auto result = RpcRequest(impl_->config_, "getbalance", json::array({entry.first}), error);
+        json params = json::array();
+        params.push_back(entry.first);
+        auto result = RpcRequest(impl_->config_, "getbalance", params, error);
         if (!result) {
             callback(std::nullopt, error);
             return;
@@ -715,11 +744,16 @@ void MobileClient::GetBalance(const std::string& address, BalanceCallback callba
             return;
         }
 
-        if ((*result)["balance"].is_number_unsigned()) {
+        if ((*result)["balance"].is_number()) {
             *entry.second = (*result)["balance"].get<uint64_t>();
-        } else if ((*result)["balance"].is_string()) {
+        } else {
+            auto value = (*result)["balance"].get<std::string>();
+            if (value.empty()) {
+                callback(std::nullopt, "Invalid balance value");
+                return;
+            }
             try {
-                *entry.second = static_cast<uint64_t>(std::stoull((*result)["balance"].get<std::string>()));
+                *entry.second = static_cast<uint64_t>(std::stoull(value));
             } catch (...) {
                 callback(std::nullopt, "Invalid balance value");
                 return;
@@ -747,7 +781,10 @@ void MobileClient::SendTransaction(const Transaction& tx, TransactionCallback ca
         return;
     }
 
-    json params = json::array({tx.to, tx.amount, *asset_id});
+    json params = json::array();
+    params.push_back(tx.to);
+    params.push_back(static_cast<uint64_t>(tx.amount));
+    params.push_back(static_cast<uint64_t>(*asset_id));
 
     auto result = RpcRequest(impl_->config_, "sendtoaddress", params, error);
     if (!result) {
@@ -755,8 +792,9 @@ void MobileClient::SendTransaction(const Transaction& tx, TransactionCallback ca
         return;
     }
 
-    if (result->is_string()) {
-        callback(result->get<std::string>(), std::nullopt);
+    auto txid = result->get<std::string>();
+    if (!txid.empty()) {
+        callback(txid, std::nullopt);
         return;
     }
 
@@ -794,12 +832,17 @@ void MobileClient::GetTransactionHistory(const std::string& address, uint32_t li
         const uint64_t confirmations = height - current + 1;
         const uint64_t timestamp = block_info->value("timestamp", 0ULL);
 
-        for (const auto& txid : (*block_info)["tx"]) {
-            if (!txid.is_string()) {
+        const auto& tx_list = (*block_info)["tx"];
+        if (!tx_list.is_array()) {
+            continue;
+        }
+        for (size_t i = 0; i < tx_list.size(); ++i) {
+            auto id = tx_list[i].get<std::string>();
+            if (id.empty()) {
                 continue;
             }
             TransactionHistory entry;
-            entry.txid = txid.get<std::string>();
+            entry.txid = id;
             entry.timestamp = timestamp;
             entry.status = "confirmed";
             entry.confirmations = static_cast<uint32_t>(confirmations);
@@ -834,11 +877,16 @@ void MobileClient::GetTransaction(const std::string& txid, TxInfoCallback callba
         const uint64_t confirmations = height - current + 1;
         const uint64_t timestamp = block_info->value("timestamp", 0ULL);
 
-        for (const auto& entry : (*block_info)["tx"]) {
-            if (!entry.is_string()) {
+        const auto& tx_list = (*block_info)["tx"];
+        if (!tx_list.is_array()) {
+            continue;
+        }
+        for (size_t i = 0; i < tx_list.size(); ++i) {
+            auto id = tx_list[i].get<std::string>();
+            if (id.empty()) {
                 continue;
             }
-            if (entry.get<std::string>() == txid) {
+            if (id == txid) {
                 TransactionHistory info;
                 info.txid = txid;
                 info.timestamp = timestamp;
@@ -925,11 +973,15 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
                     const uint64_t confirmations = *current_height_opt - height + 1;
                     const uint64_t timestamp = block_info->value("timestamp", 0ULL);
 
-                    for (const auto& txid : (*block_info)["tx"]) {
-                        if (!txid.is_string()) {
+                    const auto& tx_list = (*block_info)["tx"];
+                    if (!tx_list.is_array()) {
+                        continue;
+                    }
+                    for (size_t i = 0; i < tx_list.size(); ++i) {
+                        const auto id = tx_list[i].get<std::string>();
+                        if (id.empty()) {
                             continue;
                         }
-                        const auto id = txid.get<std::string>();
                         if (seen_tx.insert(id).second) {
                             seen_order.push_back(id);
                             if (seen_order.size() > kMaxSeenTransactions) {

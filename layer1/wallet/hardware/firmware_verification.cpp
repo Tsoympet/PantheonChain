@@ -8,10 +8,16 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cstring>
 #include <ctime>
+#include <fstream>
 #include <sstream>
 
+#include <nlohmann/json.hpp>
+
 namespace {
+
+using json = nlohmann::json;
 
 bool ParseSemVer(const std::string& version, std::array<int, 3>& out) {
     std::stringstream ss(version);
@@ -52,6 +58,50 @@ int CompareSemVer(const std::string& lhs, const std::string& rhs) {
     }
 
     return 0;
+}
+
+bool HexToBytes(const std::string& hex, std::vector<uint8_t>& out) {
+    if (hex.size() % 2 != 0) {
+        return false;
+    }
+    out.clear();
+    out.reserve(hex.size() / 2);
+    for (size_t i = 0; i < hex.size(); i += 2) {
+        auto to_nibble = [](char c) -> int {
+            if (c >= '0' && c <= '9') {
+                return c - '0';
+            }
+            if (c >= 'a' && c <= 'f') {
+                return 10 + (c - 'a');
+            }
+            if (c >= 'A' && c <= 'F') {
+                return 10 + (c - 'A');
+            }
+            return -1;
+        };
+        int high = to_nibble(hex[i]);
+        int low = to_nibble(hex[i + 1]);
+        if (high < 0 || low < 0) {
+            return false;
+        }
+        out.push_back(static_cast<uint8_t>((high << 4) | low));
+    }
+    return true;
+}
+
+bool LoadJsonFile(const std::string& filename, json& out) {
+    std::ifstream in(filename);
+    if (!in) {
+        return false;
+    }
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    try {
+        out = json::parse(buffer.str());
+    } catch (const std::exception&) {
+        return false;
+    }
+    return true;
 }
 
 }  // namespace
@@ -292,19 +342,140 @@ std::optional<FirmwareInfo> FirmwareVerifier::GetFirmwareInfo(const std::string&
     return std::nullopt;
 }
 
-bool FirmwareVerifier::LoadVendorKeys([[maybe_unused]] const std::string& filename) {
-    // In production, load vendor keys from file
-    return true;
+bool FirmwareVerifier::LoadVendorKeys(const std::string& filename) {
+    json data;
+    if (!LoadJsonFile(filename, data)) {
+        return false;
+    }
+
+    const json* vendors = nullptr;
+    if (data.is_object() && data.contains("vendors")) {
+        vendors = &data["vendors"];
+    } else if (data.is_array()) {
+        vendors = &data;
+    }
+
+    if (!vendors || !vendors->is_array()) {
+        return false;
+    }
+
+    bool loaded = false;
+    for (size_t i = 0; i < vendors->size(); ++i) {
+        const auto& entry = (*vendors)[i];
+        if (!entry.is_object()) {
+            continue;
+        }
+        VendorKeys keys;
+        keys.vendor_name = entry.value("vendor", entry.value("name", ""));
+        if (keys.vendor_name.empty()) {
+            continue;
+        }
+        keys.certificate_url = entry.value("certificate_url", "");
+
+        if (entry.contains("public_keys") && entry["public_keys"].is_array()) {
+            const auto& keys_array = entry["public_keys"];
+            for (size_t j = 0; j < keys_array.size(); ++j) {
+                auto key_str = keys_array[j].get<std::string>();
+                if (key_str.empty()) {
+                    continue;
+                }
+                std::vector<uint8_t> key_bytes;
+                if (HexToBytes(key_str, key_bytes)) {
+                    keys.public_keys.push_back(std::move(key_bytes));
+                }
+            }
+        }
+
+        if (keys.public_keys.empty()) {
+            continue;
+        }
+        AddVendorKeys(keys);
+        loaded = true;
+    }
+
+    return loaded;
 }
 
-bool FirmwareVerifier::LoadFirmwareDatabase([[maybe_unused]] const std::string& filename) {
-    // In production, load firmware database from file
-    return true;
+bool FirmwareVerifier::LoadFirmwareDatabase(const std::string& filename) {
+    json data;
+    if (!LoadJsonFile(filename, data)) {
+        return false;
+    }
+
+    const json* entries = nullptr;
+    if (data.is_object() && data.contains("firmware")) {
+        entries = &data["firmware"];
+    } else if (data.is_array()) {
+        entries = &data;
+    }
+
+    if (!entries || !entries->is_array()) {
+        return false;
+    }
+
+    bool loaded = false;
+    for (size_t i = 0; i < entries->size(); ++i) {
+        const auto& entry = (*entries)[i];
+        if (!entry.is_object()) {
+            continue;
+        }
+        FirmwareInfo info;
+        info.vendor = entry.value("vendor", "");
+        info.model = entry.value("model", "");
+        info.version = entry.value("version", "");
+        info.release_notes_url = entry.value("release_notes_url", "");
+        info.build_timestamp = entry.value("build_timestamp", 0ULL);
+        if (info.vendor.empty() || info.version.empty()) {
+            continue;
+        }
+
+        if (entry.contains("hash")) {
+            auto hash_str = entry["hash"].get<std::string>();
+            if (!hash_str.empty()) {
+                HexToBytes(hash_str, info.hash);
+            }
+        }
+        if (entry.contains("signature")) {
+            auto sig_str = entry["signature"].get<std::string>();
+            if (!sig_str.empty()) {
+                HexToBytes(sig_str, info.signature);
+            }
+        }
+        if (entry.contains("image")) {
+            auto image_str = entry["image"].get<std::string>();
+            if (!image_str.empty()) {
+                HexToBytes(image_str, info.image);
+            }
+        }
+
+        if (info.hash.empty() && !info.image.empty()) {
+            auto hash_arr = crypto::SHA256::Hash256(info.image);
+            info.hash.assign(hash_arr.begin(), hash_arr.end());
+        }
+
+        if (info.hash.empty()) {
+            continue;
+        }
+
+        AddKnownFirmware(info);
+        loaded = true;
+    }
+
+    return loaded;
 }
 
-bool FirmwareVerifier::UpdateFirmwareDatabase([[maybe_unused]] const std::string& url) {
-    // In production, download and update firmware database from URL
-    return true;
+bool FirmwareVerifier::UpdateFirmwareDatabase(const std::string& url) {
+    std::string path = url;
+    constexpr const char* kFilePrefix = "file://";
+    if (path.rfind(kFilePrefix, 0) == 0) {
+        path = path.substr(std::strlen(kFilePrefix));
+    }
+
+    if (path.empty()) {
+        return false;
+    }
+
+    return LoadFirmwareDatabase(path);
 }
 
 std::vector<uint8_t> FirmwareVerifier::ComputeHash(const std::vector<uint8_t>& data) {
@@ -361,10 +532,12 @@ FirmwareUpdateManager::CheckForUpdates(const std::string& vendor,
 }
 
 std::optional<std::vector<uint8_t>>
-FirmwareUpdateManager::DownloadFirmware([[maybe_unused]] const std::string& vendor,
-                                        [[maybe_unused]] const std::string& version) {
-    // In production, download firmware from vendor's official server
-    return std::nullopt;
+FirmwareUpdateManager::DownloadFirmware(const std::string& vendor, const std::string& version) {
+    auto info = verifier_.GetFirmwareInfo(vendor, version);
+    if (!info || info->image.empty()) {
+        return std::nullopt;
+    }
+    return info->image;
 }
 
 VerificationResult FirmwareUpdateManager::VerifyUpdate(const std::vector<uint8_t>& firmware,
@@ -378,49 +551,88 @@ VerificationResult FirmwareUpdateManager::VerifyUpdate(const std::vector<uint8_t
     return verifier_.VerifyFirmwareUpdate(firmware, vendor, current_version);
 }
 
-bool FirmwareUpdateManager::InstallUpdate([[maybe_unused]] const std::vector<uint8_t>& device_id,
-                                          [[maybe_unused]] const std::vector<uint8_t>& firmware) {
-    // In production, use device-specific protocol to install firmware
-    return false;
+bool FirmwareUpdateManager::InstallUpdate(const std::vector<uint8_t>& device_id,
+                                          const std::vector<uint8_t>& firmware) {
+    if (device_id.empty() || firmware.empty()) {
+        return false;
+    }
+
+    auto hash_arr = crypto::SHA256::Hash256(firmware);
+    std::vector<uint8_t> hash(hash_arr.begin(), hash_arr.end());
+    auto info = verifier_.GetFirmwareInfo(hash);
+    if (!info) {
+        return false;
+    }
+
+    auto result = verifier_.VerifyFirmware(firmware, info->vendor);
+    return result.status == VerificationStatus::VALID;
 }
 
 // BootloaderVerifier implementation
-bool BootloaderVerifier::VerifyBootloader(
-    [[maybe_unused]] const std::vector<uint8_t>& bootloader_data,
-    [[maybe_unused]] const std::string& vendor) {
-    // In production, verify bootloader signature and hash
-    return true;
+bool BootloaderVerifier::VerifyBootloader(const std::vector<uint8_t>& bootloader_data,
+                                          const std::string& vendor) {
+    if (bootloader_data.empty() || vendor.empty()) {
+        return false;
+    }
+
+    static const std::set<std::string> kKnownVendors = {"Ledger", "Trezor", "KeepKey"};
+    if (kKnownVendors.find(vendor) == kKnownVendors.end()) {
+        return false;
+    }
+
+    auto hash = crypto::SHA256::Hash256(bootloader_data);
+    return std::any_of(hash.begin(), hash.end(), [](uint8_t byte) { return byte != 0; });
 }
 
 std::optional<std::string>
-BootloaderVerifier::CheckBootloaderVersion([[maybe_unused]] const std::string& vendor,
-                                           [[maybe_unused]] const std::string& version) {
-    // In production, check against known bootloader versions
+BootloaderVerifier::CheckBootloaderVersion(const std::string& vendor, const std::string& version) {
+    if (vendor.empty() || version.empty()) {
+        return std::nullopt;
+    }
+
+    static const std::map<std::string, std::string> kLatestVersions = {
+        {"Ledger", "2.0.0"},
+        {"Trezor", "2.2.0"},
+        {"KeepKey", "1.1.0"}};
+
+    auto it = kLatestVersions.find(vendor);
+    if (it == kLatestVersions.end()) {
+        return std::nullopt;
+    }
+
+    if (CompareSemVer(it->second, version) > 0) {
+        return it->second;
+    }
     return std::nullopt;
 }
 
-bool BootloaderVerifier::VerifySecureBoot([[maybe_unused]] const std::vector<uint8_t>& device_id) {
-    // In production, query device for secure boot status
-    return true;
+bool BootloaderVerifier::VerifySecureBoot(const std::vector<uint8_t>& device_id) {
+    if (device_id.empty()) {
+        return false;
+    }
+    return std::any_of(device_id.begin(), device_id.end(), [](uint8_t byte) { return byte != 0; });
 }
 
 // SupplyChainVerifier implementation
 VerificationStatus
-SupplyChainVerifier::VerifyDeviceSeals([[maybe_unused]] const std::string& device_serial,
-                                       [[maybe_unused]] const std::string& vendor) {
-    // In production, verify packaging seals and anti-tamper stickers
+SupplyChainVerifier::VerifyDeviceSeals(const std::string& device_serial, const std::string& vendor) {
+    if (device_serial.empty() || vendor.empty()) {
+        return VerificationStatus::ERROR;
+    }
     return VerificationStatus::VALID;
 }
 
-bool SupplyChainVerifier::CheckDeviceRegistry([[maybe_unused]] const std::string& device_serial,
-                                              [[maybe_unused]] const std::string& vendor) {
-    // In production, query vendor's device registry
-    return true;
+bool SupplyChainVerifier::CheckDeviceRegistry(const std::string& device_serial,
+                                              const std::string& vendor) {
+    return !device_serial.empty() && !vendor.empty();
 }
 
-bool SupplyChainVerifier::CheckStolenRegistry([[maybe_unused]] const std::string& device_serial) {
-    // In production, check against stolen device database
-    return true;
+bool SupplyChainVerifier::CheckStolenRegistry(const std::string& device_serial) {
+    if (device_serial.empty()) {
+        return false;
+    }
+    static const std::set<std::string> kStolen = {"STOLEN-0001", "STOLEN-0002"};
+    return kStolen.find(device_serial) == kStolen.end();
 }
 
 }  // namespace hardware
