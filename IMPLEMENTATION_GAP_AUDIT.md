@@ -30,10 +30,10 @@ What is now in place:
   and are pinned to the exact gitlink commit.
 - `.github/workflows/dependency-gate.yml` enforces deterministic submodule bootstrap and Release
   CMake configure with `-DPARTHENON_REQUIRE_REAL_DEPS=ON`.
+- Vendored archives (if introduced) must be listed in `scripts/ci/vendored_archives.sha256` and
+  are verified via SHA-256 during the dependency gate.
 
 What still remains:
-- Add cryptographic integrity verification for vendored archives if any non-submodule dependencies
-  are introduced.
 - Extend release pipeline to publish and verify an SBOM/provenance attestation.
 
 ### 2) Hardware crypto / wallet firmware placeholder replacement
