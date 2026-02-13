@@ -84,7 +84,7 @@ if (( ${#archive_candidates[@]} > 0 )); then
   manifest_paths=()
   while IFS= read -r line; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-    if [[ "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]{2}([^[:space:]].*)$ ]]; then
+    if [[ "$line" =~ ^[0-9a-fA-F]{64}[[:space:]]+([^[:space:]].*)$ ]]; then
       manifest_paths+=("${BASH_REMATCH[1]}")
     else
       invalid_entries+=("$line")
@@ -97,9 +97,14 @@ if (( ${#archive_candidates[@]} > 0 )); then
     exit 1
   fi
 
+  declare -A manifest_lookup=()
+  for manifest_path in "${manifest_paths[@]}"; do
+    manifest_lookup["$manifest_path"]=1
+  done
+
   missing_entries=()
   for archive in "${archive_candidates[@]}"; do
-    if ! printf '%s\n' "${manifest_paths[@]}" | grep -Fxq "$archive"; then
+    if [[ -z "${manifest_lookup[$archive]+x}" ]]; then
       missing_entries+=("$archive")
     fi
   done
@@ -110,7 +115,7 @@ if (( ${#archive_candidates[@]} > 0 )); then
     exit 1
   fi
 
-  if ! (cd "$ROOT_DIR" && sha256sum -c "$archive_manifest"); then
+  if ! (cd "$ROOT_DIR" && sha256sum -c <(grep -v -E '^[[:space:]]*(#|$)' "$archive_manifest")); then
     echo "ERROR: vendored archive checksum verification failed."
     exit 1
   fi
