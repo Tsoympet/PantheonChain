@@ -143,6 +143,30 @@ bool Node::Start() {
                   << static_cast<int>(genesis_hash[1]) << std::dec << ")" << std::endl;
     }
 
+    const uint32_t chain_height = block_storage_->GetHeight();
+    for (uint32_t height = 1; height <= chain_height; ++height) {
+        auto block = block_storage_->GetBlockByHeight(height);
+        if (!block) {
+            std::cerr << "Failed to load block at height " << height << " during startup"
+                      << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+
+        chainstate::BlockUndo undo;
+        if (!chain_->ConnectBlock(*block, undo)) {
+            std::cerr << "Failed to reconstruct in-memory chain at height " << height
+                      << std::endl;
+            block_storage_->Close();
+            utxo_storage_->Close();
+            return false;
+        }
+    }
+
+    sync_target_height_ = static_cast<uint32_t>(chain_->GetHeight());
+    is_syncing_.store(false);
+
     // Set up network callbacks
     network_->SetOnNewPeer([this](const std::string& peer_id) { HandleNewPeer(peer_id); });
 
