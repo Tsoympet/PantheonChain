@@ -483,6 +483,27 @@ void TestRejectMessageAndCommandSafety() {
     std::cout << "  ✓ Passed (reject/command safety)" << std::endl;
 }
 
+void TestCompactSizeNonCanonicalRejection() {
+    std::cout << "Test: CompactSize non-canonical encoding rejection" << std::endl;
+
+    // 253 marker must encode values >= 253.
+    const std::vector<uint8_t> noncanonical_16 = {0xfd, 0x01, 0x00};
+    assert(!InvMessage::Deserialize(noncanonical_16.data(), noncanonical_16.size()));
+    assert(!AddrMessage::Deserialize(noncanonical_16.data(), noncanonical_16.size()));
+    assert(!HeadersMessage::Deserialize(noncanonical_16.data(), noncanonical_16.size()));
+
+    // 254 marker must encode values > 65535.
+    const std::vector<uint8_t> noncanonical_32 = {0xfe, 0xff, 0xff, 0x00, 0x00};
+    assert(!InvMessage::Deserialize(noncanonical_32.data(), noncanonical_32.size()));
+
+    // 255 marker must encode values > 0xFFFFFFFF.
+    const std::vector<uint8_t> noncanonical_64 = {0xff, 0xff, 0xff, 0xff, 0xff,
+                                                  0x00, 0x00, 0x00, 0x00};
+    assert(!HeadersMessage::Deserialize(noncanonical_64.data(), noncanonical_64.size()));
+
+    std::cout << "  ✓ Passed (compactsize canonical checks)" << std::endl;
+}
+
 int main() {
     std::cout << "=== P2P Protocol Tests ===" << std::endl;
 
@@ -500,6 +521,7 @@ int main() {
     TestHeadersMessage();
     TestTxAndBlockMessages();
     TestRejectMessageAndCommandSafety();
+    TestCompactSizeNonCanonicalRejection();
 
     std::cout << "\n✓ All P2P tests passed!" << std::endl;
     return 0;

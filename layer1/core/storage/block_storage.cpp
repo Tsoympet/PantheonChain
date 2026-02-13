@@ -2,12 +2,33 @@
 
 #include "block_storage.h"
 
+#include <charconv>
 #include <iomanip>
 #include <leveldb/write_batch.h>
-#include <sstream>
 
 namespace parthenon {
 namespace storage {
+
+namespace {
+
+bool TryParseUint32(const std::string& value, uint32_t& out) {
+    if (value.empty()) {
+        return false;
+    }
+
+    uint32_t parsed = 0;
+    const char* begin = value.data();
+    const char* end = value.data() + value.size();
+    auto [ptr, ec] = std::from_chars(begin, end, parsed);
+    if (ec != std::errc{} || ptr != end) {
+        return false;
+    }
+
+    out = parsed;
+    return true;
+}
+
+}  // namespace
 
 bool BlockStorage::Open(const std::string& db_path) {
     leveldb::Options options;
@@ -45,51 +66,12 @@ std::string BlockStorage::HashKey(const std::array<uint8_t, 32>& hash) {
 }
 
 std::string BlockStorage::SerializeBlock(const primitives::Block& block) {
-    // Simple serialization (in production, use proper binary format)
-    std::ostringstream oss;
-
-    // Serialize header
-    oss.write(reinterpret_cast<const char*>(&block.header.version), sizeof(block.header.version));
-    oss.write(reinterpret_cast<const char*>(block.header.prev_block_hash.data()), 32);
-    oss.write(reinterpret_cast<const char*>(block.header.merkle_root.data()), 32);
-    oss.write(reinterpret_cast<const char*>(&block.header.timestamp),
-              sizeof(block.header.timestamp));
-    oss.write(reinterpret_cast<const char*>(&block.header.bits), sizeof(block.header.bits));
-    oss.write(reinterpret_cast<const char*>(&block.header.nonce), sizeof(block.header.nonce));
-
-    // Serialize transaction count
-    uint32_t tx_count = static_cast<uint32_t>(block.transactions.size());
-    oss.write(reinterpret_cast<const char*>(&tx_count), sizeof(tx_count));
-
-    // Note: Full transaction serialization would go here
-    // For now, we store the count to maintain structure
-
-    return oss.str();
+    const auto bytes = block.Serialize();
+    return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 }
 
 std::optional<primitives::Block> BlockStorage::DeserializeBlock(const std::string& data) {
-    if (data.size() < sizeof(primitives::BlockHeader) + sizeof(uint32_t)) {
-        return std::nullopt;
-    }
-
-    std::istringstream iss(data);
-    primitives::Block block;
-
-    // Deserialize header
-    iss.read(reinterpret_cast<char*>(&block.header.version), sizeof(block.header.version));
-    iss.read(reinterpret_cast<char*>(block.header.prev_block_hash.data()), 32);
-    iss.read(reinterpret_cast<char*>(block.header.merkle_root.data()), 32);
-    iss.read(reinterpret_cast<char*>(&block.header.timestamp), sizeof(block.header.timestamp));
-    iss.read(reinterpret_cast<char*>(&block.header.bits), sizeof(block.header.bits));
-    iss.read(reinterpret_cast<char*>(&block.header.nonce), sizeof(block.header.nonce));
-
-    // Deserialize transaction count
-    uint32_t tx_count;
-    iss.read(reinterpret_cast<char*>(&tx_count), sizeof(tx_count));
-
-    // Note: Full transaction deserialization would go here
-
-    return block;
+    return primitives::Block::Deserialize(reinterpret_cast<const uint8_t*>(data.data()), data.size());
 }
 
 bool BlockStorage::StoreBlock(const primitives::Block& block, uint32_t height) {
@@ -148,7 +130,11 @@ std::optional<primitives::Block> BlockStorage::GetBlockByHash(const std::array<u
     }
 
     // Then get block by height
-    uint32_t height = static_cast<uint32_t>(std::stoul(height_str));
+    uint32_t height = 0;
+    if (!TryParseUint32(height_str, height)) {
+        return std::nullopt;
+    }
+
     return GetBlockByHeight(height);
 }
 
@@ -164,7 +150,12 @@ uint32_t BlockStorage::GetHeight() {
         return 0;
     }
 
-    return static_cast<uint32_t>(std::stoul(value));
+    uint32_t height = 0;
+    if (!TryParseUint32(value, height)) {
+        return 0;
+    }
+
+    return height;
 }
 
 bool BlockStorage::UpdateChainTip(uint32_t height, const std::array<uint8_t, 32>& best_hash) {
