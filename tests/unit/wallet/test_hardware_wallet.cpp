@@ -274,6 +274,14 @@ void test_firmware_anti_rollback_checks() {
     std::cout << "✓ Firmware anti-rollback tests passed\n";
 }
 
+void test_supply_chain_stolen_registry() {
+    assert(!SupplyChainVerifier::CheckStolenRegistry(""));
+    assert(!SupplyChainVerifier::CheckStolenRegistry("STOLEN-0001"));
+    assert(SupplyChainVerifier::CheckStolenRegistry("SAFE-0001"));
+
+    std::cout << "✓ Supply chain stolen registry tests passed\n";
+}
+
 int main() {
     std::cout << "Running hardware wallet tests...\n\n";
 
@@ -285,6 +293,7 @@ int main() {
     test_firmware_key_rotation_and_revocation();
     test_firmware_security_advisory_revocation();
     test_firmware_anti_rollback_checks();
+    test_supply_chain_stolen_registry();
 
     std::cout << "\nAll hardware wallet tests passed!\n";
     return 0;

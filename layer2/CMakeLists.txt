@@ -23,6 +23,7 @@ target_include_directories(layer2 PUBLIC
 target_link_libraries(layer2
     parthenon_crypto
     parthenon_primitives
+    parthenon_privacy
 )
 
 # All layer2 code now organized under proper subdirectories:

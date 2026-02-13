@@ -45,43 +45,28 @@ class json {
         : type_(Type::kObject), boolean_(false), number_(0.0), object_(init.begin(), init.end()) {}
 
     static json parse(const std::string& input) {
-        const std::string trimmed = Trim(input);
-        if (trimmed.empty() || trimmed == "null") {
-            return json();
+        size_t pos = 0;
+        json value = ParseValue(input, pos);
+        SkipWhitespace(input, pos);
+        if (pos != input.size()) {
+            throw std::runtime_error("json stub parser failed to parse input");
         }
-        if (trimmed == "true") {
-            return json(true);
-        }
-        if (trimmed == "false") {
-            return json(false);
-        }
-        if (trimmed == "[]") {
-            return json(array_t{});
-        }
-        if (trimmed == "{}") {
-            return json(object_t{});
-        }
-        if (trimmed.size() >= 2 && trimmed.front() == '"' && trimmed.back() == '"') {
-            return json(trimmed.substr(1, trimmed.size() - 2));
-        }
-        double number_value = 0.0;
-        if (TryParseNumber(trimmed, &number_value)) {
-            return json(number_value);
-        }
-        if (!trimmed.empty() && trimmed.front() == '[') {
-            return json(array_t{});
-        }
-        if (!trimmed.empty() && trimmed.front() == '{') {
-            return json(object_t{});
-        }
-        throw std::runtime_error("json stub parser failed to parse input");
+        return value;
     }
 
+    static json parse(const std::string& input, std::nullptr_t, bool) { return parse(input); }
+
     static json array() { return json(array_t{}); }
+    static json array(std::initializer_list<json> init) { return json(array_t(init)); }
 
     bool is_array() const { return type_ == Type::kArray; }
     bool is_object() const { return type_ == Type::kObject; }
     bool is_number() const { return type_ == Type::kNumber; }
+    bool is_string() const { return type_ == Type::kString; }
+    bool is_boolean() const { return type_ == Type::kBoolean; }
+    bool is_null() const { return type_ == Type::kNull; }
+    bool is_number_unsigned() const { return type_ == Type::kNumber && number_ >= 0; }
+    bool is_discarded() const { return false; }
 
     bool empty() const {
         if (is_array()) {
@@ -153,6 +138,11 @@ class json {
         }
         return array_[index];
     }
+
+    array_t::iterator begin() { return array_.begin(); }
+    array_t::iterator end() { return array_.end(); }
+    array_t::const_iterator begin() const { return array_.begin(); }
+    array_t::const_iterator end() const { return array_.end(); }
 
     void push_back(const json& value) {
         EnsureArray();
@@ -300,6 +290,169 @@ class json {
             *out = result;
         }
         return true;
+    }
+
+    static void SkipWhitespace(const std::string& value, size_t& pos) {
+        while (pos < value.size() && std::isspace(static_cast<unsigned char>(value[pos]))) {
+            ++pos;
+        }
+    }
+
+    static json ParseValue(const std::string& value, size_t& pos) {
+        SkipWhitespace(value, pos);
+        if (pos >= value.size()) {
+            throw std::runtime_error("json stub parser failed to parse input");
+        }
+
+        char c = value[pos];
+        if (c == '{') {
+            return ParseObject(value, pos);
+        }
+        if (c == '[') {
+            return ParseArray(value, pos);
+        }
+        if (c == '"') {
+            return json(ParseString(value, pos));
+        }
+        if (value.compare(pos, 4, "true") == 0) {
+            pos += 4;
+            return json(true);
+        }
+        if (value.compare(pos, 5, "false") == 0) {
+            pos += 5;
+            return json(false);
+        }
+        if (value.compare(pos, 4, "null") == 0) {
+            pos += 4;
+            return json();
+        }
+        return ParseNumber(value, pos);
+    }
+
+    static json ParseObject(const std::string& value, size_t& pos) {
+        json::object_t obj;
+        ++pos;  // consume '{'
+        SkipWhitespace(value, pos);
+        if (pos < value.size() && value[pos] == '}') {
+            ++pos;
+            return json(obj);
+        }
+        while (pos < value.size()) {
+            SkipWhitespace(value, pos);
+            if (value[pos] != '"') {
+                throw std::runtime_error("json stub parser failed to parse input");
+            }
+            std::string key = ParseString(value, pos);
+            SkipWhitespace(value, pos);
+            if (pos >= value.size() || value[pos] != ':') {
+                throw std::runtime_error("json stub parser failed to parse input");
+            }
+            ++pos;
+            json val = ParseValue(value, pos);
+            obj.emplace(std::move(key), std::move(val));
+            SkipWhitespace(value, pos);
+            if (pos >= value.size()) {
+                break;
+            }
+            if (value[pos] == ',') {
+                ++pos;
+                continue;
+            }
+            if (value[pos] == '}') {
+                ++pos;
+                break;
+            }
+            throw std::runtime_error("json stub parser failed to parse input");
+        }
+        return json(obj);
+    }
+
+    static json ParseArray(const std::string& value, size_t& pos) {
+        json::array_t array;
+        ++pos;  // consume '['
+        SkipWhitespace(value, pos);
+        if (pos < value.size() && value[pos] == ']') {
+            ++pos;
+            return json(array);
+        }
+        while (pos < value.size()) {
+            json val = ParseValue(value, pos);
+            array.push_back(std::move(val));
+            SkipWhitespace(value, pos);
+            if (pos >= value.size()) {
+                break;
+            }
+            if (value[pos] == ',') {
+                ++pos;
+                continue;
+            }
+            if (value[pos] == ']') {
+                ++pos;
+                break;
+            }
+            throw std::runtime_error("json stub parser failed to parse input");
+        }
+        return json(array);
+    }
+
+    static std::string ParseString(const std::string& value, size_t& pos) {
+        std::string result;
+        if (value[pos] != '"') {
+            throw std::runtime_error("json stub parser failed to parse input");
+        }
+        ++pos;
+        while (pos < value.size()) {
+            char c = value[pos++];
+            if (c == '"') {
+                break;
+            }
+            if (c == '\\' && pos < value.size()) {
+                char escaped = value[pos++];
+                switch (escaped) {
+                    case '"':
+                    case '\\':
+                    case '/':
+                        result.push_back(escaped);
+                        break;
+                    case 'b':
+                        result.push_back('\b');
+                        break;
+                    case 'f':
+                        result.push_back('\f');
+                        break;
+                    case 'n':
+                        result.push_back('\n');
+                        break;
+                    case 'r':
+                        result.push_back('\r');
+                        break;
+                    case 't':
+                        result.push_back('\t');
+                        break;
+                    default:
+                        result.push_back(escaped);
+                        break;
+                }
+            } else {
+                result.push_back(c);
+            }
+        }
+        return result;
+    }
+
+    static json ParseNumber(const std::string& value, size_t& pos) {
+        size_t start = pos;
+        while (pos < value.size() && (std::isdigit(static_cast<unsigned char>(value[pos])) ||
+                                      value[pos] == '-' || value[pos] == '+' ||
+                                      value[pos] == '.' || value[pos] == 'e' || value[pos] == 'E')) {
+            ++pos;
+        }
+        std::string number_str = value.substr(start, pos - start);
+        double number_value = 0.0;
+        if (!TryParseNumber(number_str, &number_value)) {
+            throw std::runtime_error("json stub parser failed to parse input");
+        }
+        return json(number_value);
     }
 
     Type type_;

@@ -112,6 +112,9 @@ add_subdirectory(layer2)
 # Client Applications
 add_subdirectory(clients)
 
+# Tools and SDKs
+add_subdirectory(tools)
+
 # Tests
 add_subdirectory(tests)
 

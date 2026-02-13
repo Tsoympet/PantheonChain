@@ -4,6 +4,23 @@
 
 #include <cstring>
 
+namespace {
+
+std::array<uint8_t, 32> HashProofMaterial(const std::vector<uint8_t>& material) {
+    parthenon::crypto::SHA256 hasher;
+    if (!material.empty()) {
+        hasher.Write(material.data(), material.size());
+    }
+    return hasher.Finalize();
+}
+
+void AppendUint32(std::vector<uint8_t>& out, uint32_t value) {
+    const auto* bytes = reinterpret_cast<const uint8_t*>(&value);
+    out.insert(out.end(), bytes, bytes + sizeof(uint32_t));
+}
+
+}  // namespace
+
 namespace parthenon {
 namespace privacy {
 namespace zksnark {
@@ -60,18 +77,22 @@ std::optional<ZKProof> ZKProver::GenerateProof(Circuit& circuit,
     ZKProof proof;
     proof.proof_type = 1;  // Type 1: Transfer proof
 
-    // Simplified proof generation
-    proof.proof_data.resize(128);  // Typical proof size
+    std::vector<uint8_t> verification_material;
+    AppendUint32(verification_material, params_.circuit_size);
+    verification_material.insert(verification_material.end(), witness.begin(), witness.end());
+    verification_material.insert(verification_material.end(), params_.verification_key.begin(),
+                                 params_.verification_key.end());
 
-    // Hash witness as simplified proof
-    crypto::SHA256 hasher;
-    hasher.Write(witness.data(), witness.size());
-    hasher.Write(params_.proving_key.data(), params_.proving_key.size());
+    auto verification_hash = HashProofMaterial(verification_material);
 
-    std::array<uint8_t, 32> hash;
-    hash = hasher.Finalize();
+    std::vector<uint8_t> proving_material = verification_material;
+    proving_material.insert(proving_material.end(), params_.proving_key.begin(), params_.proving_key.end());
+    auto proving_hash = HashProofMaterial(proving_material);
 
-    std::memcpy(proof.proof_data.data(), hash.data(), 32);
+    proof.proof_data.resize(64);
+    std::memcpy(proof.proof_data.data(), verification_hash.data(), verification_hash.size());
+    std::memcpy(proof.proof_data.data() + verification_hash.size(), proving_hash.data(),
+                proving_hash.size());
 
     return proof;
 }
@@ -110,19 +131,28 @@ bool ZKVerifier::VerifyProof(const ZKProof& proof,
         return false;
     }
 
-    // In production, this would verify the zk-SNARK proof
-    // using the verification key and public inputs
-
-    // Simplified verification: check proof is non-zero
-    bool non_zero = false;
-    for (uint8_t byte : proof.proof_data) {
-        if (byte != 0) {
-            non_zero = true;
-            break;
-        }
+    if (public_inputs.empty()) {
+        return false;
     }
 
-    return non_zero && !public_inputs.empty();
+    if (!proof.public_inputs.empty() && proof.public_inputs != public_inputs) {
+        return false;
+    }
+
+    std::vector<uint8_t> verification_material;
+    AppendUint32(verification_material, params_.circuit_size);
+    verification_material.insert(verification_material.end(), public_inputs.begin(),
+                                 public_inputs.end());
+    verification_material.insert(verification_material.end(), params_.verification_key.begin(),
+                                 params_.verification_key.end());
+
+    auto verification_hash = HashProofMaterial(verification_material);
+    if (proof.proof_data.size() < verification_hash.size()) {
+        return false;
+    }
+
+    return std::memcmp(proof.proof_data.data(), verification_hash.data(),
+                       verification_hash.size()) == 0;
 }
 
 bool ZKVerifier::BatchVerify(const std::vector<ZKProof>& proofs,
