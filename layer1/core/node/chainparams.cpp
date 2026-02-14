@@ -57,7 +57,6 @@ std::optional<NetworkMode> ParseNetworkMode(const std::string& mode_name) {
 
     std::string normalized =
         mode_name.substr(first_non_space, last_non_space - first_non_space + 1);
-    std::string normalized = mode_name;
     std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char c) {
         return static_cast<char>(std::tolower(c));
     });
