@@ -146,89 +146,66 @@ class ConfigParser {
                 int parsed_port = 0;
                 if (!TryParsePort(scalar_value, parsed_port)) {
                     std::cerr << "Warning: Invalid network.port '" << scalar_value
-                if (!TryParsePort(value, parsed_port)) {
-                    std::cerr << "Warning: Invalid network.port '" << value
                               << "'; keeping default/network-derived value" << std::endl;
                 } else {
                     config.network_port = parsed_port;
                     config.network_port_configured = true;
                 }
-            }
-            else if (key == "network.max_connections") {
+            } else if (key == "network.max_connections") {
                 int parsed_connections = 0;
                 if (!TryParseInt(scalar_value, parsed_connections) || parsed_connections <= 0) {
                     std::cerr << "Warning: Invalid network.max_connections '" << scalar_value
-                if (!TryParseInt(value, parsed_connections) || parsed_connections <= 0) {
-                    std::cerr << "Warning: Invalid network.max_connections '" << value
                               << "'; keeping default" << std::endl;
                 } else {
                     config.max_connections = parsed_connections;
                 }
-            }
-            else if (key == "network.timeout") {
+            } else if (key == "network.timeout") {
                 int parsed_timeout = 0;
                 if (!TryParseInt(scalar_value, parsed_timeout) || parsed_timeout <= 0) {
                     std::cerr << "Warning: Invalid network.timeout '" << scalar_value
-                if (!TryParseInt(value, parsed_timeout) || parsed_timeout <= 0) {
-                    std::cerr << "Warning: Invalid network.timeout '" << value
                               << "'; keeping default" << std::endl;
                 } else {
                     config.network_timeout = parsed_timeout;
                 }
-            }
-            else if (key == "network.mode")
+            } else if (key == "network.mode") {
                 config.network = scalar_value;
-            else if (key == "rpc.enabled") {
+            } else if (key == "rpc.enabled") {
                 bool parsed_enabled = config.rpc_enabled;
                 if (!TryParseBool(scalar_value, parsed_enabled)) {
                     std::cerr << "Warning: Invalid rpc.enabled '" << scalar_value
-                config.network = value;
-            else if (key == "rpc.enabled") {
-                bool parsed_enabled = config.rpc_enabled;
-                if (!TryParseBool(value, parsed_enabled)) {
-                    std::cerr << "Warning: Invalid rpc.enabled '" << value
                               << "'; keeping default" << std::endl;
                 } else {
                     config.rpc_enabled = parsed_enabled;
                 }
-            }
-            else if (key == "rpc.port") {
+            } else if (key == "rpc.port") {
                 int parsed_port = 0;
                 if (!TryParsePort(scalar_value, parsed_port)) {
                     std::cerr << "Warning: Invalid rpc.port '" << scalar_value
-                if (!TryParsePort(value, parsed_port)) {
-                    std::cerr << "Warning: Invalid rpc.port '" << value
                               << "'; keeping default/network-derived value" << std::endl;
                 } else {
                     config.rpc_port = parsed_port;
                     config.rpc_port_configured = true;
                 }
-            }
-            else if (key == "rpc.user")
-                config.rpc_user = value;
-            else if (key == "rpc.password")
-                config.rpc_password = value;
-            else if (key == "rpc.allow_unauthenticated") {
+            } else if (key == "rpc.user") {
+                config.rpc_user = scalar_value;
+            } else if (key == "rpc.password") {
+                config.rpc_password = scalar_value;
+            } else if (key == "rpc.allow_unauthenticated") {
                 bool parsed_allow_unauthenticated = config.rpc_allow_unauthenticated;
                 if (!TryParseBool(scalar_value, parsed_allow_unauthenticated)) {
                     std::cerr << "Warning: Invalid rpc.allow_unauthenticated '" << scalar_value
-                if (!TryParseBool(value, parsed_allow_unauthenticated)) {
-                    std::cerr << "Warning: Invalid rpc.allow_unauthenticated '" << value
                               << "'; keeping default" << std::endl;
                 } else {
                     config.rpc_allow_unauthenticated = parsed_allow_unauthenticated;
                 }
-            }
-            else if (key == "data_dir")
-                config.data_dir = value;
-            else if (key == "log_level")
-                config.log_level = value;
-            else if (key == "mining.enabled") {
+            } else if (key == "data_dir") {
+                config.data_dir = scalar_value;
+            } else if (key == "log_level") {
+                config.log_level = scalar_value;
+            } else if (key == "mining.enabled") {
                 bool parsed_mining_enabled = config.mining_enabled;
                 if (!TryParseBool(scalar_value, parsed_mining_enabled)) {
                     std::cerr << "Warning: Invalid mining.enabled '" << scalar_value
-                if (!TryParseBool(value, parsed_mining_enabled)) {
-                    std::cerr << "Warning: Invalid mining.enabled '" << value
                               << "'; keeping default" << std::endl;
                 } else {
                     config.mining_enabled = parsed_mining_enabled;
@@ -383,54 +360,6 @@ class Node {
             return false;
         }
         const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        }
-        const auto network_mode = *parsed_mode;
-        const auto network_mode = parsed_mode.value_or(node::NetworkMode::MAINNET);
-        if (!parsed_mode.has_value()) {
-            std::cerr << "Unknown network mode '" << config_.network
-                      << "', defaulting to mainnet (supported: mainnet/testnet/regtest)"
-                      << std::endl;
-        }
         std::cout << "Selected network: " << node::NetworkModeToString(network_mode)
                   << std::endl;
 
