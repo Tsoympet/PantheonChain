@@ -14,7 +14,7 @@ void PrintUsage() {
         << "Usage: pantheon-relayer-l3 --commitment=<encoded> --active-stake=<value> "
            "--last-finalized-height=<value>\n"
         << "Encoded format: OBOLOS:epoch:finalized_height:finalized_block_hash:state_root:"
-           "validator_set_hash:validator_id|stake|signature(,...)\n";
+           "validator_set_hash:<empty_or_reserved>:validator_id|stake|signature(...)\n";
 }
 
 std::optional<uint64_t> ParseUint(const std::string& value) {
