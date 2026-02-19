@@ -1,0 +1,10 @@
+{
+  "layer": "l1",
+  "node_id": "talanton-testnet-1",
+  "network": "testnet",
+  "p2p_port": 28333,
+  "rpc_port": 28332,
+  "data_dir": "./.testnet/l1",
+  "genesis_file": "genesis_talanton.json",
+  "commitment_interval": 20
+}

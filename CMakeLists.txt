@@ -103,11 +103,17 @@ include_directories(SYSTEM ${JSON_INCLUDE_DIR})
 # Include directory for project headers
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+# Shared layered architecture modules
+add_subdirectory(src)
+
 # Layer 1 Core - Consensus Critical
 add_subdirectory(layer1)
 
 # Layer 2 - Non-Consensus Modules
 add_subdirectory(layer2)
+
+# Relayers
+add_subdirectory(relayers)
 
 # Client Applications
 add_subdirectory(clients)
