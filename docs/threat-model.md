@@ -25,3 +25,10 @@ PantheonChain MVP uses rollup-style commitments with economic-finality signature
 - Commitment validation is signature/quorum-based only.
 - Bridges are economically secure but not cryptographically trustless.
 - Operators should monitor commitment freshness along `OBOLOS -> DRACHMA -> TALANTON`.
+
+
+## Bridge-specific MVP assumptions
+
+- Withdrawals are optimistic and enforce a configurable trust window before unlock.
+- Safety relies on honest-majority finality signatures, not validity proofs.
+- Operators should treat bridge unlocks as delayed-finality operations tied to commitment freshness.
