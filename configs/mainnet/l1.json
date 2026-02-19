@@ -1,0 +1,10 @@
+{
+  "layer": "l1",
+  "node_id": "talanton-mainnet-validator-1",
+  "network": "mainnet",
+  "p2p_port": 8333,
+  "rpc_port": 8332,
+  "data_dir": "/var/lib/pantheon/l1",
+  "genesis_file": "genesis_talanton.json",
+  "commitment_interval": 20
+}
