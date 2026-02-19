@@ -14,7 +14,7 @@ void PrintUsage() {
         << "Usage: pantheon-relayer-l2 --commitment=<encoded> --active-stake=<value> "
            "--last-finalized-height=<value>\n"
         << "Encoded format: DRACHMA:epoch:finalized_height:finalized_block_hash:state_root:"
-           "validator_set_hash:validator_id|stake|signature(,...)\n";
+           "validator_set_hash:upstream_commitment_hash:validator_id|stake|signature(...)\n";
 }
 
 std::optional<uint64_t> ParseUint(const std::string& value) {

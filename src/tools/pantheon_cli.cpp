@@ -56,12 +56,15 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        if (layer == "l2" && commitment.source_chain != pantheon::common::SourceChain::OBOLOS) {
-            std::cerr << "layer l2 only accepts TX_L3_COMMIT commitments from OBOLOS" << std::endl;
+        if (layer == "l2" && commitment.source_chain != pantheon::common::SourceChain::DRACHMA) {
+            std::cerr
+                << "layer l2 commitment submissions must be TX_L2_COMMIT payloads from DRACHMA"
+                << std::endl;
             return 1;
         }
         if (layer == "l3" && commitment.source_chain != pantheon::common::SourceChain::OBOLOS) {
-            std::cerr << "layer l3 commitment submissions must be OBOLOS finality payloads" << std::endl;
+            std::cerr << "layer l3 commitment submissions must be TX_L3_COMMIT payloads from OBOLOS"
+                      << std::endl;
             return 1;
         }
 
