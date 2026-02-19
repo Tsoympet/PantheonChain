@@ -10,13 +10,15 @@ permissions:
 
 jobs:
   build-test-testnet:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ ninja-build python3 curl clang-format
+          sudo apt-get install -y cmake g++ ninja-build python3 curl clang-format \
+            libssl-dev libboost-system-dev libboost-filesystem-dev \
+            libboost-thread-dev libboost-program-options-dev
       - name: Cache build directory
         uses: actions/cache@v4
         with:
