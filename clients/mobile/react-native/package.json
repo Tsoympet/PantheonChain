@@ -23,6 +23,12 @@
     "react-native-sha256": "^1.4.10"
   },
   "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@babel/preset-env": "^7.20.0",
+    "@babel/runtime": "^7.20.0",
+    "@react-native/metro-config": "^0.72.0",
+    "jest": "^30.2.0",
+    "metro-react-native-babel-preset": "0.76.0"
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
     "@babel/runtime": "^7.24.0",
