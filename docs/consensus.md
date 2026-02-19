@@ -17,7 +17,7 @@
 
 ## DRACHMA (L2 / PoS + BFT)
 
-DRACHMA commitments anchored to TALANTON must include a state commitment that reflects the latest finalized OBOLOS commitment hash.
+DRACHMA commitments anchored to TALANTON must include a state commitment that reflects the latest finalized OBOLOS commitment hash (`upstream_commitment_hash`).
 
 - Epoch-based proposer rotation.
 - Deterministic proposer selection weighted by active stake.

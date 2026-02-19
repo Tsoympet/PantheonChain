@@ -36,6 +36,7 @@ int main() {
         "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
         common::PseudoSha256d(l3_commit.state_root + l3_commit.finalized_block_hash),
         "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        common::PseudoSha256d(common::EncodeCommitment(l3_commit)),
         {{"val1", 70, "sig1"}, {"val2", 40, "sig2"}}};
     auto l2_valid = talanton::ValidateL2Commit(l2_commit, {9}, 150);
     assert(l2_valid.valid);
