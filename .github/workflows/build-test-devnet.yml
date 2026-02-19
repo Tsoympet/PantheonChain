@@ -1,0 +1,40 @@
+name: Build Test Devnet
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  build-test-devnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ ninja-build python3 curl clang-format
+      - name: Cache build directory
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', '**/CMakeLists.txt') }}
+      - name: Audit
+        run: ./scripts/repo-audit.sh
+      - name: Build
+        run: ./scripts/build.sh
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Start devnet
+        run: ./scripts/run-devnet.sh
+      - name: Integration smoke
+        run: ./tests/integration/devnet-smoke.sh
+      - name: Stop devnet
+        if: always()
+        run: xargs -r kill < <(cat .devnet/*.pid) || true
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devnet-logs
+          path: .devnet/logs

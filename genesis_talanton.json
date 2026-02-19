@@ -1,0 +1,12 @@
+{
+  "chain": "TALANTON",
+  "layer": "l1",
+  "consensus": "pow-sha256d",
+  "native_token": "TALANTON",
+  "inflation_schedule": {"initial_block_reward": 50, "halving_interval": 210000},
+  "epoch_length": 144,
+  "minimum_stake": 0,
+  "slashing_ratios": {},
+  "commitment_interval": 20,
+  "features": {"tx_l2_commit": true, "staking": false}
+}

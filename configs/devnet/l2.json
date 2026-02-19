@@ -1,0 +1,10 @@
+{
+  "layer": "l2",
+  "node_id": "drachma-devnet-1",
+  "network": "devnet",
+  "p2p_port": 19333,
+  "rpc_port": 19332,
+  "data_dir": "./.devnet/l2",
+  "genesis_file": "genesis_drachma.json",
+  "commitment_interval": 10
+}

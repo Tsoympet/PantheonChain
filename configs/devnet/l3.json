@@ -1,0 +1,10 @@
+{
+  "layer": "l3",
+  "node_id": "obolos-devnet-1",
+  "network": "devnet",
+  "p2p_port": 20333,
+  "rpc_port": 20332,
+  "data_dir": "./.devnet/l3",
+  "genesis_file": "genesis_obolos.json",
+  "commitment_interval": 5
+}
