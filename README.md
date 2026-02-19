@@ -35,6 +35,17 @@ For Docker-based startup:
 docker compose up --build
 ```
 
+## Quickstart (testnet)
+
+```bash
+./scripts/build.sh
+./scripts/run-testnet.sh
+./tests/integration/testnet-smoke.sh
+```
+
+Testnet uses ports 28332/29332/30332 (RPC) and 28333/29333/30333 (P2P).
+See [`configs/testnet/README.md`](configs/testnet/README.md) for configuration details.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
