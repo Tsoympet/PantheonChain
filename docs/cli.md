@@ -1,19 +1,19 @@
 # CLI
 
-`parthenon-cli` supports legacy and layered commands.
+`pantheon-cli` supports layer-aware operational commands.
 
 ## Layered commands
 
 ```bash
-parthenon-cli stake deposit --layer=l2
-parthenon-cli deploy-contract --layer=l3
-parthenon-cli submit-commitment --layer=l2
+pantheon-cli stake deposit --layer=l2
+pantheon-cli deploy-contract --layer=l3
+pantheon-cli submit-commitment --layer=l2 --commitment=<encoded_l3_or_l2_commitment>
+pantheon-cli submit-commitment --layer=l3 --commitment=<encoded_l3_commitment>
 ```
 
-## Legacy commands
+## Notes
 
-```bash
-parthenon-cli getinfo
-parthenon-cli getblockcount
-parthenon-cli getbalance TALANTON
-```
+- `stake deposit` is valid on DRACHMA (L2) only.
+- `deploy-contract` is valid on OBOLOS (L3) only.
+- Commitments must use the canonical format:
+  `SOURCE:epoch:finalized_height:finalized_block_hash:state_root:validator_set_hash:validator|stake|sig,...`

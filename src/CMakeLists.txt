@@ -1,6 +1,7 @@
 add_library(pantheon_layers STATIC
     common/commitments.cpp
     common/cryptography.cpp
+    common/bridging.cpp
     common/mempool.cpp
     common/metrics.cpp
     common/p2p_network.cpp
@@ -18,3 +19,5 @@ if(MSVC)
 else()
   target_compile_options(pantheon_layers PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
+
+add_subdirectory(tools)

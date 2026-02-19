@@ -5,3 +5,7 @@ add_test(NAME LayersTests COMMAND test_layers)
 add_executable(test_commitment_serialization test_commitment_serialization.cpp)
 target_link_libraries(test_commitment_serialization PRIVATE pantheon_layers)
 add_test(NAME CommitmentSerializationTests COMMAND test_commitment_serialization)
+
+add_executable(test_bridge_flows test_bridge_flows.cpp)
+target_link_libraries(test_bridge_flows PRIVATE pantheon_layers)
+add_test(NAME BridgeFlowTests COMMAND test_bridge_flows)
