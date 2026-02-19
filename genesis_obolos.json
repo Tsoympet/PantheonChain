@@ -1,0 +1,12 @@
+{
+  "chain": "OBOLOS",
+  "layer": "l3",
+  "consensus": "pos-bft",
+  "native_token": "OBOLOS",
+  "inflation_schedule": {"annual_rate": 0.07},
+  "epoch_length": 60,
+  "minimum_stake": 500,
+  "slashing_ratios": {"double_sign": 0.05, "equivocation": 0.1},
+  "commitment_interval": 5,
+  "features": {"evm": true, "gas_token": "OBOLOS"}
+}

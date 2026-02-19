@@ -60,6 +60,8 @@ RUN mkdir -p /home/parthenon/.parthenon/data && \
 # Copy binaries from builder
 COPY --from=builder /build/build/clients/core-daemon/parthenond /usr/local/bin/
 COPY --from=builder /build/build/clients/cli/parthenon-cli /usr/local/bin/
+COPY --from=builder /build/build/relayers/pantheon-relayer-l2 /usr/local/bin/
+COPY --from=builder /build/build/relayers/pantheon-relayer-l3 /usr/local/bin/
 
 # Copy configuration
 COPY --from=builder /build/build/clients/core-daemon/parthenond.conf /etc/parthenon/
@@ -68,7 +70,7 @@ COPY --from=builder /build/build/clients/core-daemon/parthenond.conf /etc/parthe
 COPY README.md WHITEPAPER.md EULA.md LICENSE /usr/share/doc/parthenon/
 
 # Set permissions
-RUN chmod +x /usr/local/bin/parthenond /usr/local/bin/parthenon-cli
+RUN chmod +x /usr/local/bin/parthenond /usr/local/bin/parthenon-cli /usr/local/bin/pantheon-relayer-l2 /usr/local/bin/pantheon-relayer-l3
 
 # Switch to parthenon user
 USER parthenon

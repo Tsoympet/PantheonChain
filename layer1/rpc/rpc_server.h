@@ -11,6 +11,8 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <mutex>
+#include <vector>
 
 // Forward declarations
 namespace httplib {
@@ -149,6 +151,9 @@ class RPCServer {
     std::shared_ptr<httplib::Server> http_server_;
     std::thread server_thread_;
 
+    std::mutex commitment_mutex_;
+    std::vector<std::string> commitment_log_;
+
     // Initialize standard RPC methods
     void InitializeStandardMethods();
 
@@ -161,6 +166,11 @@ class RPCServer {
     RPCResponse HandleGetNewAddress(const RPCRequest& req);
     RPCResponse HandleSendToAddress(const RPCRequest& req);
     RPCResponse HandleStop(const RPCRequest& req);
+    RPCResponse HandleChainInfo(const RPCRequest& req);
+    RPCResponse HandleStakingDeposit(const RPCRequest& req);
+    RPCResponse HandleCommitmentSubmit(const RPCRequest& req);
+    RPCResponse HandleCommitmentList(const RPCRequest& req);
+    RPCResponse HandleEvmDeploy(const RPCRequest& req);
 };
 
 }  // namespace rpc

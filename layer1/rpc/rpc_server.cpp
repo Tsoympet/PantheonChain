@@ -218,6 +218,14 @@ bool RPCServer::Start() {
     http_server_ = std::make_shared<httplib::Server>();
 
     // Set up POST endpoint for JSON-RPC
+#ifndef CPP_HTTPLIB_STUB_H
+    http_server_->Get("/health", [this](const httplib::Request& req, httplib::Response& res) {
+        (void)req;
+        json health = {{"status", running_ ? "ok" : "stopped"}, {"rpc_port", port_}};
+        res.set_content(health.dump(), "application/json");
+    });
+#endif
+
     http_server_->Post("/", [this](const httplib::Request& req, httplib::Response& res) {
         try {
             // Extract client IP for rate limiting
@@ -384,6 +392,11 @@ void RPCServer::InitializeStandardMethods() {
     RegisterMethod("sendtoaddress",
                    [this](const RPCRequest& req) { return HandleSendToAddress(req); });
     RegisterMethod("stop", [this](const RPCRequest& req) { return HandleStop(req); });
+    RegisterMethod("chain/info", [this](const RPCRequest& req) { return HandleChainInfo(req); });
+    RegisterMethod("staking/deposit", [this](const RPCRequest& req) { return HandleStakingDeposit(req); });
+    RegisterMethod("commitments/submit", [this](const RPCRequest& req) { return HandleCommitmentSubmit(req); });
+    RegisterMethod("commitments/list", [this](const RPCRequest& req) { return HandleCommitmentList(req); });
+    RegisterMethod("evm/deploy", [this](const RPCRequest& req) { return HandleEvmDeploy(req); });
 }
 
 RPCResponse RPCServer::HandleGetInfo(const RPCRequest& req) {
@@ -777,6 +790,69 @@ RPCResponse RPCServer::HandleStop(const RPCRequest& req) {
 
     node_->Stop();
     response.result = "\"Node stopping\"";
+    return response;
+}
+
+}  // namespace rpc
+}  // namespace parthenon
+
+namespace parthenon {
+namespace rpc {
+
+RPCResponse RPCServer::HandleChainInfo(const RPCRequest& req) {
+    return HandleGetInfo(req);
+}
+
+RPCResponse RPCServer::HandleStakingDeposit(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    json result;
+    result["status"] = "accepted";
+    result["module"] = "staking";
+    result["params"] = req.params.empty() ? json::array() : json::parse(req.params, nullptr, false);
+    response.result = result.dump();
+    return response;
+}
+
+RPCResponse RPCServer::HandleCommitmentSubmit(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    const std::string payload = req.params.empty() ? "[]" : req.params;
+    {
+        std::lock_guard<std::mutex> lock(commitment_mutex_);
+        commitment_log_.push_back(payload);
+    }
+    json result;
+    result["status"] = "queued";
+    result["count"] = commitment_log_.size();
+    response.result = result.dump();
+    return response;
+}
+
+RPCResponse RPCServer::HandleCommitmentList(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    json result;
+    result["commitments"] = json::array();
+    {
+        std::lock_guard<std::mutex> lock(commitment_mutex_);
+        for (const auto& entry : commitment_log_) {
+            result["commitments"].push_back(entry);
+        }
+        result["count"] = commitment_log_.size();
+    }
+    response.result = result.dump();
+    return response;
+}
+
+RPCResponse RPCServer::HandleEvmDeploy(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    json result;
+    result["status"] = "accepted";
+    result["module"] = "evm";
+    result["params"] = req.params.empty() ? json::array() : json::parse(req.params, nullptr, false);
+    response.result = result.dump();
     return response;
 }
 

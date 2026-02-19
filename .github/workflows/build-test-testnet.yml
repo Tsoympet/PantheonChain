@@ -1,0 +1,45 @@
+name: Build Test Testnet
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-testnet:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ ninja-build python3 curl clang-format \
+            libssl-dev libboost-system-dev libboost-filesystem-dev \
+            libboost-thread-dev libboost-program-options-dev
+      - name: Cache build directory
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', '**/CMakeLists.txt') }}
+      - name: Validate testnet configs
+        run: python3 scripts/validate-config.py configs/testnet/l1.json configs/testnet/l2.json configs/testnet/l3.json
+      - name: Build
+        run: ./scripts/build.sh
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Start testnet
+        run: ./scripts/run-testnet.sh
+      - name: Integration smoke
+        run: ./tests/integration/testnet-smoke.sh
+      - name: Stop testnet
+        if: always()
+        run: xargs -r kill < <(cat .testnet/*.pid) || true
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testnet-logs
+          path: .testnet/logs
