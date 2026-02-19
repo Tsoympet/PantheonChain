@@ -1,54 +1,56 @@
-# Architecture
-
-PantheonChain is a layered modular blockchain stack.
-
-```mermaid
-flowchart TD
-    O[OBOLOS L3\nPoS+BFT\nEVM + gas] --> D[DRACHMA L2\nPoS+BFT\nPayments + liquidity]
-    D --> T[TALANTON L1\nPoW SHA-256d\nSettlement + security anchor]
-```
-
-## Responsibilities
-
-- **TALANTON (L1):** PoW consensus, settlement, immutable root of trust.
-- **DRACHMA (L2):** high-throughput payments, staking/slashing, L3 commitment aggregation.
-- **OBOLOS (L3):** contract execution and gas accounting.
-
-## Anchoring path
-
-`OBOLOS -> DRACHMA -> TALANTON`
-
-## Source layout
-
-- `src/common`: shared commitment/model utilities.
-- `src/talanton`: L1 anchoring validation.
-- `src/drachma`: PoS payments-layer helpers.
-- `src/obolos`: execution-layer helpers.
-- `src/relayers`: relayer binaries.
 # PantheonChain Layered Architecture
 
-PantheonChain is organized as a modular layered system:
+PantheonChain is a modular three-layer blockchain stack with strict separation of responsibilities:
 
-- **TALANTON (L1 / PoW / SHA-256d):** settlement and security anchor.
-- **DRACHMA (L2 / PoS+BFT):** payments and liquidity.
-- **OBOLOS (L3 / PoS+BFT):** EVM execution and gas.
+- **TALANTON (L1):** PoW settlement and security anchor.
+- **DRACHMA (L2):** PoS payments and liquidity layer.
+- **OBOLOS (L3):** PoS smart-contract execution layer with EVM and gas.
 
-## Canonical anchoring path
+## Canonical Anchoring Path
 
 `OBOLOS -> DRACHMA -> TALANTON`
 
-OBOLOS finality commitments are included in DRACHMA, and DRACHMA commitments are included in TALANTON.
+OBOLOS finality commitments are first included in DRACHMA as `TX_L3_COMMIT`. DRACHMA then publishes `TX_L2_COMMIT` to TALANTON, carrying DRACHMA finalized state and the latest OBOLOS anchor reference.
 
-## Code layout
+## Layer Responsibilities
 
-- `src/common`: shared primitives (commitments and validation helpers).
-- `src/talanton`: L1 commitment validation for `TX_L2_COMMIT`.
-- `src/drachma`: PoS proposer/validator logic and `TX_L3_COMMIT` validation.
-- `src/obolos`: EVM-like execution and gas accounting primitives.
-- `relayers/`: commitment relay binaries (`pantheon-relayer-l2`, `pantheon-relayer-l3`).
+## TALANTON (L1)
 
-## Node operation modes
+- Consensus: SHA-256d Proof-of-Work.
+- Function: immutable settlement and trust root.
+- Token: TALANTON for L1 fees + mining rewards.
+- Excludes staking.
+- Verifies `TX_L2_COMMIT` for monotonicity, payload encoding, and >=2/3 stake signatures from DRACHMA's active validator set.
 
-`pantheon-node --layer=l1|l2|l3`
+## DRACHMA (L2)
 
-Mining is restricted to `--layer=l1`.
+- Consensus: epoch-based PoS with BFT finality.
+- Function: payments, liquidity, high-throughput transfers.
+- Token: DRACHMA for fees + staking rewards + validator staking.
+- Maintains staking/slashing state and deterministic proposer selection.
+- Verifies `TX_L3_COMMIT` from OBOLOS.
+- Periodically commits finalized state to TALANTON.
+
+## OBOLOS (L3)
+
+- Consensus: epoch-based PoS with BFT finality.
+- Function: EVM execution and gas accounting.
+- Token: OBOLOS for gas + staking rewards + validator staking.
+- Produces finalized commitments consumed by DRACHMA.
+
+## Code Layout
+
+- `src/common`: shared p2p, serialization, storage, mempool, metrics, cryptography, and commitment primitives.
+- `src/talanton`: L1 commitment validation (`TX_L2_COMMIT`).
+- `src/drachma`: L2 PoS logic, staking/slashing helpers, and `TX_L3_COMMIT` validation.
+- `src/obolos`: L3 EVM execution and gas accounting helpers.
+- `relayers/pantheon-relayer-l2.cpp`: DRACHMA -> TALANTON commitment relayer.
+- `relayers/pantheon-relayer-l3.cpp`: OBOLOS -> DRACHMA commitment relayer.
+
+## Runtime Modes
+
+- Node mode: `pantheon-node --layer=l1|l2|l3`
+- CLI examples:
+  - `pantheon-cli stake deposit --layer=l2`
+  - `pantheon-cli deploy-contract --layer=l3`
+  - `pantheon-cli submit-commitment --layer=l2|l3`

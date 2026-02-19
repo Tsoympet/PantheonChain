@@ -1,29 +1,33 @@
-# Migration
-
-## What changes for existing users
-
-- Node operators now choose an explicit layer role: `--layer=l1|l2|l3`.
-- Configs are profile-based under `configs/`.
-- Devnet orchestration uses three node instances plus relayers.
-- RPC and CLI now include layered commitment/staking/execution command families.
-
-## Backward compatibility
-
-Legacy folders (`layer1/`, `layer2/`) remain for compatibility; new work should target layered `src/` modules.
 # Migration Guide
 
-## From monolithic chain to layered stack
+## Goal
 
-1. Keep TALANTON PoW consensus as L1 settlement anchor.
-2. Move payment-heavy flows to DRACHMA (L2 PoS).
-3. Move contract execution to OBOLOS (L3 PoS + EVM).
-4. Route commitments through canonical path `L3 -> L2 -> L1`.
-5. Update operators to use `pantheon-node --layer=<l1|l2|l3>`.
+Migrate from a single-chain, multi-token model to layered operation:
 
-## Config and genesis
+- TALANTON = L1 settlement/security.
+- DRACHMA = L2 payments/liquidity.
+- OBOLOS = L3 EVM execution.
+
+## Operator Migration Steps
+
+1. Deploy TALANTON nodes as PoW-only settlement anchors.
+2. Deploy DRACHMA validator nodes with PoS staking enabled.
+3. Deploy OBOLOS validator/execution nodes.
+4. Start relayers:
+   - `pantheon-relayer-l3` for OBOLOS -> DRACHMA.
+   - `pantheon-relayer-l2` for DRACHMA -> TALANTON.
+5. Switch client workflows to layer-aware RPC/CLI endpoints.
+
+## Config and Genesis Inputs
 
 Use chain-specific genesis files:
 
 - `genesis_talanton.json`
 - `genesis_drachma.json`
 - `genesis_obolos.json`
+
+Each genesis includes inflation, epoch length, minimum stake, slashing ratios, and commitment interval parameters.
+
+## Backward Compatibility
+
+Legacy directories remain available for historical compatibility, but new consensus and commitment logic should target `src/common`, `src/talanton`, `src/drachma`, and `src/obolos`.

@@ -1,27 +1,27 @@
-# Threat Model
-
-## Assumptions (MVP)
-
-- L2/L3 finality assumes >=2/3 honest active stake.
-- Commitments are rollup-style with signatures; no zk/fraud proofs in MVP.
-- Relayers may delay but not silently rewrite finalized history when quorum assumptions hold.
-
-## Operational risks
-
-- Exposed unauthenticated RPC is for devnet only.
-- Validator/relayer key compromise can impact liveness and safety.
 # Threat Model (MVP)
 
-## Security assumptions
+## Security Model
 
-This MVP uses rollup-style commitments with economic finality signatures.
+PantheonChain MVP uses rollup-style commitments with economic-finality signatures.
 
 - No zk-proofs.
 - No fraud proofs.
-- Trust model depends on >=2/3 honest active stake in L2 and L3 validator sets.
+- Security depends on honest-majority-by-stake (>=2/3) assumptions in DRACHMA and OBOLOS validator sets.
 
-## Known limitations
+## Trust and Finality Assumptions
 
-- Bridge withdrawals are optimistic with a trust window.
-- Commitment validity is signature/quorum based, not proof-system based.
-- Relayer censorship/delay is possible but detectable from missing commitments.
+- TALANTON provides PoW immutability for final settlement.
+- DRACHMA and OBOLOS provide fast finality under BFT quorum assumptions.
+- Relayers are responsible for liveness of commitment publication, not consensus safety.
+
+## Primary Risks
+
+- Validator key compromise can break safety/liveness on L2/L3.
+- Relayer censorship or delay can postpone anchoring.
+- Optimistic bridge withdrawals inherit trust-window risk until final settlement confidence.
+
+## MVP Limitations
+
+- Commitment validation is signature/quorum-based only.
+- Bridges are economically secure but not cryptographically trustless.
+- Operators should monitor commitment freshness along `OBOLOS -> DRACHMA -> TALANTON`.
