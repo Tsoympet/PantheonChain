@@ -2,26 +2,72 @@
 #include "common/serialization.h"
 #include "drachma/pos_consensus.h"
 
+#include <cstdint>
 #include <iostream>
+#include <optional>
+#include <string>
 
-int main() {
-    using namespace pantheon;
+namespace {
 
-    common::Commitment commit{
-        common::SourceChain::OBOLOS,
-        18,
-        640,
-        "1111111111111111111111111111111111111111111111111111111111111111",
-        "2222222222222222222222222222222222222222222222222222222222222222",
-        "3333333333333333333333333333333333333333333333333333333333333333",
-        {{"l3-val-1", 50, "sig-a"}, {"l3-val-2", 30, "sig-b"}}};
+void PrintUsage() {
+    std::cerr
+        << "Usage: pantheon-relayer-l3 --commitment=<encoded> --active-stake=<value> "
+           "--last-finalized-height=<value>\n"
+        << "Encoded format: OBOLOS:epoch:finalized_height:finalized_block_hash:state_root:"
+           "validator_set_hash:validator_id|stake|signature(,...)\n";
+}
 
-    auto result = drachma::ValidateL3Commit(commit, 500, 100);
-    if (!result.valid) {
-        std::cerr << "pantheon-relayer-l3 rejected commitment: " << result.reason << std::endl;
+std::optional<uint64_t> ParseUint(const std::string& value) {
+    try {
+        return std::stoull(value);
+    } catch (const std::exception&) {
+        return std::nullopt;
+    }
+}
+
+}  // namespace
+
+int main(int argc, char* argv[]) {
+    std::optional<std::string> encoded_commitment;
+    std::optional<uint64_t> active_stake;
+    std::optional<uint64_t> last_finalized_height;
+
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg.rfind("--commitment=", 0) == 0) {
+            encoded_commitment = arg.substr(13);
+        } else if (arg.rfind("--active-stake=", 0) == 0) {
+            active_stake = ParseUint(arg.substr(15));
+        } else if (arg.rfind("--last-finalized-height=", 0) == 0) {
+            last_finalized_height = ParseUint(arg.substr(24));
+        } else {
+            std::cerr << "Unknown argument: " << arg << std::endl;
+            PrintUsage();
+            return 1;
+        }
+    }
+
+    if (!encoded_commitment || !active_stake || !last_finalized_height) {
+        PrintUsage();
         return 1;
     }
 
-    std::cout << "pantheon-relayer-l3 relayed: " << common::EncodeCommitment(commit) << std::endl;
+    pantheon::common::Commitment commitment{};
+    auto decode_result = pantheon::common::DecodeCommitment(*encoded_commitment, commitment);
+    if (!decode_result.valid) {
+        std::cerr << "pantheon-relayer-l3 decode error: " << decode_result.reason << std::endl;
+        return 1;
+    }
+
+    auto validate_result =
+        pantheon::drachma::ValidateL3Commit(commitment, *last_finalized_height, *active_stake);
+    if (!validate_result.valid) {
+        std::cerr << "pantheon-relayer-l3 rejected commitment: " << validate_result.reason
+                  << std::endl;
+        return 1;
+    }
+
+    std::cout << "pantheon-relayer-l3 relayed: " << pantheon::common::EncodeCommitment(commitment)
+              << std::endl;
     return 0;
 }
