@@ -24,6 +24,10 @@ struct Commitment {
     std::string finalized_block_hash;
     std::string state_root;
     std::string validator_set_hash;
+    // For DRACHMA -> TALANTON commitments this carries the latest finalized
+    // OBOLOS commitment hash to preserve the canonical anchoring chain
+    // OBOLOS -> DRACHMA -> TALANTON.
+    std::string upstream_commitment_hash;
     std::vector<FinalitySignature> signatures;
 };
 

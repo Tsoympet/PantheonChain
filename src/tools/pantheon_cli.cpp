@@ -55,6 +55,16 @@ int main(int argc, char* argv[]) {
             std::cerr << "commitment decode error: " << result.reason << std::endl;
             return 1;
         }
+
+        if (layer == "l2" && commitment.source_chain != pantheon::common::SourceChain::OBOLOS) {
+            std::cerr << "layer l2 only accepts TX_L3_COMMIT commitments from OBOLOS" << std::endl;
+            return 1;
+        }
+        if (layer == "l3" && commitment.source_chain != pantheon::common::SourceChain::OBOLOS) {
+            std::cerr << "layer l3 commitment submissions must be OBOLOS finality payloads" << std::endl;
+            return 1;
+        }
+
         std::cout << "commitment accepted for layer " << layer << std::endl;
         return 0;
     }

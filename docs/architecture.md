@@ -10,7 +10,7 @@ PantheonChain is a modular three-layer blockchain stack with strict separation o
 
 `OBOLOS -> DRACHMA -> TALANTON`
 
-OBOLOS finality commitments are first included in DRACHMA as `TX_L3_COMMIT`. DRACHMA then publishes `TX_L2_COMMIT` to TALANTON, carrying DRACHMA finalized state and the latest OBOLOS anchor reference.
+OBOLOS finality commitments are first included in DRACHMA as `TX_L3_COMMIT`. DRACHMA then publishes `TX_L2_COMMIT` to TALANTON, carrying DRACHMA finalized state and the latest OBOLOS anchor reference via `upstream_commitment_hash`.
 
 ## Layer Responsibilities
 

@@ -26,14 +26,16 @@ std::string RandomMaybeMalformedCommitment(std::mt19937_64& rng) {
         return RandomHex(rng, static_cast<std::size_t>(rng() % 60 + 1));
     }
 
+    const auto source = (rng() % 2) == 0 ? pantheon::common::SourceChain::DRACHMA
+                                       : pantheon::common::SourceChain::OBOLOS;
     pantheon::common::Commitment commitment{
-        (rng() % 2) == 0 ? pantheon::common::SourceChain::DRACHMA
-                         : pantheon::common::SourceChain::OBOLOS,
+        source,
         rng() % 100,
         (rng() % 1000) + 1,
         RandomHex(rng, 64),
         RandomHex(rng, 64),
         RandomHex(rng, 64),
+        source == pantheon::common::SourceChain::DRACHMA ? RandomHex(rng, 64) : std::string{},
         {{"v1", 70, "sig1"}, {"v2", 40, "sig2"}}};
     return pantheon::common::EncodeCommitment(commitment);
 }

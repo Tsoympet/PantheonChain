@@ -32,6 +32,14 @@ CommitmentValidationResult ValidatePayloadEncoding(const Commitment& commitment)
         return {false, "at least one validator signature is required"};
     }
 
+    if (commitment.source_chain == SourceChain::DRACHMA && commitment.upstream_commitment_hash.empty()) {
+        return {false, "DRACHMA commitments must include upstream OBOLOS commitment hash"};
+    }
+    if (!commitment.upstream_commitment_hash.empty() &&
+        (!IsHexLike(commitment.upstream_commitment_hash) || commitment.upstream_commitment_hash.size() != 64)) {
+        return {false, "upstream_commitment_hash must be a 32-byte hex string when present"};
+    }
+
     for (const auto& sig : commitment.signatures) {
         if (sig.validator_id.empty() || sig.signature.empty()) {
             return {false, "validator signatures must contain validator_id and signature"};

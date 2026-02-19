@@ -42,7 +42,7 @@ common::Commitment BuildL3Commitment(uint64_t epoch, uint64_t finalized_height,
                                      const std::string& validator_set_hash,
                                      std::vector<common::FinalitySignature> signatures) {
     return {common::SourceChain::OBOLOS, epoch, finalized_height, finalized_block_hash, state_root,
-            validator_set_hash, std::move(signatures)};
+            validator_set_hash, "", std::move(signatures)};
 }
 
 common::CommitmentValidationResult ValidateL3Finality(const common::Commitment& commitment,
