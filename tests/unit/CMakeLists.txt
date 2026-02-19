@@ -15,3 +15,5 @@ add_subdirectory(rpc)
 
 add_subdirectory(node)
 add_subdirectory(storage)
+
+add_subdirectory(layers)

@@ -30,8 +30,27 @@ class RPCClient {
 
         std::string result = "{\"result\": ";
 
-        if (method == "getinfo") {
+        if (method == "getinfo" || method == "chain/info") {
             result += "{\"version\": \"1.0.0\", \"blocks\": 12345, \"connections\": 8}";
+        } else if (method == "staking/deposit") {
+            if (params.empty()) {
+                return "{\"error\": \"Usage: stake deposit --layer=l2|l3\"}";
+            }
+            result += "{\"status\":\"accepted\",\"module\":\"staking\",\"layer\":\"" +
+                      params[0] + "\"}";
+        } else if (method == "evm/deploy") {
+            if (params.empty()) {
+                return "{\"error\": \"Usage: deploy-contract --layer=l3\"}";
+            }
+            result += "{\"status\":\"accepted\",\"module\":\"evm\",\"layer\":\"" +
+                      params[0] + "\"}";
+        } else if (method == "commitments/submit") {
+            if (params.empty()) {
+                return "{\"error\": \"Usage: submit-commitment --layer=l2|l3\"}";
+            }
+            result +=
+                "{\"status\":\"queued\",\"module\":\"commitments\",\"layer\":\"" +
+                params[0] + "\"}";
         } else if (method == "getblockcount") {
             result += "12345";
         } else if (method == "getbalance") {
@@ -66,6 +85,9 @@ class CLI {
         std::cout << "  getbalance [asset]                   - Get wallet balance\n";
         std::cout << "  sendtoaddress <asset> <addr> <amt>   - Send transaction\n";
         std::cout << "  stop                                 - Stop the daemon\n";
+        std::cout << "  stake deposit --layer=l2|l3          - Submit staking deposit\n";
+        std::cout << "  deploy-contract --layer=l3           - Deploy EVM contract on OBOLOS\n";
+        std::cout << "  submit-commitment --layer=l2|l3      - Submit L2/L3 commitment\n";
         std::cout << "  help                                 - Show this help\n";
         std::cout << std::endl;
     }
@@ -77,6 +99,39 @@ class CLI {
     void ExecuteCommand(const std::string& cmd, const std::vector<std::string>& args) {
         if (cmd == "help") {
             ShowHelp();
+            return;
+        }
+
+        if (cmd == "stake" && !args.empty() && args[0] == "deposit") {
+            std::string layer = "l2";
+            for (const auto& arg : args) {
+                if (arg.rfind("--layer=", 0) == 0) {
+                    layer = arg.substr(8);
+                }
+            }
+            std::cout << rpc_.Call("staking/deposit", {layer}) << std::endl;
+            return;
+        }
+
+        if (cmd == "deploy-contract") {
+            std::string layer = "l3";
+            for (const auto& arg : args) {
+                if (arg.rfind("--layer=", 0) == 0) {
+                    layer = arg.substr(8);
+                }
+            }
+            std::cout << rpc_.Call("evm/deploy", {layer}) << std::endl;
+            return;
+        }
+
+        if (cmd == "submit-commitment") {
+            std::string layer = "l2";
+            for (const auto& arg : args) {
+                if (arg.rfind("--layer=", 0) == 0) {
+                    layer = arg.substr(8);
+                }
+            }
+            std::cout << rpc_.Call("commitments/submit", {layer}) << std::endl;
             return;
         }
 
