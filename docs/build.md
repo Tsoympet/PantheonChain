@@ -2,18 +2,25 @@
 
 ## Canonical build method
 
-PantheonChain uses **CMake**.
+PantheonChain uses **CMake** as the canonical build system.
 
 ```bash
 ./scripts/build.sh
 ```
 
-This configures and builds in `build/` using local dependencies or repository stubs.
+This configures and builds in `build/`.
 
-## CI platform matrix
+## CI-supported platforms
 
-- Ubuntu (`ubuntu-latest`) for build/test/devnet smoke.
-- Lint checks on Ubuntu.
+Current required CI pipeline (`.github/workflows/build-test-devnet.yml`) runs on:
+
+- `ubuntu-latest` for:
+  - repository audit
+  - build
+  - unit tests
+  - integration devnet smoke
+
+Additional legacy workflows may validate other platforms, but `ubuntu-latest` is the canonical required gate.
 
 ## Manual build
 

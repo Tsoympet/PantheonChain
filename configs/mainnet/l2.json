@@ -1,0 +1,10 @@
+{
+  "layer": "l2",
+  "node_id": "drachma-mainnet-validator-1",
+  "network": "mainnet",
+  "p2p_port": 9333,
+  "rpc_port": 9332,
+  "data_dir": "/var/lib/pantheon/l2",
+  "genesis_file": "genesis_drachma.json",
+  "commitment_interval": 10
+}

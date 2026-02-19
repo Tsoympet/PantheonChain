@@ -21,6 +21,14 @@ This design keeps L1 minimal and immutable, while L2 and L3 provide throughput a
 
 ---
 
+## Layer Anchoring Diagram
+
+```mermaid
+flowchart LR
+  O[OBOLOS L3\nEVM + Gas] -->|TX_L3_COMMIT| D[DRACHMA L2\nPoS Payments]
+  D -->|TX_L2_COMMIT| T[TALANTON L1\nPoW Settlement]
+```
+
 ## Layer Responsibilities
 
 ### TALANTON (Layer-1)
@@ -90,7 +98,9 @@ docker compose up --build
 ### Node
 
 ```bash
-pantheon-node --layer=l1|l2|l3
+parthenond /configs/l1.conf --layer=l1
+parthenond /configs/l2.conf --layer=l2
+parthenond /configs/l3.conf --layer=l3
 ```
 
 ### CLI
@@ -141,10 +151,14 @@ See `docs/threat-model.md` for explicit trust assumptions and risks.
 - [Consensus](docs/consensus.md)
 - [Threat Model](docs/threat-model.md)
 - [Migration](docs/migration.md)
-- [Plan](docs/plan.md)
+- [Build](docs/build.md)
 - [Run Devnet](docs/run-devnet.md)
 - [RPC](docs/rpc.md)
 - [CLI](docs/cli.md)
+- [Tokenomics](docs/tokenomics.md)
+- [Operations](docs/operations.md)
+- [Release](docs/release.md)
+- [Glossary](docs/glossary.md)
 
 ---
 

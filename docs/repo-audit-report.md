@@ -1,35 +1,59 @@
 # Repository Audit Report
 
-## What was missing
+## Gap scan summary
 
-- No canonical layered docs set (`build.md`, `run-devnet.md`, `rpc.md`, `cli.md`, `glossary.md`).
-- No standardized `configs/` network profiles for devnet/testnet/mainnet.
-- Missing executable developer scripts (`build.sh`, `test.sh`, `lint.sh`, `run-devnet.sh`, `repo-audit.sh`).
-- No CI workflow that validates audit + build + unit + devnet smoke end-to-end.
-- No config validation utility with clear errors.
-- Docker compose not aligned to L1/L2/L3 + relayers.
+### Missing or inconsistent before this pass
 
-## What was added/updated
+- Mainnet profile templates were incomplete (`configs/mainnet` lacked `l1/l2/l3` JSON+CONF templates).
+- Devnet daemon config files had stale network mode values.
+- Audit script checks were too narrow (did not verify all required layered directories/profiles).
+- Config validation covered basic shape only and did not catch profile/path mismatches or duplicate ports.
+- Root README runtime examples still referenced old `pantheon-node` naming.
+- Legacy compatibility scope needed clearer guidance for old roots (`layer1`, `layer2`, top-level `tools`).
 
-- Added layered docs and README overhaul.
-- Added config schema + devnet profiles and validation script.
-- Added script tooling for build/test/lint/devnet/audit.
-- Added integration smoke test for RPC health + commitment submit/list.
-- Added new CI workflow: `.github/workflows/build-test-devnet.yml`.
-- Added repository hygiene files: `.editorconfig`, `.clang-format`, `CODEOWNERS`.
-- Added `legacy/README.md` to explain compatibility paths.
+### Added/updated in this pass
 
-## How to build/test/devnet now
+- Added full `configs/mainnet/{l1,l2,l3}.json` and `configs/mainnet/{l1,l2,l3}.conf` templates.
+- Corrected `configs/devnet/*.conf` to use `network.mode=devnet`.
+- Expanded `scripts/validate-config.py` with network checks, stronger field validation, and cross-file port conflict detection.
+- Expanded `scripts/repo-audit.sh` to validate required layered directories, required docs/configs/workflows, executable scripts, and stale docs references.
+- Updated `README.md` with daemon-accurate run commands, expanded docs index, and mermaid anchoring diagram.
+- Updated `CONTRIBUTING.md` with explicit build/test/style/PR requirements and architecture targeting guidance.
+- Updated `legacy/README.md` to explicitly mark compatibility paths and migration expectations.
+
+## Current canonical commands
+
+### Build
 
 ```bash
-./scripts/repo-audit.sh
 ./scripts/build.sh
+```
+
+### Lint
+
+```bash
 ./scripts/lint.sh
-./scripts/run-devnet.sh
+```
+
+### Tests
+
+```bash
 ./scripts/test.sh
 ```
 
-## One-command container startup
+### Devnet startup
+
+```bash
+./scripts/run-devnet.sh
+```
+
+### Full audit check
+
+```bash
+./scripts/repo-audit.sh
+```
+
+### Docker devnet
 
 ```bash
 docker compose up --build
