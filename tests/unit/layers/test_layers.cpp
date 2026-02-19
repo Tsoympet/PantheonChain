@@ -5,8 +5,10 @@
 #include "common/p2p_network.h"
 #include "common/serialization.h"
 #include "common/storage.h"
+#include "drachma/payments_state_machine.h"
 #include "drachma/pos_consensus.h"
 #include "obolos/execution.h"
+#include "obolos/pos_consensus.h"
 #include "talanton/l1_commitment_validator.h"
 
 #include <cassert>
@@ -16,32 +18,50 @@
 using namespace pantheon;
 
 int main() {
-    common::Commitment l3_commit{
-        common::SourceChain::OBOLOS,
-        1,
-        10,
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    // OBOLOS L3 finality commitment
+    common::Commitment l3_commit = obolos::BuildL3Commitment(
+        1, 10, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        {{"val1", 70, "sig1"}, {"val2", 40, "sig2"}}};
+        {{"val1", 70, "sig1"}, {"val2", 40, "sig2"}});
 
-    auto l3_valid = drachma::ValidateL3Commit(l3_commit, 5, 150);
+    auto l3_valid = obolos::ValidateL3Finality(l3_commit, 5, 150);
     assert(l3_valid.valid);
 
-    common::Commitment l2_commit = l3_commit;
-    l2_commit.source_chain = common::SourceChain::DRACHMA;
+    // DRACHMA anchors L3 hash inside L2 state root material.
+    common::Commitment l2_commit{
+        common::SourceChain::DRACHMA,
+        1,
+        10,
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        common::PseudoSha256d(l3_commit.state_root + l3_commit.finalized_block_hash),
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        {{"val1", 70, "sig1"}, {"val2", 40, "sig2"}}};
     auto l2_valid = talanton::ValidateL2Commit(l2_commit, {9}, 150);
     assert(l2_valid.valid);
 
-    const std::vector<drachma::Validator> validators{{"val1", 80}, {"val2", 20}};
-    const auto& proposer_a = drachma::SelectDeterministicProposer(validators, 3, 22);
-    const auto& proposer_b = drachma::SelectDeterministicProposer(validators, 3, 22);
-    assert(proposer_a.id == proposer_b.id);
+    const std::vector<drachma::Validator> l2_validators{{"val1", 80}, {"val2", 20}};
+    const auto& l2_proposer_a = drachma::SelectDeterministicProposer(l2_validators, 3, 22);
+    const auto& l2_proposer_b = drachma::SelectDeterministicProposer(l2_validators, 3, 22);
+    assert(l2_proposer_a.id == l2_proposer_b.id);
 
-    auto slash_double_sign = drachma::SlashDoubleSign(validators.front(), 1, 20);
+    const std::vector<obolos::Validator> l3_validators{{"val3", 60}, {"val4", 40}};
+    const auto& l3_proposer_a = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
+    const auto& l3_proposer_b = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
+    assert(l3_proposer_a.id == l3_proposer_b.id);
+
+    auto slash_double_sign = drachma::SlashDoubleSign(l2_validators.front(), 1, 20);
     assert(slash_double_sign.slashed_amount == 4);
-    auto slash_equivocation = drachma::SlashEquivocation(validators.front(), 1, 10);
+    auto slash_equivocation = drachma::SlashEquivocation(l2_validators.front(), 1, 10);
     assert(slash_equivocation.slashed_amount == 8);
+
+    drachma::PaymentsStateMachine payments;
+    payments.Credit("alice", 1000);
+    auto transfer = payments.Transfer("alice", "bob", 250, 5);
+    assert(transfer.ok);
+    assert(payments.Balance("alice") == 745);
+    assert(payments.Balance("bob") == 250);
+    assert(payments.CollectedFees() == 5);
 
     auto exec_ok = obolos::ExecuteEvmLikeCall("6001600055", 50000, 1);
     assert(exec_ok.success);

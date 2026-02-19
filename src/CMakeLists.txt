@@ -9,6 +9,8 @@ add_library(pantheon_layers STATIC
     common/storage.cpp
     talanton/l1_commitment_validator.cpp
     drachma/pos_consensus.cpp
+    drachma/payments_state_machine.cpp
+    obolos/pos_consensus.cpp
     obolos/execution.cpp
 )
 
