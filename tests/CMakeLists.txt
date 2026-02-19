@@ -54,3 +54,10 @@ target_link_libraries(test_consensus
     parthenon_primitives
 )
 add_test(NAME consensus COMMAND test_consensus)
+
+# Devnet smoke RPC integration (headless)
+add_executable(test_devnet_smoke_rpc integration/devnet_smoke_rpc.cpp)
+target_link_libraries(test_devnet_smoke_rpc
+    parthenon_rpc
+)
+add_test(NAME devnet_smoke_rpc COMMAND test_devnet_smoke_rpc)

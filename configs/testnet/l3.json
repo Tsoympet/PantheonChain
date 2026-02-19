@@ -1,0 +1,10 @@
+{
+  "layer": "l3",
+  "node_id": "obolos-testnet-1",
+  "network": "testnet",
+  "p2p_port": 30333,
+  "rpc_port": 30332,
+  "data_dir": "./.testnet/l3",
+  "genesis_file": "genesis_obolos.json",
+  "commitment_interval": 5
+}

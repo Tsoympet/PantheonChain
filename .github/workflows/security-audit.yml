@@ -28,7 +28,7 @@ jobs:
         git -c http.https://github.com/.extraheader= submodule update --init --recursive
     
     - name: Run dependency vulnerability scan
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.30.0
       with:
         scan-type: 'fs'
         scan-ref: '.'

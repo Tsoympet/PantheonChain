@@ -1,0 +1,10 @@
+{
+  "layer": "l1",
+  "node_id": "talanton-devnet-1",
+  "network": "devnet",
+  "p2p_port": 18333,
+  "rpc_port": 18332,
+  "data_dir": "./.devnet/l1",
+  "genesis_file": "genesis_talanton.json",
+  "commitment_interval": 20
+}
