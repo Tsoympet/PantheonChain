@@ -1,77 +1,36 @@
 version: '3.8'
 
 services:
-  parthenond:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: parthenon-node
-    restart: unless-stopped
-    ports:
-      - "8333:8333"  # P2P network port
-      - "8332:8332"  # RPC port (localhost only recommended)
+  talanton-l1:
+    build: .
+    command: ["parthenond", "/configs/l1.conf", "--layer=l1"]
+    ports: ["18332:18332", "18333:18333"]
     volumes:
-      - parthenon-data:/home/parthenon/.parthenon
-      - ./parthenond.conf:/etc/parthenon/parthenond.conf:ro
-    environment:
-      - PARTHENON_NETWORK=mainnet
-      - PARTHENON_LOG_LEVEL=info
-    networks:
-      - parthenon-network
-    healthcheck:
-      test: ["CMD", "parthenon-cli", "getinfo"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    # Security options
-    security_opt:
-      - no-new-privileges:true
-    # Resource limits (adjust based on your needs)
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
+      - ./configs/devnet:/configs:ro
+      - ./genesis_talanton.json:/home/parthenon/genesis_talanton.json:ro
 
-  # Optional: Monitoring with Prometheus
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: parthenon-prometheus
-  #   restart: unless-stopped
-  #   ports:
-  #     - "9090:9090"
-  #   volumes:
-  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-  #     - prometheus-data:/prometheus
-  #   networks:
-  #     - parthenon-network
+  drachma-l2:
+    build: .
+    command: ["parthenond", "/configs/l2.conf", "--layer=l2"]
+    ports: ["19332:19332", "19333:19333"]
+    volumes:
+      - ./configs/devnet:/configs:ro
+      - ./genesis_drachma.json:/home/parthenon/genesis_drachma.json:ro
 
-  # Optional: Grafana for visualization
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: parthenon-grafana
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - grafana-data:/var/lib/grafana
-  #   environment:
-  #     - GF_SECURITY_ADMIN_PASSWORD=changeme
-  #   networks:
-  #     - parthenon-network
+  obolos-l3:
+    build: .
+    command: ["parthenond", "/configs/l3.conf", "--layer=l3"]
+    ports: ["20332:20332", "20333:20333"]
+    volumes:
+      - ./configs/devnet:/configs:ro
+      - ./genesis_obolos.json:/home/parthenon/genesis_obolos.json:ro
 
-volumes:
-  parthenon-data:
-    driver: local
-  # prometheus-data:
-  #   driver: local
-  # grafana-data:
-  #   driver: local
+  relayer-l2:
+    build: .
+    command: ["/usr/local/bin/pantheon-relayer-l2"]
+    depends_on: [drachma-l2, talanton-l1]
 
-networks:
-  parthenon-network:
-    driver: bridge
+  relayer-l3:
+    build: .
+    command: ["/usr/local/bin/pantheon-relayer-l3"]
+    depends_on: [obolos-l3, drachma-l2]

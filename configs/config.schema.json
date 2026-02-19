@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pantheon Node Config",
+  "type": "object",
+  "required": ["layer", "node_id", "network", "p2p_port", "rpc_port", "data_dir", "commitment_interval"],
+  "properties": {
+    "layer": {"enum": ["l1", "l2", "l3"]},
+    "node_id": {"type": "string", "minLength": 3},
+    "network": {"type": "string"},
+    "p2p_port": {"type": "integer", "minimum": 1, "maximum": 65535},
+    "rpc_port": {"type": "integer", "minimum": 1, "maximum": 65535},
+    "data_dir": {"type": "string", "minLength": 1},
+    "genesis_file": {"type": "string", "minLength": 1},
+    "commitment_interval": {"type": "integer", "minimum": 1}
+  }
+}
