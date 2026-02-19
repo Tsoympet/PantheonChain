@@ -10,6 +10,7 @@
 - Config validation covered basic shape only and did not catch profile/path mismatches or duplicate ports.
 - Root README runtime examples still referenced old `pantheon-node` naming.
 - Legacy compatibility scope needed clearer guidance for old roots (`layer1`, `layer2`, top-level `tools`).
+- Devnet/testnet startup scripts returned before RPC listeners were ready, causing intermittent smoke-test failures from clean checkouts.
 
 ### Added/updated in this pass
 
@@ -20,6 +21,7 @@
 - Updated `README.md` with daemon-accurate run commands, expanded docs index, and mermaid anchoring diagram.
 - Updated `CONTRIBUTING.md` with explicit build/test/style/PR requirements and architecture targeting guidance.
 - Updated `legacy/README.md` to explicitly mark compatibility paths and migration expectations.
+- Hardened `scripts/run-devnet.sh` and `scripts/run-testnet.sh` with explicit RPC readiness probes before reporting startup success.
 
 ## Current canonical commands
 
