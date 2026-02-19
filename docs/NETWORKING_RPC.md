@@ -330,3 +330,12 @@ void* blockchain = ZeroCopyNetwork::MemoryMapFile("blocks.dat", size);
 - No work needed for standard deployment
 
 Both systems are **production-ready** and provide excellent performance without requiring additional libraries or configuration.
+
+## Layered RPC Surface (MVP)
+
+- `/chain/info`
+- `/staking/*`
+- `/commitments/*`
+- `/evm/*` (OBOLOS only)
+
+These endpoints align with layered operation modes and commitment submission flow.

@@ -36,14 +36,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
 
       - name: Validate Expo SDK compatibility
         run: |
-          node -e "const fs=require('fs'); const app=JSON.parse(fs.readFileSync('app.json','utf8')); const sdk=String(app?.expo?.sdkVersion || '0'); const major=parseInt(sdk.split('.')[0],10)||0; if(major<41){ console.error(`Expo SDK ${sdk} is unsupported by EAS Build managed workflow. Upgrade to SDK 41+.`); process.exit(1);} console.log(`Expo SDK ${sdk} is compatible.`);"
+          node -e "const fs=require('fs'); const app=JSON.parse(fs.readFileSync('app.json','utf8')); const sdk=String(app?.expo?.sdkVersion || '0'); const major=parseInt(sdk.split('.')[0],10)||0; if(major<50){ console.error(\`Expo SDK \${sdk} is unsupported by EAS Build managed workflow. Upgrade to SDK 50+.\`); process.exit(1);} console.log(\`Expo SDK \${sdk} is compatible.\`);"
 
       - name: Setup Expo and EAS
         uses: expo/expo-github-action@v8

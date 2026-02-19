@@ -45,6 +45,7 @@ struct Config {
     std::string log_level = "info";
     bool mining_enabled = false;
     std::string network = "mainnet";
+    std::string layer = "l1";
     bool network_port_configured = false;
     bool rpc_port_configured = false;
 };
@@ -169,6 +170,8 @@ class ConfigParser {
                 }
             } else if (key == "network.mode") {
                 config.network = scalar_value;
+            } else if (key == "network.layer") {
+                config.layer = scalar_value;
             } else if (key == "rpc.enabled") {
                 bool parsed_enabled = config.rpc_enabled;
                 if (!TryParseBool(scalar_value, parsed_enabled)) {
@@ -228,6 +231,14 @@ class ConfigParser {
         }
 
         config.network = node::NetworkModeToString(*mode_opt);
+        for (auto& ch : config.layer) {
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+        if (config.layer != "l1" && config.layer != "l2" && config.layer != "l3") {
+            std::cerr << "Warning: Unknown network.layer '" << config.layer
+                      << "', defaulting to l1" << std::endl;
+            config.layer = "l1";
+        }
         const auto params = node::GetNetworkParams(*mode_opt);
         if (!config.network_port_configured) {
             config.network_port = static_cast<int>(params.default_p2p_port);
@@ -339,6 +350,7 @@ class Node {
         std::cout << "=== ParthenonChain Node Starting ===" << std::endl;
         std::cout << "Data directory: " << config_.data_dir << std::endl;
         std::cout << "Network mode: " << config_.network << std::endl;
+        std::cout << "Layer mode: " << config_.layer << std::endl;
         std::cout << "Network port: " << config_.network_port << std::endl;
         std::cout << "RPC enabled: " << (config_.rpc_enabled ? "yes" : "no") << std::endl;
         if (config_.rpc_enabled) {
@@ -410,6 +422,11 @@ class Node {
             }
         }
 
+        if (config_.mining_enabled && config_.layer != "l1") {
+            std::cerr << "Mining can only be enabled in layer=l1 mode" << std::endl;
+            return false;
+        }
+
         if (config_.mining_enabled) {
             auto mining_address = wallet_->GenerateAddress("mining");
             if (mining_address.pubkey.empty()) {
@@ -477,12 +494,24 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl;
 
     std::string config_file = "parthenond.conf";
-    if (argc > 1) {
-        config_file = argv[1];
+    std::string layer_override;
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg.rfind("--layer=", 0) == 0) {
+            layer_override = arg.substr(8);
+        } else if (arg == "--help") {
+            std::cout << "Usage: pantheon-node [config_file] [--layer=l1|l2|l3]" << std::endl;
+            return 0;
+        } else if (!arg.empty() && arg.front() != '-') {
+            config_file = arg;
+        }
     }
 
     // Parse configuration
     parthenon::Config config = parthenon::ConfigParser::Parse(config_file);
+    if (!layer_override.empty()) {
+        config.layer = layer_override;
+    }
 
     // Create node
     parthenon::Node node(config);
