@@ -1,0 +1,12 @@
+{
+  "chain": "DRACHMA",
+  "layer": "l2",
+  "consensus": "pos-bft",
+  "native_token": "DRACHMA",
+  "inflation_schedule": {"annual_rate": 0.05},
+  "epoch_length": 120,
+  "minimum_stake": 1000,
+  "slashing_ratios": {"double_sign": 0.05, "equivocation": 0.1},
+  "commitment_interval": 10,
+  "features": {"tx_l3_commit": true, "general_evm": false}
+}
