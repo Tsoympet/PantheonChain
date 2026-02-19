@@ -1,0 +1,10 @@
+{
+  "layer": "l2",
+  "node_id": "drachma-testnet-1",
+  "network": "testnet",
+  "p2p_port": 29333,
+  "rpc_port": 29332,
+  "data_dir": "./.testnet/l2",
+  "genesis_file": "genesis_drachma.json",
+  "commitment_interval": 10
+}
