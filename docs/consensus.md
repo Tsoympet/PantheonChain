@@ -17,6 +17,8 @@
 
 ## DRACHMA (L2 / PoS + BFT)
 
+DRACHMA commitments anchored to TALANTON must include a state commitment that reflects the latest finalized OBOLOS commitment hash.
+
 - Epoch-based proposer rotation.
 - Deterministic proposer selection weighted by active stake.
 - Block finality requires signatures from >=2/3 active stake.
@@ -42,3 +44,6 @@
 - Full EVM-style execution environment.
 - OBOLOS token is used for gas and staking.
 - Finalized OBOLOS checkpoints are exported to DRACHMA as commitment payloads.
+
+
+`TX_L3_COMMIT` payloads are produced by OBOLOS validators and finalized once signatures from >=2/3 active stake are collected.
