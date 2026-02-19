@@ -28,6 +28,9 @@ const Validator& SelectDeterministicProposer(const std::vector<Validator>& valid
 SlashingEvent SlashDoubleSign(const Validator& validator, uint64_t ratio_numerator,
                               uint64_t ratio_denominator);
 
+SlashingEvent SlashEquivocation(const Validator& validator, uint64_t ratio_numerator,
+                                uint64_t ratio_denominator);
+
 common::CommitmentValidationResult ValidateL3Commit(const common::Commitment& commitment,
                                                     uint64_t last_l3_height,
                                                     uint64_t active_stake);

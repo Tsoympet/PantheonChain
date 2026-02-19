@@ -41,4 +41,6 @@ CommitmentValidationResult ValidateFinalityQuorum(const Commitment& commitment,
                                                   uint64_t minimum_numerator = 2,
                                                   uint64_t minimum_denominator = 3);
 
+std::string SourceChainName(SourceChain source_chain);
+
 }  // namespace pantheon::common

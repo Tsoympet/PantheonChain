@@ -1,23 +1,44 @@
-# Consensus Model
+# Consensus Specification
 
-## TALANTON (L1)
+## TALANTON (L1 / PoW)
 
-- Proof-of-Work with SHA-256d.
-- No staking.
-- Validates `TX_L2_COMMIT` with:
-  - monotonic finalized height,
-  - payload encoding checks,
-  - >=2/3 active stake finality signatures.
+- Algorithm: SHA-256d Proof-of-Work.
+- TALANTON does not run staking.
+- Native token utility is restricted to mining rewards and L1 fees.
 
-## DRACHMA (L2)
+### `TX_L2_COMMIT` Validation Rules
 
-- Epoch-based PoS with BFT finality.
-- Deterministic proposer selection weighted by stake.
-- Slashing primitive for double-signing.
-- Validates `TX_L3_COMMIT` using monotonicity, encoding, and quorum.
+`TX_L2_COMMIT` must satisfy:
 
-## OBOLOS (L3)
+1. `source_chain == DRACHMA`
+2. `finalized_height` is strictly monotonic relative to anchored L2 height.
+3. Payload fields are correctly encoded.
+4. Finality signatures represent >=2/3 of active DRACHMA stake.
 
-- Epoch-based PoS with BFT finality.
-- EVM-style execution with gas accounting.
-- Uses OBOLOS as gas and stake token.
+## DRACHMA (L2 / PoS + BFT)
+
+- Epoch-based proposer rotation.
+- Deterministic proposer selection weighted by active stake.
+- Block finality requires signatures from >=2/3 active stake.
+- Validator set is derived from staking state.
+
+### Slashing Conditions
+
+- Double-signing.
+- Equivocation.
+
+### `TX_L3_COMMIT` Validation Rules
+
+`TX_L3_COMMIT` must satisfy:
+
+1. `source_chain == OBOLOS`
+2. `finalized_height` is strictly monotonic against last accepted L3 commitment.
+3. Payload fields are correctly encoded.
+4. Finality signatures represent >=2/3 of active OBOLOS stake.
+
+## OBOLOS (L3 / PoS + BFT + EVM)
+
+- Epoch-based PoS with BFT finality (>=2/3 signatures).
+- Full EVM-style execution environment.
+- OBOLOS token is used for gas and staking.
+- Finalized OBOLOS checkpoints are exported to DRACHMA as commitment payloads.

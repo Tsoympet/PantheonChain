@@ -1,5 +1,11 @@
 add_library(pantheon_layers STATIC
     common/commitments.cpp
+    common/cryptography.cpp
+    common/mempool.cpp
+    common/metrics.cpp
+    common/p2p_network.cpp
+    common/serialization.cpp
+    common/storage.cpp
     talanton/l1_commitment_validator.cpp
     drachma/pos_consensus.cpp
     obolos/execution.cpp

@@ -70,4 +70,15 @@ CommitmentValidationResult ValidateFinalityQuorum(const Commitment& commitment,
     return {true, ""};
 }
 
+std::string SourceChainName(SourceChain source_chain) {
+    switch (source_chain) {
+        case SourceChain::DRACHMA:
+            return "DRACHMA";
+        case SourceChain::OBOLOS:
+            return "OBOLOS";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 }  // namespace pantheon::common

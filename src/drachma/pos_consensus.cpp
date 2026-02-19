@@ -36,13 +36,25 @@ const Validator& SelectDeterministicProposer(const std::vector<Validator>& valid
     return validators.back();
 }
 
-SlashingEvent SlashDoubleSign(const Validator& validator, uint64_t ratio_numerator,
-                              uint64_t ratio_denominator) {
+namespace {
+SlashingEvent BuildSlashingEvent(const Validator& validator, const std::string& reason,
+                                 uint64_t ratio_numerator, uint64_t ratio_denominator) {
     if (ratio_denominator == 0 || ratio_numerator > ratio_denominator) {
         throw std::invalid_argument("invalid slash ratio");
     }
     const uint64_t slashed = (validator.stake * ratio_numerator) / ratio_denominator;
-    return {validator.id, "double-sign", slashed};
+    return {validator.id, reason, slashed};
+}
+}  // namespace
+
+SlashingEvent SlashDoubleSign(const Validator& validator, uint64_t ratio_numerator,
+                              uint64_t ratio_denominator) {
+    return BuildSlashingEvent(validator, "double-sign", ratio_numerator, ratio_denominator);
+}
+
+SlashingEvent SlashEquivocation(const Validator& validator, uint64_t ratio_numerator,
+                                uint64_t ratio_denominator) {
+    return BuildSlashingEvent(validator, "equivocation", ratio_numerator, ratio_denominator);
 }
 
 common::CommitmentValidationResult ValidateL3Commit(const common::Commitment& commitment,
