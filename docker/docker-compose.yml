@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  talanton-l1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["pantheon-l1-talanton-node", "--layer=l1"]
+  drachma-l2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["pantheon-l2-drachma-node", "--layer=l2"]
+  obolos-l3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["pantheon-l3-obolos-node", "--layer=l3"]
+  relayer-l3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["pantheon-relayer-l3"]
+  relayer-l2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["pantheon-relayer-l2"]

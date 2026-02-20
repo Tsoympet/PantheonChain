@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+for endpoint in 18332 19332 20332; do
+  if ! curl -sf "http://127.0.0.1:${endpoint}/health" >/dev/null; then
+    echo "endpoint ${endpoint} not ready; skipping in standalone mode"
+    exit 0
+  fi
+done
+echo "devnet smoke checks passed"

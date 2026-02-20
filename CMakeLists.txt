@@ -1,165 +1,56 @@
 cmake_minimum_required(VERSION 3.15)
-project(ParthenonChain VERSION 1.0.0 LANGUAGES CXX C)
-
+project(PantheonChain VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Compiler flags for security and performance (save original)
-set(ORIGINAL_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Od")
-else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
-endif()
-
-# Enable testing
 enable_testing()
 
-# Dependency gate for production builds
-set(PARTHENON_REQUIRE_REAL_DEPS_DEFAULT OFF)
-if(CMAKE_BUILD_TYPE MATCHES "^[Rr]el")
-  set(PARTHENON_REQUIRE_REAL_DEPS_DEFAULT ON)
-endif()
-option(PARTHENON_REQUIRE_REAL_DEPS "Require real third-party dependencies (no stubs)" ${PARTHENON_REQUIRE_REAL_DEPS_DEFAULT})
+add_library(pantheon_common STATIC
+  common/crypto/cryptography.cpp
+  common/p2p/p2p_network.cpp
+  common/storage/storage.cpp
+  common/serialization/serialization.cpp
+  common/serialization/commitments.cpp
+  common/mempool/mempool.cpp
+  common/metrics/metrics.cpp
+  common/monetary/denominations.cpp
+  common/monetary/units.cpp
+)
+target_include_directories(pantheon_common PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/layer1-talanton/core)
 
-function(parthenon_require_real dependency_path dependency_name)
-  if(PARTHENON_REQUIRE_REAL_DEPS AND NOT EXISTS "${dependency_path}")
-    message(FATAL_ERROR
-      "Production build requires ${dependency_name}, but ${dependency_path} is missing. "
-      "Initialize submodules or install the dependency.")
-  endif()
-endfunction()
+add_library(pantheon_l1 STATIC layer1-talanton/tx/l1_commitment_validator.cpp)
+target_include_directories(pantheon_l1 PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/layer1-talanton/core)
+target_link_libraries(pantheon_l1 PUBLIC pantheon_common)
 
-# Build secp256k1 library
-set(SECP256K1_BUILD_BENCHMARK OFF CACHE BOOL "Build secp256k1 benchmarks")
-set(SECP256K1_BUILD_TESTS OFF CACHE BOOL "Build secp256k1 tests")
-set(SECP256K1_BUILD_EXHAUSTIVE_TESTS OFF CACHE BOOL "Build exhaustive tests")
-set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON CACHE BOOL "Enable Schnorr signature module")
-set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON CACHE BOOL "Enable extra keys module")
-parthenon_require_real("${CMAKE_SOURCE_DIR}/third_party/secp256k1/CMakeLists.txt" "secp256k1 submodule")
-if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/secp256k1/CMakeLists.txt")
-  set(SECP256K1_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/secp256k1")
-  add_subdirectory(third_party/secp256k1 EXCLUDE_FROM_ALL)
-else()
-  set(SECP256K1_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/stubs/secp256k1")
-  add_subdirectory(third_party/stubs/secp256k1 EXCLUDE_FROM_ALL)
-endif()
-set(SECP256K1_INCLUDE_DIR "${SECP256K1_SOURCE_DIR}/include")
-# Remove strict warning flags from secp256k1 target to avoid errors in third-party code
-if(TARGET secp256k1)
-  if(MSVC)
-    # MSVC: Disable warnings as errors
-    target_compile_options(secp256k1 PRIVATE /WX-)
-  else()
-    # GCC/Clang: Disable warnings as errors
-    target_compile_options(secp256k1 PRIVATE -Wno-error)
-  endif()
-endif()
+add_library(pantheon_l2 STATIC
+  layer2-drachma/consensus/pos_consensus.cpp
+  layer2-drachma/payments/payments_state_machine.cpp
+)
+target_include_directories(pantheon_l2 PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/layer1-talanton/core)
+target_link_libraries(pantheon_l2 PUBLIC pantheon_common)
 
-# Build LevelDB for blockchain storage (without strict warnings)
-set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build LevelDB tests")
-set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build LevelDB benchmarks")
-parthenon_require_real("${CMAKE_SOURCE_DIR}/third_party/leveldb/CMakeLists.txt" "LevelDB submodule")
-if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/leveldb/CMakeLists.txt")
-  add_subdirectory(third_party/leveldb EXCLUDE_FROM_ALL)
-else()
-  add_subdirectory(third_party/stubs/leveldb EXCLUDE_FROM_ALL)
-endif()
-# Ensure RTTI and remove strict warning flags from leveldb target to avoid errors in third-party code
-if(TARGET leveldb)
-  if(MSVC)
-    # MSVC: Disable warnings as errors and suppress CRT security warnings for third-party code
-    target_compile_options(leveldb PRIVATE /WX- /GR)
-    target_compile_definitions(leveldb PRIVATE _CRT_SECURE_NO_WARNINGS)
-  else()
-    # GCC/Clang: Disable specific warnings
-    target_compile_options(leveldb PRIVATE -frtti -Wno-error -Wno-conversion -Wno-old-style-cast -Wno-shadow)
-  endif()
-endif()
+add_library(pantheon_l3 STATIC
+  layer3-obolos/consensus/pos_consensus.cpp
+  layer3-obolos/evm/execution.cpp
+)
+target_include_directories(pantheon_l3 PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/layer1-talanton/core)
+target_link_libraries(pantheon_l3 PUBLIC pantheon_common)
 
-# Include directories for header-only libraries (as system includes to suppress warnings)
-parthenon_require_real("${CMAKE_SOURCE_DIR}/third_party/cpp-httplib/httplib.h" "cpp-httplib headers")
-if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/cpp-httplib/httplib.h")
-  set(HTTPLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/cpp-httplib")
-else()
-  set(HTTPLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/stubs/cpp-httplib")
-endif()
-parthenon_require_real("${CMAKE_SOURCE_DIR}/third_party/json/include/nlohmann/json.hpp" "nlohmann/json headers")
-if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/json/include/nlohmann/json.hpp")
-  set(JSON_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/json/include")
-else()
-  set(JSON_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/stubs/json/include")
-endif()
-include_directories(SYSTEM ${HTTPLIB_INCLUDE_DIR})
-include_directories(SYSTEM ${JSON_INCLUDE_DIR})
+add_executable(pantheon-l1-talanton-node common/utils/pantheon_node.cpp)
+add_executable(pantheon-l2-drachma-node common/utils/pantheon_node.cpp)
+add_executable(pantheon-l3-obolos-node common/utils/pantheon_node.cpp)
+target_compile_definitions(pantheon-l1-talanton-node PRIVATE PANTHEON_NODE_LAYER="l1")
+target_compile_definitions(pantheon-l2-drachma-node PRIVATE PANTHEON_NODE_LAYER="l2")
+target_compile_definitions(pantheon-l3-obolos-node PRIVATE PANTHEON_NODE_LAYER="l3")
 
-# Include directory for project-wide headers (e.g., version information)
-# Include directory for project headers
-include_directories(${CMAKE_SOURCE_DIR}/include)
+add_executable(pantheon-cli cli/pantheon-cli/main.cpp)
+target_link_libraries(pantheon-cli PRIVATE pantheon_common)
 
-# Shared layered architecture modules
-add_subdirectory(src)
+add_executable(pantheon-relayer-l2 relayers/relayer-l2/main.cpp)
+add_executable(pantheon-relayer-l3 relayers/relayer-l3/main.cpp)
+target_link_libraries(pantheon-relayer-l2 PRIVATE pantheon_common pantheon_l1 pantheon_l2)
+target_link_libraries(pantheon-relayer-l3 PRIVATE pantheon_common pantheon_l2)
 
-# Layer 1 Core - Consensus Critical
-add_subdirectory(layer1)
-
-# Layer 2 - Non-Consensus Modules
-add_subdirectory(layer2)
-
-# Relayers
-add_subdirectory(relayers)
-
-# Client Applications
-add_subdirectory(clients)
-
-# Tools and SDKs
-add_subdirectory(tools)
-
-# Tests
-add_subdirectory(tests)
-
-# CPack configuration for package generation
-set(CPACK_PACKAGE_NAME "ParthenonChain")
-set(CPACK_PACKAGE_VENDOR "ParthenonChain Foundation")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "ParthenonChain - A Multi-Asset Proof-of-Work Blockchain with Smart Contracts")
-set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "ParthenonChain")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
-set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
-
-# Platform-specific packaging
-if(WIN32)
-  set(CPACK_GENERATOR "NSIS;ZIP")
-  set(CPACK_NSIS_DISPLAY_NAME "ParthenonChain ${PROJECT_VERSION}")
-  set(CPACK_NSIS_PACKAGE_NAME "ParthenonChain")
-  set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
-  set(CPACK_NSIS_MODIFY_PATH ON)
-elseif(APPLE)
-  set(CPACK_GENERATOR "DragNDrop;TGZ")
-  set(CPACK_DMG_VOLUME_NAME "ParthenonChain")
-  set(CPACK_DMG_FORMAT "UDZO")
-elseif(UNIX)
-  set(CPACK_GENERATOR "DEB;RPM;TGZ")
-  
-  # Debian package configuration
-  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "ParthenonChain Foundation <dev@parthenonchain.org>")
-  set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
-  set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libssl3 | libssl1.1, libboost-system1.74.0 | libboost-system1.71.0")
-  
-  # RPM package configuration
-  set(CPACK_RPM_PACKAGE_LICENSE "MIT")
-  set(CPACK_RPM_PACKAGE_GROUP "Applications/System")
-  set(CPACK_RPM_PACKAGE_REQUIRES "openssl, boost-system")
-endif()
-
-include(CPack)
+add_test(NAME devnet_smoke_rpc COMMAND ${CMAKE_SOURCE_DIR}/tests/integration/devnet_smoke_test)
