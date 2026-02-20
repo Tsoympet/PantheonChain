@@ -42,3 +42,22 @@ Fixed protocol denomination constants:
 - `1 TALANTON = 6000 DRACHMA = 36000 OBOLOS`
 
 These are protocol-level unit-of-account conversions only (not price pegs).
+
+
+## Denomination Override
+
+Relevant amount endpoints accept an optional denomination override through params (JSON-RPC style equivalent of `?denom=<name>`).
+
+Example request params for `getbalance`:
+
+```json
+["DRACHMA", "tetradrachm"]
+```
+
+Responses include:
+
+- `amount_raw`
+- `amount_formatted`
+- `denom_used`
+
+This is presentation-only and does not change on-chain accounting.

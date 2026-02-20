@@ -14,7 +14,8 @@ namespace parthenon {
 
 namespace {
 
-std::string AmountToRaw(const std::string& amount, const std::string& unit_flag) {
+std::string AmountToRaw(const std::string& amount, const std::string& unit_flag,
+                        const std::string& denomination = "") {
     primitives::AssetID asset = primitives::AssetID::TALANTON;
     if (unit_flag == "--in-dr") {
         asset = primitives::AssetID::DRACHMA;
@@ -22,7 +23,12 @@ std::string AmountToRaw(const std::string& amount, const std::string& unit_flag)
         asset = primitives::AssetID::OBOLOS;
     }
 
-    const auto parsed = common::monetary::ParseDisplayAmount(amount, asset);
+    std::string parse_error;
+    const auto parsed = denomination.empty()
+                            ? common::monetary::ParseDisplayAmount(amount, asset)
+                            : common::monetary::ParseDisplayAmountWithDenomination(amount, asset,
+                                                                                   denomination,
+                                                                                   &parse_error);
     if (!parsed) {
         return "invalid";
     }
@@ -30,9 +36,13 @@ std::string AmountToRaw(const std::string& amount, const std::string& unit_flag)
 }
 
 void PrintDualAmount(uint64_t raw, primitives::AssetID asset) {
-    const auto view = common::monetary::BuildAmountView(raw, asset);
-    std::cout << "amount_raw=" << view.amount_raw << " amount=" << view.amount << " token=" << view.token
-              << std::endl;
+    const auto view = common::monetary::BuildAmountView(raw, asset, "", true);
+    std::cout << "amount_raw=" << view.amount_raw << " amount_formatted=" << view.amount_formatted
+              << " token=" << view.token << " denom_used=" << view.denom_used;
+    if (view.dual_display.has_value()) {
+        std::cout << " dual=\"" << *view.dual_display << "\"";
+    }
+    std::cout << std::endl;
 }
 
 }  // namespace
@@ -125,7 +135,7 @@ class CLI {
         std::cout << "  getinfo                                              - Get node information\n";
         std::cout << "  getblockcount                                        - Get current block height\n";
         std::cout << "  getbalance [asset]                                   - Get wallet balance\n";
-        std::cout << "  sendtoaddress <asset> <addr> <amt> [--in-tal|--in-dr|--in-ob] - Send transaction\n";
+        std::cout << "  sendtoaddress <asset> <addr> <amt> [<denom>] [--in-tal|--in-dr|--in-ob] [--denom=<name>] - Send transaction\n";
         std::cout << "  chain/monetary_spec                                  - Get monetary unit spec\n";
         std::cout << "  stop                                                 - Stop the daemon\n";
         std::cout << "  stake deposit --layer=l2|l3                          - Submit staking deposit\n";
@@ -180,12 +190,18 @@ class CLI {
 
         if (cmd == "sendtoaddress" && args.size() >= 3) {
             std::string unit_flag = "--in-tal";
-            for (const auto& arg : args) {
+            std::string denomination;
+            for (size_t i = 0; i < args.size(); ++i) {
+                const auto& arg = args[i];
                 if (arg == "--in-tal" || arg == "--in-dr" || arg == "--in-ob") {
                     unit_flag = arg;
+                } else if (arg.rfind("--denom=", 0) == 0) {
+                    denomination = arg.substr(8);
+                } else if (i == 3 && !arg.empty() && arg[0] != '-') {
+                    denomination = arg;
                 }
             }
-            std::string raw = AmountToRaw(args[2], unit_flag);
+            std::string raw = AmountToRaw(args[2], unit_flag, denomination);
             if (raw == "invalid") {
                 std::cout << "{\"error\":\"invalid amount for denomination\"}" << std::endl;
                 return;

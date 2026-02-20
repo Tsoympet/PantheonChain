@@ -27,6 +27,12 @@ pantheon-cli sendtoaddress OBOLOS <addr> 42.50000000 --in-ob
 - `--in-dr` (DRACHMA)
 - `--in-ob` (OBOLOS)
 
+Optional Attic-style denomination override:
+
+- `--denom=tetradrachm`
+- `--denom=mina`
+- positional denom after amount, e.g. `sendtoaddress DRACHMA <addr> 2 tetradrachm --in-dr`
+
 CLI output uses dual representation where possible: integer raw amount + formatted unit amount.
 
 ## Notes
@@ -38,3 +44,12 @@ CLI output uses dual representation where possible: integer raw amount + formatt
 - Monetary ratios are protocol-level accounting only:
   - `1 DRACHMA = 6 OBOLOS`
   - `1 TALANTON = 6000 DRACHMA = 36000 OBOLOS`
+
+## Examples
+
+```bash
+pantheon-cli sendtoaddress DRACHMA <addr> 2 tetradrachm --in-dr
+pantheon-cli sendtoaddress DRACHMA <addr> 5 --denom=mina --in-dr
+# gas estimate in obol; report in drachma
+pantheon-cli getbalance OBOLOS
+```

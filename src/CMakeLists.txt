@@ -15,6 +15,7 @@ add_library(pantheon_layers STATIC
 )
 
 add_library(parthenon_monetary STATIC
+    common/monetary/denominations.cpp
     common/monetary/units.cpp
 )
 
