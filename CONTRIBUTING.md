@@ -22,7 +22,7 @@ Contributions should target the layered architecture:
 - `src/talanton` (L1)
 - `src/drachma` (L2)
 - `src/obolos` (L3)
-- `src/relayers` and `relayers` (relay services)
+- `src/relayers` (relay services; top-level `relayers/` is compatibility CMake wiring)
 - `src/tools` (CLI/node tool integrations)
 - `configs/{devnet,testnet,mainnet}` (network profiles)
 - `tests/{unit,integration,fixtures}`

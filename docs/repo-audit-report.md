@@ -4,19 +4,20 @@
 
 ### Missing or inconsistent before this pass
 
-- Multiple GitHub workflows pinned to non-existent `@v6` major versions (`checkout`, `upload-artifact`, `setup-node`, `setup-python`), which would fail in CI.
-- Audit script checks were too narrow (did not enforce supported GitHub Action major versions).
-- Build documentation did not clearly enumerate all platforms currently covered by CI workflows.
+- Relayer source files still lived in top-level `relayers/`, while the layered architecture defines `src/relayers/` as the canonical home.
+- Core docs (`README.md`, `docs/architecture.md`, `CONTRIBUTING.md`) still referenced top-level relayer source paths.
 
 ### Added/updated in this pass
 
-- Updated workflows under `.github/workflows/` to supported major versions:
-  - `actions/checkout@v4`
-  - `actions/upload-artifact@v4`
-  - `actions/setup-node@v4`
-  - `actions/setup-python@v5`
-- Extended `scripts/repo-audit.sh` to fail when unsupported `@v6` action pins are present.
-- Updated `docs/build.md` with explicit CI-supported platform coverage (Ubuntu, macOS, Windows) and canonical release gate workflow.
+- Migrated relayer implementation files to `src/relayers/`:
+  - `src/relayers/pantheon-relayer-l2.cpp`
+  - `src/relayers/pantheon-relayer-l3.cpp`
+- Kept `relayers/` as a compatibility build shim and documented deprecation/migration in `relayers/README.md`.
+- Updated relayer references in:
+  - `README.md`
+  - `docs/architecture.md`
+  - `CONTRIBUTING.md`
+- Revalidated repo requirements with `scripts/repo-audit.sh`.
 
 ## Current canonical commands
 
