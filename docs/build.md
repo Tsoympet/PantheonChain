@@ -12,15 +12,20 @@ This configures and builds in `build/`.
 
 ## CI-supported platforms
 
-Current required CI pipeline (`.github/workflows/build-test-devnet.yml`) runs on:
+CI currently validates builds/tests on the following platforms:
 
-- `ubuntu-latest` for:
-  - repository audit
-  - build
-  - unit tests
-  - integration devnet smoke
+- **Ubuntu (`ubuntu-latest`/`ubuntu-22.04`)**
+  - Build, lint, repository audit
+  - Unit + integration smoke coverage
+  - Security/dependency checks
+- **macOS (`macos-latest`)**
+  - Build + test workflow coverage
+- **Windows (`windows-latest`)**
+  - Build + test workflow coverage
 
-Additional legacy workflows may validate other platforms, but `ubuntu-latest` is the canonical required gate.
+For release gating, the canonical required layered pipeline remains:
+
+- `.github/workflows/build-test-devnet.yml`
 
 ## Manual build
 

@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 0
@@ -50,7 +50,7 @@ jobs:
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: ubuntu-build
         path: build/
@@ -62,7 +62,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 0
@@ -87,7 +87,7 @@ jobs:
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: macos-build
         path: build/
@@ -99,7 +99,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 0
@@ -159,7 +159,7 @@ jobs:
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: windows-build
         path: build/

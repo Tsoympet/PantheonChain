@@ -44,4 +44,11 @@ if rg -n "docs/(ARCHITECTURE|TOKENOMICS|NETWORKING_RPC)\.md" README.md docs >/de
   exit 1
 fi
 
+# Ensure workflows use currently supported major action versions.
+if rg -n "actions/(checkout|upload-artifact|setup-node|setup-python)@v6" .github/workflows >/dev/null; then
+  echo "Found unsupported GitHub Action major versions (@v6)"
+  rg -n "actions/(checkout|upload-artifact|setup-node|setup-python)@v6" .github/workflows
+  exit 1
+fi
+
 echo "Repository audit passed"

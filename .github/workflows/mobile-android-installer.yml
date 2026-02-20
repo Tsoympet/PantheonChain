@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Validate Expo token
         run: |
@@ -34,7 +34,7 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 22
 
@@ -71,7 +71,7 @@ jobs:
           npx eas-cli build:download --platform android --id "$BUILD_ID" --path parthenon-mobile-android.apk --non-interactive
 
       - name: Upload Android installer
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: parthenon-mobile-android-apk
           path: clients/mobile/react-native/parthenon-mobile-android.apk
