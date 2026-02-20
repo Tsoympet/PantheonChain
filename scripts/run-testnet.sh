@@ -9,6 +9,18 @@ python3 scripts/validate-config.py configs/testnet/l1.json configs/testnet/l2.js
 mkdir -p .testnet/logs
 PYTHON_BIN="/usr/bin/python3"
 
+cleanup_on_error() {
+  local exit_code="$?"
+  if [[ "$exit_code" -eq 0 ]]; then
+    return
+  fi
+
+  if compgen -G ".testnet/*.pid" >/dev/null; then
+    xargs -r kill < <(cat .testnet/*.pid) || true
+  fi
+}
+trap cleanup_on_error ERR
+
 "$PYTHON_BIN" scripts/mock_layer_server.py 28332 l1 >.testnet/logs/l1.log 2>&1 & echo $! >.testnet/l1.pid
 "$PYTHON_BIN" scripts/mock_layer_server.py 29332 l2 >.testnet/logs/l2.log 2>&1 & echo $! >.testnet/l2.pid
 "$PYTHON_BIN" scripts/mock_layer_server.py 30332 l3 >.testnet/logs/l3.log 2>&1 & echo $! >.testnet/l3.pid
@@ -29,6 +41,8 @@ wait_for_rpc() {
 wait_for_rpc "http://127.0.0.1:28332/health" "L1"
 wait_for_rpc "http://127.0.0.1:29332/health" "L2"
 wait_for_rpc "http://127.0.0.1:30332/health" "L3"
+
+trap - ERR
 
 if [[ -x build/relayers/pantheon-relayer-l2 ]]; then
   build/relayers/pantheon-relayer-l2 >.testnet/logs/relayer-l2.log 2>&1 || true
