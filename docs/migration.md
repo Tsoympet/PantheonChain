@@ -28,6 +28,17 @@ Use chain-specific genesis files:
 
 Each genesis includes inflation, epoch length, minimum stake, slashing ratios, and commitment interval parameters.
 
+## Monetary Unit-of-Account Migration Note
+
+Ancient Greek denomination constants are now canonical and protocol-defined:
+
+- `1 DRACHMA = 6 OBOLOS`
+- `1 TALANTON = 6000 DRACHMA = 36000 OBOLOS`
+
+Precision remains fixed at 8 decimals for each token (talantonion, drachmion, obolion).
+
+Backward compatibility: raw base units in the ledger remain unchanged (`10^8` base unit scale), so no historical balance rewrite is required.
+
 ## Backward Compatibility
 
 Legacy directories remain available for historical compatibility, but new consensus and commitment logic should target `src/common`, `src/talanton`, `src/drachma`, and `src/obolos`.

@@ -1,5 +1,7 @@
 #include "bridging.h"
 
+#include "common/monetary/units.h"
+
 namespace pantheon::common {
 
 namespace {
@@ -46,3 +48,38 @@ BridgeResult ValidateWithdrawal(const BridgeTransfer& transfer,
 }
 
 }  // namespace pantheon::common
+
+
+std::optional<GasBudgetQuote> EstimateGasBudgetInDr(uint64_t amount_dr_raw) {
+    auto ob = parthenon::common::monetary::ConvertDrToOb(amount_dr_raw);
+    if (!ob) {
+        return std::nullopt;
+    }
+    return GasBudgetQuote{amount_dr_raw, *ob};
+}
+
+std::string BuildBridgeAccountingView(const BridgeTransfer& transfer) {
+    if (transfer.source_layer == BridgeLayer::L1 && transfer.target_layer == BridgeLayer::L2 &&
+        transfer.asset == "TALANTON") {
+        auto dr = parthenon::common::monetary::ConvertTalToDr(transfer.amount);
+        if (!dr) {
+            return "wTAL remains distinct on L2 (overflow computing informational DRACHMA view)";
+        }
+        return "wTAL remains distinct on L2; informational equivalent=" +
+               parthenon::common::monetary::FormatAmount(*dr,
+                   parthenon::primitives::AssetID::DRACHMA) + " DRACHMA";
+    }
+
+    if (transfer.source_layer == BridgeLayer::L2 && transfer.target_layer == BridgeLayer::L3 &&
+        transfer.asset == "DRACHMA") {
+        auto ob = EstimateGasBudgetInDr(transfer.amount);
+        if (!ob) {
+            return "Explicit DRACHMA->OBOLOS conversion required before execution (overflow)";
+        }
+        return "Explicit DRACHMA->OBOLOS conversion helper: " +
+               parthenon::common::monetary::FormatAmount(ob->amount_ob_raw,
+                   parthenon::primitives::AssetID::OBOLOS) + " OBOLOS";
+    }
+
+    return "No implicit asset conversion. Conversions are explicit or informational only.";
+}

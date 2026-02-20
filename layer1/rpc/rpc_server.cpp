@@ -5,6 +5,7 @@
 #include "primitives/transaction.h"
 
 #include "node/node.h"
+#include "common/monetary/units.h"
 #include "validation.h"
 #include "wallet/wallet.h"
 
@@ -16,6 +17,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <stdexcept>
 #include <thread>
 
 using json = nlohmann::json;
@@ -192,6 +194,9 @@ RPCServer::RPCServer(uint16_t port)
       node_(nullptr),
       wallet_(nullptr),
       rate_limiter_(std::make_unique<RateLimiter>(100, 60)) {
+    if (!parthenon::common::monetary::ValidateMonetaryInvariants()) {
+        throw std::runtime_error("Monetary constants invariant violation at startup");
+    }
     InitializeStandardMethods();
 }
 
@@ -393,6 +398,7 @@ void RPCServer::InitializeStandardMethods() {
                    [this](const RPCRequest& req) { return HandleSendToAddress(req); });
     RegisterMethod("stop", [this](const RPCRequest& req) { return HandleStop(req); });
     RegisterMethod("chain/info", [this](const RPCRequest& req) { return HandleChainInfo(req); });
+    RegisterMethod("chain/monetary_spec", [this](const RPCRequest& req) { return HandleMonetarySpec(req); });
     RegisterMethod("staking/deposit", [this](const RPCRequest& req) { return HandleStakingDeposit(req); });
     RegisterMethod("commitments/submit", [this](const RPCRequest& req) { return HandleCommitmentSubmit(req); });
     RegisterMethod("commitments/list", [this](const RPCRequest& req) { return HandleCommitmentList(req); });
@@ -465,7 +471,11 @@ RPCResponse RPCServer::HandleGetBalance(const RPCRequest& req) {
         uint64_t balance = wallet_->GetBalance(asset_id);
 
         json result;
+        const auto view = parthenon::common::monetary::BuildAmountView(balance, asset_id);
         result["balance"] = balance;
+        result["amount_raw"] = std::to_string(view.amount_raw);
+        result["amount"] = view.amount;
+        result["token"] = view.token;
         result["asset"] = asset;
 
         response.result = result.dump();
@@ -800,7 +810,47 @@ namespace parthenon {
 namespace rpc {
 
 RPCResponse RPCServer::HandleChainInfo(const RPCRequest& req) {
-    return HandleGetInfo(req);
+    auto response = HandleGetInfo(req);
+    if (response.IsError()) {
+        return response;
+    }
+
+    auto info = json::parse(response.result);
+    info["monetary_spec_hash"] = parthenon::common::monetary::MonetarySpecHash();
+    response.result = info.dump();
+    return response;
+}
+
+RPCResponse RPCServer::HandleMonetarySpec(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+
+    if (!parthenon::common::monetary::ValidateMonetaryInvariants()) {
+        response.error = "Monetary constants invariant violation";
+        return response;
+    }
+
+    json result;
+    result["spec_hash"] = parthenon::common::monetary::MonetarySpecHash();
+    result["payload"] = parthenon::common::monetary::MonetarySpecPayload();
+    result["ratios"] = {
+        {"dr_per_tal", parthenon::common::monetary::RATIO_DR_PER_TAL},
+        {"ob_per_dr", parthenon::common::monetary::RATIO_OB_PER_DR},
+        {"ob_per_tal", parthenon::common::monetary::RATIO_OB_PER_TAL},
+    };
+    result["decimals"] = {
+        {"tal", parthenon::common::monetary::TAL_DECIMALS},
+        {"dr", parthenon::common::monetary::DR_DECIMALS},
+        {"ob", parthenon::common::monetary::OB_DECIMALS},
+    };
+    result["unit_table"] = {
+        {"1 DRACHMA", "6 OBOLOS"},
+        {"1 TALANTON", "6000 DRACHMA"},
+        {"1 TALANTON (OB)", "36000 OBOLOS"},
+    };
+
+    response.result = result.dump();
+    return response;
 }
 
 RPCResponse RPCServer::HandleStakingDeposit(const RPCRequest& req) {
@@ -809,6 +859,8 @@ RPCResponse RPCServer::HandleStakingDeposit(const RPCRequest& req) {
     json result;
     result["status"] = "accepted";
     result["module"] = "staking";
+    result["fee_token"] = "DRACHMA";
+    result["fee_note"] = "L2 fees are paid in DRACHMA; optional OBOLOS equivalent is informational.";
     result["params"] = req.params.empty() ? json::array() : json::parse(req.params, nullptr, false);
     response.result = result.dump();
     return response;
@@ -851,6 +903,8 @@ RPCResponse RPCServer::HandleEvmDeploy(const RPCRequest& req) {
     json result;
     result["status"] = "accepted";
     result["module"] = "evm";
+    result["fee_token"] = "OBOLOS";
+    result["fee_note"] = "L3 gas is paid in OBOLOS; DRACHMA/TALANTON equivalents are reporting-only.";
     result["params"] = req.params.empty() ? json::array() : json::parse(req.params, nullptr, false);
     response.result = result.dump();
     return response;

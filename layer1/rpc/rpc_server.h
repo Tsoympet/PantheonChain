@@ -167,6 +167,7 @@ class RPCServer {
     RPCResponse HandleSendToAddress(const RPCRequest& req);
     RPCResponse HandleStop(const RPCRequest& req);
     RPCResponse HandleChainInfo(const RPCRequest& req);
+    RPCResponse HandleMonetarySpec(const RPCRequest& req);
     RPCResponse HandleStakingDeposit(const RPCRequest& req);
     RPCResponse HandleCommitmentSubmit(const RPCRequest& req);
     RPCResponse HandleCommitmentList(const RPCRequest& req);

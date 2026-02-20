@@ -54,6 +54,29 @@ flowchart LR
 
 ---
 
+
+## Ancient Greek Monetary Model (Unit-of-Account)
+
+PantheonChain enforces a protocol-level denomination model across TALANTON/DRACHMA/OBOLOS.
+
+- **1 DRACHMA = 6 OBOLOS**
+- **1 TALANTON = 6,000 DRACHMA = 36,000 OBOLOS**
+
+This is strictly an accounting and denomination rule for base units, display units, fee quoting, and reporting.
+It is **not** a fiat peg and **not** a promise of market price.
+
+Canonical precision:
+
+- TALANTON smallest unit: **talantonion** (`10^-8`)
+- DRACHMA smallest unit: **drachmion** (`10^-8`)
+- OBOLOS smallest unit: **obolion** (`10^-8`)
+
+All internal ledger amounts remain integer base units; floating point is never used for consensus/accounting.
+
+Historically, this follows the classical Attic denomination relationship where the drachma and obol were nested units of account.
+
+---
+
 ## Repository Layout
 
 - `src/common/` — shared networking, crypto, serialization, storage, mempool, commitments, metrics
