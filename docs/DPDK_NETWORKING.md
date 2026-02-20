@@ -1022,7 +1022,7 @@ spec:
 ### Documentation
 - [DPDK Official Documentation](https://doc.dpdk.org/)
 - [Intel DPDK Getting Started Guide](https://www.intel.com/content/www/us/en/developer/articles/guide/dpdk-guide.html)
-- [PantheonChain Network Architecture](./NETWORK_ARCHITECTURE.md)
+- [PantheonChain Network Architecture](./architecture.md)
 
 ### Community
 - PantheonChain Discord: #high-performance channel
