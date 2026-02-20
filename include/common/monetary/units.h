@@ -16,7 +16,11 @@ enum class RoundingMode {
 struct AmountView {
     uint64_t amount_raw;
     std::string amount;
+    std::string amount_formatted;
     std::string token;
+    std::string denom_used;
+    std::optional<std::string> dual_display;
+    bool approximate;
 };
 
 constexpr uint32_t TAL_DECIMALS = 8;
@@ -68,9 +72,18 @@ std::optional<uint64_t> ConvertObToDr(uint64_t ob_raw, RoundingMode rounding = R
 std::optional<uint64_t> ConvertObToTal(uint64_t ob_raw, RoundingMode rounding = RoundingMode::Floor);
 
 std::string FormatAmount(uint64_t amount_raw, parthenon::primitives::AssetID asset);
+std::optional<std::string> FormatAmountWithDenomination(uint64_t amount_raw,
+                                                        parthenon::primitives::AssetID asset,
+                                                        const std::string& denomination,
+                                                        bool* approximate = nullptr);
 std::optional<uint64_t> ParseDisplayAmount(const std::string& value,
                                            parthenon::primitives::AssetID asset);
-AmountView BuildAmountView(uint64_t amount_raw, parthenon::primitives::AssetID asset);
+std::optional<uint64_t> ParseDisplayAmountWithDenomination(const std::string& value,
+                                                           parthenon::primitives::AssetID asset,
+                                                           const std::string& denomination,
+                                                           std::string* error = nullptr);
+AmountView BuildAmountView(uint64_t amount_raw, parthenon::primitives::AssetID asset,
+                           const std::string& denomination = "", bool dual_display = false);
 
 std::string MonetarySpecHash();
 std::string MonetarySpecPayload();

@@ -132,6 +132,10 @@ parthenond /configs/l3.conf --layer=l3
 pantheon-cli stake deposit --layer=l2
 pantheon-cli deploy-contract --layer=l3
 pantheon-cli submit-commitment --layer=l2|l3
+# send 2 tetradrachm (DRACHMA accounting)
+pantheon-cli sendtoaddress DRACHMA <addr> 2 tetradrachm --in-dr
+# stake-like DR amount entry in mina display units
+pantheon-cli sendtoaddress DRACHMA <addr> 5 --denom=mina --in-dr
 ```
 
 ### RPC namespaces
@@ -178,6 +182,7 @@ See `docs/threat-model.md` for explicit trust assumptions and risks.
 - [Run Devnet](docs/run-devnet.md)
 - [RPC](docs/rpc.md)
 - [CLI](docs/cli.md)
+- [Denominations](docs/denominations.md)
 - [Tokenomics](docs/tokenomics.md)
 - [Operations](docs/operations.md)
 - [Release](docs/release.md)

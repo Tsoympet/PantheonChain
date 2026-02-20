@@ -24,6 +24,7 @@ int main() {
     const auto j3 = json::parse(spec3.result);
     assert(j1["spec_hash"].get<std::string>() == j2["spec_hash"].get<std::string>());
     assert(j2["spec_hash"].get<std::string>() == j3["spec_hash"].get<std::string>());
+    assert(j1.contains("denominations"));
 
     auto stake = l2.HandleRequest({"staking/deposit", "[\"l2\"]", "4"});
     assert(!stake.IsError());

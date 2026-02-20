@@ -5,6 +5,7 @@
 #include "primitives/transaction.h"
 
 #include "node/node.h"
+#include "common/monetary/denominations.h"
 #include "common/monetary/units.h"
 #include "validation.h"
 #include "wallet/wallet.h"
@@ -443,9 +444,20 @@ RPCResponse RPCServer::HandleGetBalance(const RPCRequest& req) {
     try {
         auto params = json::parse(req.params);
         std::string asset = "TALANTON";  // default
+        std::string denom_override;
 
         if (params.is_array() && params.size() > 0) {
             asset = InputValidator::SanitizeString(params[0].get<std::string>());
+            if (params.size() > 1 && params[1].is_string()) {
+                denom_override = params[1].get<std::string>();
+            }
+        } else if (params.is_object()) {
+            if (params.contains("asset") && params["asset"].is_string()) {
+                asset = InputValidator::SanitizeString(params["asset"].get<std::string>());
+            }
+            if (params.contains("denom") && params["denom"].is_string()) {
+                denom_override = params["denom"].get<std::string>();
+            }
         }
 
         // Validate asset name
@@ -471,10 +483,16 @@ RPCResponse RPCServer::HandleGetBalance(const RPCRequest& req) {
         uint64_t balance = wallet_->GetBalance(asset_id);
 
         json result;
-        const auto view = parthenon::common::monetary::BuildAmountView(balance, asset_id);
+        const auto view = parthenon::common::monetary::BuildAmountView(balance, asset_id, denom_override, true);
         result["balance"] = balance;
         result["amount_raw"] = std::to_string(view.amount_raw);
         result["amount"] = view.amount;
+        result["amount_formatted"] = view.amount_formatted;
+        result["denom_used"] = view.denom_used;
+        result["approximate"] = view.approximate;
+        if (view.dual_display.has_value()) {
+            result["dual_display"] = *view.dual_display;
+        }
         result["token"] = view.token;
         result["asset"] = asset;
 
@@ -848,6 +866,26 @@ RPCResponse RPCServer::HandleMonetarySpec(const RPCRequest& req) {
         {"1 TALANTON", "6000 DRACHMA"},
         {"1 TALANTON (OB)", "36000 OBOLOS"},
     };
+    json denominations = json::parse("{}");
+    for (const auto asset_id : {parthenon::primitives::AssetID::TALANTON,
+                                parthenon::primitives::AssetID::DRACHMA,
+                                parthenon::primitives::AssetID::OBOLOS}) {
+        const auto asset_name = parthenon::primitives::AssetSupply::GetAssetName(asset_id);
+        denominations[asset_name] = json::array();
+        for (const auto& denom : parthenon::common::monetary::GetAtticDisplayDenominations(asset_id)) {
+            denominations[asset_name].push_back({
+                {"name", denom.name},
+                {"symbol", denom.symbol},
+                {"allowed_decimals", denom.allowed_decimals},
+                {"input_allowed", denom.allow_input},
+                {"approximate_display", denom.approximate_display},
+                {"ratio", std::to_string(denom.token_units_numerator) + "/" +
+                              std::to_string(denom.token_units_denominator)},
+            });
+        }
+    }
+    result["display_set"] = "Attic standard display set";
+    result["denominations"] = denominations;
 
     response.result = result.dump();
     return response;
