@@ -4,20 +4,20 @@
 
 ### Missing or inconsistent before this pass
 
-- Relayer source files still lived in top-level `relayers/`, while the layered architecture defines `src/relayers/` as the canonical home.
-- Core docs (`README.md`, `docs/architecture.md`, `CONTRIBUTING.md`) still referenced top-level relayer source paths.
+- `scripts/repo-audit.sh` validated structure/files/configs, but did not verify:
+  - that key CI jobs/tokens remain present in the canonical devnet workflow;
+  - that required docs exposed by README/operations docs keep valid local markdown links.
+- `docs/DPDK_NETWORKING.md` contained a stale local link (`./NETWORK_ARCHITECTURE.md`) to a non-existent file.
 
 ### Added/updated in this pass
 
-- Migrated relayer implementation files to `src/relayers/`:
-  - `src/relayers/pantheon-relayer-l2.cpp`
-  - `src/relayers/pantheon-relayer-l3.cpp`
-- Kept `relayers/` as a compatibility build shim and documented deprecation/migration in `relayers/README.md`.
-- Updated relayer references in:
-  - `README.md`
-  - `docs/architecture.md`
-  - `CONTRIBUTING.md`
-- Revalidated repo requirements with `scripts/repo-audit.sh`.
+- Extended `scripts/repo-audit.sh` to include:
+  - mandatory presence checks for `.github/workflows/build.yml` and `.github/workflows/test.yml`;
+  - CI token checks in `.github/workflows/build-test-devnet.yml` (`build`, `unit-tests`, `integration-devnet-smoke`, cache, artifact upload);
+  - local markdown link validation for canonical root/docs contributor and operator docs.
+- Fixed stale docs link in `docs/DPDK_NETWORKING.md`:
+  - `./NETWORK_ARCHITECTURE.md` -> `./architecture.md`.
+- Re-ran lint, audit, and test/devnet smoke commands to confirm repository coherence.
 
 ## Current canonical commands
 
