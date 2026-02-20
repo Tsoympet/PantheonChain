@@ -1,6 +1,6 @@
 #include "common/commitments.h"
 #include "common/serialization.h"
-#include "drachma/pos_consensus.h"
+#include "layer1-talanton/tx/l1_commitment_validator.h"
 
 #include <cstdint>
 #include <iostream>
@@ -11,10 +11,10 @@ namespace {
 
 void PrintUsage() {
     std::cerr
-        << "Usage: pantheon-relayer-l3 --commitment=<encoded> --active-stake=<value> "
+        << "Usage: pantheon-relayer-l2 --commitment=<encoded> --active-stake=<value> "
            "--last-finalized-height=<value>\n"
-        << "Encoded format: OBOLOS:epoch:finalized_height:finalized_block_hash:state_root:"
-           "validator_set_hash:<empty_or_reserved>:validator_id|stake|signature(...)\n";
+        << "Encoded format: DRACHMA:epoch:finalized_height:finalized_block_hash:state_root:"
+           "validator_set_hash:upstream_commitment_hash:validator_id|stake|signature(...)\n";
 }
 
 std::optional<uint64_t> ParseUint(const std::string& value) {
@@ -55,19 +55,19 @@ int main(int argc, char* argv[]) {
     pantheon::common::Commitment commitment{};
     auto decode_result = pantheon::common::DecodeCommitment(*encoded_commitment, commitment);
     if (!decode_result.valid) {
-        std::cerr << "pantheon-relayer-l3 decode error: " << decode_result.reason << std::endl;
+        std::cerr << "pantheon-relayer-l2 decode error: " << decode_result.reason << std::endl;
         return 1;
     }
 
-    auto validate_result =
-        pantheon::drachma::ValidateL3Commit(commitment, *last_finalized_height, *active_stake);
+    auto validate_result = pantheon::talanton::ValidateL2Commit(
+        commitment, pantheon::talanton::L2AnchorState{*last_finalized_height}, *active_stake);
     if (!validate_result.valid) {
-        std::cerr << "pantheon-relayer-l3 rejected commitment: " << validate_result.reason
+        std::cerr << "pantheon-relayer-l2 rejected commitment: " << validate_result.reason
                   << std::endl;
         return 1;
     }
 
-    std::cout << "pantheon-relayer-l3 relayed: " << pantheon::common::EncodeCommitment(commitment)
+    std::cout << "pantheon-relayer-l2 relayed: " << pantheon::common::EncodeCommitment(commitment)
               << std::endl;
     return 0;
 }

@@ -11,6 +11,9 @@ void PrintUsage() {
 
 int main(int argc, char* argv[]) {
     std::string layer;
+#ifdef PANTHEON_NODE_LAYER
+    layer = PANTHEON_NODE_LAYER;
+#endif
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg.rfind("--layer=", 0) == 0) {
