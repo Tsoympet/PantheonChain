@@ -60,7 +60,7 @@ flowchart LR
 - `src/talanton/` — TALANTON L1 commitment validation and anchor logic
 - `src/drachma/` — DRACHMA PoS, staking/slashing, payments state machine, L3 commitment handling
 - `src/obolos/` — OBOLOS PoS, EVM execution, gas accounting
-- `relayers/` — commitment relay services (`l3->l2`, `l2->l1`)
+- `src/relayers/` — commitment relay services (`l3->l2`, `l2->l1`)
 - `src/tools/` — `pantheon-node` and `pantheon-cli`
 - `tests/` — unit, integration, and fuzz coverage
 - `configs/` — devnet/testnet/mainnet configuration

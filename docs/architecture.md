@@ -50,8 +50,8 @@ OBOLOS finality commitments are first included in DRACHMA as `TX_L3_COMMIT`. DRA
 - `src/talanton`: L1 commitment validation (`TX_L2_COMMIT`).
 - `src/drachma`: L2 PoS logic, staking/slashing helpers, and `TX_L3_COMMIT` validation.
 - `src/obolos`: L3 EVM execution and gas accounting helpers.
-- `relayers/pantheon-relayer-l2.cpp`: DRACHMA -> TALANTON commitment relayer.
-- `relayers/pantheon-relayer-l3.cpp`: OBOLOS -> DRACHMA commitment relayer.
+- `src/relayers/pantheon-relayer-l2.cpp`: DRACHMA -> TALANTON commitment relayer.
+- `src/relayers/pantheon-relayer-l3.cpp`: OBOLOS -> DRACHMA commitment relayer.
 
 ## Runtime Modes
 
