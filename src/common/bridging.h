@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <string>
 
+#include <optional>
+
 namespace pantheon::common {
 
 enum class BridgeLayer {
@@ -30,5 +32,15 @@ BridgeResult ValidateWithdrawal(const BridgeTransfer& transfer,
                                uint64_t current_height,
                                uint64_t finalized_height,
                                uint64_t optimistic_window);
+
+
+struct GasBudgetQuote {
+    uint64_t amount_dr_raw = 0;
+    uint64_t amount_ob_raw = 0;
+};
+
+std::optional<GasBudgetQuote> EstimateGasBudgetInDr(uint64_t amount_dr_raw);
+
+std::string BuildBridgeAccountingView(const BridgeTransfer& transfer);
 
 }  // namespace pantheon::common

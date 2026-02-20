@@ -2,12 +2,40 @@
 // Copyright (c) 2024 ParthenonChain Developers
 // Distributed under the MIT software license
 
+#include "common/monetary/units.h"
+#include "primitives/asset.h"
+
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 
 namespace parthenon {
+
+namespace {
+
+std::string AmountToRaw(const std::string& amount, const std::string& unit_flag) {
+    primitives::AssetID asset = primitives::AssetID::TALANTON;
+    if (unit_flag == "--in-dr") {
+        asset = primitives::AssetID::DRACHMA;
+    } else if (unit_flag == "--in-ob") {
+        asset = primitives::AssetID::OBOLOS;
+    }
+
+    const auto parsed = common::monetary::ParseDisplayAmount(amount, asset);
+    if (!parsed) {
+        return "invalid";
+    }
+    return std::to_string(*parsed);
+}
+
+void PrintDualAmount(uint64_t raw, primitives::AssetID asset) {
+    const auto view = common::monetary::BuildAmountView(raw, asset);
+    std::cout << "amount_raw=" << view.amount_raw << " amount=" << view.amount << " token=" << view.token
+              << std::endl;
+}
+
+}  // namespace
 
 class RPCClient {
   private:
@@ -32,18 +60,21 @@ class RPCClient {
 
         if (method == "getinfo" || method == "chain/info") {
             result += "{\"version\": \"1.0.0\", \"blocks\": 12345, \"connections\": 8}";
+        } else if (method == "chain/monetary_spec") {
+            result += "{\"spec_hash\": \"" + common::monetary::MonetarySpecHash() +
+                      "\", \"ratio_dr_per_tal\": 6000, \"ratio_ob_per_dr\": 6, \"ratio_ob_per_tal\": 36000}";
         } else if (method == "staking/deposit") {
             if (params.empty()) {
                 return "{\"error\": \"Usage: stake deposit --layer=l2|l3\"}";
             }
             result += "{\"status\":\"accepted\",\"module\":\"staking\",\"layer\":\"" +
-                      params[0] + "\"}";
+                      params[0] + "\",\"fee_token\":\"DRACHMA\"}";
         } else if (method == "evm/deploy") {
             if (params.empty()) {
                 return "{\"error\": \"Usage: deploy-contract --layer=l3\"}";
             }
             result += "{\"status\":\"accepted\",\"module\":\"evm\",\"layer\":\"" +
-                      params[0] + "\"}";
+                      params[0] + "\",\"fee_token\":\"OBOLOS\"}";
         } else if (method == "commitments/submit") {
             if (params.empty()) {
                 return "{\"error\": \"Usage: submit-commitment --layer=l2|l3\"}";
@@ -54,14 +85,25 @@ class RPCClient {
         } else if (method == "getblockcount") {
             result += "12345";
         } else if (method == "getbalance") {
-            std::string asset = params.empty() ? "TALN" : params[0];
-            result += "{\"asset\": \"" + asset + "\", \"balance\": 1000.50}";
+            std::string asset = params.empty() ? "TALANTON" : params[0];
+            uint64_t raw = 100050000000ULL;
+            primitives::AssetID id = primitives::AssetID::TALANTON;
+            if (asset == "DRACHMA") {
+                id = primitives::AssetID::DRACHMA;
+            } else if (asset == "OBOLOS") {
+                id = primitives::AssetID::OBOLOS;
+            }
+            auto view = common::monetary::BuildAmountView(raw, id);
+            result += "{\"asset\": \"" + asset + "\", \"balance\": " + std::to_string(raw) +
+                      ", \"amount_raw\": \"" + std::to_string(view.amount_raw) +
+                      "\", \"amount\": \"" + view.amount + "\", \"token\": \"" + view.token + "\"}";
         } else if (method == "sendtoaddress") {
             if (params.size() < 3) {
-                return "{\"error\": \"Usage: sendtoaddress <asset> <address> <amount>\"}";
+                return "{\"error\": \"Usage: sendtoaddress <asset> <address> <amount_raw>\"}";
             }
             result +=
-                "{\"txid\": \"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"}";
+                "{\"txid\": \"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"amount_raw\":\"" +
+                params[2] + "\"}";
         } else if (method == "stop") {
             result += "\"ParthenonChain server stopping\"";
         } else {
@@ -80,15 +122,16 @@ class CLI {
     void ShowHelp() {
         std::cout << "ParthenonChain RPC Client v1.0.0\n\n";
         std::cout << "Available commands:\n";
-        std::cout << "  getinfo                              - Get node information\n";
-        std::cout << "  getblockcount                        - Get current block height\n";
-        std::cout << "  getbalance [asset]                   - Get wallet balance\n";
-        std::cout << "  sendtoaddress <asset> <addr> <amt>   - Send transaction\n";
-        std::cout << "  stop                                 - Stop the daemon\n";
-        std::cout << "  stake deposit --layer=l2|l3          - Submit staking deposit\n";
-        std::cout << "  deploy-contract --layer=l3           - Deploy EVM contract on OBOLOS\n";
-        std::cout << "  submit-commitment --layer=l2|l3      - Submit L2/L3 commitment\n";
-        std::cout << "  help                                 - Show this help\n";
+        std::cout << "  getinfo                                              - Get node information\n";
+        std::cout << "  getblockcount                                        - Get current block height\n";
+        std::cout << "  getbalance [asset]                                   - Get wallet balance\n";
+        std::cout << "  sendtoaddress <asset> <addr> <amt> [--in-tal|--in-dr|--in-ob] - Send transaction\n";
+        std::cout << "  chain/monetary_spec                                  - Get monetary unit spec\n";
+        std::cout << "  stop                                                 - Stop the daemon\n";
+        std::cout << "  stake deposit --layer=l2|l3                          - Submit staking deposit\n";
+        std::cout << "  deploy-contract --layer=l3                           - Deploy EVM contract on OBOLOS\n";
+        std::cout << "  submit-commitment --layer=l2|l3                      - Submit L2/L3 commitment\n";
+        std::cout << "  help                                                 - Show this help\n";
         std::cout << std::endl;
     }
 
@@ -132,6 +175,35 @@ class CLI {
                 }
             }
             std::cout << rpc_.Call("commitments/submit", {layer}) << std::endl;
+            return;
+        }
+
+        if (cmd == "sendtoaddress" && args.size() >= 3) {
+            std::string unit_flag = "--in-tal";
+            for (const auto& arg : args) {
+                if (arg == "--in-tal" || arg == "--in-dr" || arg == "--in-ob") {
+                    unit_flag = arg;
+                }
+            }
+            std::string raw = AmountToRaw(args[2], unit_flag);
+            if (raw == "invalid") {
+                std::cout << "{\"error\":\"invalid amount for denomination\"}" << std::endl;
+                return;
+            }
+            std::vector<std::string> params = {args[0], args[1], raw};
+            std::cout << rpc_.Call(cmd, params) << std::endl;
+            return;
+        }
+
+        if (cmd == "getbalance") {
+            std::string asset = args.empty() ? "TALANTON" : args[0];
+            std::cout << rpc_.Call(cmd, {asset}) << std::endl;
+            if (asset == "DRACHMA") {
+                auto ob = common::monetary::ConvertDrToOb(100050000000ULL);
+                if (ob) {
+                    PrintDualAmount(*ob, primitives::AssetID::OBOLOS);
+                }
+            }
             return;
         }
 

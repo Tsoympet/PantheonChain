@@ -14,6 +14,15 @@ add_library(pantheon_layers STATIC
     obolos/execution.cpp
 )
 
+add_library(parthenon_monetary STATIC
+    common/monetary/units.cpp
+)
+
+target_include_directories(parthenon_monetary PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/layer1/core
+)
+
 target_include_directories(pantheon_layers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(MSVC)
@@ -23,3 +32,6 @@ else()
 endif()
 
 add_subdirectory(tools)
+
+
+target_link_libraries(pantheon_layers PUBLIC parthenon_monetary)

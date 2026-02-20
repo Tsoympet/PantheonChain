@@ -121,6 +121,23 @@ void TestSendRawTransactionRejectsInvalidHex() {
     std::cout << "  ✓ Passed (invalid hex)" << std::endl;
 }
 
+
+void TestMonetarySpecEndpoint() {
+    std::cout << "Test: monetary spec endpoint" << std::endl;
+
+    rpc::RPCServer server;
+    rpc::RPCRequest request;
+    request.method = "chain/monetary_spec";
+    request.id = "7";
+    request.params = "[]";
+
+    auto response = server.HandleRequest(request);
+    assert(!response.IsError());
+    assert(response.result.find("spec_hash") != std::string::npos);
+
+    std::cout << "  ✓ Passed (monetary spec)" << std::endl;
+}
+
 void TestSendToAddressRejectsInvalidAmountAndHex() {
     std::cout << "Test: sendtoaddress rejects invalid amount/address" << std::endl;
 
@@ -179,6 +196,7 @@ int main() {
     TestServerStartStopLifecycle();
     TestSendRawTransactionRejectsInvalidHex();
     TestSendToAddressRejectsInvalidAmountAndHex();
+    TestMonetarySpecEndpoint();
 
     std::cout << "✓ All RPC server tests passed!" << std::endl;
     return 0;
