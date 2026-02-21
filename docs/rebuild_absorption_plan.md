@@ -3,20 +3,22 @@
 ## Current tree snapshot (top-level)
 
 ```text
-assets/
-clients/
+layer1-talanton/
+layer2-drachma/
+layer3-obolos/
+common/
+relayers/
+cli/
 configs/
 docs/
-enterprise/
-include/
-installers/
-layer1/
-layer2/
-legacy/
-relayers/
 scripts/
-src/
 tests/
+docker/
+include/
+clients/
+enterprise/
+installers/
+assets/
 third_party/
 tools/
 ```
@@ -58,4 +60,4 @@ tools/
 
 ## Invariant statement
 
-**No legacy folder will remain; all functionality preserved in canonical modules.**
+**No legacy paths will remain; all legacy functionality will be integrated into canonical modules.**
