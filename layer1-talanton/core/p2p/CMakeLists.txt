@@ -15,8 +15,8 @@ add_library(parthenon_p2p STATIC
 )
 
 target_include_directories(parthenon_p2p PUBLIC
-    ${CMAKE_SOURCE_DIR}/layer1/core
-    ${CMAKE_SOURCE_DIR}/layer1
+    ${CMAKE_SOURCE_DIR}/layer1-talanton/core
+    ${CMAKE_SOURCE_DIR}/layer1-talanton
     ${OPENSSL_INCLUDE_DIR}
 )
 

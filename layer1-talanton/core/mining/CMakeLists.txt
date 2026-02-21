@@ -5,8 +5,9 @@ add_library(parthenon_mining STATIC
 )
 
 target_include_directories(parthenon_mining PUBLIC
-    ${CMAKE_SOURCE_DIR}/layer1/core
-    ${CMAKE_SOURCE_DIR}/layer1
+    ${CMAKE_SOURCE_DIR}/layer1-talanton/core
+    ${CMAKE_SOURCE_DIR}/layer1-talanton
+    ${CMAKE_SOURCE_DIR}/layer3-obolos
 )
 
 target_link_libraries(parthenon_mining PUBLIC

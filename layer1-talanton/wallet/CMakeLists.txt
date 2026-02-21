@@ -7,8 +7,9 @@ add_library(parthenon_wallet STATIC
 )
 
 target_include_directories(parthenon_wallet PUBLIC
-    ${CMAKE_SOURCE_DIR}/layer1/core
-    ${CMAKE_SOURCE_DIR}/layer1
+    ${CMAKE_SOURCE_DIR}/layer1-talanton/core
+    ${CMAKE_SOURCE_DIR}/layer1-talanton
+    ${CMAKE_SOURCE_DIR}/third_party/stubs/json/include
 )
 
 target_link_libraries(parthenon_wallet PUBLIC
