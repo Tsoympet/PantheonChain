@@ -1,12 +1,33 @@
 # PantheonChain
 
+[![Build Test Devnet](https://github.com/Tsoympet/PantheonChain/actions/workflows/build-test-devnet.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/build-test-devnet.yml)
+[![Build](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml)
+
 PantheonChain is organized into strict canonical layers:
 
 - **Layer 1 / TALANTON** (`layer1-talanton`): PoW anchor chain.
-- **Layer 2 / DRACHMA** (`layer2-drachma`): PoS+BFT payments layer.
-- **Layer 3 / OBOLOS** (`layer3-obolos`): PoS+BFT execution layer with EVM and gas in OBOLOS.
+- **Layer 2 / DRACHMA** (`layer2-drachma`): PoS payments layer.
+- **Layer 3 / OBOLOS** (`layer3-obolos`): PoS + EVM execution layer.
 
 Anchoring path: **OBOLOS -> DRACHMA -> TALANTON**.
+
+## Quickstart
+
+```bash
+./scripts/build.sh
+./scripts/run-devnet.sh
+./tests/integration/devnet-smoke.sh
+```
+
+## Devnet/Testnet
+
+- Devnet configs: `configs/devnet/`
+- Testnet template configs: `configs/testnet/`
+- Config validation:
+
+```bash
+python3 scripts/validate-config.py configs/devnet/l1.json configs/devnet/l2.json configs/devnet/l3.json
+```
 
 ## Repository structure
 
@@ -22,36 +43,16 @@ Anchoring path: **OBOLOS -> DRACHMA -> TALANTON**.
 - `tests/`
 - `docker/`
 
-## Build
+## Operator docs
 
-```bash
-./scripts/build.sh
-```
+- [Testnet Definition of Done](docs/testnet_definition_of_done.md)
+- [Testnet Ready Report](docs/testnet_ready_report.md)
+- [Testnet Ops Runbook](docs/ops/testnet_operations_runbook.md)
 
-## Test
-
-```bash
-./scripts/test.sh
-```
-
-## Run devnet
-
-```bash
-./scripts/run-devnet.sh
-./tests/integration/devnet_smoke_test
-```
-
-## Docs
+## Existing docs
 
 - [Architecture](docs/architecture.md)
 - [Build](docs/build.md)
 - [Run devnet](docs/run-devnet.md)
 - [RPC](docs/rpc.md)
 - [CLI](docs/cli.md)
-- [Tokenomics](docs/tokenomics.md)
-- [Threat model](docs/threat-model.md)
-- [Migration](docs/migration.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Glossary](docs/glossary.md)
-- [Rebuild absorption plan](docs/rebuild_absorption_plan.md)
-- [Rebuild report](docs/rebuild_report.md)
