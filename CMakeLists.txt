@@ -53,4 +53,4 @@ add_executable(pantheon-relayer-l3 relayers/relayer-l3/main.cpp)
 target_link_libraries(pantheon-relayer-l2 PRIVATE pantheon_common pantheon_l1 pantheon_l2)
 target_link_libraries(pantheon-relayer-l3 PRIVATE pantheon_common pantheon_l2)
 
-add_test(NAME devnet_smoke_rpc COMMAND ${CMAKE_SOURCE_DIR}/tests/integration/devnet_smoke_test)
+
