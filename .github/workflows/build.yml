@@ -152,7 +152,7 @@ jobs:
         cmake -B build `
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
           -DPARTHENON_REQUIRE_REAL_DEPS=ON `
-          -DOPENSSL_ROOT_DIR=$opensslRoot `
+          -DOPENSSL_ROOT_DIR="$opensslRoot" `
           -GNinja
 
     - name: Build

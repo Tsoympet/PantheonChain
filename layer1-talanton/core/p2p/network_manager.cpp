@@ -17,6 +17,20 @@
 #include <iostream>
 #include <random>
 
+#ifdef _WIN32
+#ifndef ssize_t
+typedef int ssize_t;
+#endif
+#define CLOSE_SOCKET(fd) closesocket(static_cast<SOCKET>(fd))
+#define SOCKET_WOULD_BLOCK() (WSAGetLastError() == WSAEWOULDBLOCK)
+// On Windows, non-blocking connect() returns WSAEWOULDBLOCK (not WSAEINPROGRESS)
+#define SOCKET_IN_PROGRESS() (WSAGetLastError() == WSAEWOULDBLOCK)
+#else
+#define CLOSE_SOCKET(fd) close(fd)
+#define SOCKET_WOULD_BLOCK() (errno == EAGAIN || errno == EWOULDBLOCK)
+#define SOCKET_IN_PROGRESS() (errno == EINPROGRESS)
+#endif
+
 namespace parthenon {
 namespace p2p {
 
@@ -54,8 +68,13 @@ bool PeerConnection::Connect() {
         }
 
         // Set non-blocking
+#ifdef _WIN32
+        u_long mode = 1;
+        ioctlsocket(static_cast<SOCKET>(socket_fd_), FIONBIO, &mode);
+#else
         int flags = fcntl(socket_fd_, F_GETFL, 0);
         fcntl(socket_fd_, F_SETFL, flags | O_NONBLOCK);
+#endif
 
         // Connect to peer
         struct sockaddr_in server_addr {};
@@ -64,7 +83,7 @@ bool PeerConnection::Connect() {
 
         if (inet_pton(AF_INET, address_.c_str(), &server_addr.sin_addr) <= 0) {
             std::cerr << "Invalid address: " << address_ << std::endl;
-            close(socket_fd_);
+            CLOSE_SOCKET(socket_fd_);
             socket_fd_ = -1;
             return false;
         }
@@ -72,9 +91,9 @@ bool PeerConnection::Connect() {
         int result = connect(socket_fd_,
                              reinterpret_cast<struct sockaddr*>(&server_addr),
                              sizeof(server_addr));
-        if (result < 0 && errno != EINPROGRESS) {
+        if (result < 0 && !SOCKET_IN_PROGRESS()) {
             std::cerr << "Failed to connect to " << address_ << ":" << port_ << std::endl;
-            close(socket_fd_);
+            CLOSE_SOCKET(socket_fd_);
             socket_fd_ = -1;
             return false;
         }
@@ -86,7 +105,7 @@ bool PeerConnection::Connect() {
 
 void PeerConnection::Disconnect() {
     if (socket_fd_ >= 0) {
-        close(socket_fd_);
+        CLOSE_SOCKET(socket_fd_);
         socket_fd_ = -1;
     }
     state_ = PeerState::DISCONNECTED;
@@ -106,9 +125,9 @@ bool PeerConnection::SendRaw(const std::vector<uint8_t>& data) {
 
     size_t sent = 0;
     while (sent < data.size()) {
-        ssize_t result = send(socket_fd_, data.data() + sent, data.size() - sent, 0);
+        ssize_t result = send(socket_fd_, reinterpret_cast<const char*>(data.data() + sent), static_cast<int>(data.size() - sent), 0);
         if (result < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            if (SOCKET_WOULD_BLOCK()) {
                 // Would block, queue for later
                 send_queue_.push(std::vector<uint8_t>(data.begin() + sent, data.end()));
                 return true;
@@ -125,9 +144,9 @@ bool PeerConnection::SendRaw(const std::vector<uint8_t>& data) {
 bool PeerConnection::ReceiveRaw(size_t bytes) {
     std::vector<uint8_t> buffer(bytes);
 
-    ssize_t received = recv(socket_fd_, buffer.data(), bytes, 0);
+    ssize_t received = recv(socket_fd_, reinterpret_cast<char*>(buffer.data()), static_cast<int>(bytes), 0);
     if (received < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (SOCKET_WOULD_BLOCK()) {
             return true;  // No data available yet
         }
         std::cerr << "Receive failed: " << strerror(errno) << std::endl;
@@ -140,7 +159,7 @@ bool PeerConnection::ReceiveRaw(size_t bytes) {
         return false;
     }
 
-    recv_buffer_.insert(recv_buffer_.end(), buffer.begin(), buffer.begin() + received);
+    recv_buffer_.insert(recv_buffer_.end(), buffer.data(), buffer.data() + static_cast<size_t>(received));
     return true;
 }
 
@@ -342,7 +361,7 @@ void NetworkManager::Stop() {
 
     // Close listen socket
     if (listen_socket_ >= 0) {
-        close(listen_socket_);
+        CLOSE_SOCKET(listen_socket_);
         listen_socket_ = -1;
     }
 
@@ -376,7 +395,7 @@ bool NetworkManager::CreateListenSocket() {
 
     // Set socket options
     int opt = 1;
-    setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&opt), sizeof(opt));
 
     // Bind to port
     struct sockaddr_in addr {};
@@ -385,14 +404,14 @@ bool NetworkManager::CreateListenSocket() {
     addr.sin_port = htons(listen_port_);
 
     if (bind(listen_socket_, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
-        close(listen_socket_);
+        CLOSE_SOCKET(listen_socket_);
         listen_socket_ = -1;
         return false;
     }
 
     // Listen for connections
     if (listen(listen_socket_, MAX_INBOUND_CONNECTIONS) < 0) {
-        close(listen_socket_);
+        CLOSE_SOCKET(listen_socket_);
         listen_socket_ = -1;
         return false;
     }
@@ -405,10 +424,17 @@ void NetworkManager::AcceptLoop() {
         struct sockaddr_in client_addr {};
         socklen_t addr_len = sizeof(client_addr);
 
+#ifdef _WIN32
+        SOCKET raw_client = accept(static_cast<SOCKET>(listen_socket_), reinterpret_cast<struct sockaddr*>(&client_addr), &addr_len);
+        int client_socket = (raw_client == INVALID_SOCKET) ? -1 : static_cast<int>(raw_client);
+        if (client_socket < 0) {
+            if (SOCKET_WOULD_BLOCK()) {
+#else
         int client_socket =
             accept(listen_socket_, reinterpret_cast<struct sockaddr*>(&client_addr), &addr_len);
         if (client_socket < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            if (SOCKET_WOULD_BLOCK()) {
+#endif
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 continue;
             }
@@ -423,7 +449,7 @@ void NetworkManager::AcceptLoop() {
 
         // Check if banned
         if (IsBanned(address)) {
-            close(client_socket);
+            CLOSE_SOCKET(client_socket);
             continue;
         }
 
@@ -433,7 +459,7 @@ void NetworkManager::AcceptLoop() {
         {
             std::lock_guard<std::mutex> lock(peers_mutex_);
             if (peers_.size() >= MAX_CONNECTIONS) {
-                close(client_socket);
+                CLOSE_SOCKET(client_socket);
                 continue;
             }
 
