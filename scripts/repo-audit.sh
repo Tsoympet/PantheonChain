@@ -4,7 +4,7 @@ required_docs=(
   docs/architecture.md docs/build.md docs/run-devnet.md docs/rpc.md docs/cli.md docs/tokenomics.md docs/threat-model.md docs/migration.md docs/troubleshooting.md docs/glossary.md docs/rebuild_absorption_plan.md docs/rebuild_report.md
 )
 required_configs=(configs/devnet/l1.json configs/devnet/l2.json configs/devnet/l3.json)
-required_scripts=(scripts/build.sh scripts/test.sh scripts/lint.sh scripts/run-devnet.sh scripts/clean.sh scripts/repo-audit.sh)
+required_scripts=(scripts/build.sh scripts/test.sh scripts/lint.sh scripts/run-devnet.sh scripts/clean.sh scripts/repo-audit.sh scripts/placeholder-gate.sh)
 required_dirs=(
   layer1-talanton/node
   layer1-talanton/consensus

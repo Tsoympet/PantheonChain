@@ -9,6 +9,14 @@ permissions:
   contents: read
 
 jobs:
+
+  placeholder-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder gate
+        run: ./scripts/placeholder-gate.sh
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -68,10 +76,8 @@ jobs:
           key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', '**/CMakeLists.txt') }}
       - name: Build (cache fallback)
         run: test -d build || ./scripts/build.sh
-      - name: Start devnet
-        run: ./scripts/run-devnet.sh
       - name: Integration smoke
-        run: ./tests/integration/devnet-smoke.sh
+        run: ./scripts/test.sh
       - name: Stop devnet
         if: always()
         run: xargs -r kill < <(cat .devnet/*.pid) || true
@@ -81,3 +87,11 @@ jobs:
         with:
           name: devnet-logs
           path: .devnet/logs
+
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint
+        run: ./scripts/lint.sh
