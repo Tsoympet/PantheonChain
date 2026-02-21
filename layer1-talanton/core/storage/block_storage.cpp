@@ -4,6 +4,7 @@
 
 #include <charconv>
 #include <iomanip>
+#include <sstream>
 #include <leveldb/write_batch.h>
 
 namespace parthenon {
