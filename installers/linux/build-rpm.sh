@@ -47,7 +47,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Read version from VERSION file (supports plain semver or C/C++ #define format).
 # Fallback to version.h for compatibility with older release automation.
-VERSION_FILE="$PROJECT_ROOT/VERSION"
+VERSION_FILE="$PROJECT_ROOT/VERSION.txt"
 VERSION_HEADER_FILE="$PROJECT_ROOT/version.h"
 
 extract_version() {

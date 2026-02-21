@@ -7,7 +7,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Read version from VERSION file
-VERSION=$(cat "$PROJECT_ROOT/VERSION" 2>/dev/null || echo "1.0.0")
+VERSION=$(cat "$PROJECT_ROOT/VERSION.txt" 2>/dev/null || echo "1.0.0")
 
 echo "=== Generating checksums for ParthenonChain release artifacts ==="
 
