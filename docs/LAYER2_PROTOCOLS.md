@@ -430,4 +430,4 @@ Planned enhancements:
 ---
 
 **See Also**:
-- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [architecture.md](architecture.md)
