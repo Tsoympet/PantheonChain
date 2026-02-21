@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(PantheonChain VERSION 1.0.0 LANGUAGES CXX)
+project(PantheonChain VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -53,4 +53,17 @@ add_executable(pantheon-relayer-l3 relayers/relayer-l3/main.cpp)
 target_link_libraries(pantheon-relayer-l2 PRIVATE pantheon_common pantheon_l1 pantheon_l2)
 target_link_libraries(pantheon-relayer-l3 PRIVATE pantheon_common pantheon_l2)
 
+# Third-party stubs (secp256k1 and leveldb) used by layer1-talanton
+set(SECP256K1_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/stubs/secp256k1/include")
+add_subdirectory(third_party/stubs/secp256k1)
+add_subdirectory(third_party/stubs/leveldb)
 
+# Compatibility shim: parthenon_monetary wraps the monetary code in pantheon_common
+add_library(parthenon_monetary INTERFACE)
+target_link_libraries(parthenon_monetary INTERFACE pantheon_common)
+
+# Layer 1 full library set (parthenon_node, parthenon_wallet, parthenon_rpc, etc.)
+add_subdirectory(layer1-talanton)
+
+# Client applications: parthenond (daemon), parthenon-cli, parthenon-qt (desktop wallet)
+add_subdirectory(clients)

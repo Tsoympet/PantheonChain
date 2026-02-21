@@ -6,8 +6,8 @@ add_library(parthenon_storage STATIC
 )
 
 target_include_directories(parthenon_storage PUBLIC
-    ${CMAKE_SOURCE_DIR}/layer1/core
-    ${CMAKE_SOURCE_DIR}/layer1
+    ${CMAKE_SOURCE_DIR}/layer1-talanton/core
+    ${CMAKE_SOURCE_DIR}/layer1-talanton
 )
 
 if(TARGET leveldb)

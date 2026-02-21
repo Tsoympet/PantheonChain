@@ -6,8 +6,8 @@ add_library(parthenon_node STATIC
 )
 
 target_include_directories(parthenon_node PUBLIC
-    ${CMAKE_SOURCE_DIR}/layer1/core
-    ${CMAKE_SOURCE_DIR}/layer1
+    ${CMAKE_SOURCE_DIR}/layer1-talanton/core
+    ${CMAKE_SOURCE_DIR}/layer1-talanton
 )
 
 target_link_libraries(parthenon_node PUBLIC
