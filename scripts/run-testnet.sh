@@ -6,7 +6,7 @@ cd "$ROOT"
 
 python3 scripts/validate-config.py configs/testnet/l1.json configs/testnet/l2.json configs/testnet/l3.json
 
-mkdir -p .testnet/logs
+mkdir -p .testnet/logs .testnet/state
 PYTHON_BIN="/usr/bin/python3"
 
 cleanup_on_error() {
@@ -21,9 +21,9 @@ cleanup_on_error() {
 }
 trap cleanup_on_error ERR
 
-"$PYTHON_BIN" scripts/mock_layer_server.py 28332 l1 >.testnet/logs/l1.log 2>&1 & echo $! >.testnet/l1.pid
-"$PYTHON_BIN" scripts/mock_layer_server.py 29332 l2 >.testnet/logs/l2.log 2>&1 & echo $! >.testnet/l2.pid
-"$PYTHON_BIN" scripts/mock_layer_server.py 30332 l3 >.testnet/logs/l3.log 2>&1 & echo $! >.testnet/l3.pid
+"$PYTHON_BIN" scripts/devnet_layer_server.py 28332 l1 .testnet/state/l1.json >.testnet/logs/l1.log 2>&1 & echo $! >.testnet/l1.pid
+"$PYTHON_BIN" scripts/devnet_layer_server.py 29332 l2 .testnet/state/l2.json >.testnet/logs/l2.log 2>&1 & echo $! >.testnet/l2.pid
+"$PYTHON_BIN" scripts/devnet_layer_server.py 30332 l3 .testnet/state/l3.json >.testnet/logs/l3.log 2>&1 & echo $! >.testnet/l3.pid
 
 wait_for_rpc() {
   local url="$1"
