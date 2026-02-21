@@ -484,6 +484,6 @@ type %APPDATA%\ParthenonChain\debug.log
 ---
 
 **Next Steps**:
-- Read [ARCHITECTURE.md](ARCHITECTURE.md) to understand the system
+- Read [architecture.md](architecture.md) to understand the system
 - Review [SECURITY.md](../SECURITY.md) for security best practices
 - See [Layer 1 Core](LAYER1_CORE.md) for technical details

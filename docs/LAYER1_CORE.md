@@ -464,5 +464,5 @@ const uint32_t MAX_MONEY = 21000000 * COIN;  // Maximum TALANTON
 ---
 
 **See Also**:
-- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [architecture.md](architecture.md)
 - [SECURITY_MODEL.md](SECURITY_MODEL.md)

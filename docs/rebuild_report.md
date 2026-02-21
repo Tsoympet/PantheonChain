@@ -34,6 +34,8 @@ Legacy `src/*` layer modules were moved into canonical layer directories. Shared
 ## Known limitations and next steps
 
 - Current devnet uses a mock RPC harness for smoke validation.
+- Initial docs normalization completed by removing duplicate uppercase markdown aliases and
+  standardizing links to canonical lowercase docs paths.
 - Additional directory normalization is still desirable for strict one-to-one mapping between
   auxiliary trees (`clients`, `installers`, `tools`, `assets`) and canonical module ownership.
 - Integration smoke currently validates mocked/devnet orchestration paths; production-hardening

@@ -193,7 +193,7 @@ ctest -R indexers
 
 For detailed Layer 2 protocol documentation, see:
 - [LAYER2_PROTOCOLS.md](../docs/LAYER2_PROTOCOLS.md)
-- [Architecture Overview](../docs/ARCHITECTURE.md)
+- [Architecture Overview](../docs/architecture.md)
 - [Phase 8 Completion Report](../docs/PHASE8_COMPLETION.md)
 
 ## Examples
