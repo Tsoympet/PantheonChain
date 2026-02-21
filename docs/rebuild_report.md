@@ -13,10 +13,17 @@
 - scripts
 - tests
 - docker
+- include
+- clients
+- enterprise
+- installers
+- assets
+- third_party
+- tools
 
 ## Legacy absorption summary
 
-Legacy `src/*` layer modules were moved into canonical layer directories. Shared primitives were moved into `common/*`. `legacy/` was removed after absorbing remaining functionality into canonical modules.
+Legacy `src/*` layer modules were moved into canonical layer directories. Shared primitives were moved into `common/*`. `legacy/` and `src/` were removed after absorbing remaining functionality into canonical modules.
 
 ## Build / test / devnet
 
