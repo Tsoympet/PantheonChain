@@ -1,5 +1,7 @@
 #include "verifier.h"
 
+#include "crypto/sha256.h"
+
 #include <algorithm>
 
 namespace parthenon {
@@ -54,17 +56,18 @@ VerificationResult ContractVerifier::VerifyContract(const std::vector<uint8_t>& 
 
 VerificationResult
 ContractVerifier::VerifySource([[maybe_unused]] const std::string& source_code,
-                               [[maybe_unused]] const std::vector<Property>& properties) {
-    // In production, would compile source to bytecode first
-    // For now, return simplified result
-    VerificationResult result;
-    result.status = VerificationStatus::VERIFIED;
-
+                               const std::vector<Property>& properties) {
     if (source_code.empty()) {
+        VerificationResult result;
         result.status = VerificationStatus::FAILED;
+        return result;
     }
 
-    return result;
+    // Convert source string bytes to a bytecode buffer for static analysis.
+    // This is a conservative approximation: real production would invoke a
+    // compiler (e.g., solc) to produce actual EVM bytecode before verifying.
+    std::vector<uint8_t> bytecode(source_code.begin(), source_code.end());
+    return VerifyContract(bytecode, properties);
 }
 
 void ContractVerifier::AddProperty(const Property& property) {
@@ -204,11 +207,12 @@ UpgradeableContract::CreateProxy(const std::vector<uint8_t>& implementation,
     proxy.admin_address = admin;
     proxy.version = 1;
 
-    // Generate proxy address (simplified)
-    proxy.proxy_address.resize(20);
-    for (size_t i = 0; i < 20; ++i) {
-        proxy.proxy_address[i] = static_cast<uint8_t>(i);
-    }
+    // Derive proxy address as SHA256(implementation || admin), truncated to 20 bytes
+    crypto::SHA256 hasher;
+    hasher.Write(implementation.data(), implementation.size());
+    hasher.Write(admin.data(), admin.size());
+    auto address_hash = hasher.Finalize();
+    proxy.proxy_address.assign(address_hash.begin(), address_hash.begin() + 20);
 
     return proxy;
 }

@@ -1,5 +1,7 @@
 #include "optimistic_rollup.h"
 
+#include "crypto/sha256.h"
+
 #include <algorithm>
 #include <cstring>
 
@@ -255,18 +257,13 @@ bool RollupSequencer::ValidateTransaction(const RollupTx& tx) const {
 std::array<uint8_t, 32>
 RollupSequencer::CalculateStateRoot(const std::array<uint8_t, 32>& prev_root,
                                     const std::vector<RollupTx>& transactions) const {
-    std::array<uint8_t, 32> new_root = prev_root;
-
-    // Simple state transition
-    // In production, would apply each transaction to the state
+    // Compute new state root as SHA256(prev_root || tx_hash_0 || tx_hash_1 || ...)
+    crypto::SHA256 hasher;
+    hasher.Write(prev_root.data(), prev_root.size());
     for (const auto& tx : transactions) {
-        // XOR transaction hash into state root (simplified)
-        for (size_t i = 0; i < 32; ++i) {
-            new_root[i] ^= tx.tx_hash[i];
-        }
+        hasher.Write(tx.tx_hash.data(), tx.tx_hash.size());
     }
-
-    return new_root;
+    return hasher.Finalize();
 }
 
 // RollupVerifier Implementation
@@ -329,15 +326,11 @@ std::optional<FraudProof> RollupVerifier::GenerateFraudProof(uint64_t batch_id) 
 std::array<uint8_t, 32>
 RollupVerifier::ReExecuteTransaction(const RollupTx& tx,
                                      const std::array<uint8_t, 32>& state_root) const {
-    std::array<uint8_t, 32> new_root = state_root;
-
-    // Apply transaction to state
-    // This is simplified - production would execute full state transition
-    for (size_t i = 0; i < 32; ++i) {
-        new_root[i] ^= tx.tx_hash[i];
-    }
-
-    return new_root;
+    // Apply transaction to state: new_root = SHA256(state_root || tx_hash)
+    crypto::SHA256 hasher;
+    hasher.Write(state_root.data(), state_root.size());
+    hasher.Write(tx.tx_hash.data(), tx.tx_hash.size());
+    return hasher.Finalize();
 }
 
 }  // namespace rollups
