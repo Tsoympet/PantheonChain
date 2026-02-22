@@ -165,9 +165,6 @@ class GenericHardwareWallet : public HardwareWallet {
             ss << std::hex << static_cast<int>(hash[i]);
         }
 
-        [[maybe_unused]] bool show_on_device = display_on_device;
-        // In production: if (show_on_device) { device->ShowAddress(...); }
-
         return ss.str();
     }
 
@@ -211,8 +208,6 @@ class GenericHardwareWallet : public HardwareWallet {
         auto hash = crypto::SHA256::Hash256(message);
         std::copy(hash.begin(), hash.end(), signature.begin());
 
-        [[maybe_unused]] const DerivationPath& signing_path = path;
-        // In production: derive key using signing_path
         return signature;
     }
 

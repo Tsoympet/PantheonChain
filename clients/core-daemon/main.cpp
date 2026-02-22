@@ -341,6 +341,12 @@ class Node {
   public:
     explicit Node(const Config& config) : config_(config) {}
 
+    /// Starts all node subsystems: data directory setup, network mode resolution,
+    /// wallet seed loading/generation, core node startup, optional RPC server
+    /// initialization, and optional mining activation.
+    ///
+    /// Returns true if all subsystems started successfully, false otherwise.
+    /// On failure, any partially started subsystems are stopped before returning.
     bool Start() {
         if (running_.load()) {
             std::cerr << "Node already running" << std::endl;
@@ -508,7 +514,9 @@ int main(int argc, char* argv[]) {
     }
 
     // Parse configuration
-    parthenon::Config config = parthenon::ConfigParser::Parse(config_file);
+    const std::filesystem::path config_path =
+        std::filesystem::weakly_canonical(std::filesystem::path(config_file));
+    parthenon::Config config = parthenon::ConfigParser::Parse(config_path.string());
     if (!layer_override.empty()) {
         config.layer = layer_override;
     }

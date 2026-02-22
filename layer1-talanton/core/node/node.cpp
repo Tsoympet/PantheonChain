@@ -610,30 +610,7 @@ void Node::HandleTxReceived(const std::string& peer_id, const primitives::Transa
 void Node::HandleInvReceived(const std::string& peer_id, const p2p::InvMessage& inv) {
     std::cout << "Received inventory from " << peer_id << ": " << inv.inventory.size() << " items"
               << std::endl;
-
-    // Request data for items we don't have
-    p2p::GetDataMessage getdata;
-    for (const auto& item : inv.inventory) {
-        // Check if we already have this item
-        bool have_item = false;
-
-        if (item.type == p2p::InvType::MSG_BLOCK) {
-            have_item = block_storage_ && block_storage_->GetBlockByHash(item.hash).has_value();
-        } else if (item.type == p2p::InvType::MSG_TX) {
-            // Check mempool or recent blocks
-            // have_item = mempool_->HasTransaction(item.hash);
-        }
-
-        if (!have_item) {
-            getdata.inventory.push_back(item);
-        }
-    }
-
-    // Request items we don't have
-    if (!getdata.inventory.empty() && network_) {
-        // Send getdata to the peer
-        // network_->SendGetData(peer_id, getdata);
-    }
+    // Network GetData send not yet implemented; received inventory is logged only
 }
 
 void Node::HandleGetDataReceived(const std::string& peer_id, const p2p::GetDataMessage& msg) {
@@ -644,24 +621,7 @@ void Node::HandleGetDataReceived(const std::string& peer_id, const p2p::GetDataM
         return;
     }
 
-    // Respond with requested items
-    for (const auto& item : msg.inventory) {
-        if (item.type == p2p::InvType::MSG_BLOCK) {
-            if (block_storage_) {
-                auto block = block_storage_->GetBlockByHash(item.hash);
-                if (block) {
-                    // Send block to peer
-                    // network_->SendBlock(peer_id, *block);
-                }
-            }
-        } else if (item.type == p2p::InvType::MSG_TX) {
-            // Get transaction from mempool
-            // if (mempool_->HasTransaction(item.hash)) {
-            //     auto tx = mempool_->GetTransaction(item.hash);
-            //     network_->SendTx(peer_id, tx);
-            // }
-        }
-    }
+    // Block and transaction send not yet implemented; request is logged only
 }
 
 // Mining functions
