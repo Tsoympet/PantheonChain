@@ -16,7 +16,9 @@ class WalletService {
     // In production, this would use proper key derivation (BIP32/BIP44)
     // For now, generate a simple deterministic address
     const timestamp = Date.now();
-    const randomPart = Math.random().toString(36).substring(7);
+    const randomBytes = new Uint8Array(16);
+    crypto.getRandomValues(randomBytes);
+    const randomPart = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
     const seedString = `${asset}-${timestamp}-${randomPart}`;
     
     try {

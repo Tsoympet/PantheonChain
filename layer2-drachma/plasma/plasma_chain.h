@@ -42,7 +42,7 @@ struct PlasmaTx {
     uint64_t nonce;
     std::vector<uint8_t> signature;
 
-    PlasmaTx() : amount(0), nonce(0) {}
+    PlasmaTx() : amount(0), nonce(0) { tx_hash.fill(0); }
 };
 
 /**
@@ -58,7 +58,7 @@ struct ExitRequest {
     uint64_t challenge_period_end;
     bool challenged;
 
-    ExitRequest() : plasma_block_number(0), amount(0), challenge_period_end(0), challenged(false) {}
+    ExitRequest() : plasma_block_number(0), amount(0), challenge_period_end(0), challenged(false) { tx_hash.fill(0); }
 };
 
 /**

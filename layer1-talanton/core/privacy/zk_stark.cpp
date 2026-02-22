@@ -185,6 +185,7 @@ STARKProof RecursiveSTARK::ProveVerification([[maybe_unused]] const STARKProof& 
     // In production: generate proof of verification
     STARKProof recursive;
     recursive.proof_data.resize(512);
+    recursive.fri_layers = 0;
     return recursive;
 }
 

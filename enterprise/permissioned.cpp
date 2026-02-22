@@ -1,5 +1,7 @@
 #include "permissioned.h"
 
+#include <ctime>
+
 namespace parthenon {
 namespace enterprise {
 
@@ -233,6 +235,7 @@ std::vector<ComplianceManager::TransactionAlert> ComplianceManager::ScreenTransa
         alert.alert_type = "LARGE_TRANSACTION";
         alert.severity = RiskLevel::MEDIUM;
         alert.description = "Transaction exceeds threshold";
+        alert.timestamp = static_cast<uint64_t>(std::time(nullptr));
         alert.resolved = false;
         alerts.push_back(alert);
     }
@@ -243,6 +246,7 @@ std::vector<ComplianceManager::TransactionAlert> ComplianceManager::ScreenTransa
         alert.alert_type = "UNVERIFIED_PARTICIPANT";
         alert.severity = RiskLevel::HIGH;
         alert.description = "One or both parties not KYC verified";
+        alert.timestamp = static_cast<uint64_t>(std::time(nullptr));
         alert.resolved = false;
         alerts.push_back(alert);
     }

@@ -60,7 +60,7 @@ struct CrossShardTx {
     std::vector<uint8_t> proof;
     uint32_t block_height;
 
-    CrossShardTx() : source_shard(0), destination_shard(0), block_height(0) {}
+    CrossShardTx() : source_shard(0), destination_shard(0), block_height(0) { tx_hash.fill(0); }
 };
 
 /**
