@@ -106,6 +106,9 @@ class PeerDiscovery {
     bool dns_discovery_enabled_;
     bool peer_exchange_enabled_;
     PeerDiscoveredCallback peer_discovered_callback_;
+#ifdef _WIN32
+    bool wsa_startup_failed_ = false;
+#endif
 
     // Default DNS seeds for mainnet
     static const std::vector<std::string> DEFAULT_DNS_SEEDS;

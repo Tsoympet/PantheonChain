@@ -141,7 +141,7 @@ crypto::Schnorr::PrivateKey DerivePrivateKey(const std::vector<uint8_t>& entropy
     return privkey;
 }
 
-[[maybe_unused]] bool PopulatePrivateKey(crypto::Schnorr::PrivateKey& privkey) {
+bool PopulatePrivateKey(crypto::Schnorr::PrivateKey& privkey) {
     std::array<uint8_t, crypto::Schnorr::PRIVATE_KEY_SIZE> random_bytes{};
     for (int attempt = 0; attempt < 10; ++attempt) {
         if (!FillRandomBytes(random_bytes.data(), random_bytes.size())) {
@@ -559,16 +559,15 @@ Wallet::Wallet() {}
 
 std::unique_ptr<Wallet> Wallet::Generate() {
     auto wallet = std::unique_ptr<Wallet>(new Wallet());
-    std::vector<uint8_t> entropy(32);
-    if (!FillRandomBytes(entropy.data(), entropy.size())) {
-        return nullptr;
-    }
-    wallet->mnemonic_ = FormatMnemonic(entropy);
 
-    auto privkey = DerivePrivateKey(entropy);
-    if (!crypto::Schnorr::ValidatePrivateKey(privkey)) {
+    // Generate a cryptographically valid random private key
+    crypto::Schnorr::PrivateKey privkey{};
+    if (!PopulatePrivateKey(privkey)) {
         return nullptr;
     }
+
+    // Encode the private key bytes as the mnemonic for backup/recovery
+    wallet->mnemonic_ = FormatMnemonic(std::vector<uint8_t>(privkey.begin(), privkey.end()));
 
     auto pubkey_opt = crypto::Schnorr::GetPublicKey(privkey);
     if (!pubkey_opt) {
@@ -589,7 +588,13 @@ std::unique_ptr<Wallet> Wallet::FromMnemonic(const std::string& mnemonic) {
         return nullptr;
     }
 
-    auto privkey = DerivePrivateKey(entropy);
+    // Interpret the decoded bytes directly as the private key
+    crypto::Schnorr::PrivateKey privkey{};
+    if (entropy.size() != privkey.size()) {
+        return nullptr;
+    }
+    std::copy(entropy.begin(), entropy.end(), privkey.begin());
+
     if (!crypto::Schnorr::ValidatePrivateKey(privkey)) {
         return nullptr;
     }
@@ -916,12 +921,18 @@ void MobileClient::GetTransaction(const std::string& txid, TxInfoCallback callba
 }
 
 void MobileClient::CallContract(const ContractCall& call, ContractCallCallback callback) {
-    (void)call;
+    if (call.contract_address.empty()) {
+        callback(std::nullopt, "Contract address must not be empty");
+        return;
+    }
     callback(std::nullopt, "Contract calls are not supported by the current SDK implementation");
 }
 
 void MobileClient::DeployContract(const std::vector<uint8_t>& bytecode, TransactionCallback callback) {
-    (void)bytecode;
+    if (bytecode.empty()) {
+        callback(std::nullopt, "Bytecode must not be empty");
+        return;
+    }
     callback(std::nullopt, "Contract deployment is not supported by the current SDK implementation");
 }
 
@@ -1028,7 +1039,10 @@ void MobileClient::SubscribeToAddress(const std::string& address, AddressTxCallb
 }
 
 void MobileClient::EstimateGas(const Transaction& tx, GasEstimateCallback callback) {
-    (void)tx;
+    if (tx.to.empty()) {
+        callback(std::nullopt, "Transaction destination address must not be empty");
+        return;
+    }
     callback(std::nullopt, "Gas estimation is not supported by the current SDK implementation");
 }
 
@@ -1150,7 +1164,7 @@ std::optional<QRCodeHelper::PaymentRequest> QRCodeHelper::ParsePaymentURI(const 
 }
 
 // SecureStorage implementation
-bool SecureStorage::Store([[maybe_unused]] const std::string& key, [[maybe_unused]] const std::vector<uint8_t>& data) {
+bool SecureStorage::Store(const std::string& key, const std::vector<uint8_t>& data) {
     std::array<uint8_t, kStorageKeySize> storage_key{};
     if (!LoadOrCreateStorageKey(storage_key)) {
         return false;
@@ -1175,7 +1189,7 @@ bool SecureStorage::Store([[maybe_unused]] const std::string& key, [[maybe_unuse
     return true;
 }
 
-std::optional<std::vector<uint8_t>> SecureStorage::Retrieve([[maybe_unused]] const std::string& key) {
+std::optional<std::vector<uint8_t>> SecureStorage::Retrieve(const std::string& key) {
     std::array<uint8_t, kStorageKeySize> storage_key{};
     if (!LoadOrCreateStorageKey(storage_key)) {
         return std::nullopt;
@@ -1197,14 +1211,14 @@ std::optional<std::vector<uint8_t>> SecureStorage::Retrieve([[maybe_unused]] con
     return plaintext;
 }
 
-bool SecureStorage::Delete([[maybe_unused]] const std::string& key) {
+bool SecureStorage::Delete(const std::string& key) {
     std::lock_guard<std::mutex> lock(g_storage_mutex);
     auto path = StorageDataPath(key);
     std::error_code ec;
     return std::filesystem::remove(path, ec);
 }
 
-bool SecureStorage::Exists([[maybe_unused]] const std::string& key) {
+bool SecureStorage::Exists(const std::string& key) {
     std::lock_guard<std::mutex> lock(g_storage_mutex);
     auto path = StorageDataPath(key);
     std::error_code ec;

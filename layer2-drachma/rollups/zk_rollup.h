@@ -198,7 +198,7 @@ class ZKRollupProver {
      * Generate transfer proof for transaction
      */
     privacy::zksnark::ZKProof GenerateTransferProof(const ZKTransaction& tx,
-                                                    [[maybe_unused]] const std::vector<uint8_t>& witness);
+                                                    const std::vector<uint8_t>& witness);
 
     /**
      * Setup proof parameters (trusted setup)

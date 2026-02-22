@@ -2,6 +2,9 @@
 
 #include "pq_crypto.h"
 
+#include "crypto/sha256.h"
+
+#include <algorithm>
 #include <cstring>
 #include <random>
 
@@ -18,18 +21,34 @@ bool DilithiumSignature::GenerateKeyPair(PublicKey& public_key, SecretKey& secre
 }
 
 DilithiumSignature::Signature
-DilithiumSignature::Sign([[maybe_unused]] const std::vector<uint8_t>& message,
-                         [[maybe_unused]] const SecretKey& secret_key) {
+DilithiumSignature::Sign(const std::vector<uint8_t>& message,
+                         const SecretKey& secret_key) {
+    // Deterministic placeholder: fill signature with SHA256(message || secret_key) repeated
+    SHA256 hasher;
+    hasher.Write(message.data(), message.size());
+    hasher.Write(secret_key.data(), secret_key.size());
+    auto hash = hasher.Finalize();
+
     Signature sig;
-    std::fill(sig.begin(), sig.end(), 0xAB);
+    for (size_t i = 0; i < sig.size(); ++i) {
+        sig[i] = hash[i % 32];
+    }
     return sig;
 }
 
-bool DilithiumSignature::Verify([[maybe_unused]] const std::vector<uint8_t>& message,
-                                [[maybe_unused]] const Signature& signature,
-                                [[maybe_unused]] const PublicKey& public_key) {
-    // In production: actual verification
-    return true;
+bool DilithiumSignature::Verify(const std::vector<uint8_t>& message,
+                                const Signature& signature,
+                                const PublicKey& public_key) {
+    // NOTE: This is a structural stub — not cryptographically secure.
+    // A real Dilithium verifier must be used in production.
+    // Accept any non-trivial signature for a non-empty message
+    // with the correct key and signature sizes.
+    if (message.empty() || public_key.size() != PUBLIC_KEY_SIZE ||
+        signature.size() != SIGNATURE_SIZE) {
+        return false;
+    }
+    return std::any_of(signature.begin(), signature.end(),
+                       [](uint8_t b) { return b != 0; });
 }
 
 // Kyber KEM implementation
@@ -39,18 +58,29 @@ bool KyberKEM::GenerateKeyPair(PublicKey& public_key, SecretKey& secret_key) {
     return true;
 }
 
-bool KyberKEM::Encapsulate([[maybe_unused]] const PublicKey& public_key, Ciphertext& ciphertext,
+bool KyberKEM::Encapsulate(const PublicKey& public_key, Ciphertext& ciphertext,
                            SharedSecret& shared_secret) {
+    // Deterministic placeholder: derive shared secret from public key
+    SHA256 hasher;
+    hasher.Write(public_key.data(), public_key.size());
+    auto hash = hasher.Finalize();
+
     std::fill(ciphertext.begin(), ciphertext.end(), 0xCD);
-    std::fill(shared_secret.begin(), shared_secret.end(), 0xEF);
+    std::copy(hash.begin(), hash.end(), shared_secret.begin());
     return true;
 }
 
 std::optional<KyberKEM::SharedSecret>
-KyberKEM::Decapsulate([[maybe_unused]] const Ciphertext& ciphertext,
-                      [[maybe_unused]] const SecretKey& secret_key) {
+KyberKEM::Decapsulate(const Ciphertext& ciphertext,
+                      const SecretKey& secret_key) {
+    // Deterministic placeholder: derive shared secret from secret key + ciphertext
+    SHA256 hasher;
+    hasher.Write(secret_key.data(), secret_key.size());
+    hasher.Write(ciphertext.data(), ciphertext.size());
+    auto hash = hasher.Finalize();
+
     SharedSecret secret;
-    std::fill(secret.begin(), secret.end(), 0xEF);
+    std::copy(hash.begin(), hash.end(), secret.begin());
     return secret;
 }
 
@@ -62,17 +92,31 @@ bool SPHINCSPlusSignature::GenerateKeyPair(PublicKey& public_key, SecretKey& sec
 }
 
 SPHINCSPlusSignature::Signature
-SPHINCSPlusSignature::Sign([[maybe_unused]] const std::vector<uint8_t>& message,
-                           [[maybe_unused]] const SecretKey& secret_key) {
+SPHINCSPlusSignature::Sign(const std::vector<uint8_t>& message,
+                           const SecretKey& secret_key) {
+    // Deterministic placeholder: fill signature with SHA256(message || secret_key) repeated
+    SHA256 hasher;
+    hasher.Write(message.data(), message.size());
+    hasher.Write(secret_key.data(), secret_key.size());
+    auto hash = hasher.Finalize();
+
     Signature sig(SIGNATURE_SIZE);
-    std::fill(sig.begin(), sig.end(), 0xBC);
+    for (size_t i = 0; i < sig.size(); ++i) {
+        sig[i] = hash[i % 32];
+    }
     return sig;
 }
 
-bool SPHINCSPlusSignature::Verify([[maybe_unused]] const std::vector<uint8_t>& message,
-                                  [[maybe_unused]] const Signature& signature,
-                                  [[maybe_unused]] const PublicKey& public_key) {
-    return true;
+bool SPHINCSPlusSignature::Verify(const std::vector<uint8_t>& message,
+                                  const Signature& signature,
+                                  const PublicKey& public_key) {
+    // Placeholder: accept any non-trivial signature for non-empty message
+    if (message.empty() || public_key.size() != PUBLIC_KEY_SIZE ||
+        signature.size() != SIGNATURE_SIZE) {
+        return false;
+    }
+    return std::any_of(signature.begin(), signature.end(),
+                       [](uint8_t b) { return b != 0; });
 }
 
 // Hybrid Crypto implementation
@@ -106,9 +150,19 @@ bool HybridCrypto::Verify(const std::vector<uint8_t>& message, const HybridSigna
 
 // PQ Address implementation
 std::string PQAddress::FromPublicKey(
-    [[maybe_unused]] const std::array<uint8_t, DilithiumSignature::PUBLIC_KEY_SIZE>& public_key) {
-    // In production: hash public key and encode
-    return "pqptn1" + std::string(58, '0');
+    const std::array<uint8_t, DilithiumSignature::PUBLIC_KEY_SIZE>& public_key) {
+    // Derive address by hashing the public key and encoding as hex with "pqptn1" prefix
+    SHA256 hasher;
+    hasher.Write(public_key.data(), public_key.size());
+    auto hash = hasher.Finalize();
+
+    std::string addr = "pqptn1";
+    for (size_t i = 0; i < 29; ++i) {  // 29 hex-pairs = 58 chars
+        static const char kHex[] = "0123456789abcdef";
+        addr += kHex[(hash[i % 32] >> 4) & 0xF];
+        addr += kHex[hash[i % 32] & 0xF];
+    }
+    return addr;
 }
 
 bool PQAddress::IsValid(const std::string& address) {

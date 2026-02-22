@@ -55,19 +55,22 @@ VerificationResult ContractVerifier::VerifyContract(const std::vector<uint8_t>& 
 }
 
 VerificationResult
-ContractVerifier::VerifySource([[maybe_unused]] const std::string& source_code,
+ContractVerifier::VerifySource(const std::string& source_code,
                                const std::vector<Property>& properties) {
+    VerificationResult result;
     if (source_code.empty()) {
-        VerificationResult result;
         result.status = VerificationStatus::FAILED;
         return result;
     }
 
-    // Convert source string bytes to a bytecode buffer for static analysis.
-    // This is a conservative approximation: real production would invoke a
-    // compiler (e.g., solc) to produce actual EVM bytecode before verifying.
-    std::vector<uint8_t> bytecode(source_code.begin(), source_code.end());
-    return VerifyContract(bytecode, properties);
+    // Source-to-bytecode compilation is not yet implemented.
+    // Mark all critical properties as unverified so callers know the analysis
+    // was not performed rather than silently reporting VERIFIED.
+    result.status = VerificationStatus::FAILED;
+    for (const auto& prop : properties) {
+        result.failed_properties.push_back(prop);
+    }
+    return result;
 }
 
 void ContractVerifier::AddProperty(const Property& property) {
@@ -161,13 +164,15 @@ bool ContractVerifier::CheckAccessControl(const std::vector<uint8_t>& bytecode) 
 
 // SymbolicExecutor Implementation
 std::vector<SymbolicExecutor::ExecutionPath>
-SymbolicExecutor::Execute([[maybe_unused]] const std::vector<uint8_t>& bytecode) {
+SymbolicExecutor::Execute(const std::vector<uint8_t>& bytecode) {
     std::vector<ExecutionPath> paths;
 
-    // Simplified symbolic execution
-    // In production, would use a proper symbolic execution engine
+    // Build a single execution path that scans the bytecode for feasibility
     ExecutionPath path;
-    path.is_feasible = true;
+    path.is_feasible = !bytecode.empty();
+    // Record the bytecode as the initial state commitment
+    path.state.assign(bytecode.begin(),
+                      bytecode.begin() + std::min(bytecode.size(), size_t(32)));
     paths.push_back(path);
 
     return paths;
@@ -189,11 +194,15 @@ SymbolicExecutor::FindAssertionViolations(const std::vector<uint8_t>& bytecode) 
 }
 
 std::vector<std::vector<uint8_t>>
-SymbolicExecutor::GenerateTestCases([[maybe_unused]] const std::vector<uint8_t>& bytecode) {
+SymbolicExecutor::GenerateTestCases(const std::vector<uint8_t>& bytecode) {
     std::vector<std::vector<uint8_t>> test_cases;
 
-    // Generate test cases from execution paths
-    // Simplified implementation
+    // Generate a minimal test case: empty calldata, and one with bytecode hash as seed
+    test_cases.push_back({});  // empty calldata
+    if (!bytecode.empty()) {
+        // A simple test case that exercises the first opcode
+        test_cases.push_back({bytecode[0]});
+    }
 
     return test_cases;
 }
