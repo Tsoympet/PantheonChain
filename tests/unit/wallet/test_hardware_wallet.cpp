@@ -16,11 +16,11 @@ void test_derivation_path_parsing() {
     auto path1 = DerivationPath::Parse("m/44'/0'/0'/0/0");
     assert(path1.has_value());
     assert(path1->path.size() == 5);
-    assert((path1->path[0] & 0x80000000) != 0);  // Hardened
-    assert((path1->path[1] & 0x80000000) != 0);  // Hardened
-    assert((path1->path[2] & 0x80000000) != 0);  // Hardened
-    assert((path1->path[3] & 0x80000000) == 0);  // Not hardened
-    assert((path1->path[4] & 0x80000000) == 0);  // Not hardened
+    assert((path1->path[0] & 0x80000000) != 0); // Hardened
+    assert((path1->path[1] & 0x80000000) != 0); // Hardened
+    assert((path1->path[2] & 0x80000000) != 0); // Hardened
+    assert((path1->path[3] & 0x80000000) == 0); // Not hardened
+    assert((path1->path[4] & 0x80000000) == 0); // Not hardened
 
     // Test path to string conversion
     std::string path_str = path1->ToString();
@@ -56,11 +56,11 @@ void test_hardware_wallet_manager() {
 void test_derivation_path_construction() {
     // Test constructor with vector
     std::vector<uint32_t> path_data = {
-        44 | 0x80000000,  // 44'
-        0 | 0x80000000,   // 0'
-        0 | 0x80000000,   // 0'
-        0,                // 0
-        0                 // 0
+        44 | 0x80000000, // 44'
+        0 | 0x80000000,  // 0'
+        0 | 0x80000000,  // 0'
+        0,               // 0
+        0                // 0
     };
 
     DerivationPath path(path_data);
@@ -77,7 +77,7 @@ void test_firmware_signature_verification() {
     FirmwareVerifier verifier;
 
     Schnorr::PrivateKey privkey{};
-    privkey[31] = 1;  // Deterministic valid key for tests
+    privkey[31] = 1; // Deterministic valid key for tests
 
     auto pubkey_opt = Schnorr::GetPublicKey(privkey);
     assert(pubkey_opt.has_value());

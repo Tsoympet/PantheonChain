@@ -42,7 +42,7 @@ void TestTransactionStructureValidation() {
 
     // Transaction with duplicate inputs
     Transaction dup_inputs_tx = tx;
-    dup_inputs_tx.inputs.push_back(input);  // Same input twice
+    dup_inputs_tx.inputs.push_back(input); // Same input twice
     error = TransactionValidator::ValidateStructure(dup_inputs_tx);
     assert(error.has_value());
     assert(error->type == ValidationError::Type::TX_DUPLICATE_INPUTS);
@@ -116,7 +116,7 @@ void TestCoinbaseMaturity() {
 
     std::vector<uint8_t> pubkey(32, 0xAB);
     TxOutput output(AssetID::TALANTON, 5000000000, pubkey);
-    Coin coin(output, 100, true);  // Coinbase coin
+    Coin coin(output, 100, true); // Coinbase coin
     utxo_set.AddCoin(outpoint, coin);
 
     // Try to spend at height 150 (not yet mature)
@@ -172,7 +172,7 @@ void TestBlockStructureValidation() {
 
     // Block with non-coinbase first transaction
     Block no_coinbase_block = block;
-    no_coinbase_block.transactions[0].inputs[0].prevout.vout = 0;  // Make it non-coinbase
+    no_coinbase_block.transactions[0].inputs[0].prevout.vout = 0; // Make it non-coinbase
     error = BlockValidator::ValidateStructure(no_coinbase_block);
     assert(error.has_value());
     assert(error->type == ValidationError::Type::BLOCK_NO_COINBASE);

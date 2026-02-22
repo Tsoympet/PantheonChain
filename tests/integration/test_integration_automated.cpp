@@ -24,35 +24,35 @@ int test_count = 0;
 int test_passed = 0;
 int test_failed = 0;
 
-void TEST_START(const char* name) {
+void TEST_START(const char *name) {
     std::cout << "\n=== TEST: " << name << " ===\n";
     test_count++;
 }
 
-void TEST_PASS(const char* name) {
+void TEST_PASS(const char *name) {
     std::cout << "✅ PASS: " << name << "\n";
     test_passed++;
 }
 
-void TEST_FAIL(const char* name, const char* reason) {
+void TEST_FAIL(const char *name, const char *reason) {
     std::cerr << "❌ FAIL: " << name << " - " << reason << "\n";
     test_failed++;
 }
 
-#define ASSERT_TRUE(cond, msg)        \
-    do {                              \
-        if (!(cond)) {                \
-            TEST_FAIL(__func__, msg); \
-            return false;             \
-        }                             \
+#define ASSERT_TRUE(cond, msg)                                                                     \
+    do {                                                                                           \
+        if (!(cond)) {                                                                             \
+            TEST_FAIL(__func__, msg);                                                              \
+            return false;                                                                          \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_EQ(a, b, msg)          \
-    do {                              \
-        if ((a) != (b)) {             \
-            TEST_FAIL(__func__, msg); \
-            return false;             \
-        }                             \
+#define ASSERT_EQ(a, b, msg)                                                                       \
+    do {                                                                                           \
+        if ((a) != (b)) {                                                                          \
+            TEST_FAIL(__func__, msg);                                                              \
+            return false;                                                                          \
+        }                                                                                          \
     } while (0)
 
 // Easy difficulty for testing - allows quick nonce finding
@@ -67,7 +67,7 @@ std::array<uint8_t, 32> GenerateTestSeedDeterministic(uint8_t seed_byte = 0x42) 
     }
     return seed;
 }
-}  // namespace
+} // namespace
 
 // Test 1: Complete block production and validation flow
 bool test_block_production_flow() {
@@ -92,7 +92,7 @@ bool test_block_production_flow() {
     ASSERT_TRUE(template_opt.has_value(), "Failed to create block template");
 
     // Verify template structure
-    auto& block_template = *template_opt;
+    auto &block_template = *template_opt;
     ASSERT_TRUE(block_template.block.transactions.size() > 0, "Template should have transactions");
     ASSERT_TRUE(block_template.block.transactions[0].IsCoinbase(), "First tx should be coinbase");
     ASSERT_EQ(block_template.height, 1u, "First block should be height 1");
@@ -134,7 +134,7 @@ bool test_block_production_flow() {
     return true;
 }
 
-#if 0  // Disabled: legacy API coverage scaffold
+#if 0 // Disabled: legacy API coverage scaffold
 // Test 2: Complete transaction flow from creation to confirmation
 bool test_transaction_flow() {
     TEST_START("Transaction Flow");
@@ -192,7 +192,7 @@ bool test_transaction_flow() {
 }
 #endif
 
-#if 0  // Disabled: legacy API coverage scaffold
+#if 0 // Disabled: legacy API coverage scaffold
 // Test 3: Multi-node network synchronization
 bool test_network_sync() {
     TEST_START("Network Synchronization");
@@ -241,7 +241,7 @@ bool test_network_sync() {
 }
 #endif
 
-#if 0  // Disabled: legacy API coverage scaffold
+#if 0 // Disabled: legacy API coverage scaffold
 // Test 4: Smart contract deployment and execution
 bool test_smart_contract_flow() {
     TEST_START("Smart Contract Flow");
@@ -374,7 +374,7 @@ bool test_peer_database() {
     return true;
 }
 
-#if 0  // Disabled: legacy API coverage scaffold
+#if 0 // Disabled: legacy API coverage scaffold
 // Test 6: UTXO persistence and wallet synchronization
 bool test_utxo_persistence() {
     TEST_START("UTXO Persistence");

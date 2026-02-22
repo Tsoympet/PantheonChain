@@ -55,7 +55,7 @@ Transaction CreateCoinbase(uint64_t height) {
 }
 
 // Helper to create a simple block
-Block CreateBlock(uint64_t height, const std::array<uint8_t, 32>& prev_hash) {
+Block CreateBlock(uint64_t height, const std::array<uint8_t, 32> &prev_hash) {
     Block block;
 
     block.header.version = 1;

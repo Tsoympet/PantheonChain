@@ -147,7 +147,7 @@ void TestSupplyCapEnforcementAtEveryHeight() {
     struct AssetCap {
         AssetID id;
         uint64_t max_supply;
-        const char* ticker;
+        const char *ticker;
     };
 
     AssetCap assets[] = {{AssetID::TALANTON, 21000000ULL * AssetSupply::BASE_UNIT, "TALN"},
@@ -168,7 +168,7 @@ void TestSupplyCapEnforcementAtEveryHeight() {
                                           50 * Issuance::HALVING_INTERVAL,
                                           100 * Issuance::HALVING_INTERVAL};
 
-    for (const auto& asset : assets) {
+    for (const auto &asset : assets) {
         std::cout << "  Testing " << asset.ticker << "..." << std::endl;
 
         for (uint64_t height : test_heights) {
@@ -201,7 +201,7 @@ void TestBlockRewardValidationAgainstCaps() {
         {AssetID::DRACHMA, Issuance::HALVING_INTERVAL, 41000000ULL * AssetSupply::BASE_UNIT},
         {AssetID::OBOLOS, Issuance::HALVING_INTERVAL, 61000000ULL * AssetSupply::BASE_UNIT}};
 
-    for (const auto& tc : cases) {
+    for (const auto &tc : cases) {
         uint64_t valid_reward = Issuance::GetBlockReward(tc.height, tc.asset);
 
         // Valid reward should pass validation
@@ -224,14 +224,14 @@ void TestAsymptoticSupplyApproach() {
     struct AssetTest {
         AssetID id;
         uint64_t max_supply;
-        const char* ticker;
+        const char *ticker;
     };
 
     AssetTest assets[] = {{AssetID::TALANTON, 21000000ULL * AssetSupply::BASE_UNIT, "TALN"},
                           {AssetID::DRACHMA, 41000000ULL * AssetSupply::BASE_UNIT, "DRM"},
                           {AssetID::OBOLOS, 61000000ULL * AssetSupply::BASE_UNIT, "OBL"}};
 
-    for (const auto& asset : assets) {
+    for (const auto &asset : assets) {
         std::cout << "  Testing " << asset.ticker << " asymptotic approach..." << std::endl;
 
         // Test at increasingly high heights
@@ -255,7 +255,7 @@ void TestAsymptoticSupplyApproach() {
             // Note: Caps are intentionally set slightly higher than achievable supply
             // TALANTON achieves 99.9999952%, DRACHMA 99.3658%, OBOLOS 99.8360%
             if (exponent >= 4) {
-                assert(percentage > 99.0);  // All assets reach > 99%
+                assert(percentage > 99.0); // All assets reach > 99%
             }
         }
     }
@@ -270,7 +270,7 @@ void TestNoSupplyOverflowInArithmetic() {
 
     for (AssetID asset : assets) {
         // Test at maximum representable height
-        uint64_t max_height = UINT64_MAX / 2;  // Avoid overflow in height itself
+        uint64_t max_height = UINT64_MAX / 2; // Avoid overflow in height itself
 
         // This should not crash or overflow
         uint64_t supply = Issuance::CalculateSupplyAtHeight(max_height, asset);

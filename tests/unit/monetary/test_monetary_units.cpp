@@ -30,8 +30,7 @@ int main() {
     assert(ParseDisplayAmountWithDenomination("2", parthenon::primitives::AssetID::DRACHMA,
                                               "tetradrachm")
                .value() == 8ULL * DR_BASE_UNIT);
-    assert(ParseDisplayAmountWithDenomination("3", parthenon::primitives::AssetID::DRACHMA,
-                                              "mina")
+    assert(ParseDisplayAmountWithDenomination("3", parthenon::primitives::AssetID::DRACHMA, "mina")
                .value() == 300ULL * DR_BASE_UNIT);
     std::string err;
     assert(!ParseDisplayAmountWithDenomination("1", parthenon::primitives::AssetID::OBOLOS,
@@ -40,9 +39,8 @@ int main() {
     assert(err == "denomination is display-only");
 
     bool approx = false;
-    auto in_obol = FormatAmountWithDenomination(2ULL * DR_BASE_UNIT,
-                                                parthenon::primitives::AssetID::DRACHMA,
-                                                "obol", &approx);
+    auto in_obol = FormatAmountWithDenomination(
+        2ULL * DR_BASE_UNIT, parthenon::primitives::AssetID::DRACHMA, "obol", &approx);
     assert(in_obol.has_value());
     assert(*in_obol == "12.00000000");
 

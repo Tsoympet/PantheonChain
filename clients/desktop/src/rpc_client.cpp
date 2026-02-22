@@ -11,14 +11,9 @@
 #include <QNetworkRequest>
 #include <QUrl>
 
-RPCClient::RPCClient(QObject* parent)
-    : QObject(parent),
-      networkManager(nullptr),
-      rpcHost("127.0.0.1"),
-      rpcPort(8332),
-      connected(false),
-      blockHeight(0),
-      requestId(1) {
+RPCClient::RPCClient(QObject *parent)
+    : QObject(parent), networkManager(nullptr), rpcHost("127.0.0.1"), rpcPort(8332),
+      connected(false), blockHeight(0), requestId(1) {
 
     networkManager = new QNetworkAccessManager(this);
     connect(networkManager, &QNetworkAccessManager::finished, this, &RPCClient::handleNetworkReply);
@@ -31,12 +26,12 @@ RPCClient::RPCClient(QObject* parent)
 
 RPCClient::~RPCClient() {}
 
-void RPCClient::setCredentials(const QString& user, const QString& password) {
+void RPCClient::setCredentials(const QString &user, const QString &password) {
     rpcUser = user;
     rpcPassword = password;
 }
 
-void RPCClient::connectToServer(const QString& host, int port) {
+void RPCClient::connectToServer(const QString &host, int port) {
     rpcHost = host;
     rpcPort = port;
 
@@ -49,20 +44,14 @@ void RPCClient::disconnect() {
     emit connectionStatusChanged(false);
 }
 
-double RPCClient::getBalance(const QString& asset) const {
-    return balances.value(asset, 0.0);
-}
+double RPCClient::getBalance(const QString &asset) const { return balances.value(asset, 0.0); }
 
-void RPCClient::updateBalances() {
-    sendRPCRequest("getbalance");
-}
+void RPCClient::updateBalances() { sendRPCRequest("getbalance"); }
 
-void RPCClient::updateBlockHeight() {
-    sendRPCRequest("getblockcount");
-}
+void RPCClient::updateBlockHeight() { sendRPCRequest("getblockcount"); }
 
-void RPCClient::sendTransaction(const QString& asset, const QString& address, double amount,
-                                const QString& memo) {
+void RPCClient::sendTransaction(const QString &asset, const QString &address, double amount,
+                                const QString &memo) {
     QVariantList params;
     params << asset << address << amount;
     if (!memo.isEmpty()) {
@@ -71,15 +60,11 @@ void RPCClient::sendTransaction(const QString& asset, const QString& address, do
     sendRPCRequest("sendtoaddress", params);
 }
 
-void RPCClient::getNewAddress() {
-    sendRPCRequest("getnewaddress");
-}
+void RPCClient::getNewAddress() { sendRPCRequest("getnewaddress"); }
 
-void RPCClient::getTransactionHistory() {
-    sendRPCRequest("listtransactions");
-}
+void RPCClient::getTransactionHistory() { sendRPCRequest("listtransactions"); }
 
-void RPCClient::handleNetworkReply(QNetworkReply* reply) {
+void RPCClient::handleNetworkReply(QNetworkReply *reply) {
     if (reply->error() != QNetworkReply::NoError) {
         connected = false;
         emit connectionStatusChanged(false);
@@ -135,7 +120,7 @@ void RPCClient::handleNetworkReply(QNetworkReply* reply) {
     } else if (method == "listtransactions") {
         if (result.isArray()) {
             transactionList.clear();
-            for (const auto& item : result.toArray()) {
+            for (const auto &item : result.toArray()) {
                 QJsonObject txObj = item.toObject();
                 TransactionRecord rec;
                 QString category = txObj["category"].toString();
@@ -145,8 +130,7 @@ void RPCClient::handleNetworkReply(QNetworkReply* reply) {
                 rec.address = txObj["address"].toString();
                 rec.txid = txObj["txid"].toString();
                 qint64 time = static_cast<qint64>(txObj["time"].toDouble());
-                rec.dateTime =
-                    QDateTime::fromSecsSinceEpoch(time).toString("yyyy-MM-dd hh:mm:ss");
+                rec.dateTime = QDateTime::fromSecsSinceEpoch(time).toString("yyyy-MM-dd hh:mm:ss");
                 transactionList.append(rec);
             }
         }
@@ -156,7 +140,7 @@ void RPCClient::handleNetworkReply(QNetworkReply* reply) {
     reply->deleteLater();
 }
 
-void RPCClient::sendRPCRequest(const QString& method, const QVariantList& params) {
+void RPCClient::sendRPCRequest(const QString &method, const QVariantList &params) {
     QJsonObject request;
     request["jsonrpc"] = "2.0";
     request["id"] = requestId++;
@@ -176,6 +160,6 @@ void RPCClient::sendRPCRequest(const QString& method, const QVariantList& params
         netRequest.setRawHeader("Authorization", "Basic " + credentialsBase64);
     }
 
-    QNetworkReply* reply = networkManager->post(netRequest, data);
+    QNetworkReply *reply = networkManager->post(netRequest, data);
     reply->setProperty("method", method);
 }

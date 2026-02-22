@@ -14,8 +14,8 @@ namespace parthenon {
 
 namespace {
 
-std::string AmountToRaw(const std::string& amount, const std::string& unit_flag,
-                        const std::string& denomination = "") {
+std::string AmountToRaw(const std::string &amount, const std::string &unit_flag,
+                        const std::string &denomination = "") {
     primitives::AssetID asset = primitives::AssetID::TALANTON;
     if (unit_flag == "--in-dr") {
         asset = primitives::AssetID::DRACHMA;
@@ -24,11 +24,9 @@ std::string AmountToRaw(const std::string& amount, const std::string& unit_flag,
     }
 
     std::string parse_error;
-    const auto parsed = denomination.empty()
-                            ? common::monetary::ParseDisplayAmount(amount, asset)
-                            : common::monetary::ParseDisplayAmountWithDenomination(amount, asset,
-                                                                                   denomination,
-                                                                                   &parse_error);
+    const auto parsed = denomination.empty() ? common::monetary::ParseDisplayAmount(amount, asset)
+                                             : common::monetary::ParseDisplayAmountWithDenomination(
+                                                   amount, asset, denomination, &parse_error);
     if (!parsed) {
         return "invalid";
     }
@@ -45,7 +43,7 @@ void PrintDualAmount(uint64_t raw, primitives::AssetID asset) {
     std::cout << std::endl;
 }
 
-}  // namespace
+} // namespace
 
 class RPCClient {
   private:
@@ -55,16 +53,16 @@ class RPCClient {
     std::string password_;
 
   public:
-    RPCClient(const std::string& host, int port, const std::string& user,
-              const std::string& password)
+    RPCClient(const std::string &host, int port, const std::string &user,
+              const std::string &password)
         : host_(host), port_(port), user_(user), password_(password) {}
 
-    std::string Call(const std::string& method, const std::vector<std::string>& params) {
+    std::string Call(const std::string &method, const std::vector<std::string> &params) {
         // Simulate RPC call
-        (void)host_;      // Reserved for future networked RPC integration
-        (void)port_;      // Reserved for future networked RPC integration
-        (void)user_;      // Reserved for future RPC authentication integration
-        (void)password_;  // Reserved for future RPC authentication integration
+        (void)host_;     // Reserved for future networked RPC integration
+        (void)port_;     // Reserved for future networked RPC integration
+        (void)user_;     // Reserved for future RPC authentication integration
+        (void)password_; // Reserved for future RPC authentication integration
 
         std::string result = "{\"result\": ";
 
@@ -72,26 +70,26 @@ class RPCClient {
             result += "{\"version\": \"1.0.0\", \"blocks\": 12345, \"connections\": 8}";
         } else if (method == "chain/monetary_spec") {
             result += "{\"spec_hash\": \"" + common::monetary::MonetarySpecHash() +
-                      "\", \"ratio_dr_per_tal\": 6000, \"ratio_ob_per_dr\": 6, \"ratio_ob_per_tal\": 36000}";
+                      "\", \"ratio_dr_per_tal\": 6000, \"ratio_ob_per_dr\": 6, "
+                      "\"ratio_ob_per_tal\": 36000}";
         } else if (method == "staking/deposit") {
             if (params.empty()) {
                 return "{\"error\": \"Usage: stake deposit --layer=l2|l3\"}";
             }
-            result += "{\"status\":\"accepted\",\"module\":\"staking\",\"layer\":\"" +
-                      params[0] + "\",\"fee_token\":\"DRACHMA\"}";
+            result += "{\"status\":\"accepted\",\"module\":\"staking\",\"layer\":\"" + params[0] +
+                      "\",\"fee_token\":\"DRACHMA\"}";
         } else if (method == "evm/deploy") {
             if (params.empty()) {
                 return "{\"error\": \"Usage: deploy-contract --layer=l3\"}";
             }
-            result += "{\"status\":\"accepted\",\"module\":\"evm\",\"layer\":\"" +
-                      params[0] + "\",\"fee_token\":\"OBOLOS\"}";
+            result += "{\"status\":\"accepted\",\"module\":\"evm\",\"layer\":\"" + params[0] +
+                      "\",\"fee_token\":\"OBOLOS\"}";
         } else if (method == "commitments/submit") {
             if (params.empty()) {
                 return "{\"error\": \"Usage: submit-commitment --layer=l2|l3\"}";
             }
-            result +=
-                "{\"status\":\"queued\",\"module\":\"commitments\",\"layer\":\"" +
-                params[0] + "\"}";
+            result += "{\"status\":\"queued\",\"module\":\"commitments\",\"layer\":\"" + params[0] +
+                      "\"}";
         } else if (method == "getblockcount") {
             result += "12345";
         } else if (method == "getbalance") {
@@ -111,9 +109,10 @@ class RPCClient {
             if (params.size() < 3) {
                 return "{\"error\": \"Usage: sendtoaddress <asset> <address> <amount_raw>\"}";
             }
-            result +=
-                "{\"txid\": \"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"amount_raw\":\"" +
-                params[2] + "\"}";
+            result += "{\"txid\": "
+                      "\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\","
+                      "\"amount_raw\":\"" +
+                      params[2] + "\"}";
         } else if (method == "stop") {
             result += "\"ParthenonChain server stopping\"";
         } else {
@@ -132,24 +131,32 @@ class CLI {
     void ShowHelp() {
         std::cout << "ParthenonChain RPC Client v1.0.0\n\n";
         std::cout << "Available commands:\n";
-        std::cout << "  getinfo                                              - Get node information\n";
-        std::cout << "  getblockcount                                        - Get current block height\n";
-        std::cout << "  getbalance [asset]                                   - Get wallet balance\n";
-        std::cout << "  sendtoaddress <asset> <addr> <amt> [<denom>] [--in-tal|--in-dr|--in-ob] [--denom=<name>] - Send transaction\n";
-        std::cout << "  chain/monetary_spec                                  - Get monetary unit spec\n";
+        std::cout
+            << "  getinfo                                              - Get node information\n";
+        std::cout << "  getblockcount                                        - Get current block "
+                     "height\n";
+        std::cout
+            << "  getbalance [asset]                                   - Get wallet balance\n";
+        std::cout << "  sendtoaddress <asset> <addr> <amt> [<denom>] [--in-tal|--in-dr|--in-ob] "
+                     "[--denom=<name>] - Send transaction\n";
+        std::cout
+            << "  chain/monetary_spec                                  - Get monetary unit spec\n";
         std::cout << "  stop                                                 - Stop the daemon\n";
-        std::cout << "  stake deposit --layer=l2|l3                          - Submit staking deposit\n";
-        std::cout << "  deploy-contract --layer=l3                           - Deploy EVM contract on OBOLOS\n";
-        std::cout << "  submit-commitment --layer=l2|l3                      - Submit L2/L3 commitment\n";
+        std::cout
+            << "  stake deposit --layer=l2|l3                          - Submit staking deposit\n";
+        std::cout << "  deploy-contract --layer=l3                           - Deploy EVM contract "
+                     "on OBOLOS\n";
+        std::cout
+            << "  submit-commitment --layer=l2|l3                      - Submit L2/L3 commitment\n";
         std::cout << "  help                                                 - Show this help\n";
         std::cout << std::endl;
     }
 
   public:
-    CLI(const std::string& host, int port, const std::string& user, const std::string& password)
+    CLI(const std::string &host, int port, const std::string &user, const std::string &password)
         : rpc_(host, port, user, password) {}
 
-    void ExecuteCommand(const std::string& cmd, const std::vector<std::string>& args) {
+    void ExecuteCommand(const std::string &cmd, const std::vector<std::string> &args) {
         if (cmd == "help") {
             ShowHelp();
             return;
@@ -157,7 +164,7 @@ class CLI {
 
         if (cmd == "stake" && !args.empty() && args[0] == "deposit") {
             std::string layer = "l2";
-            for (const auto& arg : args) {
+            for (const auto &arg : args) {
                 if (arg.rfind("--layer=", 0) == 0) {
                     layer = arg.substr(8);
                 }
@@ -168,7 +175,7 @@ class CLI {
 
         if (cmd == "deploy-contract") {
             std::string layer = "l3";
-            for (const auto& arg : args) {
+            for (const auto &arg : args) {
                 if (arg.rfind("--layer=", 0) == 0) {
                     layer = arg.substr(8);
                 }
@@ -179,7 +186,7 @@ class CLI {
 
         if (cmd == "submit-commitment") {
             std::string layer = "l2";
-            for (const auto& arg : args) {
+            for (const auto &arg : args) {
                 if (arg.rfind("--layer=", 0) == 0) {
                     layer = arg.substr(8);
                 }
@@ -192,7 +199,7 @@ class CLI {
             std::string unit_flag = "--in-tal";
             std::string denomination;
             for (size_t i = 0; i < args.size(); ++i) {
-                const auto& arg = args[i];
+                const auto &arg = args[i];
                 if (arg == "--in-tal" || arg == "--in-dr" || arg == "--in-ob") {
                     unit_flag = arg;
                 } else if (arg.rfind("--denom=", 0) == 0) {
@@ -266,9 +273,9 @@ class CLI {
     }
 };
 
-}  // namespace parthenon
+} // namespace parthenon
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     std::string host = "127.0.0.1";
     int port = 8332;
     std::string user = "parthenon";

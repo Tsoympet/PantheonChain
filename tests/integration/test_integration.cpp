@@ -123,7 +123,7 @@ void TestTransactionFlow() {
     txid[0] = 1;
     primitives::OutPoint outpoint(txid, 0);
     primitives::TxOutput output(primitives::AssetID::TALANTON,
-                                1000000000,  // 10 TALN
+                                1000000000, // 10 TALN
                                 addr1.pubkey);
     wallet.AddUTXO(outpoint, output, 100);
 
@@ -137,12 +137,12 @@ void TestTransactionFlow() {
     // Create transaction outputs
     std::vector<primitives::TxOutput> outputs;
     outputs.push_back(primitives::TxOutput(primitives::AssetID::TALANTON,
-                                           500000000,  // 5 TALN
+                                           500000000, // 5 TALN
                                            addr2.pubkey));
 
     // Create transaction
     auto tx_opt = wallet.CreateTransaction(outputs, primitives::AssetID::TALANTON,
-                                           1000000  // 0.01 TALN fee
+                                           1000000 // 0.01 TALN fee
     );
 
     if (!tx_opt.has_value()) {
@@ -151,7 +151,7 @@ void TestTransactionFlow() {
     }
 
     // Verify transaction structure
-    auto& tx = *tx_opt;
+    auto &tx = *tx_opt;
     if (tx.inputs.empty()) {
         std::cout << "  ❌ FAIL: Transaction should have inputs" << std::endl;
         return;
@@ -268,9 +268,9 @@ void TestSmartContractFlow() {
 
     // Simple contract: PUSH1 42, PUSH1 0, SSTORE (store 42 at slot 0)
     std::vector<uint8_t> code = {
-        static_cast<uint8_t>(evm::Opcode::PUSH1),  0x2A,  // Push 42
-        static_cast<uint8_t>(evm::Opcode::PUSH1),  0x00,  // Push 0 (storage slot)
-        static_cast<uint8_t>(evm::Opcode::SSTORE),        // Store
+        static_cast<uint8_t>(evm::Opcode::PUSH1),  0x2A, // Push 42
+        static_cast<uint8_t>(evm::Opcode::PUSH1),  0x00, // Push 0 (storage slot)
+        static_cast<uint8_t>(evm::Opcode::SSTORE),       // Store
         static_cast<uint8_t>(evm::Opcode::STOP)};
 
     // Execute contract
@@ -305,8 +305,8 @@ void TestSmartContractFlow() {
               << std::endl;
 }
 
-}  // namespace integration_tests
-}  // namespace parthenon
+} // namespace integration_tests
+} // namespace parthenon
 
 int main() {
     std::cout << "\n=== ParthenonChain Integration Tests ===" << std::endl;

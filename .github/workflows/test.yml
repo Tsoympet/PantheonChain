@@ -139,12 +139,21 @@ jobs:
           }
         }
 
-        choco install openssl -y
+        $opensslPaths = @(
+          "C:\Program Files\OpenSSL-Win64",
+          "C:\Program Files\OpenSSL",
+          "C:\Program Files (x86)\OpenSSL-Win64",
+          "C:\Program Files (x86)\OpenSSL"
+        )
+        $opensslAlreadyInstalled = $opensslPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if ($opensslAlreadyInstalled) {
+          Write-Host "OpenSSL already installed at $opensslAlreadyInstalled; skipping Chocolatey install."
+        } else {
+          choco install openssl -y
+        }
 
     - name: Configure CMake
       run: |
-        refreshenv
-
         $opensslPaths = @(
           "$env:ProgramFiles\OpenSSL-Win64",
           "$env:ProgramFiles\OpenSSL",

@@ -17,14 +17,9 @@
 #include <QTimer>
 #include <QToolBar>
 
-MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent),
-      centralStack(nullptr),
-      overviewPage(nullptr),
-      sendPage(nullptr),
-      receivePage(nullptr),
-      transactionPage(nullptr),
-      rpcClient(nullptr) {
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent), centralStack(nullptr), overviewPage(nullptr), sendPage(nullptr),
+      receivePage(nullptr), transactionPage(nullptr), rpcClient(nullptr) {
     setWindowTitle("ParthenonChain Wallet");
     resize(1000, 700);
 
@@ -67,9 +62,9 @@ MainWindow::MainWindow(QWidget* parent)
     connectToRPC();
 
     // Setup update timer
-    QTimer* timer = new QTimer(this);
+    QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::updateStatus);
-    timer->start(5000);  // Update every 5 seconds
+    timer->start(5000); // Update every 5 seconds
 }
 
 MainWindow::~MainWindow() {}

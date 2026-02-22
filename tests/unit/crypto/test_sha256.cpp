@@ -13,7 +13,7 @@
 using namespace parthenon::crypto;
 
 // Helper to convert hex string to bytes
-std::vector<uint8_t> HexToBytes(const std::string& hex) {
+std::vector<uint8_t> HexToBytes(const std::string &hex) {
     std::vector<uint8_t> bytes;
     for (size_t i = 0; i < hex.length(); i += 2) {
         std::string byte_str = hex.substr(i, 2);
@@ -24,7 +24,7 @@ std::vector<uint8_t> HexToBytes(const std::string& hex) {
 }
 
 // Helper to convert bytes to hex string
-std::string BytesToHex(const uint8_t* data, size_t len) {
+std::string BytesToHex(const uint8_t *data, size_t len) {
     std::ostringstream oss;
     oss << std::hex << std::setfill('0');
     for (size_t i = 0; i < len; ++i) {
@@ -33,8 +33,7 @@ std::string BytesToHex(const uint8_t* data, size_t len) {
     return oss.str();
 }
 
-template <size_t N>
-std::string BytesToHex(const std::array<uint8_t, N>& arr) {
+template <size_t N> std::string BytesToHex(const std::array<uint8_t, N> &arr) {
     return BytesToHex(arr.data(), arr.size());
 }
 
@@ -52,8 +51,8 @@ void TestSHA256Empty() {
 void TestSHA256ABC() {
     std::cout << "Test SHA-256: \"abc\"" << std::endl;
 
-    const char* data = "abc";
-    auto hash = SHA256::Hash256(reinterpret_cast<const uint8_t*>(data), 3);
+    const char *data = "abc";
+    auto hash = SHA256::Hash256(reinterpret_cast<const uint8_t *>(data), 3);
     std::string result = BytesToHex(hash);
     std::string expected = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
 
@@ -65,8 +64,8 @@ void TestSHA256LongMessage() {
     std::cout << "Test SHA-256: \"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq\""
               << std::endl;
 
-    const char* data = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
-    auto hash = SHA256::Hash256(reinterpret_cast<const uint8_t*>(data), 56);
+    const char *data = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+    auto hash = SHA256::Hash256(reinterpret_cast<const uint8_t *>(data), 56);
     std::string result = BytesToHex(hash);
     std::string expected = "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1";
 
@@ -78,10 +77,10 @@ void TestSHA256Incremental() {
     std::cout << "Test SHA-256: incremental hashing" << std::endl;
 
     SHA256 hasher;
-    const char* part1 = "abc";
-    const char* part2 = "def";
-    hasher.Write(reinterpret_cast<const uint8_t*>(part1), 3);
-    hasher.Write(reinterpret_cast<const uint8_t*>(part2), 3);
+    const char *part1 = "abc";
+    const char *part2 = "def";
+    hasher.Write(reinterpret_cast<const uint8_t *>(part1), 3);
+    hasher.Write(reinterpret_cast<const uint8_t *>(part2), 3);
     auto hash = hasher.Finalize();
 
     std::string result = BytesToHex(hash);
@@ -95,8 +94,8 @@ void TestSHA256Incremental() {
 void TestSHA256d() {
     std::cout << "Test SHA-256d (double SHA-256)" << std::endl;
 
-    const char* data = "hello";
-    auto hash = SHA256d::Hash256d(reinterpret_cast<const uint8_t*>(data), 5);
+    const char *data = "hello";
+    auto hash = SHA256d::Hash256d(reinterpret_cast<const uint8_t *>(data), 5);
     std::string result = BytesToHex(hash);
 
     // First hash: SHA256("hello") =
@@ -111,14 +110,14 @@ void TestTaggedSHA256() {
     std::cout << "Test Tagged SHA-256 (BIP-340 style)" << std::endl;
 
     std::string tag = "BIP0340/test";
-    const char* data = "test message";
-    auto hash = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t*>(data), 12);
+    const char *data = "test message";
+    auto hash = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t *>(data), 12);
 
     std::string result = BytesToHex(hash);
 
     // Tagged hash should be deterministic
     // Re-compute to verify
-    auto hash2 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t*>(data), 12);
+    auto hash2 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t *>(data), 12);
     std::string result2 = BytesToHex(hash2);
 
     assert(result == result2);
@@ -151,7 +150,7 @@ void TestSHA256BitcoinBlock() {
 void TestSHA256LargeData() {
     std::cout << "Test SHA-256: large data (1MB)" << std::endl;
 
-    std::vector<uint8_t> data(1024 * 1024, 0x42);  // 1MB of 0x42
+    std::vector<uint8_t> data(1024 * 1024, 0x42); // 1MB of 0x42
     auto hash = SHA256::Hash256(data);
 
     std::string result = BytesToHex(hash);
@@ -186,7 +185,7 @@ int main() {
         std::cout << "=====================================" << std::endl;
 
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed with exception: " << e.what() << std::endl;
         return 1;
     } catch (...) {

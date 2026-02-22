@@ -24,7 +24,8 @@ primitives::Block MakeTestBlock() {
     coinbase.locktime = 0;
 
     primitives::TxInput input;
-    input.prevout = primitives::OutPoint(std::array<uint8_t, 32>{}, primitives::COINBASE_VOUT_INDEX);
+    input.prevout =
+        primitives::OutPoint(std::array<uint8_t, 32>{}, primitives::COINBASE_VOUT_INDEX);
     input.signature_script = {0x51, 0x21, 0x02};
     coinbase.inputs.push_back(input);
 
@@ -37,7 +38,7 @@ primitives::Block MakeTestBlock() {
     return block;
 }
 
-}  // namespace
+} // namespace
 
 int main() {
     std::cout << "=== BlockStorage Tests ===" << std::endl;

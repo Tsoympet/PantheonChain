@@ -147,7 +147,7 @@ void test_checked_operations() {
     try {
         SafeMath::CheckedAdd(UINT64_MAX, 1);
         assert(false && "Should have thrown");
-    } catch (const std::overflow_error&) {
+    } catch (const std::overflow_error &) {
         // Expected
     }
 
@@ -162,7 +162,7 @@ void test_checked_operations() {
     try {
         SafeMath::CheckedSub(100, 200);
         assert(false && "Should have thrown");
-    } catch (const std::underflow_error&) {
+    } catch (const std::underflow_error &) {
         // Expected
     }
 
@@ -177,7 +177,7 @@ void test_checked_operations() {
     try {
         SafeMath::CheckedMul(UINT64_MAX, 2);
         assert(false && "Should have thrown");
-    } catch (const std::overflow_error&) {
+    } catch (const std::overflow_error &) {
         // Expected
     }
 
@@ -195,7 +195,7 @@ void test_checked_operations() {
     try {
         SafeMath::CheckedDiv(100, 0);
         assert(false && "Should have thrown");
-    } catch (const std::domain_error&) {
+    } catch (const std::domain_error &) {
         // Expected
     }
 
@@ -218,7 +218,7 @@ int main() {
         std::cout << "✓ All SafeMath tests passed!" << std::endl;
         return 0;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "✗ Test failed: " << e.what() << std::endl;
         return 1;
     }

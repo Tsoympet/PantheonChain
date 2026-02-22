@@ -14,7 +14,7 @@
 using namespace parthenon::crypto;
 
 // Helper to convert hex string to bytes
-std::vector<uint8_t> HexToBytes(const std::string& hex) {
+std::vector<uint8_t> HexToBytes(const std::string &hex) {
     std::vector<uint8_t> bytes;
     for (size_t i = 0; i < hex.length(); i += 2) {
         std::string byte_str = hex.substr(i, 2);
@@ -25,7 +25,7 @@ std::vector<uint8_t> HexToBytes(const std::string& hex) {
 }
 
 // Helper to convert bytes to hex string
-std::string BytesToHex(const uint8_t* data, size_t len) {
+std::string BytesToHex(const uint8_t *data, size_t len) {
     std::ostringstream oss;
     oss << std::hex << std::setfill('0');
     for (size_t i = 0; i < len; ++i) {
@@ -34,8 +34,7 @@ std::string BytesToHex(const uint8_t* data, size_t len) {
     return oss.str();
 }
 
-template <size_t N>
-std::string BytesToHex(const std::array<uint8_t, N>& arr) {
+template <size_t N> std::string BytesToHex(const std::array<uint8_t, N> &arr) {
     return BytesToHex(arr.data(), arr.size());
 }
 
@@ -100,8 +99,8 @@ void TestSignAndVerify() {
     assert(pubkey_opt.has_value());
 
     // Create a message hash
-    const char* msg = "test message";
-    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t*>(msg), 12);
+    const char *msg = "test message";
+    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t *>(msg), 12);
 
     // Sign the message
     auto sig_opt = Schnorr::Sign(privkey, msg_hash.data(), nullptr);
@@ -124,8 +123,8 @@ void TestDeterministicSigning() {
     Schnorr::PrivateKey privkey;
     std::copy(privkey_bytes.begin(), privkey_bytes.end(), privkey.begin());
 
-    const char* msg = "ParthenonChain";
-    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t*>(msg), 14);
+    const char *msg = "ParthenonChain";
+    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t *>(msg), 14);
 
     // Sign twice with same parameters
     auto sig1_opt = Schnorr::Sign(privkey, msg_hash.data(), nullptr);
@@ -151,8 +150,8 @@ void TestInvalidSignature() {
     auto pubkey_opt = Schnorr::GetPublicKey(privkey);
     assert(pubkey_opt.has_value());
 
-    const char* msg = "original message";
-    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t*>(msg), 16);
+    const char *msg = "original message";
+    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t *>(msg), 16);
 
     auto sig_opt = Schnorr::Sign(privkey, msg_hash.data(), nullptr);
     assert(sig_opt.has_value());
@@ -162,8 +161,8 @@ void TestInvalidSignature() {
     assert(valid1);
 
     // Verify with different message (should fail)
-    const char* wrong_msg = "modified message";
-    auto wrong_hash = SHA256::Hash256(reinterpret_cast<const uint8_t*>(wrong_msg), 16);
+    const char *wrong_msg = "modified message";
+    auto wrong_hash = SHA256::Hash256(reinterpret_cast<const uint8_t *>(wrong_msg), 16);
     bool valid2 = Schnorr::Verify(*pubkey_opt, wrong_hash.data(), *sig_opt);
     assert(!valid2);
 
@@ -181,8 +180,8 @@ void TestAuxiliaryRandomness() {
     auto pubkey_opt = Schnorr::GetPublicKey(privkey);
     assert(pubkey_opt.has_value());
 
-    const char* msg = "test";
-    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t*>(msg), 4);
+    const char *msg = "test";
+    auto msg_hash = SHA256::Hash256(reinterpret_cast<const uint8_t *>(msg), 4);
 
     // Create auxiliary randomness
     uint8_t aux_rand[32];
@@ -210,9 +209,9 @@ void TestBatchSignatures() {
     // Sign multiple different messages
     std::vector<std::string> messages = {"msg1", "msg2", "msg3", "msg4", "msg5"};
 
-    for (const auto& msg : messages) {
+    for (const auto &msg : messages) {
         auto msg_hash =
-            SHA256::Hash256(reinterpret_cast<const uint8_t*>(msg.c_str()), msg.length());
+            SHA256::Hash256(reinterpret_cast<const uint8_t *>(msg.c_str()), msg.length());
 
         auto sig_opt = Schnorr::Sign(privkey, msg_hash.data(), nullptr);
         assert(sig_opt.has_value() && Schnorr::Verify(*pubkey_opt, msg_hash.data(), *sig_opt));
@@ -242,7 +241,7 @@ int main() {
         std::cout << "=====================================" << std::endl;
 
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed with exception: " << e.what() << std::endl;
         return 1;
     } catch (...) {

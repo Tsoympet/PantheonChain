@@ -47,7 +47,7 @@ ChaosTestResult ChaosEngineering::TestNetworkPartition() {
         result.passed = VerifySystemRecovery();
         result.iterations = 1;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result.passed = false;
         result.error_message = e.what();
     }
@@ -76,7 +76,7 @@ ChaosTestResult ChaosEngineering::TestPacketLoss(double loss_rate) {
         result.passed = true;
         result.iterations = 100;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result.passed = false;
         result.error_message = e.what();
     }
@@ -102,7 +102,7 @@ ChaosTestResult ChaosEngineering::TestNetworkLatency(uint32_t latency_ms) {
         result.passed = true;
         result.iterations = 50;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result.passed = false;
         result.error_message = e.what();
     }
@@ -128,7 +128,7 @@ ChaosTestResult ChaosEngineering::TestDiskFull() {
         result.passed = true;
         result.iterations = 1;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result.passed = false;
         result.error_message = e.what();
     }
@@ -157,7 +157,7 @@ ChaosTestResult ChaosEngineering::TestMaliciousPeer() {
         result.passed = true;
         result.iterations = 10;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result.passed = false;
         result.error_message = e.what();
     }
@@ -183,7 +183,7 @@ ChaosTestResult ChaosEngineering::TestForkResolution() {
         result.passed = true;
         result.iterations = 5;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result.passed = false;
         result.error_message = e.what();
     }
@@ -209,7 +209,7 @@ ChaosTestResult ChaosEngineering::TestRaceConditions() {
         result.passed = true;
         result.iterations = 1000;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         result.passed = false;
         result.error_message = e.what();
     }
@@ -245,7 +245,7 @@ std::vector<ChaosTestResult> ChaosEngineering::RunAllTests() {
     return results;
 }
 
-std::string ChaosEngineering::GenerateReport(const std::vector<ChaosTestResult>& results) {
+std::string ChaosEngineering::GenerateReport(const std::vector<ChaosTestResult> &results) {
     std::ostringstream report;
 
     report << "\n╔══════════════════════════════════════════════════════════╗\n";
@@ -256,7 +256,7 @@ std::string ChaosEngineering::GenerateReport(const std::vector<ChaosTestResult>&
     size_t failed = 0;
     double total_time = 0.0;
 
-    for (const auto& result : results) {
+    for (const auto &result : results) {
         report << (result.passed ? "✅ PASS: " : "❌ FAIL: ") << result.test_name;
         report << " (" << result.duration_seconds << "s";
         if (result.iterations > 0) {
@@ -288,19 +288,17 @@ std::string ChaosEngineering::GenerateReport(const std::vector<ChaosTestResult>&
     return report.str();
 }
 
-void ChaosEngineering::InjectNetworkFault(const std::string& fault_type) {
+void ChaosEngineering::InjectNetworkFault(const std::string &fault_type) {
     std::cout << "Injecting network fault: " << fault_type << "\n";
     // Real implementation would use iptables/tc/toxiproxy
 }
 
-void ChaosEngineering::RemoveNetworkFault() {
-    std::cout << "Removing network faults\n";
-}
+void ChaosEngineering::RemoveNetworkFault() { std::cout << "Removing network faults\n"; }
 
 bool ChaosEngineering::VerifySystemRecovery() {
     std::cout << "Verifying system recovery...\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    return true;  // Placeholder
+    return true; // Placeholder
 }
 
 // Implement remaining test methods with similar patterns...
@@ -403,5 +401,5 @@ ChaosTestResult ChaosEngineering::TestDeadlocks() {
     return result;
 }
 
-}  // namespace testing
-}  // namespace parthenon
+} // namespace testing
+} // namespace parthenon

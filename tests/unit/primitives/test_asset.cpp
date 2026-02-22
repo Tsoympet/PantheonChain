@@ -122,28 +122,28 @@ void TestAssetAmountValidation() {
 void TestAssetAmountSerialization() {
     std::cout << "Test: AssetAmount serialization" << std::endl;
 
-    uint8_t buffer[9];  // 1 byte asset + 8 bytes amount
+    uint8_t buffer[9]; // 1 byte asset + 8 bytes amount
 
     // Test TALANTON
     AssetAmount taln(AssetID::TALANTON, 123456789);
     taln.Serialize(buffer);
     AssetAmount taln_deser = AssetAmount::Deserialize(buffer);
     assert(taln == taln_deser);
-    assert(buffer[0] == 0);  // TALANTON = 0
+    assert(buffer[0] == 0); // TALANTON = 0
 
     // Test DRACHMA
     AssetAmount drm(AssetID::DRACHMA, 987654321);
     drm.Serialize(buffer);
     AssetAmount drm_deser = AssetAmount::Deserialize(buffer);
     assert(drm == drm_deser);
-    assert(buffer[0] == 1);  // DRACHMA = 1
+    assert(buffer[0] == 1); // DRACHMA = 1
 
     // Test OBOLOS
     AssetAmount obl(AssetID::OBOLOS, 555555555);
     obl.Serialize(buffer);
     AssetAmount obl_deser = AssetAmount::Deserialize(buffer);
     assert(obl == obl_deser);
-    assert(buffer[0] == 2);  // OBOLOS = 2
+    assert(buffer[0] == 2); // OBOLOS = 2
 
     // Test max amounts
     AssetAmount max_taln(AssetID::TALANTON, AssetSupply::TALN_MAX_SUPPLY);
@@ -231,7 +231,7 @@ int main() {
         std::cout << "=====================================" << std::endl;
 
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed with exception: " << e.what() << std::endl;
         return 1;
     } catch (...) {

@@ -12,18 +12,18 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-OverviewPage::OverviewPage(RPCClient* rpc, QWidget* parent)
+OverviewPage::OverviewPage(RPCClient *rpc, QWidget *parent)
     : QWidget(parent), rpcClient(rpc), currentAsset("TALN") {
     setupUI();
     updateBalances();
 }
 
 void OverviewPage::setupUI() {
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(20);
 
     // Title
-    QLabel* titleLabel = new QLabel(tr("Wallet Overview"), this);
+    QLabel *titleLabel = new QLabel(tr("Wallet Overview"), this);
     QFont titleFont = titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -31,7 +31,7 @@ void OverviewPage::setupUI() {
     mainLayout->addWidget(titleLabel);
 
     // Asset selector
-    QHBoxLayout* assetLayout = new QHBoxLayout();
+    QHBoxLayout *assetLayout = new QHBoxLayout();
     assetLayout->addWidget(new QLabel(tr("Select Asset:"), this));
     assetSelector = new QComboBox(this);
     assetSelector->addItems({"TALN", "DRM", "OBL"});
@@ -42,8 +42,8 @@ void OverviewPage::setupUI() {
     mainLayout->addLayout(assetLayout);
 
     // Main balance display
-    QGroupBox* balanceBox = new QGroupBox(tr("Current Balance"), this);
-    QVBoxLayout* balanceLayout = new QVBoxLayout(balanceBox);
+    QGroupBox *balanceBox = new QGroupBox(tr("Current Balance"), this);
+    QVBoxLayout *balanceLayout = new QVBoxLayout(balanceBox);
 
     balanceLabel = new QLabel(tr("TALANTON (TALN)"), this);
     QFont balanceLabelFont = balanceLabel->font();
@@ -61,8 +61,8 @@ void OverviewPage::setupUI() {
     mainLayout->addWidget(balanceBox);
 
     // All balances
-    QGroupBox* allBalancesBox = new QGroupBox(tr("All Assets"), this);
-    QVBoxLayout* allBalancesLayout = new QVBoxLayout(allBalancesBox);
+    QGroupBox *allBalancesBox = new QGroupBox(tr("All Assets"), this);
+    QVBoxLayout *allBalancesLayout = new QVBoxLayout(allBalancesBox);
 
     talnBalanceLabel = new QLabel(tr("TALANTON (TALN): 0.00000000"), this);
     drmBalanceLabel = new QLabel(tr("DRACHMA (DRM): 0.00000000"), this);
@@ -75,7 +75,7 @@ void OverviewPage::setupUI() {
     mainLayout->addWidget(allBalancesBox);
 
     // Quick actions
-    QHBoxLayout* actionLayout = new QHBoxLayout();
+    QHBoxLayout *actionLayout = new QHBoxLayout();
     sendButton = new QPushButton(tr("Send"), this);
     receiveButton = new QPushButton(tr("Receive"), this);
 
@@ -125,10 +125,6 @@ void OverviewPage::onAssetChanged(int index) {
     updateBalances();
 }
 
-void OverviewPage::onQuickSend() {
-    emit sendRequested();
-}
+void OverviewPage::onQuickSend() { emit sendRequested(); }
 
-void OverviewPage::onQuickReceive() {
-    emit receiveRequested();
-}
+void OverviewPage::onQuickReceive() { emit receiveRequested(); }

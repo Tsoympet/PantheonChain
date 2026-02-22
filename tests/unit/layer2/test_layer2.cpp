@@ -15,9 +15,9 @@ using namespace parthenon::layer2;
 
 namespace {
 
-std::vector<uint8_t> BuildExitInputs(const std::vector<uint8_t>& account, uint64_t amount) {
+std::vector<uint8_t> BuildExitInputs(const std::vector<uint8_t> &account, uint64_t amount) {
     std::vector<uint8_t> inputs = account;
-    const auto* bytes = reinterpret_cast<const uint8_t*>(&amount);
+    const auto *bytes = reinterpret_cast<const uint8_t *>(&amount);
     inputs.insert(inputs.end(), bytes, bytes + sizeof(uint64_t));
     return inputs;
 }
@@ -34,7 +34,7 @@ class ExitCircuit : public parthenon::privacy::zksnark::Circuit {
     std::vector<uint8_t> inputs_;
 };
 
-}  // namespace
+} // namespace
 
 void test_payment_channel() {
     std::cout << "Testing payment channels..." << std::endl;
@@ -71,7 +71,7 @@ void test_payment_channel() {
     assert(channel.VerifyBalances());
 
     // Initiate close
-    assert(channel.InitiateClose(86400));  // 1 day dispute period
+    assert(channel.InitiateClose(86400)); // 1 day dispute period
     assert(channel.GetState() == ChannelState::CLOSING);
 
     std::cout << "Payment channel tests passed!" << std::endl;
@@ -152,8 +152,6 @@ void test_spv_merkle_proof() {
 
     std::cout << "SPV Merkle proof tests passed!" << std::endl;
 }
-
-
 
 void test_optimistic_rollup_and_plasma() {
     std::cout << "Testing optimistic rollup and plasma..." << std::endl;
@@ -314,7 +312,7 @@ void test_layer2_apis() {
     assert(!websocket_api.Start());
     assert(websocket_api.IsRunning());
     std::vector<std::string> sent_messages;
-    websocket_api.SetSendHandler([&sent_messages](void* connection, const std::string& message) {
+    websocket_api.SetSendHandler([&sent_messages](void *connection, const std::string &message) {
         static_cast<void>(connection);
         sent_messages.push_back(message);
     });
@@ -359,7 +357,7 @@ int main() {
 
         std::cout << "\n✓ All Layer 2 tests passed!" << std::endl;
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed: " << e.what() << std::endl;
         return 1;
     }

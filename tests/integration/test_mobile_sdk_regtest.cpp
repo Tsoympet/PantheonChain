@@ -2,8 +2,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include <atomic>
 #include <arpa/inet.h>
+#include <atomic>
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -12,9 +12,9 @@
 #include <netinet/in.h>
 #include <optional>
 #include <sstream>
+#include <string>
 #include <string_view>
 #include <sys/socket.h>
-#include <string>
 #include <thread>
 #include <unistd.h>
 #include <vector>
@@ -30,9 +30,7 @@ struct RpcState {
     std::map<uint64_t, std::string> block_hashes;
     std::map<uint64_t, std::vector<std::string>> block_txs;
     std::map<std::string, uint64_t> balances{
-        {"TALANTON", 1000},
-        {"DRACHMA", 2500},
-        {"OBOLOS", 500}};
+        {"TALANTON", 1000}, {"DRACHMA", 2500}, {"OBOLOS", 500}};
     uint64_t next_tx{1};
 };
 
@@ -57,7 +55,7 @@ class RpcServer {
         addr.sin_port = htons(port);
         addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-        if (bind(server_fd_, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+        if (bind(server_fd_, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) != 0) {
             close(server_fd_);
             server_fd_ = -1;
             throw std::runtime_error("Failed to bind server socket");
@@ -91,7 +89,8 @@ class RpcServer {
         while (running_.load()) {
             sockaddr_in client_addr{};
             socklen_t client_len = sizeof(client_addr);
-            int client_fd = accept(server_fd_, reinterpret_cast<sockaddr*>(&client_addr), &client_len);
+            int client_fd =
+                accept(server_fd_, reinterpret_cast<sockaddr *>(&client_addr), &client_len);
             if (client_fd < 0) {
                 if (!running_.load()) {
                     break;
@@ -152,7 +151,7 @@ class RpcServer {
         }
     }
 
-    size_t ParseContentLength(const std::string& headers) const {
+    size_t ParseContentLength(const std::string &headers) const {
         std::istringstream stream(headers);
         std::string line;
         while (std::getline(stream, line)) {
@@ -172,14 +171,14 @@ class RpcServer {
         return 0;
     }
 
-    std::string HandleRpc(const std::string& body) {
+    std::string HandleRpc(const std::string &body) {
         json response;
         response["jsonrpc"] = "2.0";
 
         json request;
         try {
             request = json::parse(body);
-        } catch (const std::exception&) {
+        } catch (const std::exception &) {
             response["id"] = 0;
             response["error"] = {{"message", "Invalid request"}};
             return response.dump();
@@ -214,7 +213,7 @@ class RpcServer {
                     block["hash"] = state_.block_hashes[height];
                     block["timestamp"] = 1700000000 + height;
                     json tx_array = json::array();
-                    for (const auto& txid : state_.block_txs[height]) {
+                    for (const auto &txid : state_.block_txs[height]) {
                         tx_array.push_back(txid);
                     }
                     block["tx"] = tx_array;
@@ -239,9 +238,8 @@ class RpcServer {
                 response["result"] = txid;
             }
         } else if (method == "getinfo") {
-            response["result"] = json{{"blocks", state_.block_height},
-                                      {"connections", 3},
-                                      {"syncing", false}};
+            response["result"] =
+                json{{"blocks", state_.block_height}, {"connections", 3}, {"syncing", false}};
         } else {
             response["error"] = {{"message", "Method not found"}};
         }
@@ -256,7 +254,7 @@ class RpcServer {
     RpcState state_;
 };
 
-}  // namespace
+} // namespace
 
 int main() {
     RpcServer server;
@@ -305,25 +303,25 @@ int main() {
 
     std::optional<std::string> txid;
     std::optional<std::string> tx_error;
-    client.SendTransaction(tx, [&](std::optional<std::string> result, std::optional<std::string> error) {
-        txid = result;
-        tx_error = error;
-    });
+    client.SendTransaction(
+        tx, [&](std::optional<std::string> result, std::optional<std::string> error) {
+            txid = result;
+            tx_error = error;
+        });
     assert(txid.has_value());
     assert(!tx_error.has_value());
 
     std::optional<std::vector<TransactionHistory>> history;
     std::optional<std::string> history_error;
-    client.GetTransactionHistory("", 10,
-                                 [&](std::vector<TransactionHistory> result,
-                                     std::optional<std::string> error) {
-                                     history = std::move(result);
-                                     history_error = error;
-                                 });
+    client.GetTransactionHistory(
+        "", 10, [&](std::vector<TransactionHistory> result, std::optional<std::string> error) {
+            history = std::move(result);
+            history_error = error;
+        });
     assert(history.has_value());
     assert(!history_error.has_value());
     bool found = false;
-    for (const auto& entry : *history) {
+    for (const auto &entry : *history) {
         if (entry.txid == *txid) {
             found = true;
             break;
@@ -333,23 +331,22 @@ int main() {
 
     std::optional<TransactionHistory> tx_info;
     std::optional<std::string> tx_info_error;
-    client.GetTransaction(*txid,
-                          [&](std::optional<TransactionHistory> result,
-                              std::optional<std::string> error) {
-                              tx_info = result;
-                              tx_info_error = error;
-                          });
+    client.GetTransaction(
+        *txid, [&](std::optional<TransactionHistory> result, std::optional<std::string> error) {
+            tx_info = result;
+            tx_info_error = error;
+        });
     assert(tx_info.has_value());
     assert(!tx_info_error.has_value());
     assert(tx_info->txid == *txid);
 
     std::optional<MobileClient::NetworkStatus> status;
     std::optional<std::string> status_error;
-    client.GetNetworkStatus([&](std::optional<MobileClient::NetworkStatus> result,
-                                std::optional<std::string> error) {
-        status = result;
-        status_error = error;
-    });
+    client.GetNetworkStatus(
+        [&](std::optional<MobileClient::NetworkStatus> result, std::optional<std::string> error) {
+            status = result;
+            status_error = error;
+        });
     assert(status.has_value());
     assert(!status_error.has_value());
     assert(status->block_height >= 2);
