@@ -146,7 +146,7 @@ class GenericHardwareWallet : public HardwareWallet {
     }
 
     std::optional<std::string> GetAddress(const DerivationPath& path,
-                                          bool display_on_device) override {
+                                          bool /*display_on_device*/) override {
         auto pubkey = GetPublicKey(path);
         if (!pubkey) {
             return std::nullopt;

@@ -14,7 +14,8 @@
 #ifndef ssize_t
 typedef SSIZE_T ssize_t;
 #endif
-#ifndef off_t
+#ifndef _OFF_T_DEFINED
+#define _OFF_T_DEFINED
 typedef long long off_t;
 #endif
 // Prevent collision with Win32 TransmitFile/SendFile macros
