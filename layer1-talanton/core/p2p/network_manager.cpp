@@ -642,6 +642,34 @@ void NetworkManager::BroadcastInv(const InvMessage& inv) {
     }
 }
 
+bool NetworkManager::SendBlockToPeer(const std::string& peer_id, const primitives::Block& block) {
+    std::lock_guard<std::mutex> lock(peers_mutex_);
+    auto it = peers_.find(peer_id);
+    if (it == peers_.end() || !it->second->IsConnected()) {
+        return false;
+    }
+    return it->second->SendBlock(block);
+}
+
+bool NetworkManager::SendTxToPeer(const std::string& peer_id,
+                                  const primitives::Transaction& tx) {
+    std::lock_guard<std::mutex> lock(peers_mutex_);
+    auto it = peers_.find(peer_id);
+    if (it == peers_.end() || !it->second->IsConnected()) {
+        return false;
+    }
+    return it->second->SendTx(tx);
+}
+
+bool NetworkManager::SendGetDataToPeer(const std::string& peer_id, const GetDataMessage& msg) {
+    std::lock_guard<std::mutex> lock(peers_mutex_);
+    auto it = peers_.find(peer_id);
+    if (it == peers_.end() || !it->second->IsConnected()) {
+        return false;
+    }
+    return it->second->SendGetData(msg);
+}
+
 void NetworkManager::RequestBlocks(const std::string& peer_id, uint32_t start_height,
                                    uint32_t count) {
     // start_height and count are part of the public interface for future use when

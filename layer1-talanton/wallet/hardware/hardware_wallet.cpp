@@ -3,6 +3,7 @@
 
 #include "hardware_wallet.h"
 
+#include "crypto/schnorr.h"
 #include "crypto/sha256.h"
 
 #include <algorithm>
@@ -179,15 +180,44 @@ class GenericHardwareWallet : public HardwareWallet {
             return std::nullopt;
         }
 
-        // In a real implementation:
-        // 1. Send transaction to device for review
-        // 2. User confirms on device screen
-        // 3. Device signs each input with corresponding key
-        // 4. Return fully signed transaction
+        // Build a signed copy of the transaction
+        primitives::Transaction signed_tx = tx;
 
-        // For now, return the transaction as-is
-        // In production, this would have real signatures from hardware
-        return tx;
+        for (size_t i = 0; i < signed_tx.inputs.size(); ++i) {
+            auto pubkey = GetPublicKey(input_paths[i]);
+            if (!pubkey) {
+                return std::nullopt;
+            }
+
+            // Derive the private key from the same path (matches GetPublicKey derivation).
+            // NOTE: This is a software simulation. A production hardware wallet derives
+            // keys using BIP-32 hierarchical deterministic derivation (HMAC-SHA512 with
+            // chain codes). Real device communication replaces this derivation entirely.
+            std::string path_str = input_paths[i].ToString();
+            auto entropy = crypto::SHA256::Hash256(
+                std::vector<uint8_t>(path_str.begin(), path_str.end()));
+            crypto::Schnorr::PrivateKey privkey{};
+            std::copy(entropy.begin(), entropy.end(), privkey.begin());
+
+            // Get the consensus-defined signature hash for this input
+            auto msg_hash = signed_tx.GetSignatureHash(i);
+
+            auto sig_opt = crypto::Schnorr::Sign(privkey, msg_hash.data());
+            if (!sig_opt) {
+                return std::nullopt;
+            }
+
+            // Store signature + pubkey as the signature script
+            signed_tx.inputs[i].signature_script.clear();
+            signed_tx.inputs[i].signature_script.insert(
+                signed_tx.inputs[i].signature_script.end(),
+                sig_opt->begin(), sig_opt->end());
+            signed_tx.inputs[i].signature_script.insert(
+                signed_tx.inputs[i].signature_script.end(),
+                pubkey->begin(), pubkey->end());
+        }
+
+        return signed_tx;
     }
 
     std::optional<std::vector<uint8_t>> SignMessage(const std::vector<uint8_t>& message,
@@ -196,19 +226,24 @@ class GenericHardwareWallet : public HardwareWallet {
             return std::nullopt;
         }
 
-        // In a real implementation:
-        // 1. Send message to device
-        // 2. Device derives signing key from path
-        // 3. User confirms on device
-        // 4. Device creates Schnorr signature
-        // 5. Return signature
+        // Derive the private key deterministically from the path.
+        // NOTE: This is a software simulation. See SignTransaction for details on
+        // production BIP-32 key derivation.
+        std::string path_str = path.ToString();
+        auto entropy = crypto::SHA256::Hash256(
+            std::vector<uint8_t>(path_str.begin(), path_str.end()));
+        crypto::Schnorr::PrivateKey privkey{};
+        std::copy(entropy.begin(), entropy.end(), privkey.begin());
 
-        // For now, return a mock signature
-        std::vector<uint8_t> signature(64);
-        auto hash = crypto::SHA256::Hash256(message);
-        std::copy(hash.begin(), hash.end(), signature.begin());
+        // Hash the message before signing (BIP-340 signs a 32-byte hash)
+        auto msg_hash = crypto::SHA256::Hash256(message);
 
-        return signature;
+        auto sig_opt = crypto::Schnorr::Sign(privkey, msg_hash.data());
+        if (!sig_opt) {
+            return std::nullopt;
+        }
+
+        return std::vector<uint8_t>(sig_opt->begin(), sig_opt->end());
     }
 
     bool VerifyAddress(const DerivationPath& path, const std::string& expected_address) override {

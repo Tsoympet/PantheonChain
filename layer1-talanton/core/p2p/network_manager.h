@@ -178,6 +178,11 @@ class NetworkManager {
     void BroadcastTransaction(const primitives::Transaction& tx);
     void BroadcastInv(const InvMessage& inv);
 
+    // Send to a specific peer
+    bool SendBlockToPeer(const std::string& peer_id, const primitives::Block& block);
+    bool SendTxToPeer(const std::string& peer_id, const primitives::Transaction& tx);
+    bool SendGetDataToPeer(const std::string& peer_id, const GetDataMessage& msg);
+
     // Request data
     void RequestBlocks(const std::string& peer_id, uint32_t start_height, uint32_t count);
     void RequestHeaders(const std::string& peer_id,
