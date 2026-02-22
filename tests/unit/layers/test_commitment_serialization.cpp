@@ -28,8 +28,8 @@ int main() {
     assert(decoded.upstream_commitment_hash ==
            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
 
-    auto bad_result =
-        pantheon::common::DecodeCommitment("DRACHMA:abc:42:block:state:validators:upstream:sigs", decoded);
+    auto bad_result = pantheon::common::DecodeCommitment(
+        "DRACHMA:abc:42:block:state:validators:upstream:sigs", decoded);
     assert(!bad_result.valid);
 
     auto missing_upstream = pantheon::common::DecodeCommitment(

@@ -9,7 +9,7 @@
 
 using namespace parthenon::consensus;
 
-void PrintHash(const std::array<uint8_t, 32>& hash) {
+void PrintHash(const std::array<uint8_t, 32> &hash) {
     for (int i = 31; i >= 0; i--) {
         std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
     }
@@ -43,10 +43,10 @@ void TestCompactConversionExamples() {
 
     // Test several compact values
     uint32_t compacts[] = {
-        0x1d00ffff,  // Bitcoin initial
-        0x1b0404cb,  // Higher difficulty
-        0x1a05db8b,  // Even higher difficulty
-        0x03123456,  // Very low exponent
+        0x1d00ffff, // Bitcoin initial
+        0x1b0404cb, // Higher difficulty
+        0x1a05db8b, // Even higher difficulty
+        0x03123456, // Very low exponent
     };
 
     for (uint32_t compact : compacts) {
@@ -69,7 +69,7 @@ void TestProofOfWork() {
     // Which is: 0x0000ffff000000... in big-endian
     // Hash needs to be <= target, so let's use 0x0000ff0000...
     std::array<uint8_t, 32> easy_hash{};
-    easy_hash[27] = 0xff;  // Less than target at this position
+    easy_hash[27] = 0xff; // Less than target at this position
     easy_hash[26] = 0x00;
 
     uint32_t easy_bits = 0x1d00ffff;
@@ -117,7 +117,7 @@ void TestTimewarpProtection() {
     uint32_t expected_time = Difficulty::TARGET_TIMESPAN;
 
     // Test extreme values are clamped
-    uint32_t very_short = 100;  // Much less than MIN_TIMESPAN
+    uint32_t very_short = 100; // Much less than MIN_TIMESPAN
     uint32_t new_bits_short =
         Difficulty::CalculateNextDifficulty(current_bits, very_short, expected_time);
 
@@ -127,7 +127,7 @@ void TestTimewarpProtection() {
     assert(new_bits_short == new_bits_min);
 
     // Test max timespan
-    uint32_t very_long = 100000000;  // Much more than MAX_TIMESPAN
+    uint32_t very_long = 100000000; // Much more than MAX_TIMESPAN
     uint32_t new_bits_long =
         Difficulty::CalculateNextDifficulty(current_bits, very_long, expected_time);
 

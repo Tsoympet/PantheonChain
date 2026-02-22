@@ -15,7 +15,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-SendPage::SendPage(RPCClient* rpc, QWidget* parent) : QWidget(parent), rpcClient(rpc) {
+SendPage::SendPage(RPCClient *rpc, QWidget *parent) : QWidget(parent), rpcClient(rpc) {
     setupUI();
 
     if (rpcClient) {
@@ -25,11 +25,11 @@ SendPage::SendPage(RPCClient* rpc, QWidget* parent) : QWidget(parent), rpcClient
 }
 
 void SendPage::setupUI() {
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(20);
 
     // Title
-    QLabel* titleLabel = new QLabel(tr("Send Transaction"), this);
+    QLabel *titleLabel = new QLabel(tr("Send Transaction"), this);
     QFont titleFont = titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -37,8 +37,8 @@ void SendPage::setupUI() {
     mainLayout->addWidget(titleLabel);
 
     // Send form
-    QGroupBox* formBox = new QGroupBox(tr("Transaction Details"), this);
-    QFormLayout* formLayout = new QFormLayout(formBox);
+    QGroupBox *formBox = new QGroupBox(tr("Transaction Details"), this);
+    QFormLayout *formLayout = new QFormLayout(formBox);
 
     // Asset selector
     assetSelector = new QComboBox(this);
@@ -51,7 +51,7 @@ void SendPage::setupUI() {
     formLayout->addRow(tr("To Address:"), addressEdit);
 
     // Amount with MAX button
-    QHBoxLayout* amountLayout = new QHBoxLayout();
+    QHBoxLayout *amountLayout = new QHBoxLayout();
     amountEdit = new QLineEdit(this);
     amountEdit->setPlaceholderText("0.00000000");
     maxButton = new QPushButton(tr("MAX"), this);
@@ -74,7 +74,7 @@ void SendPage::setupUI() {
     mainLayout->addWidget(statusLabel);
 
     // Action buttons
-    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
     sendButton = new QPushButton(tr("Send Transaction"), this);
     sendButton->setMinimumHeight(40);
     clearButton = new QPushButton(tr("Clear"), this);
@@ -143,7 +143,7 @@ void SendPage::onClearClicked() {
     statusLabel->clear();
 }
 
-void SendPage::onTransactionSent(const QString& txid) {
+void SendPage::onTransactionSent(const QString &txid) {
     statusLabel->setText(tr("Transaction sent successfully!\nTXID: %1").arg(txid));
     statusLabel->setStyleSheet("QLabel { color: green; }");
 
@@ -153,7 +153,7 @@ void SendPage::onTransactionSent(const QString& txid) {
     memoEdit->clear();
 }
 
-void SendPage::onError(const QString& error) {
+void SendPage::onError(const QString &error) {
     statusLabel->setText(tr("Error: %1").arg(error));
     statusLabel->setStyleSheet("QLabel { color: red; }");
 }

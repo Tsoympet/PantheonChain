@@ -98,7 +98,7 @@ void ReceivePage::onGenerateAddress() {
     rpcClient->getNewAddress();
 }
 
-void ReceivePage::onNewAddressReceived(const QString& address) {
+void ReceivePage::onNewAddressReceived(const QString &address) {
     generateButton->setEnabled(true);
     generateButton->setText(tr("Generate New Address"));
 

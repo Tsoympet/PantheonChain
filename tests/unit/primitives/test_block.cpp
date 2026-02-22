@@ -113,9 +113,9 @@ void TestGenesisBlock() {
 
     Block genesis;
     genesis.header.version = 1;
-    genesis.header.prev_block_hash = std::array<uint8_t, 32>{};  // All zeros
-    genesis.header.timestamp = 1609459200;                       // 2021-01-01
-    genesis.header.bits = Difficulty::GetInitialBits();          // Use initial difficulty
+    genesis.header.prev_block_hash = std::array<uint8_t, 32>{}; // All zeros
+    genesis.header.timestamp = 1609459200;                      // 2021-01-01
+    genesis.header.bits = Difficulty::GetInitialBits();         // Use initial difficulty
     genesis.header.nonce = 0;
 
     // Create coinbase transaction
@@ -125,7 +125,7 @@ void TestGenesisBlock() {
     TxInput input;
     input.prevout.txid = std::array<uint8_t, 32>{};
     input.prevout.vout = 0xFFFFFFFF;
-    input.signature_script = {0x04, 0x67, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73};  // "genesis"
+    input.signature_script = {0x04, 0x67, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73}; // "genesis"
     coinbase.inputs.push_back(input);
 
     std::vector<uint8_t> pubkey(32, 0xAB);
@@ -189,7 +189,7 @@ void TestBlockSerialization() {
     // Serialize
     auto serialized = block.Serialize();
     assert(!serialized.empty());
-    assert(serialized.size() >= 80);  // At least header size
+    assert(serialized.size() >= 80); // At least header size
 
     // Deserialize
     auto block2 = Block::Deserialize(serialized.data(), serialized.size());
@@ -217,7 +217,7 @@ void TestBlockValidation() {
     Transaction regular_tx;
     regular_tx.version = 1;
     TxInput input;
-    input.prevout.vout = 0;  // Not coinbase
+    input.prevout.vout = 0; // Not coinbase
     regular_tx.inputs.push_back(input);
     std::vector<uint8_t> pubkey(32, 0xAB);
     regular_tx.outputs.push_back(TxOutput(AssetID::TALANTON, 1000, pubkey));
@@ -242,7 +242,8 @@ void TestBlockDeserializeRejectsTrailingAndNonCanonicalData() {
     input.prevout.txid = std::array<uint8_t, 32>{};
     input.prevout.vout = 0xFFFFFFFF;
     coinbase.inputs.push_back(input);
-    coinbase.outputs.push_back(TxOutput(AssetID::TALANTON, 5000000000, std::vector<uint8_t>(32, 0xCD)));
+    coinbase.outputs.push_back(
+        TxOutput(AssetID::TALANTON, 5000000000, std::vector<uint8_t>(32, 0xCD)));
     block.transactions.push_back(coinbase);
     block.header.merkle_root = block.CalculateMerkleRoot();
 
@@ -281,7 +282,7 @@ int main() {
         std::cout << "========================================" << std::endl;
 
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed with exception: " << e.what() << std::endl;
         return 1;
     } catch (...) {

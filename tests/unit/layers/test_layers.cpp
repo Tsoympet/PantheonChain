@@ -42,13 +42,13 @@ int main() {
     assert(l2_valid.valid);
 
     const std::vector<drachma::Validator> l2_validators{{"val1", 80}, {"val2", 20}};
-    const auto& l2_proposer_a = drachma::SelectDeterministicProposer(l2_validators, 3, 22);
-    const auto& l2_proposer_b = drachma::SelectDeterministicProposer(l2_validators, 3, 22);
+    const auto &l2_proposer_a = drachma::SelectDeterministicProposer(l2_validators, 3, 22);
+    const auto &l2_proposer_b = drachma::SelectDeterministicProposer(l2_validators, 3, 22);
     assert(l2_proposer_a.id == l2_proposer_b.id);
 
     const std::vector<obolos::Validator> l3_validators{{"val3", 60}, {"val4", 40}};
-    const auto& l3_proposer_a = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
-    const auto& l3_proposer_b = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
+    const auto &l3_proposer_a = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
+    const auto &l3_proposer_b = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
     assert(l3_proposer_a.id == l3_proposer_b.id);
 
     auto slash_double_sign = drachma::SlashDoubleSign(l2_validators.front(), 1, 20);

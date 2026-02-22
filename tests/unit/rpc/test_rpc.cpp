@@ -52,7 +52,6 @@ void TestStopMethodWithNode() {
     std::cout << "  ✓ Passed (stop response)" << std::endl;
 }
 
-
 void TestBasicAuthConfiguration() {
     std::cout << "Test: basic auth configuration" << std::endl;
 
@@ -73,7 +72,6 @@ void TestBasicAuthConfiguration() {
 
     std::cout << "  ✓ Passed (auth checks)" << std::endl;
 }
-
 
 void TestServerStartStopLifecycle() {
     std::cout << "Test: rpc server start/stop lifecycle" << std::endl;
@@ -120,7 +118,6 @@ void TestSendRawTransactionRejectsInvalidHex() {
 
     std::cout << "  ✓ Passed (invalid hex)" << std::endl;
 }
-
 
 void TestMonetarySpecEndpoint() {
     std::cout << "Test: monetary spec endpoint" << std::endl;

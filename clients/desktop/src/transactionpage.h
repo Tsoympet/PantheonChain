@@ -14,7 +14,7 @@ class TransactionPage : public QWidget {
     Q_OBJECT
 
   public:
-    explicit TransactionPage(RPCClient* rpc, QWidget* parent = nullptr);
+    explicit TransactionPage(RPCClient *rpc, QWidget *parent = nullptr);
 
   private slots:
     void onRefresh();
@@ -25,10 +25,10 @@ class TransactionPage : public QWidget {
     void setupUI();
     void loadTransactions();
 
-    RPCClient* rpcClient;
-    QTableWidget* transactionTable;
-    QPushButton* refreshButton;
-    QComboBox* filterComboBox;
+    RPCClient *rpcClient;
+    QTableWidget *transactionTable;
+    QPushButton *refreshButton;
+    QComboBox *filterComboBox;
 };
 
-#endif  // TRANSACTIONPAGE_H
+#endif // TRANSACTIONPAGE_H

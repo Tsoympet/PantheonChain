@@ -23,9 +23,7 @@ class DEXFuzzer {
 
     uint64_t RandomUint64() { return dist_(rng_); }
 
-    uint64_t RandomAmount(uint64_t max = UINT64_MAX) {
-        return dist_(rng_) % (max + 1);
-    }
+    uint64_t RandomAmount(uint64_t max = UINT64_MAX) { return dist_(rng_) % (max + 1); }
 
     AssetID RandomAsset() {
         uint8_t asset = dist_(rng_) % 3;
@@ -38,7 +36,7 @@ class DEXFuzzer {
      */
     void FuzzGetOutputAmount(size_t iterations = 10000) {
         std::cout << "Fuzzing GetOutputAmount with " << iterations << " iterations..." << std::endl;
-        
+
         size_t valid_cases = 0;
         size_t overflow_prevented = 0;
         size_t invalid_inputs = 0;
@@ -47,10 +45,10 @@ class DEXFuzzer {
             uint64_t input_amount = RandomUint64();
             uint64_t input_reserve = RandomUint64();
             uint64_t output_reserve = RandomUint64();
-            uint64_t fee_rate = RandomAmount(10000);  // 0-100%
+            uint64_t fee_rate = RandomAmount(10000); // 0-100%
 
-            uint64_t output = AutomatedMarketMaker::GetOutputAmount(
-                input_amount, input_reserve, output_reserve, fee_rate);
+            uint64_t output = AutomatedMarketMaker::GetOutputAmount(input_amount, input_reserve,
+                                                                    output_reserve, fee_rate);
 
             // Verify output is valid
             if (output > 0) {
@@ -75,8 +73,9 @@ class DEXFuzzer {
     /**
      * Test order validation with random inputs
      */
-    void FuzzOrderValidation(size_t iterations = 500) {  // Reduce iterations
-        std::cout << "Fuzzing order validation with " << iterations << " iterations..." << std::endl;
+    void FuzzOrderValidation(size_t iterations = 500) { // Reduce iterations
+        std::cout << "Fuzzing order validation with " << iterations << " iterations..."
+                  << std::endl;
 
         OrderBook book(AssetID::TALANTON, AssetID::DRACHMA);
 
@@ -87,17 +86,17 @@ class DEXFuzzer {
             if (i % 100 == 0) {
                 std::cout << "  Progress: " << i << "/" << iterations << std::endl;
             }
-            
+
             Order order;
             order.trader_pubkey = std::vector<uint8_t>(33, static_cast<uint8_t>(i % 256));
-            order.base_asset = AssetID::TALANTON;  // Fix to match order book
-            order.quote_asset = AssetID::DRACHMA;  // Fix to match order book
-            order.type = OrderType::LIMIT_BUY;  // Fix to valid type
+            order.base_asset = AssetID::TALANTON; // Fix to match order book
+            order.quote_asset = AssetID::DRACHMA; // Fix to match order book
+            order.type = OrderType::LIMIT_BUY;    // Fix to valid type
             order.status = OrderStatus::PENDING;
             order.price = 1 + (i % 1000);  // Simple non-zero value
-            order.amount = 1 + (i % 1000);  // Simple non-zero value
+            order.amount = 1 + (i % 1000); // Simple non-zero value
             order.filled_amount = 0;
-            order.timestamp = i;  // Simple timestamp
+            order.timestamp = i; // Simple timestamp
 
             try {
                 auto order_id = book.PlaceOrder(order);
@@ -107,7 +106,7 @@ class DEXFuzzer {
                 } else {
                     rejected_orders++;
                 }
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 std::cout << "  Exception: " << e.what() << std::endl;
                 rejected_orders++;
             } catch (...) {
@@ -133,23 +132,22 @@ class DEXFuzzer {
             // Create a pool with random reserves
             uint64_t reserve_a = RandomAmount(1000000000000ULL);
             uint64_t reserve_b = RandomAmount(1000000000000ULL);
-            uint64_t fee_rate = RandomAmount(1000);  // 0-10%
+            uint64_t fee_rate = RandomAmount(1000); // 0-10%
 
             if (reserve_a == 0 || reserve_b == 0) {
-                continue;  // Skip invalid pools
+                continue; // Skip invalid pools
             }
 
-            auto pool_id = AutomatedMarketMaker::CreatePool(
-                AssetID::TALANTON, AssetID::DRACHMA,
-                reserve_a, reserve_b, fee_rate);
+            auto pool_id = AutomatedMarketMaker::CreatePool(AssetID::TALANTON, AssetID::DRACHMA,
+                                                            reserve_a, reserve_b, fee_rate);
 
             // Try to swap with random amount
             uint64_t input_amount = RandomAmount(reserve_a / 2);
             uint64_t min_output = 0;
 
             try {
-                uint64_t output = AutomatedMarketMaker::Swap(
-                    pool_id, AssetID::TALANTON, input_amount, min_output);
+                uint64_t output = AutomatedMarketMaker::Swap(pool_id, AssetID::TALANTON,
+                                                             input_amount, min_output);
 
                 if (output > 0) {
                     successful_swaps++;
@@ -173,9 +171,10 @@ class DEXFuzzer {
         std::cout << "Testing edge cases..." << std::endl;
 
         // Test max values
-        uint64_t output1 = AutomatedMarketMaker::GetOutputAmount(
-            UINT64_MAX, UINT64_MAX, UINT64_MAX, 0);
-        std::cout << "  Max values (no fee): " << (output1 == 0 ? "Safe" : "POTENTIAL ISSUE") << std::endl;
+        uint64_t output1 =
+            AutomatedMarketMaker::GetOutputAmount(UINT64_MAX, UINT64_MAX, UINT64_MAX, 0);
+        std::cout << "  Max values (no fee): " << (output1 == 0 ? "Safe" : "POTENTIAL ISSUE")
+                  << std::endl;
 
         // Test zero values
         uint64_t output2 = AutomatedMarketMaker::GetOutputAmount(0, 100, 100, 30);
@@ -197,8 +196,7 @@ class DEXFuzzer {
         std::cout << "  100% fee: Safe" << std::endl;
 
         // Test normal case
-        uint64_t output6 = AutomatedMarketMaker::GetOutputAmount(
-            1000, 10000, 10000, 30);
+        uint64_t output6 = AutomatedMarketMaker::GetOutputAmount(1000, 10000, 10000, 30);
         assert(output6 > 0 && output6 < 1000);
         std::cout << "  Normal case: " << output6 << " (expected ~900-970)" << std::endl;
     }
@@ -229,10 +227,11 @@ int main() {
         std::cout << std::endl;
 
         std::cout << "✓ All DEX fuzzing tests completed successfully!" << std::endl;
-        std::cout << "  No crashes, assertion failures, or undefined behavior detected." << std::endl;
+        std::cout << "  No crashes, assertion failures, or undefined behavior detected."
+                  << std::endl;
         return 0;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "✗ Fuzzing test failed: " << e.what() << std::endl;
         return 1;
     }

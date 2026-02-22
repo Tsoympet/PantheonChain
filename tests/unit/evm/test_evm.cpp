@@ -29,9 +29,9 @@ void TestStackOperations() {
     VM vm(state, ctx);
 
     // Test PUSH1 and ADD: PUSH1 5, PUSH1 3, ADD
-    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0x05,  // Push 5
-                                 static_cast<uint8_t>(Opcode::PUSH1), 0x03,  // Push 3
-                                 static_cast<uint8_t>(Opcode::ADD),          // Add (should give 8)
+    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0x05, // Push 5
+                                 static_cast<uint8_t>(Opcode::PUSH1), 0x03, // Push 3
+                                 static_cast<uint8_t>(Opcode::ADD),         // Add (should give 8)
                                  static_cast<uint8_t>(Opcode::STOP)};
 
     auto [result, data] = vm.Execute(code);
@@ -60,11 +60,11 @@ void TestArithmetic() {
 
     // Test: PUSH1 10, PUSH1 2, MUL, PUSH1 5, SUB
     // Result should be: 10 * 2 - 5 = 15
-    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0x0A,  // Push 10
-                                 static_cast<uint8_t>(Opcode::PUSH1), 0x02,  // Push 2
-                                 static_cast<uint8_t>(Opcode::MUL),          // Multiply (20)
-                                 static_cast<uint8_t>(Opcode::PUSH1), 0x05,  // Push 5
-                                 static_cast<uint8_t>(Opcode::SUB),          // Subtract (15)
+    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0x0A, // Push 10
+                                 static_cast<uint8_t>(Opcode::PUSH1), 0x02, // Push 2
+                                 static_cast<uint8_t>(Opcode::MUL),         // Multiply (20)
+                                 static_cast<uint8_t>(Opcode::PUSH1), 0x05, // Push 5
+                                 static_cast<uint8_t>(Opcode::SUB),         // Subtract (15)
                                  static_cast<uint8_t>(Opcode::STOP)};
 
     auto [result, data] = vm.Execute(code);
@@ -93,11 +93,11 @@ void TestMemoryOperations() {
 
     // Test: PUSH1 42, PUSH1 0, MSTORE, PUSH1 0, MLOAD
     // Store 42 at offset 0, then load it back
-    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1),  0x2A,  // Push 42
-                                 static_cast<uint8_t>(Opcode::PUSH1),  0x00,  // Push offset 0
-                                 static_cast<uint8_t>(Opcode::MSTORE),        // Store
-                                 static_cast<uint8_t>(Opcode::PUSH1),  0x00,  // Push offset 0
-                                 static_cast<uint8_t>(Opcode::MLOAD),         // Load
+    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1),  0x2A, // Push 42
+                                 static_cast<uint8_t>(Opcode::PUSH1),  0x00, // Push offset 0
+                                 static_cast<uint8_t>(Opcode::MSTORE),       // Store
+                                 static_cast<uint8_t>(Opcode::PUSH1),  0x00, // Push offset 0
+                                 static_cast<uint8_t>(Opcode::MLOAD),        // Load
                                  static_cast<uint8_t>(Opcode::STOP)};
 
     auto [result, data] = vm.Execute(code);
@@ -127,11 +127,11 @@ void TestStorageOperations() {
 
     // Test: PUSH1 99, PUSH1 1, SSTORE, PUSH1 1, SLOAD
     // Store 99 at key 1, then load it back
-    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1),  0x63,  // Push 99
-                                 static_cast<uint8_t>(Opcode::PUSH1),  0x01,  // Push key 1
-                                 static_cast<uint8_t>(Opcode::SSTORE),        // Store
-                                 static_cast<uint8_t>(Opcode::PUSH1),  0x01,  // Push key 1
-                                 static_cast<uint8_t>(Opcode::SLOAD),         // Load
+    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1),  0x63, // Push 99
+                                 static_cast<uint8_t>(Opcode::PUSH1),  0x01, // Push key 1
+                                 static_cast<uint8_t>(Opcode::SSTORE),       // Store
+                                 static_cast<uint8_t>(Opcode::PUSH1),  0x01, // Push key 1
+                                 static_cast<uint8_t>(Opcode::SLOAD),        // Load
                                  static_cast<uint8_t>(Opcode::STOP)};
 
     auto [result, data] = vm.Execute(code);
@@ -159,9 +159,9 @@ void TestComparison() {
     VM vm(state, ctx);
 
     // Test: PUSH1 5, PUSH1 3, LT (3 < 5 = true = 1)
-    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0x05,  // Push 5
-                                 static_cast<uint8_t>(Opcode::PUSH1), 0x03,  // Push 3
-                                 static_cast<uint8_t>(Opcode::LT),           // Less than
+    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0x05, // Push 5
+                                 static_cast<uint8_t>(Opcode::PUSH1), 0x03, // Push 3
+                                 static_cast<uint8_t>(Opcode::LT),          // Less than
                                  static_cast<uint8_t>(Opcode::STOP)};
 
     auto [result, data] = vm.Execute(code);
@@ -189,9 +189,9 @@ void TestBitwise() {
     VM vm(state, ctx);
 
     // Test: PUSH1 0xFF, PUSH1 0x0F, AND (should give 0x0F)
-    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0xFF,  // Push 255
-                                 static_cast<uint8_t>(Opcode::PUSH1), 0x0F,  // Push 15
-                                 static_cast<uint8_t>(Opcode::AND),          // Bitwise AND
+    std::vector<uint8_t> code = {static_cast<uint8_t>(Opcode::PUSH1), 0xFF, // Push 255
+                                 static_cast<uint8_t>(Opcode::PUSH1), 0x0F, // Push 15
+                                 static_cast<uint8_t>(Opcode::AND),         // Bitwise AND
                                  static_cast<uint8_t>(Opcode::STOP)};
 
     auto [result, data] = vm.Execute(code);
@@ -205,7 +205,7 @@ void TestGasMetering() {
 
     WorldState state;
     ExecutionContext ctx;
-    ctx.gas_limit = 100;  // Very low gas limit
+    ctx.gas_limit = 100; // Very low gas limit
     ctx.gas_price = 1;
     ctx.block_number = 1;
     ctx.timestamp = 1234567890;
@@ -222,7 +222,7 @@ void TestGasMetering() {
     // This should run out of gas due to SSTORE cost
     std::vector<uint8_t> code = {
         static_cast<uint8_t>(Opcode::PUSH1),  0x63, static_cast<uint8_t>(Opcode::PUSH1), 0x01,
-        static_cast<uint8_t>(Opcode::SSTORE),  // Costs 20000 gas
+        static_cast<uint8_t>(Opcode::SSTORE), // Costs 20000 gas
     };
 
     auto [result, data] = vm.Execute(code);
@@ -252,12 +252,12 @@ void TestReturn() {
     // Store value in memory and return it
     // PUSH1 0x42, PUSH1 0, MSTORE8, PUSH1 1, PUSH1 0, RETURN
     std::vector<uint8_t> code = {
-        static_cast<uint8_t>(Opcode::PUSH1),   0x42,  // Value to return
-        static_cast<uint8_t>(Opcode::PUSH1),   0x00,  // Offset 0
-        static_cast<uint8_t>(Opcode::MSTORE8),        // Store byte
-        static_cast<uint8_t>(Opcode::PUSH1),   0x01,  // Length 1
-        static_cast<uint8_t>(Opcode::PUSH1),   0x00,  // Offset 0
-        static_cast<uint8_t>(Opcode::RETURN)          // Return
+        static_cast<uint8_t>(Opcode::PUSH1),   0x42, // Value to return
+        static_cast<uint8_t>(Opcode::PUSH1),   0x00, // Offset 0
+        static_cast<uint8_t>(Opcode::MSTORE8),       // Store byte
+        static_cast<uint8_t>(Opcode::PUSH1),   0x01, // Length 1
+        static_cast<uint8_t>(Opcode::PUSH1),   0x00, // Offset 0
+        static_cast<uint8_t>(Opcode::RETURN)         // Return
     };
 
     auto [result, data] = vm.Execute(code);

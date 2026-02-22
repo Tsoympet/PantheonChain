@@ -14,7 +14,7 @@
 #include <QTableWidget>
 #include <QVBoxLayout>
 
-TransactionPage::TransactionPage(RPCClient* rpc, QWidget* parent)
+TransactionPage::TransactionPage(RPCClient *rpc, QWidget *parent)
     : QWidget(parent), rpcClient(rpc) {
     setupUI();
 
@@ -25,11 +25,11 @@ TransactionPage::TransactionPage(RPCClient* rpc, QWidget* parent)
 }
 
 void TransactionPage::setupUI() {
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(20);
 
     // Title
-    QLabel* titleLabel = new QLabel(tr("Transaction History"), this);
+    QLabel *titleLabel = new QLabel(tr("Transaction History"), this);
     QFont titleFont = titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -37,7 +37,7 @@ void TransactionPage::setupUI() {
     mainLayout->addWidget(titleLabel);
 
     // Filter and refresh controls
-    QHBoxLayout* controlLayout = new QHBoxLayout();
+    QHBoxLayout *controlLayout = new QHBoxLayout();
 
     controlLayout->addWidget(new QLabel(tr("Filter:"), this));
     filterComboBox = new QComboBox(this);
@@ -68,11 +68,11 @@ void TransactionPage::setupUI() {
     transactionTable->setAlternatingRowColors(true);
 
     // Set column widths
-    transactionTable->setColumnWidth(0, 150);  // Date/Time
-    transactionTable->setColumnWidth(1, 80);   // Type
-    transactionTable->setColumnWidth(2, 60);   // Asset
-    transactionTable->setColumnWidth(3, 120);  // Amount
-    transactionTable->setColumnWidth(4, 200);  // Address
+    transactionTable->setColumnWidth(0, 150); // Date/Time
+    transactionTable->setColumnWidth(1, 80);  // Type
+    transactionTable->setColumnWidth(2, 60);  // Asset
+    transactionTable->setColumnWidth(3, 120); // Amount
+    transactionTable->setColumnWidth(4, 200); // Address
 
     mainLayout->addWidget(transactionTable);
 
@@ -94,9 +94,7 @@ void TransactionPage::onFilterChanged(int index) {
     loadTransactions();
 }
 
-void TransactionPage::onTransactionHistoryUpdated() {
-    loadTransactions();
-}
+void TransactionPage::onTransactionHistoryUpdated() { loadTransactions(); }
 
 void TransactionPage::loadTransactions() {
     // Clear existing rows
@@ -118,7 +116,7 @@ void TransactionPage::loadTransactions() {
         };
     }
 
-    for (const auto& tx : txs) {
+    for (const auto &tx : txs) {
         int row = transactionTable->rowCount();
         transactionTable->insertRow(row);
 

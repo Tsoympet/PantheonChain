@@ -50,7 +50,8 @@ parthenon::primitives::Transaction MakeTestTransaction() {
     tx.inputs.push_back(input);
 
     parthenon::primitives::TxOutput output;
-    output.value = parthenon::primitives::AssetAmount(parthenon::primitives::AssetID::TALANTON, 500);
+    output.value =
+        parthenon::primitives::AssetAmount(parthenon::primitives::AssetID::TALANTON, 500);
     output.pubkey_script = std::vector<uint8_t>(32, 0x11);
     tx.outputs.push_back(output);
 
@@ -67,7 +68,7 @@ parthenon::primitives::Block MakeTestBlock() {
     block.header.merkle_root = block.CalculateMerkleRoot();
     return block;
 }
-}  // namespace
+} // namespace
 
 void TestNetAddrValidation() {
     std::cout << "Test: Network address validation" << std::endl;
@@ -85,7 +86,7 @@ void TestNetAddrValidation() {
     addr.ip[15] = 1;
 
     assert(addr.IsIPv4());
-    assert(!addr.IsRoutable());  // 192.168.x.x is private
+    assert(!addr.IsRoutable()); // 192.168.x.x is private
 
     // Test public IP
     addr.ip[12] = 8;
@@ -93,7 +94,7 @@ void TestNetAddrValidation() {
     addr.ip[14] = 8;
     addr.ip[15] = 8;
 
-    assert(addr.IsRoutable());  // 8.8.8.8 is public
+    assert(addr.IsRoutable()); // 8.8.8.8 is public
 
     std::cout << "  ✓ Passed (address validation)" << std::endl;
 }
@@ -220,13 +221,10 @@ void TestAddrMessageRoundTrip() {
 
     auto bytes = addr_msg.Serialize();
 
-    std::vector<uint8_t> expected = {
-        0x01,
-        0x04, 0x03, 0x02, 0x01,
-        0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x01, 0x02,
-        0x03, 0x04,
-        0x20, 0x8D};
+    std::vector<uint8_t> expected = {0x01, 0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06,
+                                     0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x00,
+                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF,
+                                     0xFF, 0x01, 0x02, 0x03, 0x04, 0x20, 0x8D};
     assert(bytes == expected);
 
     auto deserialized = AddrMessage::Deserialize(bytes.data(), bytes.size());
@@ -281,7 +279,7 @@ void TestHeadersMessages() {
     get_headers.hash_stop.fill(0x00);
 
     auto get_headers_bytes = get_headers.Serialize();
-    std::vector<uint8_t> expected = {0x71, 0x11, 0x01, 0x00, 0x01};  // 70001 LE + locator count
+    std::vector<uint8_t> expected = {0x71, 0x11, 0x01, 0x00, 0x01}; // 70001 LE + locator count
     expected.insert(expected.end(), locator.begin(), locator.end());
     expected.insert(expected.end(), get_headers.hash_stop.begin(), get_headers.hash_stop.end());
     assert(get_headers_bytes == expected);
@@ -293,7 +291,8 @@ void TestHeadersMessages() {
 
     auto get_headers_truncated = get_headers_bytes;
     get_headers_truncated.pop_back();
-    assert(!GetHeadersMessage::Deserialize(get_headers_truncated.data(), get_headers_truncated.size()));
+    assert(!GetHeadersMessage::Deserialize(get_headers_truncated.data(),
+                                           get_headers_truncated.size()));
 
     auto overflow = EncodeCompactSize(MAX_HEADERS_COUNT + 1);
     overflow.insert(overflow.end(), 32, 0x00);
@@ -306,7 +305,8 @@ void TestHeadersMessages() {
     headers_msg.headers.push_back(header);
 
     auto headers_bytes = headers_msg.Serialize();
-    auto headers_deserialized = HeadersMessage::Deserialize(headers_bytes.data(), headers_bytes.size());
+    auto headers_deserialized =
+        HeadersMessage::Deserialize(headers_bytes.data(), headers_bytes.size());
     assert(headers_deserialized.has_value());
     assert(headers_deserialized->headers.size() == 1);
     assert(headers_deserialized->headers[0].version == 5);
@@ -448,7 +448,6 @@ void TestTxAndBlockMessages() {
 
     std::cout << "  ✓ Passed (tx/block messages)" << std::endl;
 }
-
 
 void TestRejectMessageAndCommandSafety() {
     std::cout << "Test: Reject message and command safety" << std::endl;

@@ -102,10 +102,10 @@ void TestDifficultyDeterminism() {
     std::cout << "Consensus Test: Difficulty Determinism" << std::endl;
 
     // Test that difficulty calculation is deterministic given same inputs
-    uint32_t target1 = 0x1d00ffff;  // Initial difficulty target
+    uint32_t target1 = 0x1d00ffff; // Initial difficulty target
     uint32_t time_start = 1234567890;
-    uint32_t time_end1 = time_start + (2016 * 10 * 60);  // Exactly 2 weeks
-    uint32_t time_end2 = time_start + (2016 * 5 * 60);   // Half the expected time
+    uint32_t time_end1 = time_start + (2016 * 10 * 60); // Exactly 2 weeks
+    uint32_t time_end2 = time_start + (2016 * 5 * 60);  // Half the expected time
 
     // Calculate difficulty multiple times with same inputs
     uint32_t new_target1a =
@@ -128,13 +128,13 @@ void TestDifficultyDeterminism() {
         std::cerr << "  ❌ Difficulty failed to increase for faster blocks" << std::endl;
         std::abort();
     }
-    assert(new_target2 < target1);  // Target should decrease (difficulty increase)
+    assert(new_target2 < target1); // Target should decrease (difficulty increase)
     std::cout << "  ✅ Difficulty adjusts correctly for faster blocks" << std::endl;
 
     // Verify clamping (max 4x change)
-    uint32_t time_very_fast = time_start + (2016 * 60);  // 10x faster
+    uint32_t time_very_fast = time_start + (2016 * 60); // 10x faster
     uint32_t time_span_very_fast = time_very_fast - time_start;
-    (void)time_span_very_fast;  // Suppress unused warning
+    (void)time_span_very_fast; // Suppress unused warning
     // Should be clamped to 4x difficulty increase (target / 4)
     std::cout << "  ✅ Difficulty adjustment clamping verified" << std::endl;
 }
@@ -220,8 +220,8 @@ void TestForkResolution() {
     std::cout << "  [READY] Full integration test pending chainstate persistence" << std::endl;
 }
 
-}  // namespace consensus_tests
-}  // namespace parthenon
+} // namespace consensus_tests
+} // namespace parthenon
 
 int main() {
     std::cout << "\n=== ParthenonChain Consensus Tests ===" << std::endl;
@@ -237,7 +237,7 @@ int main() {
 
         std::cout << "\n✅ All implemented consensus tests passed!" << std::endl;
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "\n❌ CONSENSUS TEST FAILURE: " << e.what() << std::endl;
         return 1;
     }

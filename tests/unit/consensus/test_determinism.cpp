@@ -20,13 +20,13 @@ using namespace parthenon::primitives;
 void TestSHA256Determinism() {
     std::cout << "Test: SHA-256 determinism" << std::endl;
 
-    const char* data = "ParthenonChain deterministic test";
+    const char *data = "ParthenonChain deterministic test";
     size_t len = strlen(data);
 
     // Hash the same data multiple times
-    auto hash1 = SHA256::Hash256(reinterpret_cast<const uint8_t*>(data), len);
-    auto hash2 = SHA256::Hash256(reinterpret_cast<const uint8_t*>(data), len);
-    auto hash3 = SHA256::Hash256(reinterpret_cast<const uint8_t*>(data), len);
+    auto hash1 = SHA256::Hash256(reinterpret_cast<const uint8_t *>(data), len);
+    auto hash2 = SHA256::Hash256(reinterpret_cast<const uint8_t *>(data), len);
+    auto hash3 = SHA256::Hash256(reinterpret_cast<const uint8_t *>(data), len);
 
     // All hashes must be identical
     assert(hash1 == hash2);
@@ -38,13 +38,13 @@ void TestSHA256Determinism() {
 void TestSHA256dDeterminism() {
     std::cout << "Test: SHA-256d determinism" << std::endl;
 
-    const char* data = "Block header data";
+    const char *data = "Block header data";
     size_t len = strlen(data);
 
     // Hash the same data multiple times with double-SHA256
-    auto hash1 = SHA256d::Hash256d(reinterpret_cast<const uint8_t*>(data), len);
-    auto hash2 = SHA256d::Hash256d(reinterpret_cast<const uint8_t*>(data), len);
-    auto hash3 = SHA256d::Hash256d(reinterpret_cast<const uint8_t*>(data), len);
+    auto hash1 = SHA256d::Hash256d(reinterpret_cast<const uint8_t *>(data), len);
+    auto hash2 = SHA256d::Hash256d(reinterpret_cast<const uint8_t *>(data), len);
+    auto hash3 = SHA256d::Hash256d(reinterpret_cast<const uint8_t *>(data), len);
 
     // All hashes must be identical
     assert(hash1 == hash2);
@@ -57,13 +57,13 @@ void TestTaggedHashDeterminism() {
     std::cout << "Test: Tagged SHA-256 determinism" << std::endl;
 
     std::string tag = "ParthenonChain/Test";
-    const char* data = "test data for tagged hash";
+    const char *data = "test data for tagged hash";
     size_t len = strlen(data);
 
     // Hash with the same tag and data multiple times
-    auto hash1 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t*>(data), len);
-    auto hash2 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t*>(data), len);
-    auto hash3 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t*>(data), len);
+    auto hash1 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t *>(data), len);
+    auto hash2 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t *>(data), len);
+    auto hash3 = TaggedSHA256::HashTagged(tag, reinterpret_cast<const uint8_t *>(data), len);
 
     // All hashes must be identical
     assert(hash1 == hash2);
@@ -218,10 +218,10 @@ void TestDeterministicOrdering() {
     auto sorted2 = txs;
 
     std::sort(sorted1.begin(), sorted1.end(),
-              [](const Transaction& a, const Transaction& b) { return a.GetTxID() < b.GetTxID(); });
+              [](const Transaction &a, const Transaction &b) { return a.GetTxID() < b.GetTxID(); });
 
     std::sort(sorted2.begin(), sorted2.end(),
-              [](const Transaction& a, const Transaction& b) { return a.GetTxID() < b.GetTxID(); });
+              [](const Transaction &a, const Transaction &b) { return a.GetTxID() < b.GetTxID(); });
 
     // Verify same ordering
     for (size_t i = 0; i < sorted1.size(); i++) {
@@ -239,7 +239,7 @@ void TestNoSystemDependencies() {
 
     // Verify block timestamp must be explicitly provided (not system time)
     Block block;
-    block.header.timestamp = 1234567890;  // Explicit timestamp
+    block.header.timestamp = 1234567890; // Explicit timestamp
 
     auto hash1 = block.GetHash();
 

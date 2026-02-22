@@ -48,7 +48,7 @@ void TestMempoolBasics() {
     utxo_set.AddCoin(outpoint, coin);
 
     // Create a transaction
-    auto tx = CreateTestTransaction(1, 9000);  // 1000 fee
+    auto tx = CreateTestTransaction(1, 9000); // 1000 fee
 
     // Add to mempool
     assert(mempool.AddTransaction(tx, utxo_set, 150));
@@ -89,9 +89,9 @@ void TestMempoolPriority() {
     }
 
     // Add transactions with different fees
-    auto tx1 = CreateTestTransaction(1, 9900);  // Low fee (100)
-    auto tx2 = CreateTestTransaction(2, 9000);  // High fee (1000)
-    auto tx3 = CreateTestTransaction(3, 9500);  // Medium fee (500)
+    auto tx1 = CreateTestTransaction(1, 9900); // Low fee (100)
+    auto tx2 = CreateTestTransaction(2, 9000); // High fee (1000)
+    auto tx3 = CreateTestTransaction(3, 9500); // Medium fee (500)
 
     mempool.AddTransaction(tx1, utxo_set, 150);
     mempool.AddTransaction(tx2, utxo_set, 150);
@@ -130,7 +130,7 @@ void TestMempoolConflictDetection() {
 
     // Try to add conflicting transaction (same input)
     auto tx2 = CreateTestTransaction(1, 8000);
-    assert(!mempool.AddTransaction(tx2, utxo_set, 150));  // Should fail (double-spend)
+    assert(!mempool.AddTransaction(tx2, utxo_set, 150)); // Should fail (double-spend)
 
     std::cout << "  ✓ Passed (conflict detection)" << std::endl;
 }
@@ -139,7 +139,7 @@ void TestMempoolSizeLimit() {
     std::cout << "Test: Mempool size limit" << std::endl;
 
     Mempool mempool;
-    mempool.SetMaxSize(500);  // Very small limit
+    mempool.SetMaxSize(500); // Very small limit
 
     UTXOSet utxo_set;
 
@@ -162,7 +162,7 @@ void TestMempoolSizeLimit() {
         if (mempool.AddTransaction(tx, utxo_set, 150)) {
             added++;
         } else {
-            break;  // Mempool full
+            break; // Mempool full
         }
     }
 

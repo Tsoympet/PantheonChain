@@ -22,7 +22,7 @@ class MainWindow {
     MainWindow() { std::cout << "ParthenonChain Desktop Wallet v1.0.0" << std::endl; }
 
     void Show() {
-        (void)current_asset_;  // Reserved for future asset-specific UI behavior
+        (void)current_asset_; // Reserved for future asset-specific UI behavior
 
         std::cout << "\n=== ParthenonChain Wallet ===" << std::endl;
         std::cout << "TALN Balance: " << balance_taln_ << std::endl;
@@ -60,12 +60,12 @@ class MainWindow {
     }
 };
 
-}  // namespace gui
-}  // namespace parthenon
+} // namespace gui
+} // namespace parthenon
 
-int main(int argc, char* argv[]) {
-    (void)argc;  // Unused in scaffold
-    (void)argv;  // Unused in scaffold
+int main(int argc, char *argv[]) {
+    (void)argc; // Unused in scaffold
+    (void)argv; // Unused in scaffold
 
     std::cout << "ParthenonChain Desktop Wallet" << std::endl;
     std::cout << "NOTE: This is a scaffold. Production version requires Qt." << std::endl;

@@ -63,7 +63,7 @@ void TestAmountAddition() {
     Amount max(UINT64_MAX);
     Amount one(1);
     result = max.Add(one);
-    assert(!result.has_value());  // Should overflow
+    assert(!result.has_value()); // Should overflow
 
     // Near-max addition
     Amount near_max(UINT64_MAX - 10);
@@ -99,7 +99,7 @@ void TestAmountSubtraction() {
     Amount small(10);
     Amount large(100);
     result = small.Subtract(large);
-    assert(!result.has_value());  // Should underflow
+    assert(!result.has_value()); // Should underflow
 
     // Subtract from zero
     Amount zero(0);
@@ -131,7 +131,7 @@ void TestAmountMultiplication() {
     // Overflow detection
     Amount large(UINT64_MAX / 2);
     result = large.Multiply(3);
-    assert(!result.has_value());  // Should overflow
+    assert(!result.has_value()); // Should overflow
 
     // Near-max multiplication
     Amount near_max(UINT64_MAX / 10);
@@ -166,7 +166,7 @@ void TestAmountDivision() {
     Amount b(10);
     result = b.Divide(3);
     assert(result.has_value());
-    assert(result->GetValue() == 3);  // Floor division
+    assert(result->GetValue() == 3); // Floor division
 
     std::cout << "  ✓ Passed" << std::endl;
 }
@@ -259,7 +259,7 @@ int main() {
         std::cout << "=====================================" << std::endl;
 
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed with exception: " << e.what() << std::endl;
         return 1;
     } catch (...) {

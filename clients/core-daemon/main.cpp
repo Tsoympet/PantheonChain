@@ -10,8 +10,8 @@
 #include <openssl/rand.h>
 
 #include <array>
-#include <cctype>
 #include <atomic>
+#include <cctype>
 #include <cerrno>
 #include <csignal>
 #include <cstring>
@@ -52,7 +52,7 @@ struct Config {
 
 class ConfigParser {
   private:
-    static bool TryParseInt(const std::string& value, int& out) {
+    static bool TryParseInt(const std::string &value, int &out) {
         try {
             size_t parsed_chars = 0;
             const int parsed_value = std::stoi(value, &parsed_chars);
@@ -66,9 +66,9 @@ class ConfigParser {
         }
     }
 
-    static bool TryParseBool(const std::string& value, bool& out) {
+    static bool TryParseBool(const std::string &value, bool &out) {
         std::string normalized = value;
-        for (auto& ch : normalized) {
+        for (auto &ch : normalized) {
             ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
         }
 
@@ -85,7 +85,7 @@ class ConfigParser {
         return false;
     }
 
-    static std::string SanitizeScalarValue(const std::string& raw_value) {
+    static std::string SanitizeScalarValue(const std::string &raw_value) {
         std::string value = raw_value;
         const auto comment_pos = value.find('#');
         if (comment_pos != std::string::npos) {
@@ -100,7 +100,7 @@ class ConfigParser {
         return value.substr(first_non_space, last_non_space - first_non_space + 1);
     }
 
-    static bool TryParsePort(const std::string& value, int& out) {
+    static bool TryParsePort(const std::string &value, int &out) {
         int parsed = 0;
         if (!TryParseInt(value, parsed)) {
             return false;
@@ -113,7 +113,7 @@ class ConfigParser {
     }
 
   public:
-    static Config Parse(const std::string& filepath) {
+    static Config Parse(const std::string &filepath) {
         Config config;
         std::ifstream file(filepath);
         if (!file.is_open()) {
@@ -216,9 +216,8 @@ class ConfigParser {
             }
         }
 
-
         // Normalize and validate network mode
-        for (auto& ch : config.network) {
+        for (auto &ch : config.network) {
             ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
         }
 
@@ -231,12 +230,12 @@ class ConfigParser {
         }
 
         config.network = node::NetworkModeToString(*mode_opt);
-        for (auto& ch : config.layer) {
+        for (auto &ch : config.layer) {
             ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
         }
         if (config.layer != "l1" && config.layer != "l2" && config.layer != "l3") {
-            std::cerr << "Warning: Unknown network.layer '" << config.layer
-                      << "', defaulting to l1" << std::endl;
+            std::cerr << "Warning: Unknown network.layer '" << config.layer << "', defaulting to l1"
+                      << std::endl;
             config.layer = "l1";
         }
         const auto params = node::GetNetworkParams(*mode_opt);
@@ -259,8 +258,8 @@ class Node {
     std::shared_ptr<wallet::Wallet> wallet_;
     std::unique_ptr<rpc::RPCServer> rpc_server_;
 
-    static std::optional<std::array<uint8_t, 32>> LoadOrGenerateWalletSeed(
-        const std::filesystem::path& data_dir, std::string& error_message) {
+    static std::optional<std::array<uint8_t, 32>>
+    LoadOrGenerateWalletSeed(const std::filesystem::path &data_dir, std::string &error_message) {
         const auto seed_path = data_dir / "wallet.seed";
         std::array<uint8_t, 32> seed{};
 
@@ -271,11 +270,11 @@ class Node {
                                 std::strerror(errno);
                 return std::nullopt;
             }
-            seed_file.read(reinterpret_cast<char*>(seed.data()),
+            seed_file.read(reinterpret_cast<char *>(seed.data()),
                            static_cast<std::streamsize>(seed.size()));
             if (seed_file.gcount() != static_cast<std::streamsize>(seed.size())) {
-                error_message = "Wallet seed at " + seed_path.string() +
-                                " is invalid (expected 32 bytes)";
+                error_message =
+                    "Wallet seed at " + seed_path.string() + " is invalid (expected 32 bytes)";
                 return std::nullopt;
             }
             return seed;
@@ -318,16 +317,15 @@ class Node {
         }
 
         std::error_code permissions_error;
-        std::filesystem::permissions(seed_path,
-                                     std::filesystem::perms::owner_read |
-                                         std::filesystem::perms::owner_write,
-                                     std::filesystem::perm_options::replace, permissions_error);
+        std::filesystem::permissions(
+            seed_path, std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
+            std::filesystem::perm_options::replace, permissions_error);
         if (permissions_error) {
             std::cerr << "Warning: Failed to set wallet.seed permissions: "
                       << permissions_error.message() << std::endl;
         }
 
-        seed_file.write(reinterpret_cast<const char*>(seed.data()),
+        seed_file.write(reinterpret_cast<const char *>(seed.data()),
                         static_cast<std::streamsize>(seed.size()));
         if (!seed_file) {
             error_message = "Failed to save wallet seed at " + seed_path.string() +
@@ -339,7 +337,7 @@ class Node {
     }
 
   public:
-    explicit Node(const Config& config) : config_(config) {}
+    explicit Node(const Config &config) : config_(config) {}
 
     /// Starts all node subsystems: data directory setup, network mode resolution,
     /// wallet seed loading/generation, core node startup, optional RPC server
@@ -366,7 +364,7 @@ class Node {
 
         try {
             std::filesystem::create_directories(config_.data_dir);
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cerr << "Failed to prepare data directory: " << e.what() << std::endl;
             return false;
         }
@@ -378,8 +376,7 @@ class Node {
             return false;
         }
         const auto network_mode = *parsed_mode;
-        std::cout << "Selected network: " << node::NetworkModeToString(network_mode)
-                  << std::endl;
+        std::cout << "Selected network: " << node::NetworkModeToString(network_mode) << std::endl;
 
         core_node_ =
             std::make_unique<node::Node>(config_.data_dir, config_.network_port, network_mode);
@@ -483,7 +480,7 @@ class Node {
     }
 };
 
-static Node* g_node = nullptr;
+static Node *g_node = nullptr;
 
 void SignalHandler(int signum) {
     std::cout << "\nReceived signal " << signum << std::endl;
@@ -492,9 +489,9 @@ void SignalHandler(int signum) {
     }
 }
 
-}  // namespace parthenon
+} // namespace parthenon
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     std::cout << "ParthenonChain Node Daemon v1.0.0" << std::endl;
     std::cout << "Copyright (c) 2024 ParthenonChain Developers" << std::endl;
     std::cout << std::endl;

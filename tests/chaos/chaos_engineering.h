@@ -83,17 +83,17 @@ class ChaosEngineering {
     /**
      * Generate chaos testing report
      */
-    std::string GenerateReport(const std::vector<ChaosTestResult>& results);
+    std::string GenerateReport(const std::vector<ChaosTestResult> &results);
 
   private:
     std::mt19937 rng_;
     bool initialized_ = false;
 
     // Helper functions
-    void InjectNetworkFault(const std::string& fault_type);
+    void InjectNetworkFault(const std::string &fault_type);
     void RemoveNetworkFault();
     bool VerifySystemRecovery();
 };
 
-}  // namespace testing
-}  // namespace parthenon
+} // namespace testing
+} // namespace parthenon

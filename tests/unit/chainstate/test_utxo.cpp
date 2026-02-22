@@ -20,17 +20,17 @@ void TestCoinCreation() {
 
     assert(coin.height == 100);
     assert(!coin.is_coinbase);
-    assert(coin.IsSpendable(100));  // Regular coin is immediately spendable
+    assert(coin.IsSpendable(100)); // Regular coin is immediately spendable
     assert(coin.IsSpendable(101));
 
     // Create a coinbase coin
     Coin coinbase_coin(output, 100, true);
     assert(coinbase_coin.is_coinbase);
-    assert(!coinbase_coin.IsSpendable(100));  // Not yet mature
-    assert(!coinbase_coin.IsSpendable(150));  // Still not mature
-    assert(!coinbase_coin.IsSpendable(199));  // Still not mature
-    assert(coinbase_coin.IsSpendable(200));   // Mature at height 200 (100 + 100)
-    assert(coinbase_coin.IsSpendable(201));   // Still mature
+    assert(!coinbase_coin.IsSpendable(100)); // Not yet mature
+    assert(!coinbase_coin.IsSpendable(150)); // Still not mature
+    assert(!coinbase_coin.IsSpendable(199)); // Still not mature
+    assert(coinbase_coin.IsSpendable(200));  // Mature at height 200 (100 + 100)
+    assert(coinbase_coin.IsSpendable(201));  // Still mature
 
     std::cout << "  ✓ Passed (coinbase maturity works)" << std::endl;
 }

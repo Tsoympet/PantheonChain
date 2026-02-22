@@ -43,7 +43,7 @@ Transaction CreateCoinbase(uint64_t height) {
 }
 
 // Helper to mine a block
-Block CreateAndMineBlock(uint64_t height, const std::array<uint8_t, 32>& prev_hash) {
+Block CreateAndMineBlock(uint64_t height, const std::array<uint8_t, 32> &prev_hash) {
     Block block;
 
     block.header.version = 1;

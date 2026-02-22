@@ -10,7 +10,7 @@
 
 namespace {
 
-std::string RandomHex(std::mt19937_64& rng, std::size_t len) {
+std::string RandomHex(std::mt19937_64 &rng, std::size_t len) {
     static constexpr char kHex[] = "0123456789abcdef";
     std::string out;
     out.reserve(len);
@@ -20,14 +20,14 @@ std::string RandomHex(std::mt19937_64& rng, std::size_t len) {
     return out;
 }
 
-std::string RandomMaybeMalformedCommitment(std::mt19937_64& rng) {
+std::string RandomMaybeMalformedCommitment(std::mt19937_64 &rng) {
     const bool valid = (rng() % 3) == 0;
     if (!valid) {
         return RandomHex(rng, static_cast<std::size_t>(rng() % 60 + 1));
     }
 
     const auto source = (rng() % 2) == 0 ? pantheon::common::SourceChain::DRACHMA
-                                       : pantheon::common::SourceChain::OBOLOS;
+                                         : pantheon::common::SourceChain::OBOLOS;
     pantheon::common::Commitment commitment{
         source,
         rng() % 100,
@@ -40,7 +40,7 @@ std::string RandomMaybeMalformedCommitment(std::mt19937_64& rng) {
     return pantheon::common::EncodeCommitment(commitment);
 }
 
-}  // namespace
+} // namespace
 
 int main() {
     std::mt19937_64 rng(1337);
@@ -65,8 +65,8 @@ int main() {
 
         const uint64_t epoch = rng() % 1024;
         const uint64_t height = rng() % 100000;
-        const auto& p1 = pantheon::drachma::SelectDeterministicProposer(validators, epoch, height);
-        const auto& p2 = pantheon::drachma::SelectDeterministicProposer(validators, epoch, height);
+        const auto &p1 = pantheon::drachma::SelectDeterministicProposer(validators, epoch, height);
+        const auto &p2 = pantheon::drachma::SelectDeterministicProposer(validators, epoch, height);
         assert(p1.id == p2.id);
     }
 

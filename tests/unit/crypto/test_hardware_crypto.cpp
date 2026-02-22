@@ -16,12 +16,13 @@ void TestAesRoundTrip() {
 
     HardwareAES aes;
     if (!aes.Init(key)) {
-        std::cout << "HardwareAES unavailable on this environment; skipping round-trip test." << std::endl;
+        std::cout << "HardwareAES unavailable on this environment; skipping round-trip test."
+                  << std::endl;
         return;
     }
 
-    std::vector<uint8_t> plaintext = {
-        0x50, 0x61, 0x72, 0x74, 0x68, 0x65, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x69, 0x6e};
+    std::vector<uint8_t> plaintext = {0x50, 0x61, 0x72, 0x74, 0x68, 0x65, 0x6f,
+                                      0x6e, 0x43, 0x68, 0x61, 0x69, 0x6e};
 
     std::vector<uint8_t> ciphertext;
     std::vector<uint8_t> decrypted;
@@ -44,7 +45,8 @@ void TestAesTamperDetected() {
 
     HardwareAES aes;
     if (!aes.Init(key)) {
-        std::cout << "HardwareAES unavailable on this environment; skipping tamper test." << std::endl;
+        std::cout << "HardwareAES unavailable on this environment; skipping tamper test."
+                  << std::endl;
         return;
     }
 
