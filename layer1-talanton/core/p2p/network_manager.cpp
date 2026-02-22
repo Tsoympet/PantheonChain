@@ -2,6 +2,10 @@
 
 #include "network_manager.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Suppress unsafe POSIX function warnings (strerror)
+#endif
+
 #include "crypto/sha256.h"
 
 #include <chrono>
@@ -61,7 +65,11 @@ PeerConnection::~PeerConnection() {
 bool PeerConnection::Connect() {
     if (socket_fd_ < 0) {
         // Create socket
+#ifdef _WIN32
+        socket_fd_ = static_cast<int>(socket(AF_INET, SOCK_STREAM, 0));
+#else
         socket_fd_ = socket(AF_INET, SOCK_STREAM, 0);
+#endif
         if (socket_fd_ < 0) {
             std::cerr << "Failed to create socket" << std::endl;
             return false;
@@ -388,7 +396,11 @@ void NetworkManager::Stop() {
 }
 
 bool NetworkManager::CreateListenSocket() {
+#ifdef _WIN32
+    listen_socket_ = static_cast<int>(socket(AF_INET, SOCK_STREAM, 0));
+#else
     listen_socket_ = socket(AF_INET, SOCK_STREAM, 0);
+#endif
     if (listen_socket_ < 0) {
         return false;
     }
@@ -632,6 +644,10 @@ void NetworkManager::BroadcastInv(const InvMessage& inv) {
 
 void NetworkManager::RequestBlocks(const std::string& peer_id, uint32_t start_height,
                                    uint32_t count) {
+    // start_height and count are part of the public interface for future use when
+    // GetHeaders is extended to support height-based block locator population.
+    (void)start_height;
+    (void)count;
     std::lock_guard<std::mutex> lock(peers_mutex_);
     auto it = peers_.find(peer_id);
     if (it != peers_.end() && it->second->IsConnected()) {

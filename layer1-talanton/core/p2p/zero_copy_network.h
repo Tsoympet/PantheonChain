@@ -8,6 +8,21 @@
 #include <string>
 #include <vector>
 
+// Windows does not define POSIX ssize_t / off_t
+#ifdef _WIN32
+#include <BaseTsd.h>
+#ifndef ssize_t
+typedef SSIZE_T ssize_t;
+#endif
+#ifndef off_t
+typedef long long off_t;
+#endif
+// Prevent collision with Win32 TransmitFile/SendFile macros
+#ifdef SendFile
+#undef SendFile
+#endif
+#endif
+
 namespace parthenon {
 namespace p2p {
 
