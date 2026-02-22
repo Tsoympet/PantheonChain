@@ -42,6 +42,7 @@
     "minimatch": "10.2.1",
     "send": "0.19.0",
     "braces": "3.0.3",
-    "micromatch": "4.0.8"
+    "micromatch": "4.0.8",
+    "minimatch": "10.2.1"
   }
 }
