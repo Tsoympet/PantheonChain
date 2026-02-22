@@ -33,7 +33,7 @@ void test_destination_tag() {
     assert(pos == serialized.size());
 
     // Test tag validation
-    std::string long_memo(300, 'x');  // Too long
+    std::string long_memo(300, 'x'); // Too long
     DestinationTag invalid_tag(1, long_memo);
     assert(!invalid_tag.IsValid());
 
@@ -48,9 +48,9 @@ void test_time_lock_escrow() {
     assert(escrow.GetLocktime() == 1000000);
 
     // Test release conditions
-    assert(!escrow.IsReleasable(999999));  // Too early
-    assert(escrow.IsReleasable(1000000));  // Exactly at locktime
-    assert(escrow.IsReleasable(1000001));  // After locktime
+    assert(!escrow.IsReleasable(999999)); // Too early
+    assert(escrow.IsReleasable(1000000)); // Exactly at locktime
+    assert(escrow.IsReleasable(1000001)); // After locktime
 
     // Test serialization
     auto serialized = escrow.Serialize();
@@ -149,10 +149,10 @@ void test_multisig_policy() {
     assert(policy.IsValid());
 
     // Test invalid policies
-    MultisigPolicy invalid1(0, pubkeys);  // M = 0
+    MultisigPolicy invalid1(0, pubkeys); // M = 0
     assert(!invalid1.IsValid());
 
-    MultisigPolicy invalid2(4, pubkeys);  // M > N
+    MultisigPolicy invalid2(4, pubkeys); // M > N
     assert(!invalid2.IsValid());
 
     // Test serialization
@@ -213,7 +213,7 @@ int main() {
         std::cout << "All settlement tests PASSED! ✓" << std::endl;
         std::cout << "================================" << std::endl;
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed with exception: " << e.what() << std::endl;
         return 1;
     }

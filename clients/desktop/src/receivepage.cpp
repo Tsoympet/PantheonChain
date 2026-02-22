@@ -4,29 +4,27 @@
 
 #include "rpc_client.h"
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QGroupBox>
 #include <QApplication>
 #include <QClipboard>
 #include <QFont>
+#include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QVBoxLayout>
 
-    ReceivePage::ReceivePage(RPCClient * rpc, QWidget* parent)
-    : QWidget(parent),
-            rpcClient(rpc) {
+ReceivePage::ReceivePage(RPCClient *rpc, QWidget *parent) : QWidget(parent), rpcClient(rpc) {
     setupUI();
 }
 
 void ReceivePage::setupUI() {
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(20);
 
     // Title
-    QLabel* titleLabel = new QLabel(tr("Receive Coins"), this);
+    QLabel *titleLabel = new QLabel(tr("Receive Coins"), this);
     QFont titleFont = titleLabel->font();
     titleFont.setPointSize(18);
     titleFont.setBold(true);
@@ -34,7 +32,7 @@ void ReceivePage::setupUI() {
     mainLayout->addWidget(titleLabel);
 
     // Instructions
-    QLabel* instructionsLabel =
+    QLabel *instructionsLabel =
         new QLabel(tr("Share your address with others to receive payments.\n"
                       "Each address can be used multiple times."),
                    this);
@@ -42,8 +40,8 @@ void ReceivePage::setupUI() {
     mainLayout->addWidget(instructionsLabel);
 
     // Address display
-    QGroupBox* addressBox = new QGroupBox(tr("Your Address"), this);
-    QVBoxLayout* addressLayout = new QVBoxLayout(addressBox);
+    QGroupBox *addressBox = new QGroupBox(tr("Your Address"), this);
+    QVBoxLayout *addressLayout = new QVBoxLayout(addressBox);
 
     addressEdit = new QLineEdit(this);
     addressEdit->setReadOnly(true);
@@ -53,7 +51,7 @@ void ReceivePage::setupUI() {
     addressLayout->addWidget(addressEdit);
 
     // Address action buttons
-    QHBoxLayout* addressButtonLayout = new QHBoxLayout();
+    QHBoxLayout *addressButtonLayout = new QHBoxLayout();
     generateButton = new QPushButton(tr("Generate New Address"), this);
     copyButton = new QPushButton(tr("Copy to Clipboard"), this);
     copyButton->setEnabled(false);
@@ -68,8 +66,8 @@ void ReceivePage::setupUI() {
     mainLayout->addWidget(addressBox);
 
     // QR Code placeholder
-    QGroupBox* qrBox = new QGroupBox(tr("QR Code"), this);
-    QVBoxLayout* qrLayout = new QVBoxLayout(qrBox);
+    QGroupBox *qrBox = new QGroupBox(tr("QR Code"), this);
+    QVBoxLayout *qrLayout = new QVBoxLayout(qrBox);
 
     qrCodeLabel = new QLabel(this);
     qrCodeLabel->setMinimumSize(300, 300);
@@ -109,7 +107,7 @@ void ReceivePage::onCopyAddress() {
         return;
     }
 
-    QClipboard* clipboard = QApplication::clipboard();
+    QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(address);
 
     QMessageBox::information(this, tr("Copied"), tr("Address copied to clipboard!"));
