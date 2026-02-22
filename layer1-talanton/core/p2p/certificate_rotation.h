@@ -17,8 +17,8 @@ namespace p2p {
 struct CertificateInfo {
     std::string cert_path;
     std::string key_path;
-    time_t valid_from;
-    time_t valid_until;
+    time_t valid_from = 0;
+    time_t valid_until = 0;
     std::string issuer;
     std::string subject;
 
@@ -73,7 +73,7 @@ class CertificateRotation {
 
   private:
     std::string cert_dir_;
-    uint32_t check_interval_;
+    uint32_t check_interval_ = 0;
     CertificateInfo current_cert_;
     std::function<void(const CertificateInfo&)> callback_;
     bool running_ = false;

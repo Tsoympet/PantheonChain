@@ -43,7 +43,7 @@ struct RollupTx {
     std::vector<uint8_t> data;
     std::vector<uint8_t> signature;
 
-    RollupTx() : value(0), nonce(0) {}
+    RollupTx() : value(0), nonce(0) { tx_hash.fill(0); }
 };
 
 /**

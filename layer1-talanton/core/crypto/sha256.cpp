@@ -70,6 +70,7 @@ void SHA256::Reset() {
     std::copy(H0, H0 + 8, state_);
     byte_count_ = 0;
     buffer_size_ = 0;
+    std::fill_n(buffer_, BLOCK_SIZE, 0);
 }
 
 void SHA256::Transform(const uint8_t* chunk) {

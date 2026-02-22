@@ -530,5 +530,6 @@ int main(int argc, char* argv[]) {
     // Wait for shutdown signal
     node.WaitForShutdown();
 
+    parthenon::g_node = nullptr;
     return 0;
 }

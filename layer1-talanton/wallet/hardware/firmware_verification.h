@@ -59,7 +59,7 @@ struct VerificationResult {
     bool is_latest_version;
     std::vector<std::string> security_advisories;  // Known vulnerabilities
 
-    VerificationResult() : is_latest_version(false) {}
+    VerificationResult() : status(VerificationStatus::ERROR), is_latest_version(false) {}
 };
 
 /**

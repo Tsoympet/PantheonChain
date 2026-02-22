@@ -50,7 +50,7 @@ struct Order {
     uint64_t timestamp;
     std::vector<uint8_t> signature;  // Schnorr signature
 
-    Order() : price(0), amount(0), filled_amount(0), timestamp(0) {}
+    Order() : type(OrderType::LIMIT_BUY), status(OrderStatus::PENDING), price(0), amount(0), filled_amount(0), timestamp(0) {}
 };
 
 /**
