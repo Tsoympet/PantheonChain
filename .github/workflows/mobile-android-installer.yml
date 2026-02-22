@@ -78,12 +78,20 @@ jobs:
           node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['android-apk']; if(!profile){ console.error('Missing build.android-apk profile in eas.json.'); process.exit(1);} const src=profile.credentialsSource; if(src!=='local'&&src!=='remote'){ console.error('build.android-apk.credentialsSource must be set to local or remote.'); process.exit(1);} console.log('android-apk profile credentialsSource: '+src);"
 
       - name: Build Android installer (APK)
-        run: npx eas-cli build --platform android --profile android-apk --non-interactive --wait
+        run: npx eas-cli build --platform android --profile android-apk --local --non-interactive
 
-      - name: Download APK artifact
+      - name: Locate and stage APK artifact
         run: |
-          BUILD_ID=$(npx eas-cli build:list --platform android --limit 1 --status finished --json --non-interactive | jq -r '.[0].id')
-          npx eas-cli build:download --platform android --id "$BUILD_ID" --path parthenon-mobile-android.apk --non-interactive
+          APK=
+          for f in *.apk; do [ -f "$f" ] && APK="$f" && break; done
+          if [ -z "$APK" ]; then
+            APK=$(find android/app/build/outputs/apk -name "*.apk" 2>/dev/null | head -1)
+          fi
+          if [ -z "$APK" ]; then
+            echo "No APK artifact found after local build" >&2
+            exit 1
+          fi
+          cp "$APK" parthenon-mobile-android.apk
 
       - name: Upload Android installer
         uses: actions/upload-artifact@v4

@@ -65,12 +65,20 @@ jobs:
           node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['ios-release']; if(!profile){ console.error('Missing build.ios-release profile in eas.json.'); process.exit(1);} if(!profile.ios?.simulator){ console.error('build.ios-release.ios.simulator must be true for CI builds without Apple distribution credentials.'); process.exit(1);} console.log('ios-release profile is configured for simulator build (no distribution certificate required).');"
 
       - name: Build iOS simulator installer
-        run: npx eas-cli build --platform ios --profile ios-release --non-interactive --wait
+        run: npx eas-cli build --platform ios --profile ios-release --local --non-interactive
 
-      - name: Download iOS simulator artifact
+      - name: Locate and stage iOS simulator artifact
         run: |
-          BUILD_ID=$(npx eas-cli build:list --platform ios --limit 1 --status finished --json --non-interactive | jq -r '.[0].id')
-          npx eas-cli build:download --platform ios --id "$BUILD_ID" --path parthenon-mobile-ios-simulator.tar.gz --non-interactive
+          ARCHIVE=
+          for f in *.tar.gz; do [ -f "$f" ] && ARCHIVE="$f" && break; done
+          if [ -z "$ARCHIVE" ]; then
+            ARCHIVE=$(find . -maxdepth 3 -name "*.tar.gz" 2>/dev/null | head -1)
+          fi
+          if [ -z "$ARCHIVE" ]; then
+            echo "No iOS simulator artifact found after local build" >&2
+            exit 1
+          fi
+          cp "$ARCHIVE" parthenon-mobile-ios-simulator.tar.gz
 
       - name: Upload iOS simulator installer
         uses: actions/upload-artifact@v4
