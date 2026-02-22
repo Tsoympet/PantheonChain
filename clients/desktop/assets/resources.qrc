@@ -1,5 +1,16 @@
 <RCC>
     <qresource prefix="/icons">
         <file>parthenon-logo.svg</file>
+        <file>home.svg</file>
+        <file>send.svg</file>
+        <file>receive.svg</file>
+        <file>transactions.svg</file>
+        <file>wallet.svg</file>
+        <file>settings.svg</file>
+        <file>mining.svg</file>
+        <file>menu.svg</file>
+    </qresource>
+    <qresource prefix="/images">
+        <file alias="app-icon.png">icon.png</file>
     </qresource>
 </RCC>

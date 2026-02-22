@@ -137,22 +137,22 @@ void MainWindow::onBlockHeightChanged(int height) {
 }
 
 void MainWindow::createActions() {
-    overviewAction = new QAction(tr("&Overview"), this);
+    overviewAction = new QAction(QIcon(":/icons/home.svg"), tr("&Overview"), this);
     overviewAction->setStatusTip(tr("Show wallet overview"));
     overviewAction->setCheckable(true);
     connect(overviewAction, &QAction::triggered, this, &MainWindow::showOverview);
 
-    sendAction = new QAction(tr("&Send"), this);
+    sendAction = new QAction(QIcon(":/icons/send.svg"), tr("&Send"), this);
     sendAction->setStatusTip(tr("Send coins"));
     sendAction->setCheckable(true);
     connect(sendAction, &QAction::triggered, this, &MainWindow::showSend);
 
-    receiveAction = new QAction(tr("&Receive"), this);
+    receiveAction = new QAction(QIcon(":/icons/receive.svg"), tr("&Receive"), this);
     receiveAction->setStatusTip(tr("Receive coins"));
     receiveAction->setCheckable(true);
     connect(receiveAction, &QAction::triggered, this, &MainWindow::showReceive);
 
-    transactionsAction = new QAction(tr("&Transactions"), this);
+    transactionsAction = new QAction(QIcon(":/icons/transactions.svg"), tr("&Transactions"), this);
     transactionsAction->setStatusTip(tr("View transaction history"));
     transactionsAction->setCheckable(true);
     connect(transactionsAction, &QAction::triggered, this, &MainWindow::showTransactions);
