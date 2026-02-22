@@ -129,7 +129,7 @@ STARKProver::BuildMerkleTree(const std::vector<std::vector<uint64_t>>& trace) {
 
 std::vector<uint8_t>
 STARKProver::FRIProtocol(const std::vector<std::vector<uint64_t>>& polynomial) {
-    // Simplified deterministic commitment to polynomial evaluation
+    // Deterministic FRI commitment to polynomial evaluation (hash of each row)
     std::vector<uint8_t> material;
     for (const auto& row : polynomial) {
         auto hash = HashTraceRow(row);

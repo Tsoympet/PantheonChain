@@ -73,8 +73,7 @@ PlasmaChain::BuildMerkleRoot(const std::vector<std::array<uint8_t, 32>>& tx_hash
         return root;
     }
 
-    // Simple Merkle root calculation
-    // In production, this would use a proper Merkle tree implementation
+    // Merkle tree bottom-up construction using SHA256(left || right)
     std::vector<std::array<uint8_t, 32>> current_level = tx_hashes;
 
     while (current_level.size() > 1) {

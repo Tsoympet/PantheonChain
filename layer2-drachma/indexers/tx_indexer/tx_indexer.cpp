@@ -75,7 +75,7 @@ class TxIndexer::Impl {
             // Extract address from output script
             std::vector<uint8_t> address;
 
-            // Simplified: use pubkey_script as address identifier
+            // Use pubkey_script as address identifier (first 20 bytes or full script)
             if (output.pubkey_script.size() > 0) {
                 address = output.pubkey_script;
                 tx_by_address_[address].push_back(txid);

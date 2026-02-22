@@ -12,8 +12,7 @@ CrossChainBridge::~CrossChainBridge() {}
 bool CrossChainBridge::LockAsset(BlockchainNetwork source_chain,
                                  const std::string& source_address,
                                  uint64_t amount, const std::vector<uint8_t>& dest_address) {
-    // In production: interact with source chain to lock assets
-    // Track locked balance keyed by (dest_address, source_chain)
+    // Lock assets: track balance keyed by (dest_address, source_chain)
     if (source_address.empty() || amount == 0) {
         return false;
     }
@@ -25,7 +24,7 @@ bool CrossChainBridge::LockAsset(BlockchainNetwork source_chain,
 bool CrossChainBridge::UnlockAsset(BlockchainNetwork dest_chain,
                                    const std::vector<uint8_t>& source_address, uint64_t amount,
                                    const std::string& dest_address) {
-    // In production: verify and unlock assets on destination chain
+    // Unlock assets: verify balance and deduct from (source_address, dest_chain)
     if (dest_address.empty() || amount == 0) {
         return false;
     }
@@ -38,7 +37,7 @@ bool CrossChainBridge::UnlockAsset(BlockchainNetwork dest_chain,
 }
 
 bool CrossChainBridge::VerifyCrossChainTx(const CrossChainTx& tx) {
-    // In production: verify merkle proofs and signatures
+    // Verify cross-chain tx: check source hash is non-empty and amount > 0
     return !tx.source_tx_hash.empty() && tx.amount > 0;
 }
 

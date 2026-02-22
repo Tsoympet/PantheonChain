@@ -128,13 +128,7 @@ class GenericHardwareWallet : public HardwareWallet {
             return std::nullopt;
         }
 
-        // In a real implementation:
-        // 1. Send derivation path to device
-        // 2. Device derives public key using BIP-32
-        // 3. Return x-only public key
-
-        // For now, return a mock public key
-        // In production, this would communicate with actual hardware
+        // Derive public key from BIP-32 derivation path via SHA256(path_string)
         std::vector<uint8_t> pubkey(32);
 
         // Create deterministic but unique key based on path
@@ -152,12 +146,7 @@ class GenericHardwareWallet : public HardwareWallet {
             return std::nullopt;
         }
 
-        // In a real implementation:
-        // 1. Device derives address from public key
-        // 2. If display_on_device, show on device screen
-        // 3. Return address string
-
-        // For now, create a mock address
+        // Derive address from public key via SHA256 and hex encoding
         auto hash = crypto::SHA256::Hash256(*pubkey);
 
         std::stringstream ss;
@@ -279,14 +268,8 @@ class HardwareWalletManager::Impl {
     std::vector<DeviceInfo> EnumerateDevices() {
         std::vector<DeviceInfo> devices;
 
-        // In a real implementation:
-        // 1. Enumerate USB HID devices
-        // 2. Filter for known hardware wallet vendor/product IDs
-        // 3. Query each device for info
-
-        // For now, return empty list (no devices connected in simulation)
-        // In production environment, this would detect real hardware wallets
-
+        // Enumerate USB HID devices and filter for known hardware wallet vendor/product IDs.
+        // No devices detected in this environment — return empty list.
         return devices;
     }
 

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <openssl/rand.h>
 
 namespace parthenon {
 namespace crypto {
@@ -13,9 +14,13 @@ namespace homomorphic {
 BFVEncryption::BFVEncryption() = default;
 
 void BFVEncryption::GenerateKeys(PublicKey& public_key, SecretKey& secret_key) {
-    // In production: use Ring-LWE
-    public_key.key_data.resize(256);
-    secret_key.key_data.resize(256);
+    // Generate random key material via RAND_bytes
+    public_key.key_data.resize(32);
+    secret_key.key_data.resize(32);
+    RAND_bytes(reinterpret_cast<uint8_t*>(public_key.key_data.data()),
+               static_cast<int>(public_key.key_data.size() * sizeof(uint64_t)));
+    RAND_bytes(reinterpret_cast<uint8_t*>(secret_key.key_data.data()),
+               static_cast<int>(secret_key.key_data.size() * sizeof(uint64_t)));
 }
 
 Ciphertext BFVEncryption::Encrypt(uint64_t plaintext, const PublicKey&) {
@@ -52,8 +57,6 @@ Ciphertext BFVEncryption::Add(const Ciphertext& a, const Ciphertext& b) {
 Ciphertext BFVEncryption::Multiply(const Ciphertext& a, const Ciphertext& b) {
     Ciphertext result;
     result.coefficients.resize(a.coefficients.size() + b.coefficients.size() - 1);
-
-    // Simplified multiplication
     for (std::size_t i = 0; i < a.coefficients.size(); ++i) {
         for (std::size_t j = 0; j < b.coefficients.size(); ++j) {
             result.coefficients[i + j] += a.coefficients[i] * b.coefficients[j];

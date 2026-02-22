@@ -256,11 +256,64 @@ MerklePatriciaTrie::Remove(NodePtr node, const std::vector<uint8_t>& nibbles, si
         return node;
     }
 
-    // Simplified removal - just marks as empty for now
-    // Full implementation would handle node collapsing
     if (idx == nibbles.size()) {
-        if (node->type == NodeType::LEAF || node->type == NodeType::BRANCH) {
+        // Clear the value at this node
+        node->value.clear();
+        // If a LEAF has no value, replace with EMPTY node
+        if (node->type == NodeType::LEAF) {
+            return std::make_shared<Node>();  // EMPTY
+        }
+        return node;
+    }
+
+    if (node->type == NodeType::LEAF) {
+        // Check if the remaining path matches this leaf
+        if (node->path.size() == nibbles.size() - idx &&
+            std::equal(node->path.begin(), node->path.end(), nibbles.begin() + idx)) {
             node->value.clear();
+            return std::make_shared<Node>();  // EMPTY
+        }
+        return node;  // Different path, no change
+    }
+
+    if (node->type == NodeType::BRANCH) {
+        uint8_t nibble = nibbles[idx];
+        if (nibble < 16 && node->children[nibble]) {
+            node->children[nibble] = Remove(node->children[nibble], nibbles, idx + 1);
+        }
+        // Collapse branch with a single remaining child into extension/leaf
+        int remaining = 0;
+        int remaining_idx = -1;
+        for (int i = 0; i < 16; ++i) {
+            if (node->children[i] && node->children[i]->type != NodeType::EMPTY) {
+                ++remaining;
+                remaining_idx = i;
+            }
+        }
+        if (remaining == 0 && node->value.empty()) {
+            return std::make_shared<Node>();  // EMPTY
+        }
+        if (remaining == 1 && node->value.empty()) {
+            // Collapse: merge remaining child into this node as extension
+            auto child = node->children[remaining_idx];
+            auto ext = std::make_shared<Node>();
+            ext->type = NodeType::EXTENSION;
+            ext->path.push_back(static_cast<uint8_t>(remaining_idx));
+            ext->path.insert(ext->path.end(), child->path.begin(), child->path.end());
+            ext->value = child->value;
+            ext->children = child->children;
+            return ext;
+        }
+        return node;
+    }
+
+    if (node->type == NodeType::EXTENSION) {
+        if (idx + node->path.size() <= nibbles.size() &&
+            std::equal(node->path.begin(), node->path.end(), nibbles.begin() + idx)) {
+            node->children[0] = Remove(node->children[0], nibbles, idx + node->path.size());
+            if (!node->children[0] || node->children[0]->type == NodeType::EMPTY) {
+                return std::make_shared<Node>();  // EMPTY
+            }
         }
         return node;
     }

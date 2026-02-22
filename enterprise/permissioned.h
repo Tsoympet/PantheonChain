@@ -343,6 +343,8 @@ private:
     SLAThresholds thresholds_;
     uint64_t total_uptime_ms_;
     uint64_t total_downtime_ms_;
+    uint64_t block_time_count_ = 0;
+    uint64_t tx_confirmation_count_ = 0;
 };
 
 } // namespace enterprise
