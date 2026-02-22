@@ -101,8 +101,8 @@ uint64_t Issuance::CalculateSupplyAtHeight(uint64_t height, primitives::AssetID 
 
         // Add to total supply (with overflow check)
         uint64_t epoch_supply = blocks_in_epoch * reward;
-        // Check for multiplication overflow (blocks_in_epoch is always > 0 in this loop)
-        if (blocks_in_epoch != 0 && epoch_supply / blocks_in_epoch != reward) {
+        // Check for multiplication overflow
+        if (epoch_supply / blocks_in_epoch != reward) {
             // Overflow detected, return max supply
             return primitives::AssetSupply::GetMaxSupply(asset);
         }
