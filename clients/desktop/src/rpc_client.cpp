@@ -2,6 +2,7 @@
 
 #include "rpc_client.h"
 
+#include <QDateTime>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -18,6 +19,7 @@ RPCClient::RPCClient(QObject* parent)
       connected(false),
       blockHeight(0),
       requestId(1) {
+
     networkManager = new QNetworkAccessManager(this);
     connect(networkManager, &QNetworkAccessManager::finished, this, &RPCClient::handleNetworkReply);
 
@@ -28,6 +30,11 @@ RPCClient::RPCClient(QObject* parent)
 }
 
 RPCClient::~RPCClient() {}
+
+void RPCClient::setCredentials(const QString& user, const QString& password) {
+    rpcUser = user;
+    rpcPassword = password;
+}
 
 void RPCClient::connectToServer(const QString& host, int port) {
     rpcHost = host;
@@ -64,9 +71,8 @@ void RPCClient::sendTransaction(const QString& asset, const QString& address, do
     sendRPCRequest("sendtoaddress", params);
 }
 
-QString RPCClient::getNewAddress() {
+void RPCClient::getNewAddress() {
     sendRPCRequest("getnewaddress");
-    return "parthenon1q...";  // Placeholder until response received
 }
 
 void RPCClient::getTransactionHistory() {
@@ -120,9 +126,30 @@ void RPCClient::handleNetworkReply(QNetworkReply* reply) {
             balances["OBL"] = balObj["OBL"].toDouble();
             emit balanceChanged();
         }
+    } else if (method == "getnewaddress") {
+        if (result.isString()) {
+            emit newAddressReceived(result.toString());
+        }
     } else if (method == "sendtoaddress") {
         emit transactionSent(result.toString());
     } else if (method == "listtransactions") {
+        if (result.isArray()) {
+            transactionList.clear();
+            for (const auto& item : result.toArray()) {
+                QJsonObject txObj = item.toObject();
+                TransactionRecord rec;
+                QString category = txObj["category"].toString();
+                rec.type = (category == "send") ? "Sent" : "Received";
+                rec.asset = txObj["asset"].toString("TALN");
+                rec.amount = txObj["amount"].toDouble();
+                rec.address = txObj["address"].toString();
+                rec.txid = txObj["txid"].toString();
+                qint64 time = static_cast<qint64>(txObj["time"].toDouble());
+                rec.dateTime =
+                    QDateTime::fromSecsSinceEpoch(time).toString("yyyy-MM-dd hh:mm:ss");
+                transactionList.append(rec);
+            }
+        }
         emit transactionHistoryUpdated();
     }
 
@@ -142,6 +169,12 @@ void RPCClient::sendRPCRequest(const QString& method, const QVariantList& params
     QUrl url(QString("http://%1:%2").arg(rpcHost).arg(rpcPort));
     QNetworkRequest netRequest(url);
     netRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    if (!rpcUser.isEmpty() || !rpcPassword.isEmpty()) {
+        const QString credentials = rpcUser + ":" + rpcPassword;
+        const QByteArray credentialsBase64 = credentials.toUtf8().toBase64();
+        netRequest.setRawHeader("Authorization", "Basic " + credentialsBase64);
+    }
 
     QNetworkReply* reply = networkManager->post(netRequest, data);
     reply->setProperty("method", method);

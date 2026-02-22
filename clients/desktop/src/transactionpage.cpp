@@ -102,27 +102,23 @@ void TransactionPage::loadTransactions() {
     // Clear existing rows
     transactionTable->setRowCount(0);
 
-    // In production, this would load from rpcClient
-    // For now, show sample data
-    struct Transaction {
-        QString dateTime;
-        QString type;
-        QString asset;
-        double amount;
-        QString address;
-        QString txid;
-    };
+    QList<TransactionRecord> txs;
 
-    QList<Transaction> sampleTxs = {
-        {QDateTime::currentDateTime().addDays(-1).toString("yyyy-MM-dd hh:mm:ss"), "Received",
-         "TALN", 100.50000000, "parthenon1q123...", "abc123..."},
-        {QDateTime::currentDateTime().addDays(-2).toString("yyyy-MM-dd hh:mm:ss"), "Sent", "DRM",
-         -50.25000000, "parthenon1q456...", "def456..."},
-        {QDateTime::currentDateTime().addDays(-3).toString("yyyy-MM-dd hh:mm:ss"), "Received",
-         "OBL", 200.00000000, "parthenon1q789...", "ghi789..."},
-    };
+    if (rpcClient && !rpcClient->transactions().isEmpty()) {
+        txs = rpcClient->transactions();
+    } else {
+        // Show sample data until live data arrives
+        txs = {
+            {QDateTime::currentDateTime().addDays(-1).toString("yyyy-MM-dd hh:mm:ss"), "Received",
+             "TALN", 100.50000000, "parthenon1q123...", "abc123..."},
+            {QDateTime::currentDateTime().addDays(-2).toString("yyyy-MM-dd hh:mm:ss"), "Sent",
+             "DRM", -50.25000000, "parthenon1q456...", "def456..."},
+            {QDateTime::currentDateTime().addDays(-3).toString("yyyy-MM-dd hh:mm:ss"), "Received",
+             "OBL", 200.00000000, "parthenon1q789...", "ghi789..."},
+        };
+    }
 
-    for (const auto& tx : sampleTxs) {
+    for (const auto& tx : txs) {
         int row = transactionTable->rowCount();
         transactionTable->insertRow(row);
 

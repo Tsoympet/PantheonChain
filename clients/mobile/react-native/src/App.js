@@ -256,8 +256,15 @@ const App = () => {
   const ReceiveScreen = () => {
     const generateAddress = async () => {
       try {
-        const address = await WalletService.generateAddress(selectedAsset);
-        setCurrentAddress(address);
+        let address;
+        if (connected) {
+          address = await NetworkService.getNewAddress();
+        } else {
+          address = await WalletService.generateAddress(selectedAsset);
+        }
+        if (address) {
+          setCurrentAddress(address);
+        }
       } catch (error) {
         Alert.alert('Error', 'Failed to generate address');
       }

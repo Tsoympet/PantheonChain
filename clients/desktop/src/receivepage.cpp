@@ -17,6 +17,11 @@
 
 ReceivePage::ReceivePage(RPCClient *rpc, QWidget *parent) : QWidget(parent), rpcClient(rpc) {
     setupUI();
+
+    if (rpcClient) {
+        connect(rpcClient, &RPCClient::newAddressReceived, this,
+                &ReceivePage::onNewAddressReceived);
+    }
 }
 
 void ReceivePage::setupUI() {
@@ -88,17 +93,25 @@ void ReceivePage::onGenerateAddress() {
         return;
     }
 
-    QString newAddress = rpcClient->getNewAddress();
-    if (newAddress.isEmpty()) {
+    generateButton->setEnabled(false);
+    generateButton->setText(tr("Generating..."));
+    rpcClient->getNewAddress();
+}
+
+void ReceivePage::onNewAddressReceived(const QString& address) {
+    generateButton->setEnabled(true);
+    generateButton->setText(tr("Generate New Address"));
+
+    if (address.isEmpty()) {
         QMessageBox::warning(this, tr("Error"),
                              tr("Failed to generate address. Please check your connection."));
         return;
     }
 
-    addressEdit->setText(newAddress);
+    addressEdit->setText(address);
     copyButton->setEnabled(true);
 
-    qrCodeLabel->setText(tr("QR Code for:\n%1").arg(newAddress));
+    qrCodeLabel->setText(tr("QR Code for:\n%1").arg(address));
 }
 
 void ReceivePage::onCopyAddress() {

@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(rpcClient, &RPCClient::connectionStatusChanged, this,
             &MainWindow::onConnectionStatusChanged);
     connect(rpcClient, &RPCClient::balanceChanged, this, &MainWindow::onBalanceChanged);
+    connect(rpcClient, &RPCClient::blockHeightChanged, this, &MainWindow::onBlockHeightChanged);
 
     // Create central widget with stacked pages
     centralStack = new QStackedWidget(this);
@@ -129,6 +130,10 @@ void MainWindow::onBalanceChanged() {
     if (overviewPage) {
         overviewPage->updateBalances();
     }
+}
+
+void MainWindow::onBlockHeightChanged(int height) {
+    blockHeightLabel->setText(tr("Block: %1").arg(height));
 }
 
 void MainWindow::createActions() {
