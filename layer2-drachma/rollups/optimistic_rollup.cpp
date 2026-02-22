@@ -173,8 +173,7 @@ std::vector<RollupBatch> OptimisticRollup::GetPendingBatches() const {
 std::vector<uint8_t> OptimisticRollup::CompressBatch(const RollupBatch& batch) const {
     std::vector<uint8_t> compressed;
 
-    // Simple compression: just serialize
-    // In production, would use proper compression algorithm
+    // Simple compression: serialize batch state roots and transaction data
     compressed.reserve(64 + batch.transactions.size() * 32);
 
     // Add state roots

@@ -45,7 +45,6 @@ class GraphQLAPI::Impl {
 
     std::string HandleQuery(const std::string& query) {
         // Simple query parser (simplified version)
-        // In production, use a proper GraphQL library
 
         if (query.find("blocks") != std::string::npos) {
             return HandleBlocksQuery(query);

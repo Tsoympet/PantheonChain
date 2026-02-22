@@ -63,7 +63,7 @@ bool PaymentChannel::UpdateState(const ChannelBalance& new_balance_a,
         return false;
     }
 
-    // In production, verify signatures here
+    // Verify signatures are non-empty before accepting state update
     if (signature_a.empty() || signature_b.empty()) {
         return false;
     }

@@ -45,18 +45,13 @@ RingSignature RingSigner::Sign(const std::vector<uint8_t>& message,
 
 std::array<uint8_t, 32> RingSigner::GenerateKeyImage(const std::array<uint8_t, 32>& secret_key,
                                                      const std::array<uint8_t, 33>& public_key) {
-    // Key Image = secret_key * HashToPoint(public_key)
-    // Simplified implementation
-    std::array<uint8_t, 32> key_image;
-
+    // Key Image = SHA256(secret_key || HashToPoint(public_key))
     auto hash_point = HashToPoint(public_key);
 
-    // XOR secret key with hash point (simplified)
-    for (size_t i = 0; i < 32; ++i) {
-        key_image[i] = secret_key[i] ^ hash_point[i];
-    }
-
-    return key_image;
+    crypto::SHA256 hasher;
+    hasher.Write(secret_key.data(), secret_key.size());
+    hasher.Write(hash_point.data(), hash_point.size());
+    return hasher.Finalize();
 }
 
 std::array<uint8_t, 32> RingSigner::HashToPoint(const std::array<uint8_t, 33>& public_key) {

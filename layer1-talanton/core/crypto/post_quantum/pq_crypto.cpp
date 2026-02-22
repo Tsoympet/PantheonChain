@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <openssl/rand.h>
 #include <random>
 
 namespace parthenon {
@@ -200,7 +201,8 @@ std::array<uint8_t, 32> QuantumRNG::Generate256() {
 }
 
 void QuantumRNG::SeedPRNG() {
-    // In production: seed with quantum random data
+    auto seed_bytes = GenerateRandomBytes(32);
+    RAND_seed(seed_bytes.data(), static_cast<int>(seed_bytes.size()));
 }
 
 }  // namespace pqc

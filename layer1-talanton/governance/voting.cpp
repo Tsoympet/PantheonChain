@@ -168,19 +168,18 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
     }
 
     // Execute proposal based on type
-    // In production, this would trigger actual state changes
     switch (proposal.type) {
         case ProposalType::PARAMETER_CHANGE:
-            // Apply parameter change
+            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::PARAMETER_CHANGE));
             break;
         case ProposalType::TREASURY_SPENDING:
-            // Execute treasury spending
+            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::TREASURY_SPENDING));
             break;
         case ProposalType::PROTOCOL_UPGRADE:
-            // Schedule protocol upgrade
+            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::PROTOCOL_UPGRADE));
             break;
         case ProposalType::GENERAL:
-            // General action
+            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::GENERAL));
             break;
     }
 

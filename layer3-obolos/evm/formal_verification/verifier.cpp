@@ -138,7 +138,18 @@ bool ContractVerifier::CheckOverflow(const std::vector<uint8_t>& bytecode) {
     for (size_t i = 0; i < bytecode.size(); ++i) {
         // ADD: 0x01, MUL: 0x02, SUB: 0x03
         if (bytecode[i] == 0x01 || bytecode[i] == 0x02 || bytecode[i] == 0x03) {
-            // Would check for overflow checks here
+            // Scan forward up to 16 bytes for a JUMPI (0x57) overflow check
+            bool has_overflow_check = false;
+            for (size_t j = i + 1; j < bytecode.size() && j <= i + 16; ++j) {
+                if (bytecode[j] == 0x57) {
+                    has_overflow_check = true;
+                    break;
+                }
+            }
+            if (!has_overflow_check) {
+                uses_safe_math = false;
+                break;
+            }
         }
     }
 
