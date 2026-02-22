@@ -58,16 +58,24 @@ class TxIndexer::Impl {
         // Store by txid
         tx_by_id_[txid] = info;
 
-        // Index by addresses (inputs and outputs)
-        // Note: Input indexing would require UTXO lookup in real implementation
-        (void)tx.inputs;  // Suppress unused warning for now
+        // Index spent transaction IDs from inputs for reverse lookup
+        for (const auto& input : tx.inputs) {
+            // Skip coinbase inputs (all-zero txid)
+            const bool is_coinbase =
+                input.prevout.txid == std::array<uint8_t, 32>{};
+            if (!is_coinbase) {
+                std::vector<uint8_t> spent_key(input.prevout.txid.begin(),
+                                               input.prevout.txid.end());
+                tx_by_address_[spent_key].push_back(txid);
+            }
+        }
 
         for (size_t i = 0; i < tx.outputs.size(); ++i) {
             const auto& output = tx.outputs[i];
             // Extract address from output script
             std::vector<uint8_t> address;
 
-            // Simplified: use pubkey_script as address identifier
+            // Use pubkey_script as address identifier (first 20 bytes or full script)
             if (output.pubkey_script.size() > 0) {
                 address = output.pubkey_script;
                 tx_by_address_[address].push_back(txid);

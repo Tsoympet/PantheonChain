@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <openssl/rand.h>
 #include "crypto/schnorr.h"
 #include "crypto/sha256.h"
 
@@ -13,16 +14,13 @@ using namespace parthenon;
  * Generate a new key pair
  */
 void GenerateKeyPair() {
-    // Generate random private key
+    // Generate cryptographically secure random private key
     crypto::Schnorr::PrivateKey privkey;
-    
-    // In production, use secure random number generator
-    // For now, use simple method
-    crypto::SHA256 hasher;
-    auto seed = std::string("random_seed_" + std::to_string(std::time(nullptr)));
-    hasher.Write(reinterpret_cast<const uint8_t*>(seed.data()), seed.size());
-    auto hash = hasher.Finalize();
-    std::copy(hash.begin(), hash.end(), privkey.begin());
+
+    // Retry until we get a valid private key
+    do {
+        RAND_bytes(privkey.data(), static_cast<int>(privkey.size()));
+    } while (!crypto::Schnorr::ValidatePrivateKey(privkey));
     
     // Derive public key
     auto pubkey_opt = crypto::Schnorr::GetPublicKey(privkey);

@@ -1,5 +1,7 @@
 #include "plasma_chain.h"
 
+#include "crypto/sha256.h"
+
 #include <algorithm>
 #include <cstring>
 
@@ -71,26 +73,21 @@ PlasmaChain::BuildMerkleRoot(const std::vector<std::array<uint8_t, 32>>& tx_hash
         return root;
     }
 
-    // Simple Merkle root calculation
-    // In production, this would use a proper Merkle tree implementation
+    // Merkle tree bottom-up construction using SHA256(left || right)
     std::vector<std::array<uint8_t, 32>> current_level = tx_hashes;
 
     while (current_level.size() > 1) {
         std::vector<std::array<uint8_t, 32>> next_level;
 
         for (size_t i = 0; i < current_level.size(); i += 2) {
-            std::array<uint8_t, 32> combined;
+            const std::array<uint8_t, 32>& left = current_level[i];
+            const std::array<uint8_t, 32>& right =
+                (i + 1 < current_level.size()) ? current_level[i + 1] : current_level[i];
 
-            if (i + 1 < current_level.size()) {
-                // Hash two nodes together - copy first 16 bytes from each
-                std::memcpy(combined.data(), current_level[i].data(), 16);
-                std::memcpy(combined.data() + 16, current_level[i + 1].data(), 16);
-            } else {
-                // Odd number, duplicate last node
-                combined = current_level[i];
-            }
-
-            next_level.push_back(combined);
+            crypto::SHA256 hasher;
+            hasher.Write(left.data(), left.size());
+            hasher.Write(right.data(), right.size());
+            next_level.push_back(hasher.Finalize());
         }
 
         current_level = next_level;
@@ -183,19 +180,35 @@ std::vector<ExitRequest> PlasmaChain::GetPendingExits() const {
 bool PlasmaChain::VerifyMerkleProof(const std::array<uint8_t, 32>& tx_hash,
                                     const std::array<uint8_t, 32>& merkle_root,
                                     const std::vector<uint8_t>& proof) const {
-    // Simplified Merkle proof verification
-    if (proof.empty()) {
+    // Each proof element is 33 bytes: 1 byte direction + 32 bytes sibling hash.
+    // Direction: 0 = sibling is on the right (tx is left child),
+    //            1 = sibling is on the left  (tx is right child).
+    if (proof.empty() || proof.size() % 33 != 0) {
         return false;
     }
 
-    const bool tx_hash_non_zero =
-        std::any_of(tx_hash.begin(), tx_hash.end(), [](uint8_t b) { return b != 0; });
-    const bool root_non_zero =
-        std::any_of(merkle_root.begin(), merkle_root.end(), [](uint8_t b) { return b != 0; });
+    std::array<uint8_t, 32> current = tx_hash;
+    size_t num_levels = proof.size() / 33;
 
-    // In production, this would properly verify the Merkle path.
-    // For now, require minimally sane non-empty inputs.
-    return tx_hash_non_zero && root_non_zero;
+    for (size_t i = 0; i < num_levels; ++i) {
+        uint8_t direction = proof[i * 33];
+        std::array<uint8_t, 32> sibling;
+        std::memcpy(sibling.data(), proof.data() + i * 33 + 1, 32);
+
+        crypto::SHA256 hasher;
+        if (direction == 0) {
+            // current is the left child, sibling is the right child
+            hasher.Write(current.data(), current.size());
+            hasher.Write(sibling.data(), sibling.size());
+        } else {
+            // sibling is the left child, current is the right child
+            hasher.Write(sibling.data(), sibling.size());
+            hasher.Write(current.data(), current.size());
+        }
+        current = hasher.Finalize();
+    }
+
+    return current == merkle_root;
 }
 
 // PlasmaOperator Implementation
@@ -223,11 +236,13 @@ PlasmaBlock PlasmaOperator::CreateBlock() {
     // Build Merkle root from transactions
     block.merkle_root = chain_->BuildMerkleRoot(block.transactions);
 
-    // Calculate block hash (simplified)
-    
-    // Calculate block hash (simplified) - use only 8 bytes to avoid overflow
-    std::memset(block.block_hash.data(), 0, 32);  // Zero the entire hash first
-    std::memcpy(block.block_hash.data(), &block.block_number, sizeof(uint64_t));
+    // Compute block hash from block data
+    crypto::SHA256 hasher;
+    hasher.Write(reinterpret_cast<const uint8_t*>(&block.block_number), sizeof(uint64_t));
+    hasher.Write(block.prev_hash.data(), block.prev_hash.size());
+    hasher.Write(block.merkle_root.data(), block.merkle_root.size());
+    hasher.Write(reinterpret_cast<const uint8_t*>(&block.timestamp), sizeof(uint64_t));
+    block.block_hash = hasher.Finalize();
 
     return block;
 }

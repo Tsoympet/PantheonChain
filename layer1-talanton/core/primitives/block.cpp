@@ -248,7 +248,7 @@ std::optional<Block> Block::Deserialize(const uint8_t* data, size_t len) {
             return std::nullopt;
         block.transactions.push_back(*tx);
 
-        // Advance pointer (simplified - need to track actual bytes read)
+        // Advance pointer by re-serializing the deserialized transaction to measure its byte length
         auto tx_bytes = tx->Serialize();
         if (tx_bytes.size() > remaining)
             return std::nullopt;

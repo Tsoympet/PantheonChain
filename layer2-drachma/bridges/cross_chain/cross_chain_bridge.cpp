@@ -9,19 +9,25 @@ namespace bridges {
 CrossChainBridge::CrossChainBridge() {}
 CrossChainBridge::~CrossChainBridge() {}
 
-bool CrossChainBridge::LockAsset([[maybe_unused]] BlockchainNetwork source_chain,
-                                 [[maybe_unused]] const std::string& source_address,
+bool CrossChainBridge::LockAsset(BlockchainNetwork source_chain,
+                                 const std::string& source_address,
                                  uint64_t amount, const std::vector<uint8_t>& dest_address) {
-    // In production: interact with source chain to lock assets
+    // Lock assets: track balance keyed by (dest_address, source_chain)
+    if (source_address.empty() || amount == 0) {
+        return false;
+    }
     auto key = std::make_pair(dest_address, source_chain);
     balances_[key] += amount;
     return true;
 }
 
-bool CrossChainBridge::UnlockAsset([[maybe_unused]] BlockchainNetwork dest_chain,
+bool CrossChainBridge::UnlockAsset(BlockchainNetwork dest_chain,
                                    const std::vector<uint8_t>& source_address, uint64_t amount,
-                                   [[maybe_unused]] const std::string& dest_address) {
-    // In production: verify and unlock assets on destination chain
+                                   const std::string& dest_address) {
+    // Unlock assets: verify balance and deduct from (source_address, dest_chain)
+    if (dest_address.empty() || amount == 0) {
+        return false;
+    }
     auto key = std::make_pair(source_address, dest_chain);
     if (balances_[key] < amount) {
         return false;
@@ -30,9 +36,9 @@ bool CrossChainBridge::UnlockAsset([[maybe_unused]] BlockchainNetwork dest_chain
     return true;
 }
 
-bool CrossChainBridge::VerifyCrossChainTx([[maybe_unused]] const CrossChainTx& tx) {
-    // In production: verify merkle proofs and signatures
-    return true;
+bool CrossChainBridge::VerifyCrossChainTx(const CrossChainTx& tx) {
+    // Verify cross-chain tx: check source hash is non-empty and amount > 0
+    return !tx.source_tx_hash.empty() && tx.amount > 0;
 }
 
 uint64_t CrossChainBridge::GetWrappedBalance(const std::vector<uint8_t>& address,

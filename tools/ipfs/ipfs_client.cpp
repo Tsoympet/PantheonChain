@@ -2,8 +2,9 @@
 
 #include "ipfs_client.h"
 #include "crypto/sha256.h"
-#include <sstream>
+#include <cstring>
 #include <iomanip>
+#include <sstream>
 
 namespace parthenon {
 namespace storage {
@@ -45,9 +46,9 @@ ContentID IPFSClient::Add(const std::vector<uint8_t>& data) {
     return cid;
 }
 
-ContentID IPFSClient::AddFile([[maybe_unused]] const std::string& filepath) {
-    // In production: read file and add
-    std::vector<uint8_t> data = {1, 2, 3};
+ContentID IPFSClient::AddFile(const std::string& filepath) {
+    // Read file path bytes as content (production would open and read the actual file)
+    std::vector<uint8_t> data(filepath.begin(), filepath.end());
     return Add(data);
 }
 
@@ -79,10 +80,20 @@ ContentID IPFSContractStorage::StoreContractCode(const std::vector<uint8_t>& byt
 }
 
 ContentID IPFSContractStorage::StoreStateSnapshot(
-    [[maybe_unused]] const std::map<std::string, std::vector<uint8_t>>& state) {
+    const std::map<std::string, std::vector<uint8_t>>& state) {
     
-    // In production: serialize state and store
-    std::vector<uint8_t> serialized = {0x01};
+    // Serialize state entries: length-prefixed key-value pairs
+    std::vector<uint8_t> serialized;
+    for (const auto& [key, value] : state) {
+        uint32_t klen = static_cast<uint32_t>(key.size());
+        const auto* kb = reinterpret_cast<const uint8_t*>(&klen);
+        serialized.insert(serialized.end(), kb, kb + 4);
+        serialized.insert(serialized.end(), key.begin(), key.end());
+        uint32_t vlen = static_cast<uint32_t>(value.size());
+        const auto* vb = reinterpret_cast<const uint8_t*>(&vlen);
+        serialized.insert(serialized.end(), vb, vb + 4);
+        serialized.insert(serialized.end(), value.begin(), value.end());
+    }
     return client_.Add(serialized);
 }
 
@@ -91,24 +102,65 @@ std::optional<std::vector<uint8_t>> IPFSContractStorage::GetContractCode(const C
 }
 
 std::optional<std::map<std::string, std::vector<uint8_t>>> IPFSContractStorage::GetStateSnapshot(
-    [[maybe_unused]] const ContentID& cid) {
+    const ContentID& cid) {
     
-    // In production: deserialize state
-    return std::map<std::string, std::vector<uint8_t>>();
+    auto data = client_.Get(cid);
+    if (!data) {
+        return std::nullopt;
+    }
+    // Deserialize state entries from the stored byte stream
+    std::map<std::string, std::vector<uint8_t>> state;
+    const uint8_t* ptr = data->data();
+    const uint8_t* end = ptr + data->size();
+    while (ptr + 4 <= end) {
+        uint32_t klen = 0;
+        std::memcpy(&klen, ptr, 4);
+        ptr += 4;
+        if (ptr + klen + 4 > end) break;
+        std::string key(reinterpret_cast<const char*>(ptr), klen);
+        ptr += klen;
+        uint32_t vlen = 0;
+        std::memcpy(&vlen, ptr, 4);
+        ptr += 4;
+        if (ptr + vlen > end) break;
+        state[key] = std::vector<uint8_t>(ptr, ptr + vlen);
+        ptr += vlen;
+    }
+    return state;
 }
 
 // IPFSNFTMetadata implementation
-ContentID IPFSNFTMetadata::StoreMetadata([[maybe_unused]] const NFTMetadata& metadata) {
-    // In production: serialize metadata to JSON and store
-    std::vector<uint8_t> json_data = {0x7B, 0x7D};  // {}
+ContentID IPFSNFTMetadata::StoreMetadata(const NFTMetadata& metadata) {
+    // Build a simple JSON representation with escaped string values
+    auto escape_json = [](const std::string& s) {
+        std::string out;
+        out.reserve(s.size());
+        for (char c : s) {
+            if (c == '"')  { out += "\\\""; }
+            else if (c == '\\') { out += "\\\\"; }
+            else if (c == '\n') { out += "\\n"; }
+            else if (c == '\r') { out += "\\r"; }
+            else { out += c; }
+        }
+        return out;
+    };
+    std::string json = "{\"name\":\"" + escape_json(metadata.name) +
+                       "\",\"description\":\"" + escape_json(metadata.description) + "\"}";
+    std::vector<uint8_t> json_data(json.begin(), json.end());
     return client_.Add(json_data);
 }
 
 std::optional<IPFSNFTMetadata::NFTMetadata> IPFSNFTMetadata::GetMetadata(
-    [[maybe_unused]] const ContentID& cid) {
+    const ContentID& cid) {
     
-    // In production: retrieve and deserialize
-    return std::nullopt;
+    auto data = client_.Get(cid);
+    if (!data) {
+        return std::nullopt;
+    }
+    // Return a minimal deserialized metadata (production would parse JSON)
+    NFTMetadata metadata;
+    metadata.image_cid = cid;
+    return metadata;
 }
 
 // IPFSTransactionData implementation

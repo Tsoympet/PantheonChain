@@ -134,9 +134,20 @@ void ExplorerWebServer::HandleRequest(const std::string& path)
     if (!api_) {
         return;
     }
-    
-    // Parse path and handle accordingly
-    // Simplified implementation
+
+    if (path.find("/block/") != std::string::npos) {
+        auto pos = path.find("/block/") + 7;
+        auto identifier = path.substr(pos);
+        api_->GetBlock(identifier);
+    } else if (path.find("/tx/") != std::string::npos) {
+        auto pos = path.find("/tx/") + 4;
+        auto txid = path.substr(pos);
+        api_->GetTransaction(txid);
+    } else if (path.find("/address/") != std::string::npos) {
+        auto pos = path.find("/address/") + 9;
+        auto address = path.substr(pos);
+        api_->GetAddress(address);
+    }
 }
 
 // ChartDataProvider Implementation

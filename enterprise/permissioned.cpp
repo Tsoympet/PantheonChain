@@ -1,6 +1,7 @@
 #include "permissioned.h"
 
 #include <ctime>
+#include <fstream>
 
 namespace parthenon {
 namespace enterprise {
@@ -318,9 +319,21 @@ bool AuditLogger::ExportLog(
     uint64_t start_time,
     uint64_t end_time)
 {
-    // Would export to file
-    // Simplified implementation
-    return !filename.empty();
+    if (filename.empty()) {
+        return false;
+    }
+    std::ofstream out(filename);
+    if (!out) {
+        return false;
+    }
+    for (const auto& event : events_) {
+        if (event.timestamp >= start_time && event.timestamp <= end_time) {
+    out << event.event_id << "," << event.timestamp << ","
+                << static_cast<int>(event.type) << ","
+                << event.action << "\n";
+        }
+    }
+    return true;
 }
 
 std::vector<AuditLogger::AuditEvent> AuditLogger::GetEventsByActor(
@@ -359,14 +372,17 @@ SLAMonitor::~SLAMonitor() = default;
 
 void SLAMonitor::RecordBlockTime(uint64_t time_ms)
 {
-    // Update average
-    // Simplified implementation
-    current_metrics_.avg_block_time_ms = time_ms;
+    // Cumulative moving average: avg = avg + (new - avg) / count
+    ++block_time_count_;
+    current_metrics_.avg_block_time_ms +=
+        (time_ms - current_metrics_.avg_block_time_ms) / block_time_count_;
 }
 
 void SLAMonitor::RecordTransactionConfirmation(uint64_t time_ms)
 {
-    current_metrics_.avg_tx_confirmation_time_ms = time_ms;
+    ++tx_confirmation_count_;
+    current_metrics_.avg_tx_confirmation_time_ms +=
+        (time_ms - current_metrics_.avg_tx_confirmation_time_ms) / tx_confirmation_count_;
 }
 
 void SLAMonitor::RecordTransactionResult(bool success)

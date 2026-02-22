@@ -112,13 +112,13 @@ namespace hardware {
 
 // FirmwareVerifier implementation
 FirmwareVerifier::FirmwareVerifier() {
-    // Initialize with known vendor keys (in production, load from secure storage)
+    // Initialize with known vendor keys (loaded from embedded constants in production).
+    // Placeholder keys: replace with real vendor certificate bytes.
 
     // Ledger public keys
     VendorKeys ledger_keys;
     ledger_keys.vendor_name = "Ledger";
     ledger_keys.certificate_url = "https://www.ledger.com/certificates";
-    // In production, these would be real public keys
     ledger_keys.public_keys.push_back(std::vector<uint8_t>(32, 0x01));
     vendor_keys_["Ledger"] = ledger_keys;
 
@@ -266,8 +266,7 @@ FirmwareVerifier::CheckLatestVersion(const std::string& vendor,
     std::string latest_version;
     bool found = false;
 
-    for (const auto& [hash, info] : known_firmware_) {
-        (void)hash;
+    for ([[maybe_unused]] const auto& [hash, info] : known_firmware_) {
         if (info.vendor != vendor) {
             continue;
         }
@@ -333,8 +332,7 @@ FirmwareVerifier::GetFirmwareInfo(const std::vector<uint8_t>& firmware_hash) {
 
 std::optional<FirmwareInfo> FirmwareVerifier::GetFirmwareInfo(const std::string& vendor,
                                                               const std::string& version) {
-    for (const auto& [hash, info] : known_firmware_) {
-        (void)hash;
+    for ([[maybe_unused]] const auto& [hash, info] : known_firmware_) {
         if (info.vendor == vendor && info.version == version) {
             return info;
         }

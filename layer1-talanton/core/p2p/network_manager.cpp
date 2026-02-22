@@ -672,16 +672,22 @@ bool NetworkManager::SendGetDataToPeer(const std::string& peer_id, const GetData
 
 void NetworkManager::RequestBlocks(const std::string& peer_id, uint32_t start_height,
                                    uint32_t count) {
-    // start_height and count are part of the public interface for future use when
-    // GetHeaders is extended to support height-based block locator population.
-    (void)start_height;
-    (void)count;
     std::lock_guard<std::mutex> lock(peers_mutex_);
     auto it = peers_.find(peer_id);
     if (it != peers_.end() && it->second->IsConnected()) {
-        // Create GetHeaders message
+        // Build a height-based block locator: encode start_height and count as
+        // a synthetic locator hash (bytes 0-3 = start_height LE, 4-7 = count LE)
         GetHeadersMessage msg;
-        // Would need to populate with actual block locator
+        std::array<uint8_t, 32> locator_entry{};
+        locator_entry[0] = static_cast<uint8_t>(start_height & 0xFF);
+        locator_entry[1] = static_cast<uint8_t>((start_height >> 8) & 0xFF);
+        locator_entry[2] = static_cast<uint8_t>((start_height >> 16) & 0xFF);
+        locator_entry[3] = static_cast<uint8_t>((start_height >> 24) & 0xFF);
+        locator_entry[4] = static_cast<uint8_t>(count & 0xFF);
+        locator_entry[5] = static_cast<uint8_t>((count >> 8) & 0xFF);
+        locator_entry[6] = static_cast<uint8_t>((count >> 16) & 0xFF);
+        locator_entry[7] = static_cast<uint8_t>((count >> 24) & 0xFF);
+        msg.block_locator_hashes.push_back(locator_entry);
         it->second->SendGetHeaders(msg);
     }
 }

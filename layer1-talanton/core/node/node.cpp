@@ -576,8 +576,7 @@ void Node::HandleNewPeer(const std::string& peer_id) {
 
 void Node::RecomputeSyncTarget() {
     uint32_t best_height = GetHeight();
-    for (const auto& [id, info] : peers_) {
-        (void)id;
+    for ([[maybe_unused]] const auto& [id, info] : peers_) {
         if (info.is_connected && info.height > best_height) {
             best_height = info.height;
         }

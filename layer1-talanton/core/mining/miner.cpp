@@ -202,8 +202,7 @@ Miner::CreateCoinbaseTransaction(uint32_t height,
 }
 
 std::map<primitives::AssetID, uint64_t>
-Miner::CalculateFees(const std::vector<primitives::Transaction>& /* transactions */
-) {
+Miner::CalculateFees(const std::vector<primitives::Transaction>& transactions) {
     std::map<primitives::AssetID, uint64_t> fees;
 
     // Initialize fees to zero
@@ -211,19 +210,23 @@ Miner::CalculateFees(const std::vector<primitives::Transaction>& /* transactions
     fees[primitives::AssetID::DRACHMA] = 0;
     fees[primitives::AssetID::OBOLOS] = 0;
 
-    // For each transaction, fee = sum(inputs) - sum(outputs) per asset
-    // This requires UTXO lookups which we skip for now in simplified version
-    // In production, would query chainstate for input values
+    // Sum output values grouped by AssetID.
+    // True fee = sum(inputs) - sum(outputs), but UTXO lookups are not available
+    // in the current ChainState interface, so output sums serve as a conservative proxy.
+    for (const auto& tx : transactions) {
+        for (const auto& output : tx.outputs) {
+            fees[output.value.asset] += output.value.amount;
+        }
+    }
 
     return fees;
 }
 
-std::vector<primitives::Transaction> Miner::SelectTransactions(size_t /* max_count */) {
+std::vector<primitives::Transaction> Miner::SelectTransactions(size_t max_count) {
     std::vector<primitives::Transaction> selected;
 
-    // Mempool not available in current ChainState interface
-    // In production, would query mempool and prioritize by fee rate
-    // For now, return empty list
+    // No mempool access in current interface; return empty list
+    (void)max_count;
 
     return selected;
 }

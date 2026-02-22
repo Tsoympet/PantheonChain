@@ -336,14 +336,23 @@ uint256_t VM::Shl(const uint256_t& shift, const uint256_t& value) const {
     if (shift_amount >= 256)
         return uint256_t{};
 
-    // Simplified left shift
     uint256_t result = value;
-    for (uint64_t i = 0; i < shift_amount; i++) {
-        // Shift left by 1 bit
+    // Whole-byte shift followed by sub-byte shift for efficiency
+    size_t byte_shift = shift_amount / 8;
+    size_t bit_shift = shift_amount % 8;
+    if (byte_shift > 0) {
+        for (int j = 0; j + static_cast<int>(byte_shift) < 32; ++j) {
+            result[j] = result[j + byte_shift];
+        }
+        for (size_t j = 32 - byte_shift; j < 32; ++j) {
+            result[j] = 0;
+        }
+    }
+    if (bit_shift > 0) {
         uint8_t carry = 0;
-        for (int j = 31; j >= 0; j--) {
-            uint8_t new_carry = (result[j] & 0x80) >> 7;
-            result[j] = (result[j] << 1) | carry;
+        for (int j = 31; j >= 0; --j) {
+            uint8_t new_carry = (result[j] & 0xFFu) >> (8 - bit_shift);
+            result[j] = static_cast<uint8_t>((result[j] << bit_shift) | carry);
             carry = new_carry;
         }
     }
@@ -355,14 +364,23 @@ uint256_t VM::Shr(const uint256_t& shift, const uint256_t& value) const {
     if (shift_amount >= 256)
         return uint256_t{};
 
-    // Simplified right shift
     uint256_t result = value;
-    for (uint64_t i = 0; i < shift_amount; i++) {
-        // Shift right by 1 bit
+    // Whole-byte shift followed by sub-byte shift for efficiency
+    size_t byte_shift = shift_amount / 8;
+    size_t bit_shift = shift_amount % 8;
+    if (byte_shift > 0) {
+        for (int j = 31; j >= static_cast<int>(byte_shift); --j) {
+            result[j] = result[j - byte_shift];
+        }
+        for (size_t j = 0; j < byte_shift; ++j) {
+            result[j] = 0;
+        }
+    }
+    if (bit_shift > 0) {
         uint8_t carry = 0;
-        for (int j = 0; j < 32; j++) {
-            uint8_t new_carry = (result[j] & 0x01) << 7;
-            result[j] = (result[j] >> 1) | carry;
+        for (int j = 0; j < 32; ++j) {
+            uint8_t new_carry = static_cast<uint8_t>(result[j] << (8 - bit_shift));
+            result[j] = static_cast<uint8_t>((result[j] >> bit_shift) | carry);
             carry = new_carry;
         }
     }
@@ -654,13 +672,20 @@ ExecResult VM::ExecuteOpcode(Opcode op, const std::vector<uint8_t>& code, size_t
             break;
 
         // Context operations
-        case Opcode::ADDRESS:
-            Push(ToUint256(0));  // Simplified - would need address conversion
+        case Opcode::ADDRESS: {
+            // Load 20-byte contract address into a uint256 (right-aligned)
+            uint256_t addr_val{};
+            std::copy(ctx_.address.begin(), ctx_.address.end(), addr_val.begin() + 12);
+            Push(addr_val);
             break;
-
-        case Opcode::CALLER:
-            Push(ToUint256(0));  // Simplified
+        }
+        case Opcode::CALLER: {
+            // Load 20-byte caller address into a uint256 (right-aligned)
+            uint256_t caller_val{};
+            std::copy(ctx_.caller.begin(), ctx_.caller.end(), caller_val.begin() + 12);
+            Push(caller_val);
             break;
+        }
 
         case Opcode::CALLVALUE:
             Push(ctx_.value);

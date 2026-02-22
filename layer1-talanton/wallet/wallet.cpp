@@ -224,8 +224,7 @@ void Wallet::SyncWithChain(const chainstate::UTXOSet& utxo_set) {
 }
 
 crypto::Schnorr::PrivateKey Wallet::DeriveKey(uint64_t index) {
-    // Simplified BIP-32 derivation
-    // In production, would use proper BIP-32 implementation
+    // SHA256(seed || index) deterministic HD key derivation
     crypto::SHA256 hasher;
     hasher.Write(seed_.data(), seed_.size());
 
