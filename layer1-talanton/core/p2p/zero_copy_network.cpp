@@ -3,7 +3,9 @@
 #include "zero_copy_network.h"
 
 #include <cstring>
+#ifndef _WIN32
 #include <dlfcn.h>
+#endif
 #include <iostream>
 #include <sstream>
 
@@ -118,6 +120,10 @@ bool ZeroCopyNetwork::IsAvailable() {
 }
 
 ssize_t ZeroCopyNetwork::OptimizedSend(int socket_fd, const void* data, size_t len) {
+#ifdef _WIN32
+    // Windows: use regular send (non-blocking is set on the socket itself)
+    return static_cast<ssize_t>(send(socket_fd, static_cast<const char*>(data), static_cast<int>(len), 0));
+#else
     // Try MSG_ZEROCOPY flag (Linux 4.14+)
 #ifdef MSG_ZEROCOPY
     ssize_t sent = send(socket_fd, data, len, MSG_ZEROCOPY | MSG_DONTWAIT);
@@ -128,10 +134,15 @@ ssize_t ZeroCopyNetwork::OptimizedSend(int socket_fd, const void* data, size_t l
 
     // Fallback to regular send
     return send(socket_fd, data, len, MSG_DONTWAIT);
+#endif
 }
 
 ssize_t ZeroCopyNetwork::OptimizedRecv(int socket_fd, void* buffer, size_t len) {
+#ifdef _WIN32
+    return static_cast<ssize_t>(recv(socket_fd, static_cast<char*>(buffer), static_cast<int>(len), 0));
+#else
     return recv(socket_fd, buffer, len, MSG_DONTWAIT);
+#endif
 }
 
 // ============================================================================
@@ -212,6 +223,7 @@ uint16_t DPDKNetwork::ReceiveBurst(uint16_t port_id, uint16_t queue_id, void** p
 }
 
 bool DPDKNetwork::IsAvailable() {
+#ifndef _WIN32
     // Detect commonly named DPDK EAL shared libraries.
     static constexpr const char* kLibraries[] = {
         "librte_eal.so",
@@ -227,7 +239,7 @@ bool DPDKNetwork::IsAvailable() {
             return true;
         }
     }
-
+#endif
     return false;
 }
 

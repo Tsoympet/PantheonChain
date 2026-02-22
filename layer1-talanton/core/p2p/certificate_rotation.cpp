@@ -2,6 +2,10 @@
 
 #include "certificate_rotation.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Suppress unsafe POSIX function warnings (fopen)
+#endif
+
 #include <cstring>
 #include <fstream>
 #include <iostream>

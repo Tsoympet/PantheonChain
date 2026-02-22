@@ -14,8 +14,10 @@ on:
 
 jobs:
   build-ios-installer:
-    name: Build iOS IPA Installer
+    name: Build iOS Simulator Installer
     runs-on: macos-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: clients/mobile/react-native
@@ -58,21 +60,21 @@ jobs:
         run: |
           npx eas-cli init --force --non-interactive
 
-      - name: Validate EAS build profile uses preconfigured credentials
+      - name: Validate EAS build profile is configured for simulator
         run: |
-          node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['ios-release']; if(!profile){ console.error('Missing build.ios-release profile in eas.json.'); process.exit(1);} if(profile.credentialsSource!=='remote'){ console.error('build.ios-release.credentialsSource must be set to \'remote\' so CI uses preconfigured Expo credentials.'); process.exit(1);} console.log('ios-release profile is configured to use remote Expo credentials.');"
+          node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['ios-release']; if(!profile){ console.error('Missing build.ios-release profile in eas.json.'); process.exit(1);} if(!profile.ios?.simulator){ console.error('build.ios-release.ios.simulator must be true for CI builds without Apple distribution credentials.'); process.exit(1);} console.log('ios-release profile is configured for simulator build (no distribution certificate required).');"
 
-      - name: Build iOS installer (IPA)
+      - name: Build iOS simulator installer
         run: npx eas-cli build --platform ios --profile ios-release --non-interactive --wait
 
-      - name: Download IPA artifact
+      - name: Download iOS simulator artifact
         run: |
           BUILD_ID=$(npx eas-cli build:list --platform ios --limit 1 --status finished --json --non-interactive | jq -r '.[0].id')
-          npx eas-cli build:download --platform ios --id "$BUILD_ID" --path parthenon-mobile-ios.ipa --non-interactive
+          npx eas-cli build:download --platform ios --id "$BUILD_ID" --path parthenon-mobile-ios-simulator.tar.gz --non-interactive
 
-      - name: Upload iOS installer
+      - name: Upload iOS simulator installer
         uses: actions/upload-artifact@v4
         with:
-          name: parthenon-mobile-ios-ipa
-          path: clients/mobile/react-native/parthenon-mobile-ios.ipa
+          name: parthenon-mobile-ios-simulator
+          path: clients/mobile/react-native/parthenon-mobile-ios-simulator.tar.gz
           retention-days: 14

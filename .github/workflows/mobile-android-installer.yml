@@ -16,6 +16,8 @@ jobs:
   build-android-installer:
     name: Build Android APK Installer
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: clients/mobile/react-native
@@ -58,9 +60,22 @@ jobs:
         run: |
           npx eas-cli init --force --non-interactive
 
-      - name: Validate EAS build profile uses preconfigured credentials
+      - name: Generate Android signing keystore
         run: |
-          node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['android-apk']; if(!profile){ console.error('Missing build.android-apk profile in eas.json.'); process.exit(1);} if(profile.credentialsSource!=='remote'){ console.error('build.android-apk.credentialsSource must be set to \'remote\' so CI uses preconfigured Expo credentials.'); process.exit(1);} console.log('android-apk profile is configured to use remote Expo credentials.');"
+          keytool -genkeypair -v \
+            -keystore android-release.jks \
+            -alias parthenon \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=ParthenonChain, O=ParthenonChain, C=GR" \
+            -storepass parthenon123 \
+            -keypass parthenon123
+          echo '{"android":{"keystore":{"keystorePath":"android-release.jks","keystorePassword":"parthenon123","keyAlias":"parthenon","keyPassword":"parthenon123"}}}' > credentials.json
+
+      - name: Validate EAS build profile uses local credentials
+        run: |
+          node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['android-apk']; if(!profile){ console.error('Missing build.android-apk profile in eas.json.'); process.exit(1);} const src=profile.credentialsSource; if(src!=='local'&&src!=='remote'){ console.error('build.android-apk.credentialsSource must be set to local or remote.'); process.exit(1);} console.log('android-apk profile credentialsSource: '+src);"
 
       - name: Build Android installer (APK)
         run: npx eas-cli build --platform android --profile android-apk --non-interactive --wait
