@@ -1049,6 +1049,35 @@ void MobileClient::GetNetworkStatus(NetworkStatusCallback callback) {
 }
 
 // QRCodeHelper implementation
+
+// Decode percent-encoded characters in a URI component (e.g. %20 -> space, %26 -> &)
+static std::string PercentDecode(const std::string& encoded) {
+    std::string result;
+    result.reserve(encoded.size());
+    for (size_t i = 0; i < encoded.size(); ++i) {
+        if (encoded[i] == '%' && i + 2 < encoded.size() &&
+            std::isxdigit(static_cast<unsigned char>(encoded[i + 1])) &&
+            std::isxdigit(static_cast<unsigned char>(encoded[i + 2]))) {
+            uint8_t high = 0;
+            uint8_t low = 0;
+            auto from_hex = [](char c) -> uint8_t {
+                if (c >= '0' && c <= '9') return static_cast<uint8_t>(c - '0');
+                if (c >= 'a' && c <= 'f') return static_cast<uint8_t>(c - 'a' + 10);
+                return static_cast<uint8_t>(c - 'A' + 10);
+            };
+            high = from_hex(encoded[i + 1]);
+            low  = from_hex(encoded[i + 2]);
+            result.push_back(static_cast<char>((high << 4) | low));
+            i += 2;
+        } else if (encoded[i] == '+') {
+            result.push_back(' ');
+        } else {
+            result.push_back(encoded[i]);
+        }
+    }
+    return result;
+}
+
 std::string QRCodeHelper::GeneratePaymentURI(
     const std::string& address,
     uint64_t amount,
@@ -1066,16 +1095,57 @@ std::string QRCodeHelper::GeneratePaymentURI(
 }
 
 std::optional<QRCodeHelper::PaymentRequest> QRCodeHelper::ParsePaymentURI(const std::string& uri) {
-    // In production: parse URI with proper URL decoding
-    if (uri.substr(0, 9) != "pantheon:") {
+    constexpr const char* kScheme = "pantheon:";
+    constexpr size_t kSchemeLen = 9;  // strlen("pantheon:")
+
+    if (uri.size() < kSchemeLen || uri.substr(0, kSchemeLen) != kScheme) {
         return std::nullopt;
     }
-    
+
     PaymentRequest req;
-    // Simplified parsing
-    req.address = "ptn1q" + std::string(39, '0');
-    req.amount = 1000;
-    req.asset = "TALN";
+
+    // Split address from query string
+    const std::string body = uri.substr(kSchemeLen);
+    const auto qmark = body.find('?');
+    if (qmark == std::string::npos) {
+        req.address = body;
+    } else {
+        req.address = body.substr(0, qmark);
+        std::string query = body.substr(qmark + 1);
+
+        // Parse key=value pairs separated by '&'
+        while (!query.empty()) {
+            const auto amp = query.find('&');
+            std::string pair = (amp == std::string::npos) ? query : query.substr(0, amp);
+            query = (amp == std::string::npos) ? "" : query.substr(amp + 1);
+
+            const auto eq = pair.find('=');
+            if (eq == std::string::npos) {
+                continue;
+            }
+            const std::string key = pair.substr(0, eq);
+            const std::string val = pair.substr(eq + 1);
+
+            if (key == "amount") {
+                try {
+                    req.amount = static_cast<uint64_t>(std::stoull(val));
+                } catch (const std::exception& e) {
+                    std::cerr << "ParsePaymentURI: invalid amount '" << val << "': " << e.what()
+                              << std::endl;
+                    return std::nullopt;
+                }
+            } else if (key == "asset") {
+                req.asset = PercentDecode(val);
+            } else if (key == "memo") {
+                req.memo = PercentDecode(val);
+            }
+        }
+    }
+
+    if (req.address.empty()) {
+        return std::nullopt;
+    }
+
     return req;
 }
 

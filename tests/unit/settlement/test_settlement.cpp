@@ -2,6 +2,8 @@
 #include "../../../layer1/settlement/escrow.h"
 #include "../../../layer1/settlement/multisig.h"
 
+#include "../../../layer1-talanton/core/crypto/sha256.h"
+
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -68,12 +70,10 @@ void test_hash_lock_escrow() {
         preimage[i] = static_cast<uint8_t>(i * 7 + 13);
     }
 
-    // In real implementation, we'd use SHA-256
-    // For now, create a dummy hash
+    // Hash the preimage with SHA-256 as required by HTLC/hash-lock semantics
+    auto sha_result = parthenon::crypto::SHA256::Hash256(preimage.data(), preimage.size());
     Hash256 hash;
-    for (size_t i = 0; i < 32; ++i) {
-        hash[i] = static_cast<uint8_t>(i);
-    }
+    std::copy(sha_result.begin(), sha_result.end(), hash.begin());
 
     HashLockEscrow escrow(hash);
     assert(escrow.GetHash() == hash);

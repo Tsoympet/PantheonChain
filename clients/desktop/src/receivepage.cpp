@@ -9,7 +9,6 @@
 #include <QGroupBox>
 #include <QApplication>
 #include <QClipboard>
-#include <QDateTime>
 #include <QFont>
 #include <QLabel>
 #include <QLineEdit>
@@ -91,16 +90,16 @@ void ReceivePage::onGenerateAddress() {
         return;
     }
 
-    // In production, this would call rpcClient->getNewAddress()
-    // For now, generate a sample address
-    QString newAddress =
-        QString("parthenon1q%1")
-            .arg(QDateTime::currentMSecsSinceEpoch() % 1000000000, 9, 10, QChar('0'));
+    QString newAddress = rpcClient->getNewAddress();
+    if (newAddress.isEmpty()) {
+        QMessageBox::warning(this, tr("Error"),
+                             tr("Failed to generate address. Please check your connection."));
+        return;
+    }
 
     addressEdit->setText(newAddress);
     copyButton->setEnabled(true);
 
-    // In production, generate QR code here
     qrCodeLabel->setText(tr("QR Code for:\n%1").arg(newAddress));
 }
 
