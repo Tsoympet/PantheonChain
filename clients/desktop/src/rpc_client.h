@@ -3,6 +3,8 @@
 #ifndef RPC_CLIENT_H
 #define RPC_CLIENT_H
 
+#include <QDateTime>
+#include <QList>
 #include <QMap>
 #include <QObject>
 #include <QString>
@@ -10,6 +12,15 @@
 
 class QNetworkAccessManager;
 class QNetworkReply;
+
+struct TransactionRecord {
+    QString dateTime;
+    QString type;
+    QString asset;
+    double amount;
+    QString address;
+    QString txid;
+};
 
 class RPCClient : public QObject {
     Q_OBJECT
@@ -19,6 +30,7 @@ class RPCClient : public QObject {
     ~RPCClient();
 
     void connectToServer(const QString& host, int port);
+    void setCredentials(const QString& user, const QString& password);
     void disconnect();
     bool isConnected() const { return connected; }
 
@@ -33,8 +45,11 @@ class RPCClient : public QObject {
     // Transaction operations
     void sendTransaction(const QString& asset, const QString& address, double amount,
                          const QString& memo = QString());
-    QString getNewAddress();
+    void getNewAddress();
     void getTransactionHistory();
+
+    // Access last-fetched transaction list
+    QList<TransactionRecord> transactions() const { return transactionList; }
 
   signals:
     void connectionStatusChanged(bool connected);
@@ -42,6 +57,7 @@ class RPCClient : public QObject {
     void blockHeightChanged(int height);
     void transactionSent(const QString& txid);
     void transactionHistoryUpdated();
+    void newAddressReceived(const QString& address);
     void errorOccurred(const QString& error);
 
   private slots:
@@ -54,10 +70,13 @@ class RPCClient : public QObject {
     QString rpcHost;
     int rpcPort;
     bool connected;
+    QString rpcUser;
+    QString rpcPassword;
 
     QMap<QString, double> balances;
     int blockHeight;
     int requestId;
+    QList<TransactionRecord> transactionList;
 };
 
 #endif  // RPC_CLIENT_H

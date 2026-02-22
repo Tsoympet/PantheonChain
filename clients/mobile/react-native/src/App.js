@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Image,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -13,6 +14,8 @@ import {
 } from 'react-native';
 import WalletService from './WalletService';
 import NetworkService from './NetworkService';
+
+const logoImage = require('../assets/icon.png');
 
 // ParthenonChain Mobile Wallet
 const App = () => {
@@ -73,7 +76,11 @@ const App = () => {
 
   const WalletScreen = () => (
     <View style={styles.container}>
-      <Text style={styles.title}>Parthenon Wallet</Text>
+      {/* App Header with Logo */}
+      <View style={styles.header}>
+        <Image source={logoImage} style={styles.headerLogo} />
+        <Text style={styles.title}>Parthenon Wallet</Text>
+      </View>
       
       {/* Connection Status */}
       <View style={styles.statusBar}>
@@ -115,11 +122,19 @@ const App = () => {
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={() => setCurrentScreen('send')}>
+          <Text
+            style={styles.actionButtonIcon}
+            accessibilityElementsHidden={true}
+            importantForAccessibility="no-hide-descendants">↑</Text>
           <Text style={styles.actionButtonText}>Send</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={() => setCurrentScreen('receive')}>
+          <Text
+            style={styles.actionButtonIcon}
+            accessibilityElementsHidden={true}
+            importantForAccessibility="no-hide-descendants">↓</Text>
           <Text style={styles.actionButtonText}>Receive</Text>
         </TouchableOpacity>
       </View>
@@ -142,9 +157,11 @@ const App = () => {
       <TouchableOpacity 
         style={styles.transactionsButton}
         onPress={() => setCurrentScreen('transactions')}>
-        <Text style={styles.transactionsButtonText}>
-          View Transactions
-        </Text>
+        <Text
+          style={styles.transactionsButtonIcon}
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no-hide-descendants">☰</Text>
+        <Text style={styles.transactionsButtonText}>View Transactions</Text>
       </TouchableOpacity>
     </View>
   );
@@ -256,8 +273,15 @@ const App = () => {
   const ReceiveScreen = () => {
     const generateAddress = async () => {
       try {
-        const address = await WalletService.generateAddress(selectedAsset);
-        setCurrentAddress(address);
+        let address;
+        if (connected) {
+          address = await NetworkService.getNewAddress();
+        } else {
+          address = await WalletService.generateAddress(selectedAsset);
+        }
+        if (address) {
+          setCurrentAddress(address);
+        }
       } catch (error) {
         Alert.alert('Error', 'Failed to generate address');
       }
@@ -356,11 +380,27 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  headerLogo: {
+    width: 36,
+    height: 36,
+    marginRight: 10,
+    borderRadius: 8,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
     color: '#333',
+  },
+  actionButtonIcon: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
   statusBar: {
     marginBottom: 15,
@@ -465,6 +505,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#007AFF',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  transactionsButtonIcon: {
+    color: '#007AFF',
+    fontSize: 16,
+    marginRight: 6,
   },
   transactionsButtonText: {
     color: '#007AFF',

@@ -37,6 +37,7 @@ class MainWindow : public QMainWindow {
     void updateStatus();
     void onConnectionStatusChanged(bool connected);
     void onBalanceChanged();
+    void onBlockHeightChanged(int height);
 
   private:
     void createActions();

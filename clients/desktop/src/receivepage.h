@@ -19,12 +19,12 @@ class ReceivePage : public QWidget {
   private slots:
     void onGenerateAddress();
     void onCopyAddress();
+    void onNewAddressReceived(const QString& address);
 
   private:
     void setupUI();
 
     RPCClient* rpcClient;
-    QLabel* addressLabel;
     QLineEdit* addressEdit;
     QPushButton* generateButton;
     QPushButton* copyButton;

@@ -3,9 +3,9 @@
 #ifndef TRANSACTIONPAGE_H
 #define TRANSACTIONPAGE_H
 
-#include <QWidget>
+#include "rpc_client.h"
 
-class RPCClient;
+#include <QWidget>
 class QTableWidget;
 class QPushButton;
 class QComboBox;
