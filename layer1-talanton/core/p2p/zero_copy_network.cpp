@@ -44,6 +44,7 @@ ssize_t ZeroCopyNetwork::SendFile(int socket_fd, int file_fd, off_t offset, size
 
     return sent;
 #else
+    (void)socket_fd; (void)file_fd; (void)offset; (void)count;
     std::cerr << "sendfile() not available on this platform\n";
     return -1;
 #endif
@@ -61,6 +62,7 @@ ssize_t ZeroCopyNetwork::Splice(int fd_in, int fd_out, size_t len) {
 
     return spliced;
 #else
+    (void)fd_in; (void)fd_out; (void)len;
     std::cerr << "splice() not available on this platform\n";
     return -1;
 #endif
@@ -94,6 +96,7 @@ void* ZeroCopyNetwork::MemoryMapFile(const std::string& file_path, size_t& size)
 
     return addr;
 #else
+    (void)file_path; (void)size;
     std::cerr << "mmap() not available on this platform\n";
     return nullptr;
 #endif
@@ -107,6 +110,7 @@ bool ZeroCopyNetwork::UnmapFile(void* addr, size_t size) {
     }
     return true;
 #else
+    (void)addr; (void)size;
     return false;
 #endif
 }
