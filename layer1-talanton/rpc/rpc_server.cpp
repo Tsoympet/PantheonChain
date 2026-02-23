@@ -93,7 +93,7 @@ std::string TrimAsciiWhitespace(const std::string& value) {
 }
 
 bool ConstantTimeEquals(const std::string& lhs, const std::string& rhs) {
-    const size_t max_len = std::max(lhs.size(), rhs.size());
+    const size_t max_len = (std::max)(lhs.size(), rhs.size());
     unsigned char diff = static_cast<unsigned char>(lhs.size() ^ rhs.size());
 
     for (size_t i = 0; i < max_len; ++i) {

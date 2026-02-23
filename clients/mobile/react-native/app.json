@@ -25,7 +25,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "displayName": "Parthenon Wallet",
     "sdkVersion": "51.0.0"
   }
 }
