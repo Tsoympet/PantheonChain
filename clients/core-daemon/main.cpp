@@ -343,8 +343,21 @@ class Node {
     /// wallet seed loading/generation, core node startup, optional RPC server
     /// initialization, and optional mining activation.
     ///
-    /// Returns true if all subsystems started successfully, false otherwise.
-    /// On failure, any partially started subsystems are stopped before returning.
+    /// Startup proceeds through these phases in order:
+    ///   1. Precondition check (not reentrant -- returns false if already running)
+    ///   2. Configuration logging
+    ///   3. Data directory and network setup
+    ///   4. Wallet seed loading or generation
+    ///   5. Core node startup
+    ///   6. Optional RPC server initialization
+    ///   7. Optional mining activation
+    ///
+    /// @pre Not reentrant: calling Start() on a node that is already running
+    ///      returns false immediately without modifying any state.
+    ///
+    /// @return true if all subsystems started successfully; false otherwise.
+    ///         On failure, any partially started subsystems are stopped before
+    ///         returning so the node is left in a clean, stopped state.
     bool Start() {
         // Prevent double-start: if the node is already running, return early.
         if (running_.load()) {
