@@ -108,14 +108,46 @@ Remaining:
   `SlashDeposit`; `SetAntiWhaleGuard()`, `SetBoule()`, `SetRequireBouleApproval()`,
   `SetTotalSupply()` integration hooks; `MarkBouleApproved()`.
 
+#### What is also now in place (treasury, staking, emergency, fee routing)
+- **`treasury.h/.cpp`** – Full `Treasury` with five allocation tracks (CORE_DEVELOPMENT, GRANTS,
+  OPERATIONS, EMERGENCY, UNCATEGORIZED), budget periods with per-track spending caps, milestone
+  grants with phased releases and revocation, multi-sig spending for the EMERGENCY track,
+  configurable reserve ratio, guardian registry, and an immutable transaction audit log.
+- **`staking.h/.cpp`** – `StakingRegistry`: stake with optional lock period, unstake cooldown
+  (anti-flash-stake), slashing with history, voting-power derivation (stake − pending_unstake),
+  total-supply feed for `AntiWhaleGuard`.
+- **`emergency.h/.cpp`** – `EmergencyCouncil`: M-of-N guardian multi-sig actions
+  (PAUSE_GOVERNANCE, CANCEL_PROPOSAL, FAST_TRACK_UPGRADE, CUSTOM) with TTL expiry.
+  Inspired by Athenian *Apophasis* (special investigative board).
+- **`eventlog.h/.cpp`** – `GovernanceEventLog`: unified append-only audit trail (*Stele* principle)
+  for all subsystems, queryable by type, actor, block-range, or reference ID.
+- **`fee_router.h/.cpp`** – `FeeRouter`: routes every fee event from all three chain layers to the
+  correct destination (block producer / treasury / burn sink) using configurable basis-point splits:
+
+  | Fee source         | Producer | Treasury | Burn | Track            |
+  |--------------------|----------|----------|------|------------------|
+  | L1 UTXO (TALN)     | 80 %     | 15 %     | 5 %  | CORE_DEVELOPMENT |
+  | L2 validator (DRM) | 70 %     | 20 %     | 10 % | OPERATIONS       |
+  | L3 base fee (OBL)  |  0 %     | 50 %     | 50 % | GRANTS           |
+  | L3 priority tip    | 100 %    |  0 %     |  0 % | –                |
+  | Bridge fees        |  0 %     | 100 %    |  0 % | OPERATIONS       |
+  | Protocol fees      |  0 %     | 100 %    |  0 % | UNCATEGORIZED    |
+
+  Rounding remainder goes to burn so amounts always sum exactly to total fee (no satoshi leakage).
+  All routes log to `GovernanceEventLog` and update cumulative `SourceStats`.
+
 #### Remaining work
-- Persist proposals, Boule council, and ostracism records to LevelDB/RocksDB.
-- Wire `UpdateBlockHeight()` into the consensus layer so it advances automatically.
+- Persist all governance state (proposals, Boule council, ostracism records, stake, treasury
+  balances) to LevelDB/RocksDB so state survives restarts.
+- Wire `UpdateBlockHeight()` and `FeeRouter::Route()` calls into the consensus/mining layer
+  so they advance automatically on every mined block.
 - Implement actual per-`ProposalType` execution handlers (currently placeholder).
-- Add RPC and CLI endpoints for proposal creation, voting, Boule review, and ostracism queries.
-- Integrate voter eligibility against ledger stake (token balance → raw voting_power).
-- Complete the enterprise `ConsortiumManager` (permissioned.h) and link to `VotingSystem`.
+- Add RPC and CLI endpoints for proposal creation, voting, Boule review, ostracism queries,
+  treasury balance checks, and fee-route configuration.
+- Integrate voter eligibility against ledger stake: call `StakingRegistry::GetVotingPower()`
+  to derive the `voting_power` argument passed to `VotingSystem::CastVote()`.
 - Replace LCG in `Boule::ConductSortition` with a VRF for cryptographic sortition.
+- Complete the enterprise `ConsortiumManager` (permissioned.h) and link to `VotingSystem`.
 
 ## Definition of done for “production-ready”
 

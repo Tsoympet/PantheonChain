@@ -11,6 +11,16 @@ add_library(parthenon_governance
     ostracism.h
     params.cpp
     params.h
+    treasury.cpp
+    treasury.h
+    staking.cpp
+    staking.h
+    emergency.cpp
+    emergency.h
+    eventlog.cpp
+    eventlog.h
+    fee_router.cpp
+    fee_router.h
 )
 
 target_include_directories(parthenon_governance PUBLIC
