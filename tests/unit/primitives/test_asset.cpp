@@ -181,6 +181,47 @@ void TestAssetConservation() {
     std::cout << "  ✓ Passed (assets cannot be mixed)" << std::endl;
 }
 
+void TestAchievableSupply() {
+    std::cout << "Test: Achievable supply constants" << std::endl;
+
+    // Achievable supply must never exceed the hard cap
+    assert(AssetSupply::TALN_ACHIEVABLE_SUPPLY <= AssetSupply::TALN_MAX_SUPPLY);
+    assert(AssetSupply::DRM_ACHIEVABLE_SUPPLY  <= AssetSupply::DRM_MAX_SUPPLY);
+    assert(AssetSupply::OBL_ACHIEVABLE_SUPPLY  <= AssetSupply::OBL_MAX_SUPPLY);
+
+    // TALN: perfectly calibrated (50 * 210000 * 2 = 21,000,000 == cap)
+    assert(AssetSupply::TALN_ACHIEVABLE_SUPPLY == AssetSupply::TALN_MAX_SUPPLY);
+    assert(AssetSupply::TALN_ACHIEVABLE_SUPPLY == 21000000ULL * AssetSupply::BASE_UNIT);
+
+    // DRM: achievable 40,740,000 < hard cap 41,000,000 (gap = 260,000 DRM)
+    assert(AssetSupply::DRM_ACHIEVABLE_SUPPLY == 40740000ULL * AssetSupply::BASE_UNIT);
+    assert(AssetSupply::DRM_MAX_SUPPLY - AssetSupply::DRM_ACHIEVABLE_SUPPLY ==
+           260000ULL * AssetSupply::BASE_UNIT);
+
+    // OBL: achievable 60,900,000 < hard cap 61,000,000 (gap = 100,000 OBL)
+    assert(AssetSupply::OBL_ACHIEVABLE_SUPPLY == 60900000ULL * AssetSupply::BASE_UNIT);
+    assert(AssetSupply::OBL_MAX_SUPPLY - AssetSupply::OBL_ACHIEVABLE_SUPPLY ==
+           100000ULL * AssetSupply::BASE_UNIT);
+
+    // GetAchievableSupply() mirrors the per-asset constants
+    assert(AssetSupply::GetAchievableSupply(AssetID::TALANTON) ==
+           AssetSupply::TALN_ACHIEVABLE_SUPPLY);
+    assert(AssetSupply::GetAchievableSupply(AssetID::DRACHMA) ==
+           AssetSupply::DRM_ACHIEVABLE_SUPPLY);
+    assert(AssetSupply::GetAchievableSupply(AssetID::OBOLOS) ==
+           AssetSupply::OBL_ACHIEVABLE_SUPPLY);
+
+    std::cout << "  DRM achievable: "
+              << AssetSupply::DRM_ACHIEVABLE_SUPPLY / AssetSupply::BASE_UNIT
+              << " DRM  (cap: " << AssetSupply::DRM_MAX_SUPPLY / AssetSupply::BASE_UNIT << ")"
+              << std::endl;
+    std::cout << "  OBL achievable: "
+              << AssetSupply::OBL_ACHIEVABLE_SUPPLY / AssetSupply::BASE_UNIT
+              << " OBL  (cap: " << AssetSupply::OBL_MAX_SUPPLY / AssetSupply::BASE_UNIT << ")"
+              << std::endl;
+    std::cout << "  ✓ Passed (achievable supply correctly bounded by caps)" << std::endl;
+}
+
 void TestSupplyEnforcement() {
     std::cout << "Test: Supply cap enforcement" << std::endl;
 
@@ -223,6 +264,7 @@ int main() {
         TestAssetAmountValidation();
         TestAssetAmountSerialization();
         TestAssetConservation();
+        TestAchievableSupply();
         TestSupplyEnforcement();
 
         std::cout << std::endl;

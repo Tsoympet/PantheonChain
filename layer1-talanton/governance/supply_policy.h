@@ -45,9 +45,26 @@ class SupplyPolicy {
 
     static constexpr uint64_t BASE_UNIT         = 100'000'000ULL;
 
+    // Hard consensus limits – no transaction may reference more than this.
     static constexpr uint64_t TALN_MAX_SUPPLY   =  21'000'000ULL * BASE_UNIT;
     static constexpr uint64_t DRM_MAX_SUPPLY    =  41'000'000ULL * BASE_UNIT;
     static constexpr uint64_t OBL_MAX_SUPPLY    =  61'000'000ULL * BASE_UNIT;
+
+    // Achievable supply: the actual issuance ceiling from the halving schedule.
+    // Formula: initial_block_reward × HALVING_INTERVAL × 2
+    //
+    //  Asset   reward/block   achievable          cap      gap
+    //  ─────── ──────────── ──────────────── ──────────── ──────────
+    //  TALN    50 TALN       21 000 000 TALN  21 000 000  ~0 TALN
+    //  DRM     97 DRM        40 740 000 DRM   41 000 000  260 000 DRM
+    //  OBL    145 OBL        60 900 000 OBL   61 000 000  100 000 OBL
+    //
+    // Governance tiers use ACHIEVABLE_SUPPLY so quorum, whale-cap, and
+    // treasury-ceiling thresholds are calibrated to tokens that can actually
+    // be in circulation, not to the never-reachable 41M / 61M hard limits.
+    static constexpr uint64_t TALN_ACHIEVABLE_SUPPLY =  21'000'000ULL * BASE_UNIT;
+    static constexpr uint64_t DRM_ACHIEVABLE_SUPPLY  =  40'740'000ULL * BASE_UNIT;
+    static constexpr uint64_t OBL_ACHIEVABLE_SUPPLY  =  60'900'000ULL * BASE_UNIT;
 
     // ------------------------------------------------------------------ //
     //  Canonical governance tier basis-points                              //
@@ -59,22 +76,24 @@ class SupplyPolicy {
 
     // ------------------------------------------------------------------ //
     //  Pre-computed absolute thresholds (base units)                       //
+    //  Derived from ACHIEVABLE_SUPPLY so percentages reflect tokens that   //
+    //  can actually circulate.                                             //
     // ------------------------------------------------------------------ //
 
-    // --- TALN ---
-    static constexpr uint64_t TALN_TIER_LOW   = TALN_MAX_SUPPLY / 100 *  5;  //  1 050 000 TALN
-    static constexpr uint64_t TALN_TIER_MID   = TALN_MAX_SUPPLY / 100 * 10;  //  2 100 000 TALN
-    static constexpr uint64_t TALN_TIER_HIGH  = TALN_MAX_SUPPLY / 100 * 50;  // 10 500 000 TALN
+    // --- TALN (achievable == cap: 21 000 000 TALN) ---
+    static constexpr uint64_t TALN_TIER_LOW   = TALN_ACHIEVABLE_SUPPLY / 100 *  5;  //  1 050 000 TALN
+    static constexpr uint64_t TALN_TIER_MID   = TALN_ACHIEVABLE_SUPPLY / 100 * 10;  //  2 100 000 TALN
+    static constexpr uint64_t TALN_TIER_HIGH  = TALN_ACHIEVABLE_SUPPLY / 100 * 50;  // 10 500 000 TALN
 
-    // --- DRM ---
-    static constexpr uint64_t DRM_TIER_LOW    = DRM_MAX_SUPPLY  / 100 *  5;  //  2 050 000 DRM
-    static constexpr uint64_t DRM_TIER_MID    = DRM_MAX_SUPPLY  / 100 * 10;  //  4 100 000 DRM
-    static constexpr uint64_t DRM_TIER_HIGH   = DRM_MAX_SUPPLY  / 100 * 50;  // 20 500 000 DRM
+    // --- DRM (achievable = 40 740 000 < 41 M cap) ---
+    static constexpr uint64_t DRM_TIER_LOW    = DRM_ACHIEVABLE_SUPPLY  / 100 *  5;  //  2 037 000 DRM
+    static constexpr uint64_t DRM_TIER_MID    = DRM_ACHIEVABLE_SUPPLY  / 100 * 10;  //  4 074 000 DRM
+    static constexpr uint64_t DRM_TIER_HIGH   = DRM_ACHIEVABLE_SUPPLY  / 100 * 50;  // 20 370 000 DRM
 
-    // --- OBL ---
-    static constexpr uint64_t OBL_TIER_LOW    = OBL_MAX_SUPPLY  / 100 *  5;  //  3 050 000 OBL
-    static constexpr uint64_t OBL_TIER_MID    = OBL_MAX_SUPPLY  / 100 * 10;  //  6 100 000 OBL
-    static constexpr uint64_t OBL_TIER_HIGH   = OBL_MAX_SUPPLY  / 100 * 50;  // 30 500 000 OBL
+    // --- OBL (achievable = 60 900 000 < 61 M cap) ---
+    static constexpr uint64_t OBL_TIER_LOW    = OBL_ACHIEVABLE_SUPPLY  / 100 *  5;  //  3 045 000 OBL
+    static constexpr uint64_t OBL_TIER_MID    = OBL_ACHIEVABLE_SUPPLY  / 100 * 10;  //  6 090 000 OBL
+    static constexpr uint64_t OBL_TIER_HIGH   = OBL_ACHIEVABLE_SUPPLY  / 100 * 50;  // 30 450 000 OBL
 
     // ------------------------------------------------------------------ //
     //  Runtime helpers                                                      //
