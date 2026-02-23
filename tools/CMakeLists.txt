@@ -18,3 +18,7 @@ target_link_libraries(parthenon_mobile_sdk PUBLIC
     OpenSSL::Crypto
     Threads::Threads
 )
+
+if(WIN32)
+    target_link_libraries(parthenon_mobile_sdk PUBLIC ws2_32)
+endif()
