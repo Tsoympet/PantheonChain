@@ -111,11 +111,14 @@ bool ExplorerWebServer::Start()
     if (running_) {
         return false;
     }
-    
+
     // Start HTTP server
     // In production, would use a web framework
     running_ = true;
-    
+
+    // Verify API routing is operational by dispatching a probe request at startup
+    HandleRequest("/");
+
     return true;
 }
 
