@@ -13,14 +13,14 @@ jobs:
   placeholder-gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Placeholder gate
         run: ./scripts/placeholder-gate.sh
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install deps
         run: |
           sudo apt-get update
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install deps
         run: |
           sudo apt-get update
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install deps
         run: |
           sudo apt-get update
@@ -92,6 +92,6 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Lint
         run: ./scripts/lint.sh
