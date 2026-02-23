@@ -1,5 +1,8 @@
 #include "voting.h"
 
+#include "../core/crypto/schnorr.h"
+#include "../core/crypto/sha256.h"
+
 #include <algorithm>
 
 namespace parthenon {
@@ -69,8 +72,34 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
         return false;
     }
 
-    // Verify signature (simplified)
-    if (signature.empty()) {
+    // Verify Schnorr signature over canonical vote payload.
+    if (signature.size() != crypto::Schnorr::SIGNATURE_SIZE ||
+        voter.size() != crypto::Schnorr::PUBLIC_KEY_SIZE) {
+        return false;
+    }
+
+    std::vector<uint8_t> payload;
+    payload.reserve(8 + voter.size() + 1 + 8);
+
+    auto append_u64_le = [&payload](uint64_t value) {
+        for (size_t i = 0; i < 8; ++i) {
+            payload.push_back(static_cast<uint8_t>((value >> (8 * i)) & 0xFF));
+        }
+    };
+
+    append_u64_le(proposal_id);
+    payload.insert(payload.end(), voter.begin(), voter.end());
+    payload.push_back(static_cast<uint8_t>(choice));
+    append_u64_le(voting_power);
+
+    const auto vote_hash = crypto::SHA256::Hash256(payload.data(), payload.size());
+    crypto::Schnorr::PublicKey voter_pubkey{};
+    std::copy(voter.begin(), voter.end(), voter_pubkey.begin());
+
+    crypto::Schnorr::Signature schnorr_sig{};
+    std::copy(signature.begin(), signature.end(), schnorr_sig.begin());
+
+    if (!crypto::Schnorr::Verify(voter_pubkey, vote_hash.data(), schnorr_sig)) {
         return false;
     }
 

@@ -4,5 +4,6 @@
 add_subdirectory(core)
 add_subdirectory(settlement)
 add_subdirectory(identity)
+add_subdirectory(governance)
 add_subdirectory(rpc)
 add_subdirectory(wallet)

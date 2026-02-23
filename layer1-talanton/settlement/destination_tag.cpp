@@ -1,6 +1,5 @@
 #include "destination_tag.h"
 
-#include <cstring>
 
 namespace parthenon {
 namespace settlement {
@@ -82,13 +81,54 @@ bool TagValidator::ValidateMemo(const std::string& memo) {
         return false;
     }
 
-    // Check for valid UTF-8 characters (simplified: printable ASCII)
-    for (char c : memo) {
-        if (c < 32 || c > 126) {
-            if (c != '\n' && c != '\r' && c != '\t') {
+    // Validate strict UTF-8 byte sequences.
+    for (size_t i = 0; i < memo.size();) {
+        const uint8_t c = static_cast<uint8_t>(memo[i]);
+
+        if (c <= 0x7F) {
+            ++i;
+            continue;
+        }
+
+        size_t len = 0;
+        uint32_t codepoint = 0;
+
+        if ((c & 0xE0) == 0xC0) {
+            len = 2;
+            codepoint = c & 0x1F;
+            if (codepoint == 0) {
+                return false;  // Overlong encoding.
+            }
+        } else if ((c & 0xF0) == 0xE0) {
+            len = 3;
+            codepoint = c & 0x0F;
+        } else if ((c & 0xF8) == 0xF0) {
+            len = 4;
+            codepoint = c & 0x07;
+        } else {
+            return false;
+        }
+
+        if (i + len > memo.size()) {
+            return false;
+        }
+
+        for (size_t j = 1; j < len; ++j) {
+            const uint8_t cont = static_cast<uint8_t>(memo[i + j]);
+            if ((cont & 0xC0) != 0x80) {
                 return false;
             }
+            codepoint = (codepoint << 6) | (cont & 0x3F);
         }
+
+        // Reject overlong forms, UTF-16 surrogate range and values above Unicode max.
+        if ((len == 2 && codepoint < 0x80) || (len == 3 && codepoint < 0x800) ||
+            (len == 4 && codepoint < 0x10000) || codepoint > 0x10FFFF ||
+            (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+            return false;
+        }
+
+        i += len;
     }
 
     return true;
