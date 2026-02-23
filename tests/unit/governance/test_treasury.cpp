@@ -13,18 +13,18 @@ static std::vector<uint8_t> Addr(uint8_t b) { return std::vector<uint8_t>(32, b)
 void TestDepositAndBalance() {
     std::cout << "Test: Deposit and per-track balance" << std::endl;
 
-    Treasury t(2, 0);  // no reserve enforcement
+    Treasury t(2, 0); // no reserve enforcement
 
     assert(t.GetTotalBalance() == 0);
     assert(t.Deposit(1000, Addr(0x01), Treasury::Track::CORE_DEVELOPMENT, 1));
-    assert(t.Deposit(500,  Addr(0x02), Treasury::Track::GRANTS, 1));
-    assert(t.Deposit(200,  Addr(0x03), Treasury::Track::EMERGENCY, 1));
+    assert(t.Deposit(500, Addr(0x02), Treasury::Track::GRANTS, 1));
+    assert(t.Deposit(200, Addr(0x03), Treasury::Track::EMERGENCY, 1));
 
-    assert(t.GetTotalBalance()                            == 1700);
+    assert(t.GetTotalBalance() == 1700);
     assert(t.GetTrackBalance(Treasury::Track::CORE_DEVELOPMENT) == 1000);
-    assert(t.GetTrackBalance(Treasury::Track::GRANTS)           == 500);
-    assert(t.GetTrackBalance(Treasury::Track::EMERGENCY)        == 200);
-    assert(t.GetReserveBalance()                          == 200);
+    assert(t.GetTrackBalance(Treasury::Track::GRANTS) == 500);
+    assert(t.GetTrackBalance(Treasury::Track::EMERGENCY) == 200);
+    assert(t.GetReserveBalance() == 200);
 
     // Zero-amount deposit must fail
     assert(!t.Deposit(0, Addr(0x01), Treasury::Track::OPERATIONS, 1));
@@ -81,7 +81,7 @@ void TestReserveRatio() {
 void TestMultiSigSpend() {
     std::cout << "Test: Multi-sig EMERGENCY spending" << std::endl;
 
-    Treasury t(2, 0);  // require 2 signatures
+    Treasury t(2, 0); // require 2 signatures
     t.AddGuardian(Addr(0xA1));
     t.AddGuardian(Addr(0xA2));
     t.AddGuardian(Addr(0xA3));
@@ -94,7 +94,7 @@ void TestMultiSigSpend() {
     assert(sid > 0);
 
     // A1 is already initiator (counts as sig), so 1 sig so far
-    assert(!t.HasSufficientSignatures(sid));  // need 2
+    assert(!t.HasSufficientSignatures(sid)); // need 2
 
     // A2 signs → now 2 sigs, sufficient
     assert(t.SignMultiSigSpend(sid, Addr(0xA2)));
@@ -135,7 +135,7 @@ void TestBudgetPeriod() {
     assert(t.Spend(700, Addr(0x02), 2, Treasury::Track::CORE_DEVELOPMENT, "dev", 150));
 
     // Now 300 headroom left
-    assert( t.IsWithinBudget(Treasury::Track::CORE_DEVELOPMENT, 300, 150));
+    assert(t.IsWithinBudget(Treasury::Track::CORE_DEVELOPMENT, 300, 150));
     assert(!t.IsWithinBudget(Treasury::Track::CORE_DEVELOPMENT, 301, 150));
 
     // Cannot create period without proposal
@@ -151,13 +151,12 @@ void TestMilestoneGrant() {
     t.Deposit(3000, Addr(0x01), Treasury::Track::GRANTS, 1);
 
     std::vector<std::pair<std::string, uint64_t>> milestones = {
-        {"M1: Design",        500},
+        {"M1: Design", 500},
         {"M2: Implementation", 1000},
-        {"M3: Audit",          500},
+        {"M3: Audit", 500},
     };
 
-    uint64_t gid = t.CreateGrant(/*proposal_id=*/1, Addr(0xBB), "protocol v2",
-                                 milestones, 10);
+    uint64_t gid = t.CreateGrant(/*proposal_id=*/1, Addr(0xBB), "protocol v2", milestones, 10);
     assert(gid > 0);
 
     // Balance reduced by total (2000)
@@ -214,12 +213,12 @@ void TestGuardianManagement() {
 
     assert(t.AddGuardian(Addr(0x01)));
     assert(t.IsGuardian(Addr(0x01)));
-    assert(!t.AddGuardian(Addr(0x01)));  // duplicate
-    assert(!t.AddGuardian({}));           // empty addr
+    assert(!t.AddGuardian(Addr(0x01))); // duplicate
+    assert(!t.AddGuardian({}));         // empty addr
 
     assert(t.RemoveGuardian(Addr(0x01)));
     assert(!t.IsGuardian(Addr(0x01)));
-    assert(!t.RemoveGuardian(Addr(0x01)));  // already removed
+    assert(!t.RemoveGuardian(Addr(0x01))); // already removed
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -244,7 +243,7 @@ int main() {
         std::cout << "All Treasury tests passed! \u2713" << std::endl;
         std::cout << "=============================================" << std::endl;
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed: " << e.what() << std::endl;
         return 1;
     } catch (...) {
