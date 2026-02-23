@@ -70,10 +70,8 @@ void TestReserveRatio() {
     // Spending another 200 from OPERATIONS: total=700, emergency=200 (28%) → OK
     assert(t.Spend(200, Addr(0x03), 2, Treasury::Track::OPERATIONS, "test", 5));
 
-    // Spending 400 more from OPERATIONS (balance=300): would leave total=300,
-    // emergency=200 (67%) → OK actually (emergency percentage higher, reserve is maintained)
-    // But spending ALL remaining OPERATIONS (300): total=200, emergency=200 (100%) → OK
-    assert(t.Spend(300, Addr(0x03), 3, Treasury::Track::OPERATIONS, "drain ops", 5));
+    // Spending ALL remaining OPERATIONS (500): total=200, emergency=200 (100%) → OK
+    assert(t.Spend(500, Addr(0x03), 3, Treasury::Track::OPERATIONS, "drain ops", 5));
     // Only emergency left
     assert(t.GetTrackBalance(Treasury::Track::OPERATIONS) == 0);
 

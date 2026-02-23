@@ -5,10 +5,26 @@
 #include "crypto/schnorr.h"
 #include "crypto/sha256.h"
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#ifdef _WIN32
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+using SockType = SOCKET;
+using SockSizeT = int;
+#  define kInvalidSock INVALID_SOCKET
+#  define CloseSocket(s) closesocket(s)
+#else
+#  include <arpa/inet.h>
+#  include <netdb.h>
+#  include <sys/socket.h>
+#  include <unistd.h>
+using SockType = int;
+using SockSizeT = ssize_t;
+#  define kInvalidSock (-1)
+#  define CloseSocket(s) close(s)
+#endif
 #include <nlohmann/json.hpp>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -55,6 +71,14 @@ struct ParsedEndpoint {
 
 std::atomic<uint64_t> g_request_id{1};
 std::mutex g_storage_mutex;
+
+#ifdef _WIN32
+struct WsaInit {
+    WsaInit()  { WSADATA d; (void)WSAStartup(MAKEWORD(2, 2), &d); }
+    ~WsaInit() { WSACleanup(); }
+};
+static WsaInit wsa_init;
+#endif
 
 std::string BytesToHex(const uint8_t* data, size_t size) {
     std::ostringstream ss;
@@ -132,13 +156,6 @@ bool FillRandomBytes(uint8_t* data, size_t size) {
         return true;
     }
     return RAND_bytes(data, static_cast<int>(size)) == 1;
-}
-
-crypto::Schnorr::PrivateKey DerivePrivateKey(const std::vector<uint8_t>& entropy) {
-    auto hash = crypto::SHA256::Hash256(entropy);
-    crypto::Schnorr::PrivateKey privkey{};
-    std::copy(hash.begin(), hash.end(), privkey.begin());
-    return privkey;
 }
 
 bool PopulatePrivateKey(crypto::Schnorr::PrivateKey& privkey) {
@@ -233,21 +250,21 @@ std::optional<std::string> HttpPost(const ParsedEndpoint& endpoint, const std::s
         return std::nullopt;
     }
 
-    int sock = -1;
+    SockType sock = kInvalidSock;
     for (addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
         sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sock == -1) {
+        if (sock == kInvalidSock) {
             continue;
         }
         if (connect(sock, rp->ai_addr, rp->ai_addrlen) == 0) {
             break;
         }
-        close(sock);
-        sock = -1;
+        CloseSocket(sock);
+        sock = kInvalidSock;
     }
     freeaddrinfo(result);
 
-    if (sock == -1) {
+    if (sock == kInvalidSock) {
         error = "Unable to connect to RPC endpoint";
         return std::nullopt;
     }
@@ -261,11 +278,12 @@ std::optional<std::string> HttpPost(const ParsedEndpoint& endpoint, const std::s
     request << body;
     std::string request_data = request.str();
 
-    ssize_t sent = 0;
-    while (sent < static_cast<ssize_t>(request_data.size())) {
-        ssize_t chunk = send(sock, request_data.data() + sent, request_data.size() - sent, 0);
+    SockSizeT sent = 0;
+    while (sent < static_cast<SockSizeT>(request_data.size())) {
+        SockSizeT chunk = send(sock, request_data.data() + sent,
+                               static_cast<int>(request_data.size() - static_cast<size_t>(sent)), 0);
         if (chunk <= 0) {
-            close(sock);
+            CloseSocket(sock);
             error = "Failed to send RPC request";
             return std::nullopt;
         }
@@ -274,11 +292,11 @@ std::optional<std::string> HttpPost(const ParsedEndpoint& endpoint, const std::s
 
     std::string response;
     char buffer[4096];
-    ssize_t bytes = 0;
-    while ((bytes = recv(sock, buffer, sizeof(buffer), 0)) > 0) {
+    SockSizeT bytes = 0;
+    while ((bytes = recv(sock, buffer, static_cast<int>(sizeof(buffer)), 0)) > 0) {
         response.append(buffer, static_cast<size_t>(bytes));
     }
-    close(sock);
+    CloseSocket(sock);
 
     if (response.empty()) {
         error = "Empty RPC response";
