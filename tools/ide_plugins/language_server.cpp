@@ -26,7 +26,7 @@ std::vector<Diagnostic> ContractAnalyzer::Analyze(const std::string& source_code
 
 std::vector<Diagnostic> ContractAnalyzer::CheckSecurity(const std::string& source_code) {
     std::vector<Diagnostic> diagnostics;
-    
+
     if (CheckReentrancy(source_code)) {
         Diagnostic diag;
         diag.message = "Potential reentrancy vulnerability detected";
@@ -34,7 +34,23 @@ std::vector<Diagnostic> ContractAnalyzer::CheckSecurity(const std::string& sourc
         diag.code = "S001";
         diagnostics.push_back(diag);
     }
-    
+
+    if (CheckOverflow(source_code)) {
+        Diagnostic diag;
+        diag.message = "Potential integer overflow: arithmetic without SafeMath detected";
+        diag.severity = DiagnosticSeverity::WARNING;
+        diag.code = "S002";
+        diagnostics.push_back(diag);
+    }
+
+    if (CheckAccessControl(source_code)) {
+        Diagnostic diag;
+        diag.message = "Missing access control: no onlyOwner, msg.sender, or require() found";
+        diag.severity = DiagnosticSeverity::WARNING;
+        diag.code = "S003";
+        diagnostics.push_back(diag);
+    }
+
     return diagnostics;
 }
 
@@ -146,7 +162,21 @@ std::vector<CompletionItem> CompletionProvider::GetCompletions(
             items.push_back(kw);
         }
     }
-    
+
+    // Add type completions that match the prefix
+    for (auto& tc : GetTypeCompletions()) {
+        if (prefix.empty() || tc.label.rfind(prefix, 0) == 0) {
+            items.push_back(tc);
+        }
+    }
+
+    // Add function completions that match the prefix
+    for (auto& fc : GetFunctionCompletions()) {
+        if (prefix.empty() || fc.label.rfind(prefix, 0) == 0) {
+            items.push_back(fc);
+        }
+    }
+
     return items;
 }
 

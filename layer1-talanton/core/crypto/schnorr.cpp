@@ -51,19 +51,23 @@ std::optional<Schnorr::PublicKey> Schnorr::GetPublicKey(const PrivateKey& privke
 
     secp256k1_keypair keypair;
     if (!secp256k1_keypair_create(ctx, &keypair, privkey.data())) {
+        CleanupContext();
         return std::nullopt;
     }
 
     secp256k1_xonly_pubkey xonly_pubkey;
     if (!secp256k1_keypair_xonly_pub(ctx, &xonly_pubkey, nullptr, &keypair)) {
+        CleanupContext();
         return std::nullopt;
     }
 
     PublicKey pubkey;
     if (!secp256k1_xonly_pubkey_serialize(ctx, pubkey.data(), &xonly_pubkey)) {
+        CleanupContext();
         return std::nullopt;
     }
 
+    CleanupContext();
     return pubkey;
 }
 
@@ -77,14 +81,17 @@ std::optional<Schnorr::Signature> Schnorr::Sign(const PrivateKey& privkey, const
 
     secp256k1_keypair keypair;
     if (!secp256k1_keypair_create(ctx, &keypair, privkey.data())) {
+        CleanupContext();
         return std::nullopt;
     }
 
     Signature signature;
     if (!secp256k1_schnorrsig_sign32(ctx, signature.data(), msg_hash, &keypair, aux_rand)) {
+        CleanupContext();
         return std::nullopt;
     }
 
+    CleanupContext();
     return signature;
 }
 
@@ -97,22 +104,29 @@ bool Schnorr::Verify(const PublicKey& pubkey, const uint8_t* msg_hash, const Sig
 
     secp256k1_xonly_pubkey xonly_pubkey;
     if (!secp256k1_xonly_pubkey_parse(ctx, &xonly_pubkey, pubkey.data())) {
+        CleanupContext();
         return false;
     }
 
-    return secp256k1_schnorrsig_verify(ctx, signature.data(), msg_hash, 32, &xonly_pubkey) == 1;
+    bool result = secp256k1_schnorrsig_verify(ctx, signature.data(), msg_hash, 32, &xonly_pubkey) == 1;
+    CleanupContext();
+    return result;
 }
 
 bool Schnorr::ValidatePrivateKey(const PrivateKey& privkey) {
     auto ctx = static_cast<secp256k1_context*>(GetContext());
-    return secp256k1_ec_seckey_verify(ctx, privkey.data()) == 1;
+    bool result = secp256k1_ec_seckey_verify(ctx, privkey.data()) == 1;
+    CleanupContext();
+    return result;
 }
 
 bool Schnorr::ValidatePublicKey(const PublicKey& pubkey) {
     auto ctx = static_cast<secp256k1_context*>(GetContext());
 
     secp256k1_xonly_pubkey xonly_pubkey;
-    return secp256k1_xonly_pubkey_parse(ctx, &xonly_pubkey, pubkey.data()) == 1;
+    bool result = secp256k1_xonly_pubkey_parse(ctx, &xonly_pubkey, pubkey.data()) == 1;
+    CleanupContext();
+    return result;
 }
 
 }  // namespace crypto

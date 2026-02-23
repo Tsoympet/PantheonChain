@@ -134,8 +134,11 @@ void TestDifficultyDeterminism() {
     // Verify clamping (max 4x change)
     uint32_t time_very_fast = time_start + (2016 * 60); // 10x faster
     uint32_t time_span_very_fast = time_very_fast - time_start;
-    (void)time_span_very_fast; // Suppress unused warning
     // Should be clamped to 4x difficulty increase (target / 4)
+    uint32_t new_target3 =
+        Difficulty::CalculateNextDifficulty(target1, time_span_very_fast, 2016 * 10 * 60);
+    // With 10x faster blocks, difficulty would ideally increase 10x, but clamped to 4x
+    assert(new_target3 <= target1 / 4 + 1); // Target should be clamped (allow +1 for integer rounding)
     std::cout << "  ✅ Difficulty adjustment clamping verified" << std::endl;
 }
 

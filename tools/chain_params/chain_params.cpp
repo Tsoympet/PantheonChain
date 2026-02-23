@@ -25,9 +25,9 @@ const ChainParams MAINNET_PARAMS = {
     8332,  // RPC port
     600,   // 10 minutes
     2016,  // ~2 weeks
-    21000000 * 100000000,  // 21M TALANTON
-    41000000 * 100000000,  // 41M DRACHMA
-    61000000 * 100000000   // 61M OBOLOS
+    21000000ULL * 100000000ULL,  // 21M TALANTON
+    41000000ULL * 100000000ULL,  // 41M DRACHMA
+    61000000ULL * 100000000ULL   // 61M OBOLOS
 };
 
 const ChainParams TESTNET_PARAMS = {
@@ -36,9 +36,9 @@ const ChainParams TESTNET_PARAMS = {
     18332,  // RPC port
     600,    // 10 minutes
     2016,   // ~2 weeks
-    21000000 * 100000000,
-    41000000 * 100000000,
-    61000000 * 100000000
+    21000000ULL * 100000000ULL,
+    41000000ULL * 100000000ULL,
+    61000000ULL * 100000000ULL
 };
 
 const ChainParams REGTEST_PARAMS = {
@@ -47,9 +47,9 @@ const ChainParams REGTEST_PARAMS = {
     18443,  // RPC port
     1,      // 1 second (instant blocks)
     144,    // Faster adjustment
-    21000000 * 100000000,
-    41000000 * 100000000,
-    61000000 * 100000000
+    21000000ULL * 100000000ULL,
+    41000000ULL * 100000000ULL,
+    61000000ULL * 100000000ULL
 };
 
 void PrintParams(const ChainParams& params) {
