@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <stdexcept>
 
 using namespace parthenon::governance;
 
@@ -18,9 +19,11 @@ static std::vector<uint8_t> Addr(uint8_t b) { return std::vector<uint8_t>(32, b)
 // Helper: check split arithmetic sums to total_fee
 // ---------------------------------------------------------------------------
 static void AssertSplitExact(const FeeRouter::RouteResult &r) {
-    [[maybe_unused]] auto ok =
-        (r.producer_amount + r.treasury_amount + r.burn_amount == r.total_fee);
-    assert(ok);
+    const auto sum = r.producer_amount + r.treasury_amount + r.burn_amount;
+    if (sum != r.total_fee) {
+        throw std::logic_error("Fee split sum " + std::to_string(sum) + " != total_fee " +
+                               std::to_string(r.total_fee));
+    }
 }
 
 // ---------------------------------------------------------------------------
