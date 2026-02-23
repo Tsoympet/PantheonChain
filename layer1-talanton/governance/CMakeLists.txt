@@ -3,6 +3,14 @@ cmake_minimum_required(VERSION 3.14)
 add_library(parthenon_governance
     voting.cpp
     voting.h
+    antiwhale.cpp
+    antiwhale.h
+    boule.cpp
+    boule.h
+    ostracism.cpp
+    ostracism.h
+    params.cpp
+    params.h
 )
 
 target_include_directories(parthenon_governance PUBLIC

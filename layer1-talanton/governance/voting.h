@@ -1,6 +1,8 @@
 #ifndef PARTHENON_GOVERNANCE_VOTING_H
 #define PARTHENON_GOVERNANCE_VOTING_H
 
+#include "antiwhale.h"
+
 #include <array>
 #include <cstdint>
 #include <map>
@@ -11,6 +13,10 @@
 namespace parthenon {
 namespace governance {
 
+// Forward declare so VotingSystem can optionally reference Boule without
+// creating a circular dependency between voting.h and boule.h.
+class Boule;
+
 /**
  * Proposal Type
  */
@@ -18,7 +24,9 @@ enum class ProposalType {
     PARAMETER_CHANGE,   // Change blockchain parameter
     TREASURY_SPENDING,  // Spend from treasury
     PROTOCOL_UPGRADE,   // Upgrade protocol
-    GENERAL             // General governance decision
+    GENERAL,            // General governance decision
+    CONSTITUTIONAL,     // Requires supermajority; cannot be emergency-tracked
+    EMERGENCY           // Fast-tracked by Prytany; shorter voting period
 };
 
 /**
@@ -63,6 +71,13 @@ struct Proposal {
     uint64_t quorum_requirement;
     uint64_t approval_threshold;  // Percentage (0-100)
 
+    // Proposal deposit (Isegoria – anti-spam)
+    uint64_t deposit_amount;   // tokens locked by proposer
+    bool     deposit_returned; // true once deposit has been returned or slashed
+
+    // Boule screening
+    bool boule_approved;       // true once the Boule has approved this proposal
+
     Proposal()
         : proposal_id(0),
           type(ProposalType::GENERAL),
@@ -75,7 +90,10 @@ struct Proposal {
           no_votes(0),
           abstain_votes(0),
           quorum_requirement(0),
-          approval_threshold(50) {}
+          approval_threshold(50),
+          deposit_amount(0),
+          deposit_returned(false),
+          boule_approved(false) {}
 };
 
 /**
@@ -103,10 +121,13 @@ class VotingSystem {
 
     /**
      * Create new proposal
+     * deposit_amount – tokens the proposer locks as anti-spam collateral.
+     *                  Pass 0 when deposits are not enforced.
      */
     uint64_t CreateProposal(const std::vector<uint8_t>& proposer, ProposalType type,
                             const std::string& title, const std::string& description,
-                            const std::vector<uint8_t>& execution_data);
+                            const std::vector<uint8_t>& execution_data,
+                            uint64_t deposit_amount = 0);
 
     /**
      * Get proposal by ID
@@ -155,6 +176,45 @@ class VotingSystem {
     uint64_t GetBlockHeight() const { return current_block_height_; }
 
     /**
+     * Mark a proposal as Boule-approved (called by Boule integration layer).
+     * Returns false if proposal not found.
+     */
+    bool MarkBouleApproved(uint64_t proposal_id);
+
+    /**
+     * Proposal deposit management.
+     * ReturnDeposit – called after PASSED+EXECUTED or when proposal is not rejected.
+     * SlashDeposit  – called when governance decides to punish the proposer (spam/rejection).
+     */
+    bool ReturnDeposit(uint64_t proposal_id);
+    bool SlashDeposit(uint64_t proposal_id);
+
+    /**
+     * Set total token supply so the anti-whale guard can compute percentages.
+     */
+    void SetTotalSupply(uint64_t supply) { total_supply_ = supply; }
+    uint64_t GetTotalSupply() const { return total_supply_; }
+
+    /**
+     * Attach an AntiWhaleGuard. Ownership stays with the caller.
+     * Pass nullptr to detach (voting power passes through unmodified).
+     */
+    void SetAntiWhaleGuard(AntiWhaleGuard* guard) { anti_whale_ = guard; }
+
+    /**
+     * Attach a Boule instance for proposal screening integration.
+     * Pass nullptr to detach.
+     */
+    void SetBoule(Boule* boule) { boule_ = boule; }
+
+    /**
+     * When enabled, CastVote is rejected unless the proposal's
+     * boule_approved flag is set (or a Boule is attached and reports approval).
+     */
+    void SetRequireBouleApproval(bool required) { require_boule_approval_ = required; }
+    bool GetRequireBouleApproval() const { return require_boule_approval_; }
+
+    /**
      * Set voting parameters
      */
     void SetVotingPeriod(uint64_t blocks) { voting_period_ = blocks; }
@@ -174,6 +234,11 @@ class VotingSystem {
     uint64_t voting_period_;
     uint64_t default_quorum_;
     uint64_t default_threshold_;
+    uint64_t total_supply_;
+
+    AntiWhaleGuard* anti_whale_;    // optional, not owned
+    Boule*          boule_;         // optional, not owned
+    bool            require_boule_approval_;
 
     std::map<uint64_t, Proposal> proposals_;
     std::map<uint64_t, std::vector<Vote>> votes_;

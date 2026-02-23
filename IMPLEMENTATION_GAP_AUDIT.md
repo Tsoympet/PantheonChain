@@ -74,28 +74,48 @@ Remaining:
 - Include backup/restore drills, key compromise handling, and release incident procedures.
 
 
-### 6) Governance module hardening
+### 6) Governance module – ancient-Greece model + anti-whale
 
-**Status:** Partially implemented. Unit tests added.
+**Status:** Core complete. Unit tests added (46 tests across 6 suites).
 
-What is now in place:
-- `VotingSystem` manages the full proposal lifecycle (PENDING → ACTIVE → PASSED/REJECTED →
-  EXECUTED/EXPIRED) with Schnorr-authenticated votes (BIP-340), quorum enforcement, configurable
-  voting periods, and double-vote prevention.
-- `TreasuryManager` tracks deposits/withdrawals; withdrawals require a non-zero proposal_id.
-- `DelegationSystem` supports delegation and undelegation of voting power between addresses.
-- `UpdateBlockHeight()` / `GetBlockHeight()` exposed on `VotingSystem` so the consensus layer
-  (and tests) can advance the block counter.
-- Comprehensive unit tests added at `tests/unit/governance/test_governance.cpp` covering all
-  three subsystems.
+#### Ancient-Greece analogy → blockchain mapping
 
-Remaining:
-- Persist proposals and votes to the storage layer (LevelDB/RocksDB) so state survives restarts.
-- Wire `UpdateBlockHeight()` into the consensus layer so block height advances automatically.
-- Implement actual proposal execution handlers per `ProposalType` (currently a no-op placeholder).
-- Add RPC and CLI endpoints for proposal creation, voting, and status queries.
-- Integrate voter eligibility check against the ledger (token balance / stake weight).
-- Complete the enterprise `ConsortiumManager` (permissioned.h) and link it to `VotingSystem`.
+| Ancient Athens              | PantheonChain module / method                     |
+|-----------------------------|---------------------------------------------------|
+| Kleroterion (lot machine)   | `Boule::ConductSortition()` – VRF-style draw      |
+| Boule (Council of 500)      | `Boule` class – randomly-selected review council  |
+| Ekklesia (Assembly)         | `VotingSystem` – all stakers vote on proposals    |
+| Prytany (exec sub-committee)| `Boule::GetPrytany()` – rotating fast-track panel |
+| Graphe Paranomon (challenge)| `Boule::RaiseGrapheParanomon()` – veto mechanism  |
+| Dokimasia (eligibility)     | `Boule::RegisterCitizen()` + min-stake gate       |
+| Ostracism (temporary ban)   | `Ostracism` class – community ban on bad actors   |
+| Isonomia (rule of law)      | `GovernanceParams::kLimits` – constitutional floors|
+| Isegoria (equal voice)      | Proposal deposit (accessible, not prohibitive)    |
+
+#### What is now in place
+- **`antiwhale.h/.cpp`** – `AntiWhaleGuard`: quadratic voting (floor(sqrt)), per-voter hard cap,
+  whale-threshold detection; plugged into `VotingSystem::CastVote()`.
+- **`boule.h/.cpp`** – `Boule`: citizen registry, sortition (Kleroterion), Dokimasia eligibility
+  screening, 2/3-majority proposal review, Graphe Paranomon (unconstitutionality challenge with
+  council vote resolution), Prytany (rotating executive committee).
+- **`ostracism.h/.cpp`** – `Ostracism`: nominate bad actors, community vote, finalized ban,
+  time-limited with automatic rehabilitation path.
+- **`params.h/.cpp`** – `GovernanceParams`: all on-chain governance configuration, proposal-gated
+  updates (proposal_id required), constitutional floors/ceilings (Isonomia), immutable change
+  history, `Defaults()` function.
+- **`voting.h/.cpp`** (extended) – `CONSTITUTIONAL` proposal type (66% threshold, Isonomia),
+  `EMERGENCY` proposal type (Prytany fast-track); proposal deposit fields + `ReturnDeposit` /
+  `SlashDeposit`; `SetAntiWhaleGuard()`, `SetBoule()`, `SetRequireBouleApproval()`,
+  `SetTotalSupply()` integration hooks; `MarkBouleApproved()`.
+
+#### Remaining work
+- Persist proposals, Boule council, and ostracism records to LevelDB/RocksDB.
+- Wire `UpdateBlockHeight()` into the consensus layer so it advances automatically.
+- Implement actual per-`ProposalType` execution handlers (currently placeholder).
+- Add RPC and CLI endpoints for proposal creation, voting, Boule review, and ostracism queries.
+- Integrate voter eligibility against ledger stake (token balance → raw voting_power).
+- Complete the enterprise `ConsortiumManager` (permissioned.h) and link to `VotingSystem`.
+- Replace LCG in `Boule::ConductSortition` with a VRF for cryptographic sortition.
 
 ## Definition of done for “production-ready”
 
