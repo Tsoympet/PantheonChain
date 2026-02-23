@@ -64,8 +64,8 @@ static std::vector<uint8_t> MakeSignature(const Schnorr::PrivateKey &priv, uint6
 }
 
 // Cast a vote with a fresh key seeded by `seed`.
-[[maybe_unused]] static bool CastVote(VotingSystem &vs, uint64_t proposal_id, uint8_t key_seed,
-                                      VoteChoice choice, uint64_t power) {
+static bool CastVote(VotingSystem &vs, uint64_t proposal_id, uint8_t key_seed, VoteChoice choice,
+                     uint64_t power) {
     auto [priv, pub] = MakeKey(key_seed);
     auto voter = PubVec(pub);
     auto sig = MakeSignature(priv, proposal_id, voter, choice, power);
@@ -85,8 +85,10 @@ void TestVetoVoteAccumulates() {
     uint64_t pid = vs.CreateProposal({0x01}, ProposalType::GENERAL, "test", "desc", {});
     vs.UpdateBlockHeight(101); // inside voting window (starts at block 100)
 
-    assert(CastVote(vs, pid, 0x10, VoteChoice::YES, 1000));
-    assert(CastVote(vs, pid, 0x11, VoteChoice::VETO, 500));
+    [[maybe_unused]] bool ok = CastVote(vs, pid, 0x10, VoteChoice::YES, 1000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x11, VoteChoice::VETO, 500);
+    assert(ok);
 
     auto p = vs.GetProposal(pid).value();
     assert(p.yes_votes == 1000);
@@ -109,9 +111,12 @@ void TestVetoThresholdAutoRejects() {
 
     // 6000 YES, 1000 NO, 4000 VETO → total = 11000
     // veto share = 4000/11000 = 36.4 % > 33.34 % → REJECTED
-    assert(CastVote(vs, pid, 0x01, VoteChoice::YES, 6000));
-    assert(CastVote(vs, pid, 0x02, VoteChoice::NO, 1000));
-    assert(CastVote(vs, pid, 0x03, VoteChoice::VETO, 4000));
+    [[maybe_unused]] bool ok = CastVote(vs, pid, 0x01, VoteChoice::YES, 6000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x02, VoteChoice::NO, 1000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x03, VoteChoice::VETO, 4000);
+    assert(ok);
 
     // End voting period
     vs.UpdateBlockHeight(10102); // voting_end = 100 + 10000 = 10100
@@ -135,9 +140,12 @@ void TestYesMajorityPassesWithoutVeto() {
 
     // 7000 YES, 1000 NO, 1000 VETO → veto share = 1000/9000 = 11.1 % < 33.34 %
     // approval = 7000/(7000+1000) = 87.5 % ≥ 50 % → PASSED
-    assert(CastVote(vs, pid, 0x01, VoteChoice::YES, 7000));
-    assert(CastVote(vs, pid, 0x02, VoteChoice::NO, 1000));
-    assert(CastVote(vs, pid, 0x03, VoteChoice::VETO, 1000));
+    [[maybe_unused]] bool ok = CastVote(vs, pid, 0x01, VoteChoice::YES, 7000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x02, VoteChoice::NO, 1000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x03, VoteChoice::VETO, 1000);
+    assert(ok);
 
     vs.UpdateBlockHeight(10102);
     assert(vs.TallyVotes(pid));
@@ -162,8 +170,10 @@ void TestVetoExactlyAtThreshold() {
     // Make veto share exactly = 3334 / 10000:
     //   total = 10000, veto = 3334 → veto*10000 = 33340000 == total*threshold → NOT strictly
     //   greater
-    assert(CastVote(vs, pid, 0x01, VoteChoice::YES, 6666));
-    assert(CastVote(vs, pid, 0x02, VoteChoice::VETO, 3334));
+    [[maybe_unused]] bool ok = CastVote(vs, pid, 0x01, VoteChoice::YES, 6666);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x02, VoteChoice::VETO, 3334);
+    assert(ok);
 
     vs.UpdateBlockHeight(10102);
     assert(vs.TallyVotes(pid));
@@ -224,10 +234,14 @@ void TestVetoWithAbstain() {
 
     // 5000 YES, 2000 NO, 3000 ABSTAIN, 4000 VETO
     // total = 14000; veto share = 4000/14000 = 28.6 % < 33.34 % → NOT triggered
-    assert(CastVote(vs, pid, 0x01, VoteChoice::YES, 5000));
-    assert(CastVote(vs, pid, 0x02, VoteChoice::NO, 2000));
-    assert(CastVote(vs, pid, 0x03, VoteChoice::ABSTAIN, 3000));
-    assert(CastVote(vs, pid, 0x04, VoteChoice::VETO, 4000));
+    [[maybe_unused]] bool ok = CastVote(vs, pid, 0x01, VoteChoice::YES, 5000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x02, VoteChoice::NO, 2000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x03, VoteChoice::ABSTAIN, 3000);
+    assert(ok);
+    ok = CastVote(vs, pid, 0x04, VoteChoice::VETO, 4000);
+    assert(ok);
 
     vs.UpdateBlockHeight(10102);
     assert(vs.TallyVotes(pid));

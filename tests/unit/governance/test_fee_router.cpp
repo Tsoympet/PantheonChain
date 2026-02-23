@@ -17,8 +17,10 @@ static std::vector<uint8_t> Addr(uint8_t b) { return std::vector<uint8_t>(32, b)
 // ---------------------------------------------------------------------------
 // Helper: check split arithmetic sums to total_fee
 // ---------------------------------------------------------------------------
-static void AssertSplitExact([[maybe_unused]] const FeeRouter::RouteResult &r) {
-    assert(r.producer_amount + r.treasury_amount + r.burn_amount == r.total_fee);
+static void AssertSplitExact(const FeeRouter::RouteResult &r) {
+    [[maybe_unused]] auto ok =
+        (r.producer_amount + r.treasury_amount + r.burn_amount == r.total_fee);
+    assert(ok);
 }
 
 // ---------------------------------------------------------------------------
