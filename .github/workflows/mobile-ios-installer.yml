@@ -15,7 +15,7 @@ on:
 jobs:
   build-ios-installer:
     name: Build iOS Simulator Installer
-    runs-on: macos-latest
+    runs-on: macos-14
     permissions:
       contents: read
     defaults:
