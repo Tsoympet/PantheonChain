@@ -73,6 +73,30 @@ Remaining:
 - Complete operator-grade lifecycle/recovery/deployment runbooks.
 - Include backup/restore drills, key compromise handling, and release incident procedures.
 
+
+### 6) Governance module hardening
+
+**Status:** Partially implemented. Unit tests added.
+
+What is now in place:
+- `VotingSystem` manages the full proposal lifecycle (PENDING → ACTIVE → PASSED/REJECTED →
+  EXECUTED/EXPIRED) with Schnorr-authenticated votes (BIP-340), quorum enforcement, configurable
+  voting periods, and double-vote prevention.
+- `TreasuryManager` tracks deposits/withdrawals; withdrawals require a non-zero proposal_id.
+- `DelegationSystem` supports delegation and undelegation of voting power between addresses.
+- `UpdateBlockHeight()` / `GetBlockHeight()` exposed on `VotingSystem` so the consensus layer
+  (and tests) can advance the block counter.
+- Comprehensive unit tests added at `tests/unit/governance/test_governance.cpp` covering all
+  three subsystems.
+
+Remaining:
+- Persist proposals and votes to the storage layer (LevelDB/RocksDB) so state survives restarts.
+- Wire `UpdateBlockHeight()` into the consensus layer so block height advances automatically.
+- Implement actual proposal execution handlers per `ProposalType` (currently a no-op placeholder).
+- Add RPC and CLI endpoints for proposal creation, voting, and status queries.
+- Integrate voter eligibility check against the ledger (token balance / stake weight).
+- Complete the enterprise `ConsortiumManager` (permissioned.h) and link it to `VotingSystem`.
+
 ## Definition of done for “production-ready”
 
 All items below should be true before claiming full production readiness:

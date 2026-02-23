@@ -19,3 +19,5 @@ add_subdirectory(storage)
 add_subdirectory(layers)
 
 add_subdirectory(monetary)
+
+add_subdirectory(governance)

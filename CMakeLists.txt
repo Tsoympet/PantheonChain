@@ -67,3 +67,6 @@ add_subdirectory(layer1-talanton)
 
 # Client applications: parthenond (daemon), parthenon-cli, parthenon-qt (desktop wallet)
 add_subdirectory(clients)
+
+# Test suite
+add_subdirectory(tests)

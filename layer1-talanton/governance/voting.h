@@ -145,6 +145,16 @@ class VotingSystem {
     bool HasVoted(uint64_t proposal_id, const std::vector<uint8_t>& voter) const;
 
     /**
+     * Update the current block height (called by consensus layer on each new block)
+     */
+    void UpdateBlockHeight(uint64_t height) { current_block_height_ = height; }
+
+    /**
+     * Get current block height
+     */
+    uint64_t GetBlockHeight() const { return current_block_height_; }
+
+    /**
      * Set voting parameters
      */
     void SetVotingPeriod(uint64_t blocks) { voting_period_ = blocks; }
