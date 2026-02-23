@@ -138,7 +138,19 @@ void TestDifficultyDeterminism() {
     uint32_t new_target3 =
         Difficulty::CalculateNextDifficulty(target1, time_span_very_fast, 2016 * 10 * 60);
     // With 10x faster blocks, difficulty would ideally increase 10x, but clamped to 4x
-    assert(new_target3 <= target1 / 4 + 1); // Target should be clamped (allow +1 for integer rounding)
+    // Verify using compact format algebra: target = mantissa * 256^(exponent-3)
+    // new_target ≤ target1/4  iff  m3 * 256^(e3-3) ≤ m1/4 * 256^(e1-3)
+    //                          iff  m3 * 4 ≤ m1 * 256^(e1-e3)  (allow +3 for integer rounding)
+    {
+        const uint32_t e1 = (target1 >> 24), m1 = (target1 & 0x00FFFFFFu);
+        const uint32_t e3 = (new_target3 >> 24), m3 = (new_target3 & 0x00FFFFFFu);
+        assert(e3 <= e1);
+        const uint32_t exp_diff = (e3 <= e1) ? (e1 - e3) : 0u;
+        uint64_t rhs = static_cast<uint64_t>(m1);
+        for (uint32_t i = 0; i < exp_diff; ++i)
+            rhs *= 256u;
+        assert(static_cast<uint64_t>(m3) * 4u <= rhs + 3u);
+    }
     std::cout << "  ✅ Difficulty adjustment clamping verified" << std::endl;
 }
 
