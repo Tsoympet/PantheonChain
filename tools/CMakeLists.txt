@@ -10,6 +10,7 @@ add_library(parthenon_mobile_sdk STATIC
 target_include_directories(parthenon_mobile_sdk PUBLIC
     ${CMAKE_SOURCE_DIR}/tools/mobile_sdks
     ${CMAKE_SOURCE_DIR}/layer1/core
+    ${CMAKE_SOURCE_DIR}/third_party/stubs/json/include
 )
 
 target_link_libraries(parthenon_mobile_sdk PUBLIC

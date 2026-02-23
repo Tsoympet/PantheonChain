@@ -262,6 +262,12 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
         case ProposalType::GENERAL:
             proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::GENERAL));
             break;
+        case ProposalType::CONSTITUTIONAL:
+            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::CONSTITUTIONAL));
+            break;
+        case ProposalType::EMERGENCY:
+            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::EMERGENCY));
+            break;
     }
 
     proposal.status = ProposalStatus::EXECUTED;

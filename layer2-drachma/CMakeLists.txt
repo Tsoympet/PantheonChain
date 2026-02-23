@@ -17,7 +17,7 @@ add_library(layer2
 
 target_include_directories(layer2 PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../layer1/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/../layer1-talanton/core
 )
 
 target_link_libraries(layer2

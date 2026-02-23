@@ -73,7 +73,7 @@ bool HardwareAES::Encrypt(const std::vector<uint8_t>& plaintext, std::vector<uin
             break;
         }
 
-        std::vector<uint8_t> encrypted(plaintext.size());
+        std::vector<uint8_t> encrypted(plaintext.size() + EVP_MAX_BLOCK_LENGTH);
         if (plaintext.size() > 0) {
             if (EVP_EncryptUpdate(raw_ctx,
                                   encrypted.data(),
@@ -131,7 +131,7 @@ bool HardwareAES::Decrypt(const std::vector<uint8_t>& ciphertext, std::vector<ui
     bool ok = false;
     int out_len = 0;
     int final_len = 0;
-    std::vector<uint8_t> decrypted(encrypted_len);
+    std::vector<uint8_t> decrypted(encrypted_len + EVP_MAX_BLOCK_LENGTH);
 
     do {
         if (EVP_DecryptInit_ex(raw_ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {

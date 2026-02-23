@@ -1,4 +1,4 @@
-#include "common/bridging.h"
+#include "common/utils/bridging.h"
 
 #include <cassert>
 #include <iostream>

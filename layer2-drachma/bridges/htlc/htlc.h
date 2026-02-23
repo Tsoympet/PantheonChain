@@ -1,7 +1,7 @@
 #ifndef PANTHEON_LAYER2_HTLC_HTLC_H
 #define PANTHEON_LAYER2_HTLC_HTLC_H
 
-#include "layer1/core/crypto/sha256.h"
+#include "layer1-talanton/core/crypto/sha256.h"
 
 #include <cstdint>
 #include <vector>
