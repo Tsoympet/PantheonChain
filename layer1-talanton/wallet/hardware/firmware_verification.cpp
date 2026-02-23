@@ -266,7 +266,8 @@ FirmwareVerifier::CheckLatestVersion(const std::string& vendor,
     std::string latest_version;
     bool found = false;
 
-    for ([[maybe_unused]] const auto& [hash, info] : known_firmware_) {
+    for (const auto& kv : known_firmware_) {
+        const auto& info = kv.second;
         if (info.vendor != vendor) {
             continue;
         }
@@ -332,7 +333,8 @@ FirmwareVerifier::GetFirmwareInfo(const std::vector<uint8_t>& firmware_hash) {
 
 std::optional<FirmwareInfo> FirmwareVerifier::GetFirmwareInfo(const std::string& vendor,
                                                               const std::string& version) {
-    for ([[maybe_unused]] const auto& [hash, info] : known_firmware_) {
+    for (const auto& kv : known_firmware_) {
+        const auto& info = kv.second;
         if (info.vendor == vendor && info.version == version) {
             return info;
         }

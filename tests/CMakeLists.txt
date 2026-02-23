@@ -39,13 +39,15 @@ target_link_libraries(test_integration_automated
 )
 add_test(NAME integration_automated COMMAND test_integration_automated)
 
-# Mobile SDK regtest integration
+# Mobile SDK regtest integration (POSIX sockets – not supported on Windows)
+if(NOT WIN32)
 add_executable(test_mobile_sdk_regtest integration/test_mobile_sdk_regtest.cpp)
 target_link_libraries(test_mobile_sdk_regtest
     parthenon_mobile_sdk
     parthenon_crypto
 )
 add_test(NAME mobile_sdk_regtest COMMAND test_mobile_sdk_regtest)
+endif()
 
 # Consensus tests
 add_executable(test_consensus consensus/test_consensus.cpp)
