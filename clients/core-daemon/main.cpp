@@ -346,11 +346,13 @@ class Node {
     /// Returns true if all subsystems started successfully, false otherwise.
     /// On failure, any partially started subsystems are stopped before returning.
     bool Start() {
+        // Prevent double-start: if the node is already running, return early.
         if (running_.load()) {
             std::cerr << "Node already running" << std::endl;
             return false;
         }
 
+        // Log the active configuration so operators can verify startup parameters.
         std::cout << "=== ParthenonChain Node Starting ===" << std::endl;
         std::cout << "Data directory: " << config_.data_dir << std::endl;
         std::cout << "Network mode: " << config_.network << std::endl;
@@ -362,6 +364,7 @@ class Node {
         }
         std::cout << "Mining: " << (config_.mining_enabled ? "enabled" : "disabled") << std::endl;
 
+        // Ensure the data directory exists before any subsystem tries to use it.
         try {
             std::filesystem::create_directories(config_.data_dir);
         } catch (const std::exception &e) {
@@ -369,6 +372,7 @@ class Node {
             return false;
         }
 
+        // Resolve and validate the network mode string into a typed enum value.
         const auto parsed_mode = node::ParseNetworkMode(config_.network);
         if (!parsed_mode.has_value()) {
             std::cerr << "Invalid internal network mode '" << config_.network
@@ -378,9 +382,11 @@ class Node {
         const auto network_mode = *parsed_mode;
         std::cout << "Selected network: " << node::NetworkModeToString(network_mode) << std::endl;
 
+        // Instantiate the core node with the resolved network settings.
         core_node_ =
             std::make_unique<node::Node>(config_.data_dir, config_.network_port, network_mode);
 
+        // Load an existing wallet seed from disk, or generate and persist a new one.
         std::string seed_error;
         auto seed = LoadOrGenerateWalletSeed(config_.data_dir, seed_error);
         if (!seed) {
@@ -389,16 +395,21 @@ class Node {
         }
         wallet_ = std::make_shared<wallet::Wallet>(*seed);
 
+        // Start the P2P networking and blockchain synchronisation subsystems.
         if (!core_node_->Start()) {
             std::cerr << "Failed to start core node" << std::endl;
             return false;
         }
 
+        // Connect the wallet to the core node so it can track relevant transactions.
         core_node_->AttachWallet(wallet_);
 
+        // Optionally start the JSON-RPC server for external API access.
         if (config_.rpc_enabled) {
             const bool has_rpc_user = !config_.rpc_user.empty();
             const bool has_rpc_password = !config_.rpc_password.empty();
+            // Require explicit credentials unless the operator has opted into
+            // unauthenticated access (intended for local development only).
             if (!config_.rpc_allow_unauthenticated && (!has_rpc_user || !has_rpc_password)) {
                 std::cerr << "Refusing to start RPC server without credentials. "
                           << "Set rpc.user and rpc.password, or set "
@@ -425,15 +436,18 @@ class Node {
             }
         }
 
+        // Mining is only supported on the base layer (L1); reject invalid configurations.
         if (config_.mining_enabled && config_.layer != "l1") {
             std::cerr << "Mining can only be enabled in layer=l1 mode" << std::endl;
             return false;
         }
 
+        // If mining is requested, generate a dedicated address and activate the miner.
         if (config_.mining_enabled) {
             auto mining_address = wallet_->GenerateAddress("mining");
             if (mining_address.pubkey.empty()) {
                 std::cerr << "Failed to generate mining address" << std::endl;
+                // Roll back already-started subsystems before returning failure.
                 if (rpc_server_ && rpc_server_->IsRunning()) {
                     rpc_server_->Stop();
                 }
@@ -445,6 +459,7 @@ class Node {
             core_node_->StartMining(mining_address.pubkey);
         }
 
+        // All subsystems started successfully; mark the node as running.
         running_ = true;
         std::cout << "=== Node Started Successfully ===" << std::endl;
         return true;
