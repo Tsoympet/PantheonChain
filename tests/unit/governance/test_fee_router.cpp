@@ -3,9 +3,9 @@
 // Verifies the fee-splitting arithmetic and treasury-deposit integration
 // for all six fee sources that fund the PantheonChain governance treasury.
 
+#include "governance/eventlog.h"
 #include "governance/fee_router.h"
 #include "governance/treasury.h"
-#include "governance/eventlog.h"
 
 #include <cassert>
 #include <iostream>
@@ -17,7 +17,7 @@ static std::vector<uint8_t> Addr(uint8_t b) { return std::vector<uint8_t>(32, b)
 // ---------------------------------------------------------------------------
 // Helper: check split arithmetic sums to total_fee
 // ---------------------------------------------------------------------------
-static void AssertSplitExact(const FeeRouter::RouteResult& r) {
+static void AssertSplitExact([[maybe_unused]] const FeeRouter::RouteResult &r) {
     assert(r.producer_amount + r.treasury_amount + r.burn_amount == r.total_fee);
 }
 
@@ -38,15 +38,15 @@ void TestDefaultConfigs() {
 void TestL1FeeSplit() {
     std::cout << "Test: L1 UTXO fee split (80/15/5)" << std::endl;
 
-    FeeRouter router;  // no treasury attached
+    FeeRouter router; // no treasury attached
 
     // 10,000 units: 8000 producer, 1500 treasury, 500 burn
     auto r = router.Route(FeeRouter::FeeSource::L1_UTXO, 10000, Addr(0x01), 1);
     AssertSplitExact(r);
     assert(r.producer_amount == 8000);
     assert(r.treasury_amount == 1500);
-    assert(r.burn_amount     == 500);
-    assert(!r.treasury_deposited);  // no treasury attached
+    assert(r.burn_amount == 500);
+    assert(!r.treasury_deposited); // no treasury attached
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -60,7 +60,7 @@ void TestL2ValidatorSplit() {
     AssertSplitExact(r);
     assert(r.producer_amount == 7000);
     assert(r.treasury_amount == 2000);
-    assert(r.burn_amount     == 1000);
+    assert(r.burn_amount == 1000);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -75,7 +75,7 @@ void TestL3BaseFeeHalfBurn() {
     AssertSplitExact(r);
     assert(r.producer_amount == 0);
     assert(r.treasury_amount == 10000);
-    assert(r.burn_amount     == 10000);
+    assert(r.burn_amount == 10000);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -89,7 +89,7 @@ void TestL3PriorityFeeAllToProducer() {
     AssertSplitExact(r);
     assert(r.producer_amount == 5000);
     assert(r.treasury_amount == 0);
-    assert(r.burn_amount     == 0);
+    assert(r.burn_amount == 0);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -103,7 +103,7 @@ void TestBridgeFeeAllToTreasury() {
     AssertSplitExact(r);
     assert(r.producer_amount == 0);
     assert(r.treasury_amount == 3000);
-    assert(r.burn_amount     == 0);
+    assert(r.burn_amount == 0);
     assert(FeeRouter::DefaultBridgeFeeConfig().treasury_track == Treasury::Track::OPERATIONS);
 
     std::cout << "  \u2713 Passed" << std::endl;
@@ -145,7 +145,7 @@ void TestZeroFeeIsNoOp() {
     AssertSplitExact(r);
     assert(r.producer_amount == 0);
     assert(r.treasury_amount == 0);
-    assert(r.burn_amount     == 0);
+    assert(r.burn_amount == 0);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -158,20 +158,20 @@ void TestStatsAccumulation() {
     router.Route(FeeRouter::FeeSource::L1_UTXO, 20000, Addr(0x02), 2);
     router.Route(FeeRouter::FeeSource::L2_VALIDATOR, 5000, Addr(0x03), 3);
 
-    const auto& l1_stats = router.GetSourceStats(FeeRouter::FeeSource::L1_UTXO);
-    assert(l1_stats.route_count       == 2);
+    const auto &l1_stats = router.GetSourceStats(FeeRouter::FeeSource::L1_UTXO);
+    assert(l1_stats.route_count == 2);
     assert(l1_stats.total_fees_routed == 30000);
-    assert(l1_stats.total_to_producer == 24000);  // 80% of 30000
-    assert(l1_stats.total_to_treasury == 4500);   // 15% of 30000
-    assert(l1_stats.total_burned      == 1500);   // 5% of 30000
+    assert(l1_stats.total_to_producer == 24000); // 80% of 30000
+    assert(l1_stats.total_to_treasury == 4500);  // 15% of 30000
+    assert(l1_stats.total_burned == 1500);       // 5% of 30000
 
-    const auto& l2_stats = router.GetSourceStats(FeeRouter::FeeSource::L2_VALIDATOR);
-    assert(l2_stats.route_count       == 1);
+    const auto &l2_stats = router.GetSourceStats(FeeRouter::FeeSource::L2_VALIDATOR);
+    assert(l2_stats.route_count == 1);
     assert(l2_stats.total_fees_routed == 5000);
 
     auto total = router.GetTotalStats();
     assert(total.total_fees_routed == 35000);
-    assert(total.route_count       == 3);
+    assert(total.route_count == 3);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -182,12 +182,13 @@ void TestTreasuryRevenueSummary() {
     Treasury treasury(1, 0);
     FeeRouter router(&treasury);
 
-    router.Route(FeeRouter::FeeSource::L1_UTXO,     10000, Addr(0x01), 1);  // +1500 treasury, +500 burn
-    router.Route(FeeRouter::FeeSource::L3_BASE_FEE, 10000, Addr(0x02), 2);  // +5000 treasury, +5000 burn
-    router.Route(FeeRouter::FeeSource::BRIDGE_FEE,   2000, Addr(0x03), 3);  // +2000 treasury, +0 burn
+    router.Route(FeeRouter::FeeSource::L1_UTXO, 10000, Addr(0x01), 1); // +1500 treasury, +500 burn
+    router.Route(FeeRouter::FeeSource::L3_BASE_FEE, 10000, Addr(0x02),
+                 2); // +5000 treasury, +5000 burn
+    router.Route(FeeRouter::FeeSource::BRIDGE_FEE, 2000, Addr(0x03), 3); // +2000 treasury, +0 burn
 
     assert(router.GetTotalTreasuryRevenue() == 1500 + 5000 + 2000);
-    assert(router.GetTotalBurned()          == 500  + 5000 + 0);
+    assert(router.GetTotalBurned() == 500 + 5000 + 0);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -206,10 +207,10 @@ void TestCustomSplitConfig() {
     AssertSplitExact(r);
     assert(r.producer_amount == 2000);
     assert(r.treasury_amount == 8000);
-    assert(r.burn_amount     == 0);
+    assert(r.burn_amount == 0);
 
     // Retrieve stored config
-    const auto& stored = router.GetSplitConfig(FeeRouter::FeeSource::L1_UTXO);
+    const auto &stored = router.GetSplitConfig(FeeRouter::FeeSource::L1_UTXO);
     assert(stored.producer_bps == 2000);
 
     std::cout << "  \u2713 Passed" << std::endl;
@@ -222,7 +223,7 @@ void TestEventLogIntegration() {
     FeeRouter router(nullptr, &log);
 
     assert(log.Size() == 0);
-    router.Route(FeeRouter::FeeSource::L1_UTXO,     1000, Addr(0x01), 10);
+    router.Route(FeeRouter::FeeSource::L1_UTXO, 1000, Addr(0x01), 10);
     router.Route(FeeRouter::FeeSource::L3_BASE_FEE, 2000, Addr(0x02), 11);
     assert(log.Size() == 2);
 
@@ -235,7 +236,8 @@ void TestEventLogIntegration() {
 }
 
 void TestRoundingNoLeakage() {
-    std::cout << "Test: Rounding leaves no satoshi unaccounted (remainder goes to burn)" << std::endl;
+    std::cout << "Test: Rounding leaves no satoshi unaccounted (remainder goes to burn)"
+              << std::endl;
 
     FeeRouter router;
 
@@ -244,10 +246,10 @@ void TestRoundingNoLeakage() {
     //   treasury = 10001 * 1500 / 10000 = 1500
     //   burn     = 10001 - 8000 - 1500  = 501
     auto r = router.Route(FeeRouter::FeeSource::L1_UTXO, 10001, Addr(0x01), 1);
-    AssertSplitExact(r);  // must sum exactly to 10001
+    AssertSplitExact(r); // must sum exactly to 10001
     assert(r.producer_amount == 8000);
     assert(r.treasury_amount == 1500);
-    assert(r.burn_amount     == 501);
+    assert(r.burn_amount == 501);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -277,7 +279,7 @@ int main() {
         std::cout << "All FeeRouter tests passed! \u2713" << std::endl;
         std::cout << "=============================================" << std::endl;
         return 0;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Test failed: " << e.what() << std::endl;
         return 1;
     } catch (...) {
