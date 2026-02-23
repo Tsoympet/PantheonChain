@@ -17,6 +17,7 @@ add_library(pantheon_common STATIC
   common/metrics/metrics.cpp
   common/monetary/denominations.cpp
   common/monetary/units.cpp
+  common/utils/bridging.cpp
 )
 target_include_directories(pantheon_common PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/layer1-talanton/core)
 
@@ -61,6 +62,19 @@ add_subdirectory(third_party/stubs/leveldb)
 # Compatibility shim: parthenon_monetary wraps the monetary code in pantheon_common
 add_library(parthenon_monetary INTERFACE)
 target_link_libraries(parthenon_monetary INTERFACE pantheon_common)
+
+# Convenience aggregate: pantheon_layers bundles all layer libraries for tests/relayers
+add_library(pantheon_layers INTERFACE)
+target_link_libraries(pantheon_layers INTERFACE pantheon_common pantheon_l1 pantheon_l2 pantheon_l3)
+
+# Mobile SDK and other tools
+add_subdirectory(tools)
+
+# EVM library (Layer 3 Obolos execution engine)
+add_subdirectory(layer3-obolos/evm)
+
+# Layer 2 Drachma library (bridges, indexers, DEX, rollups, etc.)
+add_subdirectory(layer2-drachma)
 
 # Layer 1 full library set (parthenon_node, parthenon_wallet, parthenon_rpc, etc.)
 add_subdirectory(layer1-talanton)

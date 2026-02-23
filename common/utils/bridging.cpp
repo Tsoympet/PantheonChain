@@ -50,6 +50,8 @@ BridgeResult ValidateWithdrawal(const BridgeTransfer& transfer,
 }  // namespace pantheon::common
 
 
+namespace pantheon::common {
+
 std::optional<GasBudgetQuote> EstimateGasBudgetInDr(uint64_t amount_dr_raw) {
     auto ob = parthenon::common::monetary::ConvertDrToOb(amount_dr_raw);
     if (!ob) {
@@ -83,3 +85,5 @@ std::string BuildBridgeAccountingView(const BridgeTransfer& transfer) {
 
     return "No implicit asset conversion. Conversions are explicit or informational only.";
 }
+
+}  // namespace pantheon::common

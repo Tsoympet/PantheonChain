@@ -1,6 +1,6 @@
-#include "../../../layer1/settlement/destination_tag.h"
-#include "../../../layer1/settlement/escrow.h"
-#include "../../../layer1/settlement/multisig.h"
+#include "../../../layer1-talanton/settlement/destination_tag.h"
+#include "../../../layer1-talanton/settlement/escrow.h"
+#include "../../../layer1-talanton/settlement/multisig.h"
 
 #include "../../../layer1-talanton/core/crypto/sha256.h"
 

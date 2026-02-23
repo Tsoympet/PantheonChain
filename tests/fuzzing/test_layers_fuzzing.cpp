@@ -1,5 +1,5 @@
 #include "common/serialization.h"
-#include "drachma/pos_consensus.h"
+#include "layer2-drachma/consensus/pos_consensus.h"
 
 #include <cassert>
 #include <cstdint>

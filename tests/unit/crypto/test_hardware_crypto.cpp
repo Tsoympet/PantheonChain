@@ -1,8 +1,8 @@
 #include "crypto/hardware_crypto.h"
 
 #include <array>
-#include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
@@ -28,13 +28,13 @@ void TestAesRoundTrip() {
     std::vector<uint8_t> decrypted;
 
     const bool enc_ok = aes.Encrypt(plaintext, ciphertext);
-    assert(enc_ok);
-    assert(!ciphertext.empty());
-    assert(ciphertext != plaintext);
+    if (!enc_ok) { std::cerr << "Encrypt failed\n"; std::exit(1); }
+    if (ciphertext.empty()) { std::cerr << "Ciphertext is empty\n"; std::exit(1); }
+    if (ciphertext == plaintext) { std::cerr << "Ciphertext equals plaintext\n"; std::exit(1); }
 
     const bool dec_ok = aes.Decrypt(ciphertext, decrypted);
-    assert(dec_ok);
-    assert(decrypted == plaintext);
+    if (!dec_ok) { std::cerr << "Decrypt failed\n"; std::exit(1); }
+    if (decrypted != plaintext) { std::cerr << "Decrypted != plaintext\n"; std::exit(1); }
 }
 
 void TestAesTamperDetected() {
@@ -53,14 +53,15 @@ void TestAesTamperDetected() {
     std::vector<uint8_t> plaintext = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     std::vector<uint8_t> ciphertext;
 
-    assert(aes.Encrypt(plaintext, ciphertext));
-    assert(ciphertext.size() > 10);
+    const bool enc_ok = aes.Encrypt(plaintext, ciphertext);
+    if (!enc_ok) { std::cerr << "Encrypt failed\n"; std::exit(1); }
+    if (ciphertext.size() <= 10) { std::cerr << "Ciphertext too short\n"; std::exit(1); }
 
     ciphertext[10] ^= 0xFF;
 
     std::vector<uint8_t> decrypted;
     const bool dec_ok = aes.Decrypt(ciphertext, decrypted);
-    assert(!dec_ok);
+    if (dec_ok) { std::cerr << "Tampered decrypt should have failed\n"; std::exit(1); }
 }
 
 int main() {

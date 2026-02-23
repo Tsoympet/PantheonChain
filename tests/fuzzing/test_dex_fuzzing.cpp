@@ -1,7 +1,7 @@
 // ParthenonChain - DEX Fuzzing Tests
 // Fuzz testing to catch edge cases in DEX functions
 
-#include "layer2/dex/dex.h"
+#include "layer2-drachma/dex/dex.h"
 #include "primitives/asset.h"
 
 #include <cassert>

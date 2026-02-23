@@ -1,9 +1,9 @@
 #ifndef PANTHEON_LAYER2_SPV_SPV_BRIDGE_H
 #define PANTHEON_LAYER2_SPV_SPV_BRIDGE_H
 
-#include "layer1/core/crypto/sha256.h"
-#include "layer1/core/primitives/block.h"
-#include "layer1/core/primitives/transaction.h"
+#include "layer1-talanton/core/crypto/sha256.h"
+#include "layer1-talanton/core/primitives/block.h"
+#include "layer1-talanton/core/primitives/transaction.h"
 
 #include <cstdint>
 #include <vector>
