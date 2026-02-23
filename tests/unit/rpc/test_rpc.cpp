@@ -120,7 +120,6 @@ void TestSendRawTransactionRejectsInvalidHex() {
     std::cout << "  ✓ Passed (invalid hex)" << std::endl;
 }
 
-
 void TestValidationParsingAndSanitization() {
     std::cout << "Test: input validator parsing/sanitization" << std::endl;
 

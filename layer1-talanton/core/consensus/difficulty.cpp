@@ -20,7 +20,7 @@ std::array<uint8_t, 32> Difficulty::CompactToBits256(uint32_t compact) {
     // For our purposes, we'll allow it but handle correctly
 
     if (exponent == 0) {
-        return target;  // Zero target
+        return target; // Zero target
     }
 
     // Exponent indicates the position of the most significant byte
@@ -40,7 +40,7 @@ std::array<uint8_t, 32> Difficulty::CompactToBits256(uint32_t compact) {
     } else if (exponent <= 32) {
         // Place mantissa at the appropriate position (little-endian)
         size_t offset =
-            static_cast<size_t>(exponent - 3);  // Position of the least significant mantissa byte
+            static_cast<size_t>(exponent - 3); // Position of the least significant mantissa byte
         // offset is in [1,29] since exponent is in [4,32], so offset, offset+1, offset+2 < 32
         target[offset] = static_cast<uint8_t>(mantissa);
         target[offset + 1] = static_cast<uint8_t>(mantissa >> 8);
@@ -51,7 +51,7 @@ std::array<uint8_t, 32> Difficulty::CompactToBits256(uint32_t compact) {
     return target;
 }
 
-uint32_t Difficulty::Bits256ToCompact(const std::array<uint8_t, 32>& target) {
+uint32_t Difficulty::Bits256ToCompact(const std::array<uint8_t, 32> &target) {
     // Find the most significant non-zero byte
     size_t exponent = 32;
     while (exponent > 0 && target[exponent - 1] == 0) {
@@ -59,7 +59,7 @@ uint32_t Difficulty::Bits256ToCompact(const std::array<uint8_t, 32>& target) {
     }
 
     if (exponent == 0) {
-        return 0;  // All zeros
+        return 0; // All zeros
     }
 
     // Extract mantissa (3 bytes starting from most significant byte)
@@ -71,7 +71,7 @@ uint32_t Difficulty::Bits256ToCompact(const std::array<uint8_t, 32>& target) {
     } else if (exponent == 2) {
         mantissa = target[exponent - 1];
         mantissa = (mantissa << 8) | target[exponent - 2];
-    } else {  // exponent == 1
+    } else { // exponent == 1
         mantissa = target[0];
     }
 
@@ -84,7 +84,7 @@ uint32_t Difficulty::Bits256ToCompact(const std::array<uint8_t, 32>& target) {
     return (static_cast<uint32_t>(exponent) << 24) | mantissa;
 }
 
-int Difficulty::Compare256(const std::array<uint8_t, 32>& a, const std::array<uint8_t, 32>& b) {
+int Difficulty::Compare256(const std::array<uint8_t, 32> &a, const std::array<uint8_t, 32> &b) {
     // Compare from most significant byte (big-endian comparison)
     for (size_t i = 32; i > 0; i--) {
         if (a[i - 1] < b[i - 1])
@@ -95,7 +95,7 @@ int Difficulty::Compare256(const std::array<uint8_t, 32>& a, const std::array<ui
     return 0;
 }
 
-bool Difficulty::CheckProofOfWork(const std::array<uint8_t, 32>& hash, uint32_t compact_bits) {
+bool Difficulty::CheckProofOfWork(const std::array<uint8_t, 32> &hash, uint32_t compact_bits) {
     // Convert compact bits to 256-bit target
     auto target = CompactToBits256(compact_bits);
 
@@ -120,49 +120,41 @@ uint32_t Difficulty::CalculateNextDifficulty(uint32_t current_bits, uint32_t tim
         time_span = MAX_TIMESPAN;
     }
 
-    // Convert current target to 256-bit
-    auto current_target = CompactToBits256(current_bits);
+    // Work directly with the compact format: target = mantissa × 256^(exponent-3)
+    // Scale: new_target = current_target × time_span / expected_time
+    uint32_t exp = current_bits >> 24;
+    uint32_t mantissa = current_bits & 0x00FFFFFFu;
 
-    // Calculate new target: current_target * time_span / expected_time
-    // We need to do this carefully to avoid overflow
-    // Using 64-bit arithmetic for intermediate results
-
-    // First, find the most significant non-zero position
-    size_t msb_pos = 31;
-    while (msb_pos > 0 && current_target[msb_pos] == 0) {
-        msb_pos--;
-    }
-
-    if (msb_pos == 0 && current_target[0] == 0) {
-        // Current target is all zeros (shouldn't happen), return unchanged
+    if (exp == 0 || mantissa == 0) {
         return current_bits;
     }
 
-    // Extract significant bytes into a 64-bit number
-    uint64_t target_val = 0;
-    for (size_t i = 0; i <= std::min(msb_pos, static_cast<size_t>(7)); i++) {
-        target_val |= static_cast<uint64_t>(current_target[msb_pos - i]) << (8 * i);
+    // Scale the mantissa. Both time values are ≤ MAX_TIMESPAN < 2^23, so the
+    // product (mantissa < 2^24) × time_span fits in a uint64_t without overflow.
+    uint64_t new_mantissa = (static_cast<uint64_t>(mantissa) * time_span) / expected_time;
+
+    // Normalize: adjust exponent so that the mantissa fits in 3 bytes with MSB set
+    // but without the sign bit (bit 23) being set.
+    while (new_mantissa >= 0x1000000u) {
+        new_mantissa >>= 8;
+        ++exp;
+    }
+    while (new_mantissa < 0x010000u && exp > 3u) {
+        new_mantissa <<= 8;
+        --exp;
+    }
+    if (new_mantissa & 0x800000u) {
+        new_mantissa >>= 8;
+        ++exp;
     }
 
-    // Calculate new value
-    target_val = (target_val * time_span) / expected_time;
-
-    // Write back to target array
-    std::array<uint8_t, 32> new_target{};
-    for (size_t i = 0; i <= std::min(msb_pos, static_cast<size_t>(7)); i++) {
-        new_target[msb_pos - i] = static_cast<uint8_t>(target_val >> (8 * i));
+    // Clamp exponent to valid range
+    if (exp > 0x20u) {
+        exp = 0x20u;
     }
 
-    // Copy any remaining less significant bytes unchanged
-    if (msb_pos > 7) {
-        for (size_t i = 0; i < msb_pos - 7; i++) {
-            new_target[i] = current_target[i];
-        }
-    }
-
-    // Convert back to compact format
-    return Bits256ToCompact(new_target);
+    return (exp << 24) | static_cast<uint32_t>(new_mantissa & 0x00FFFFFFu);
 }
 
-}  // namespace consensus
-}  // namespace parthenon
+} // namespace consensus
+} // namespace parthenon

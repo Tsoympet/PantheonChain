@@ -4,9 +4,9 @@
 #include "primitives/transaction.h"
 
 #include <cassert>
+#include <chrono>
 #include <filesystem>
 #include <iostream>
-#include <unistd.h>
 
 using namespace parthenon;
 
@@ -46,7 +46,9 @@ int main() {
     storage::BlockStorage block_storage;
 
     const auto base = std::filesystem::temp_directory_path();
-    const auto db_path = base / ("parthenon_block_storage_test_" + std::to_string(::getpid()));
+    const auto db_path =
+        base / ("parthenon_block_storage_test_" +
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     std::filesystem::remove_all(db_path);
 
     assert(block_storage.Open(db_path.string()));
