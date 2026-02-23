@@ -153,6 +153,36 @@ Withdrawals are optimistic and subject to a trust window. The bridge model is ec
 
 ## 6. Token Economics
 
+PantheonChain has three native assets with independent issuance schedules.
+All three use Bitcoin-style geometric halvings (interval: 210,000 blocks ≈ 4 years).
+
+### Supply caps and issuance
+
+| Asset       | Ticker | Hard cap     | Achievable supply | Initial reward | Launch height |
+|-------------|--------|-------------:|------------------:|:--------------:|:-------------:|
+| TALANTON    | TALN   | 21,000,000   | ~21,000,000       | 50 TALN/block  | block 0       |
+| DRACHMA     | DRM    | 41,000,000   | ~40,740,000       | 97 DRM/block   | block 210,000 |
+| OBOLOS      | OBL    | 61,000,000   | ~60,900,000       | 145 OBL/block  | block 420,000 |
+
+**Hard cap** – the strict consensus limit; no coinbase can push the circulating supply above it.  
+**Achievable supply** – `initial_reward × 210,000 × 2`; the actual ceiling the halving
+schedule can reach (integer right-shift means the issuance approaches this asymptotically).
+
+TALANTON's cap and achievable supply are essentially identical (gap < 0.001 TALN).  
+DRACHMA will never exceed ~40.74M (260,000 DRM below the 41M hard cap).  
+OBOLOS will never exceed ~60.9M (100,000 OBL below the 61M hard cap).
+
+Governance quorum and anti-whale thresholds are calibrated to the **achievable supply**,
+not the hard cap, so percentages reflect tokens that can actually be in circulation.
+
+### Governance bonded-supply tiers
+
+| Tier      | Basis pts | TALN (21M)   | DRM (40.74M) | OBL (60.9M)  | Purpose                        |
+|-----------|:---------:|:------------:|:------------:|:------------:|--------------------------------|
+| TIER_LOW  |  500 bps  | 1,050,000    | 2,037,000    | 3,045,000    | Minimum participation / quorum |
+| TIER_MID  | 1000 bps  | 2,100,000    | 4,074,000    | 6,090,000    | Anti-whale influence ceiling   |
+| TIER_HIGH | 5000 bps  | 10,500,000   | 20,370,000   | 30,450,000   | Treasury hard cap              |
+
 ### TALANTON
 
 - mining rewards (PoW)

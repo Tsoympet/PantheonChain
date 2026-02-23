@@ -33,16 +33,35 @@ enum class AssetID : uint8_t {
  */
 class AssetSupply {
   public:
-    // Maximum supply for each asset (in base units)
-    static constexpr uint64_t TALN_MAX_SUPPLY = 21000000ULL * 100000000ULL;  // 21M TALN
-    static constexpr uint64_t DRM_MAX_SUPPLY = 41000000ULL * 100000000ULL;   // 41M DRM
-    static constexpr uint64_t OBL_MAX_SUPPLY = 61000000ULL * 100000000ULL;   // 61M OBL
-
     // Base unit divisor (8 decimals like Bitcoin)
     static constexpr uint64_t BASE_UNIT = 100000000ULL;
 
+    // Halving interval shared with the issuance schedule
+    static constexpr uint64_t HALVING_INTERVAL = 210000ULL;
+
+    // Hard consensus caps (in base units) – no coinbase may push supply above these.
+    // These are strict upper bounds enforced by validation; the issuance schedule
+    // asymptotically approaches but never reaches the cap for DRM and OBL.
+    static constexpr uint64_t TALN_MAX_SUPPLY = 21000000ULL * BASE_UNIT;  // 21M TALN
+    static constexpr uint64_t DRM_MAX_SUPPLY  = 41000000ULL * BASE_UNIT;  // 41M DRM
+    static constexpr uint64_t OBL_MAX_SUPPLY  = 61000000ULL * BASE_UNIT;  // 61M OBL
+
+    // Achievable supply: the actual ceiling that the halving-schedule issuance
+    // can produce.  Formula: initial_block_reward × HALVING_INTERVAL × 2
+    // (continuous geometric series with ratio ½ – integer right-shift diverges
+    // from this by < 0.001 %).
+    //
+    //  Asset   reward/block   achievable          cap      gap
+    //  ─────── ──────────── ──────────────── ──────────── ──────────
+    //  TALN    50 TALN       21 000 000 TALN  21 000 000  ~0 TALN
+    //  DRM     97 DRM        40 740 000 DRM   41 000 000  260 000 DRM
+    //  OBL    145 OBL        60 900 000 OBL   61 000 000  100 000 OBL
+    static constexpr uint64_t TALN_ACHIEVABLE_SUPPLY = 21000000ULL * BASE_UNIT;
+    static constexpr uint64_t DRM_ACHIEVABLE_SUPPLY  = 40740000ULL * BASE_UNIT;
+    static constexpr uint64_t OBL_ACHIEVABLE_SUPPLY  = 60900000ULL * BASE_UNIT;
+
     /**
-     * Get maximum supply for an asset
+     * Get maximum supply (hard consensus cap) for an asset
      */
     static uint64_t GetMaxSupply(AssetID asset) {
         switch (asset) {
@@ -62,6 +81,26 @@ class AssetSupply {
      */
     static bool IsValidAmount(AssetID asset, uint64_t amount) {
         return amount <= GetMaxSupply(asset);
+    }
+
+    /**
+     * Get achievable supply ceiling for an asset.
+     * This is the maximum that the halving-schedule issuance can produce
+     * (initial_reward × HALVING_INTERVAL × 2).  Use this for governance
+     * quorum and threshold calculations rather than the hard cap, so that
+     * percentages are calibrated against tokens that can actually exist.
+     */
+    static uint64_t GetAchievableSupply(AssetID asset) {
+        switch (asset) {
+            case AssetID::TALANTON:
+                return TALN_ACHIEVABLE_SUPPLY;
+            case AssetID::DRACHMA:
+                return DRM_ACHIEVABLE_SUPPLY;
+            case AssetID::OBOLOS:
+                return OBL_ACHIEVABLE_SUPPLY;
+            default:
+                return 0;
+        }
     }
 
     /**

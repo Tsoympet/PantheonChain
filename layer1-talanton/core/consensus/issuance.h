@@ -61,11 +61,20 @@ class Issuance {
   private:
     /**
      * Initial block rewards (in base units)
-     * These are chosen to reach the target max supplies with the halving schedule
-     * Total supply = initial_reward * HALVING_INTERVAL * 2
-     * - TALN: 50 * 210000 * 2 = 21,000,000
-     * - DRM:  97 * 210000 * 2 = 40,740,000 (slightly under 41M cap)
-     * - OBL: 145 * 210000 * 2 = 60,900,000 (slightly under 61M cap)
+     *
+     * The issuance schedule is a Bitcoin-style geometric halving.
+     * Achievable supply  =  initial_reward × HALVING_INTERVAL × 2
+     * (continuous series with ratio ½; integer right-shift rounds down,
+     *  so actual achievable is fractionally below this figure.)
+     *
+     *  Asset   reward/block   achievable          hard cap   gap
+     *  ─────── ──────────── ──────────────── ──────────── ──────────
+     *  TALN    50 TALN       21 000 000 TALN  21 000 000   ~0 TALN  ✓
+     *  DRM     97 DRM        40 740 000 DRM   41 000 000  260 000 DRM
+     *  OBL    145 OBL        60 900 000 OBL   61 000 000  100 000 OBL
+     *
+     * The hard caps are strict upper bounds enforced by consensus validation.
+     * The achievable figures are the actual ceilings for governance tiers.
      */
     static constexpr uint64_t TALN_INITIAL_REWARD = 50ULL * primitives::AssetSupply::BASE_UNIT;
     static constexpr uint64_t DRM_INITIAL_REWARD = 97ULL * primitives::AssetSupply::BASE_UNIT;

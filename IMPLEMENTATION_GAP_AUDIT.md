@@ -73,6 +73,119 @@ Remaining:
 - Complete operator-grade lifecycle/recovery/deployment runbooks.
 - Include backup/restore drills, key compromise handling, and release incident procedures.
 
+
+### 6) Governance module – ancient-Greece model + anti-whale
+
+**Status:** Core complete. Unit tests added (46 tests across 6 suites).
+
+#### Ancient-Greece analogy → blockchain mapping
+
+| Ancient Athens              | PantheonChain module / method                     |
+|-----------------------------|---------------------------------------------------|
+| Kleroterion (lot machine)   | `Boule::ConductSortition()` – VRF-style draw      |
+| Boule (Council of 500)      | `Boule` class – randomly-selected review council  |
+| Ekklesia (Assembly)         | `VotingSystem` – all stakers vote on proposals    |
+| Prytany (exec sub-committee)| `Boule::GetPrytany()` – rotating fast-track panel |
+| Graphe Paranomon (challenge)| `Boule::RaiseGrapheParanomon()` – veto mechanism  |
+| Dokimasia (eligibility)     | `Boule::RegisterCitizen()` + min-stake gate       |
+| Ostracism (temporary ban)   | `Ostracism` class – community ban on bad actors   |
+| Isonomia (rule of law)      | `GovernanceParams::kLimits` – constitutional floors|
+| Isegoria (equal voice)      | Proposal deposit (accessible, not prohibitive)    |
+
+#### What is now in place
+- **`antiwhale.h/.cpp`** – `AntiWhaleGuard`: quadratic voting (floor(sqrt)), per-voter hard cap,
+  whale-threshold detection; plugged into `VotingSystem::CastVote()`.
+- **`boule.h/.cpp`** – `Boule`: citizen registry, sortition (Kleroterion), Dokimasia eligibility
+  screening, 2/3-majority proposal review, Graphe Paranomon (unconstitutionality challenge with
+  council vote resolution), Prytany (rotating executive committee).
+- **`ostracism.h/.cpp`** – `Ostracism`: nominate bad actors, community vote, finalized ban,
+  time-limited with automatic rehabilitation path.
+- **`params.h/.cpp`** – `GovernanceParams`: all on-chain governance configuration, proposal-gated
+  updates (proposal_id required), constitutional floors/ceilings (Isonomia), immutable change
+  history, `Defaults()` function.
+- **`voting.h/.cpp`** (extended) – `CONSTITUTIONAL` proposal type (66% threshold, Isonomia),
+  `EMERGENCY` proposal type (Prytany fast-track); proposal deposit fields + `ReturnDeposit` /
+  `SlashDeposit`; `SetAntiWhaleGuard()`, `SetBoule()`, `SetRequireBouleApproval()`,
+  `SetTotalSupply()` integration hooks; `MarkBouleApproved()`.
+
+#### What is also now in place (treasury, staking, emergency, fee routing)
+- **`treasury.h/.cpp`** – Full `Treasury` with five allocation tracks (CORE_DEVELOPMENT, GRANTS,
+  OPERATIONS, EMERGENCY, UNCATEGORIZED), budget periods with per-track spending caps, milestone
+  grants with phased releases and revocation, multi-sig spending for the EMERGENCY track,
+  configurable reserve ratio, guardian registry, and an immutable transaction audit log.
+- **`staking.h/.cpp`** – `StakingRegistry`: stake with optional lock period, unstake cooldown
+  (anti-flash-stake), slashing with history, voting-power derivation (stake − pending_unstake),
+  total-supply feed for `AntiWhaleGuard`.
+- **`emergency.h/.cpp`** – `EmergencyCouncil`: M-of-N guardian multi-sig actions
+  (PAUSE_GOVERNANCE, CANCEL_PROPOSAL, FAST_TRACK_UPGRADE, CUSTOM) with TTL expiry.
+  Inspired by Athenian *Apophasis* (special investigative board).
+- **`eventlog.h/.cpp`** – `GovernanceEventLog`: unified append-only audit trail (*Stele* principle)
+  for all subsystems, queryable by type, actor, block-range, or reference ID.
+- **`fee_router.h/.cpp`** – `FeeRouter`: routes every fee event from all three chain layers to the
+  correct destination (block producer / treasury / burn sink) using configurable basis-point splits:
+
+  | Fee source         | Producer | Treasury | Burn | Track            |
+  |--------------------|----------|----------|------|------------------|
+  | L1 UTXO (TALN)     | 80 %     | 15 %     | 5 %  | CORE_DEVELOPMENT |
+  | L2 validator (DRM) | 70 %     | 20 %     | 10 % | OPERATIONS       |
+  | L3 base fee (OBL)  |  0 %     | 50 %     | 50 % | GRANTS           |
+  | L3 priority tip    | 100 %    |  0 %     |  0 % | –                |
+  | Bridge fees        |  0 %     | 100 %    |  0 % | OPERATIONS       |
+  | Protocol fees      |  0 %     | 100 %    |  0 % | UNCATEGORIZED    |
+
+  Rounding remainder goes to burn so amounts always sum exactly to total fee (no satoshi leakage).
+  All routes log to `GovernanceEventLog` and update cumulative `SourceStats`.
+
+
+#### What is also now in place (supply policy, snapshot, vesting, VETO)
+
+- **`supply_policy.h/.cpp`** – Named supply-bonded thresholds (5 % / 10 % / 50 %) for each
+  asset, expressed as absolute base-unit constants and runtime helpers:
+
+  | Asset | 5 % (TIER_LOW)   | 10 % (TIER_MID)  | 50 % (TIER_HIGH)    |
+  |-------|-------------------|-------------------|----------------------|
+  | TALN  | 1 050 000 TALN   | 2 100 000 TALN   | 10 500 000 TALN     |
+  | DRM   | 2 050 000 DRM    | 4 100 000 DRM    | 20 500 000 DRM      |
+  | OBL   | 3 050 000 OBL    | 6 100 000 OBL    | 30 500 000 OBL      |
+
+  Helpers: `IsBondingHealthy()` (5 % floor), `ExceedsTreasuryCap()` (50 % ceiling),
+  `IsWhale()` (10 % threshold), `ComputeBondedQuorum()` (quorum = 5 % of bonded supply).
+
+- **`snapshot.h/.cpp`** – `SnapshotRegistry`: voting power frozen at the proposal's
+  `voting_start` block, preventing last-block stake-manipulation attacks. Immutable once
+  created; zero-power entries excluded; independent per proposal.
+
+- **`vesting.h/.cpp`** – `VestingRegistry`: cliff + linear vesting for treasury grants and
+  team allocations. Governance-revocable (returns unvested tokens to treasury). Complements
+  `Treasury::CreateGrant()` milestone releases.
+
+- **`VoteChoice::VETO`** – Fourth vote option added to `VoteChoice` enum. `TallyVotes()`
+  now implements the Cosmos Hub veto model: if veto share of total votes exceeds
+  `veto_threshold_bps` (default 3334 ≈ 33.34 %), the proposal is **immediately REJECTED**
+  regardless of the YES/NO ratio, and the deposit should be slashed by the caller.
+  ABSTAIN votes are included in total (reducing veto %) matching the Cosmos spec.
+
+- **`GovernanceParams`** – Added `veto_threshold_bps` field (default 3334 bps) with
+  constitutional limits [1000, 5000] bps (cannot be set below 10 % or above 50 %).
+  Wired into `UpdateParam()` / `ValidateUint()` / `GetChangeHistory()`.
+
+#### Remaining work
+- Persist all governance state (proposals, Boule council, ostracism records, stake, treasury
+  balances) to LevelDB/RocksDB so state survives restarts.
+- Wire `UpdateBlockHeight()`, `FeeRouter::Route()`, and snapshot creation into the
+  consensus/mining layer so they advance automatically on every mined block.
+- Wire `SnapshotRegistry::CreateSnapshot()` into `VotingSystem::CreateProposal()` (or its
+  consensus hook) so snapshots are automatically taken at `voting_start`.
+- Wire `VestingRegistry` into `Treasury::CreateGrant()` so grants can optionally use
+  vesting schedules instead of (or in addition to) milestone releases.
+- Implement actual per-`ProposalType` execution handlers (currently placeholder).
+- Add RPC and CLI endpoints for proposal creation, voting, Boule review, ostracism queries,
+  treasury balance checks, fee-route configuration, vesting queries.
+- Integrate voter eligibility against ledger stake: call `StakingRegistry::GetVotingPower()`
+  to derive the `voting_power` argument passed to `VotingSystem::CastVote()`.
+- Replace LCG in `Boule::ConductSortition` with a VRF for cryptographic sortition.
+- Complete the enterprise `ConsortiumManager` (permissioned.h) and link to `VotingSystem`.
+
 ## Definition of done for “production-ready”
 
 All items below should be true before claiming full production readiness:

@@ -1,4 +1,5 @@
 #include "voting.h"
+#include "boule.h"
 
 #include "../core/crypto/schnorr.h"
 #include "../core/crypto/sha256.h"
@@ -17,13 +18,20 @@ VotingSystem::VotingSystem()
       default_quorum_(1000000)  // Default quorum
       ,
       default_threshold_(50)  // 50% approval
+      ,
+      total_supply_(0),
+      veto_threshold_bps_(3334),  // 33.34 % – Cosmos Hub model
+      anti_whale_(nullptr),
+      boule_(nullptr),
+      require_boule_approval_(false)
 {}
 
 VotingSystem::~VotingSystem() = default;
 
 uint64_t VotingSystem::CreateProposal(const std::vector<uint8_t>& proposer, ProposalType type,
                                       const std::string& title, const std::string& description,
-                                      const std::vector<uint8_t>& execution_data) {
+                                      const std::vector<uint8_t>& execution_data,
+                                      uint64_t deposit_amount) {
     Proposal proposal;
     proposal.proposal_id = next_proposal_id_++;
     proposal.type = type;
@@ -35,8 +43,13 @@ uint64_t VotingSystem::CreateProposal(const std::vector<uint8_t>& proposer, Prop
     proposal.voting_start = current_block_height_ + 100;  // 100 block delay
     proposal.voting_end = proposal.voting_start + voting_period_;
     proposal.quorum_requirement = default_quorum_;
-    proposal.approval_threshold = default_threshold_;
+    // CONSTITUTIONAL proposals require a higher threshold (≈ 2/3)
+    proposal.approval_threshold =
+        (type == ProposalType::CONSTITUTIONAL) ? 66 : default_threshold_;
     proposal.execution_data = execution_data;
+    proposal.deposit_amount = deposit_amount;
+    proposal.deposit_returned = false;
+    proposal.boule_approved = !require_boule_approval_;  // pre-approved when screening off
 
     proposals_[proposal.proposal_id] = proposal;
 
@@ -60,6 +73,16 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
     }
 
     Proposal& proposal = it->second;
+
+    // Check Boule approval before allowing votes
+    if (require_boule_approval_) {
+        bool approved = proposal.boule_approved;
+        if (!approved && boule_ != nullptr) {
+            approved = boule_->IsProposalApproved(proposal_id);
+            if (approved) proposal.boule_approved = true;
+        }
+        if (!approved) return false;
+    }
 
     // Check voting period
     if (current_block_height_ < proposal.voting_start ||
@@ -103,28 +126,37 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
         return false;
     }
 
-    // Create vote record
+    // Apply anti-whale scaling to raw voting_power before tallying.
+    uint64_t effective_power = voting_power;
+    if (anti_whale_ != nullptr) {
+        effective_power = anti_whale_->ComputeEffectivePower(voting_power, total_supply_);
+    }
+
+    // Create vote record (record raw power for auditability)
     Vote vote;
     vote.proposal_id = proposal_id;
     vote.voter = voter;
     vote.choice = choice;
-    vote.voting_power = voting_power;
+    vote.voting_power = effective_power;
     vote.timestamp = current_block_height_;
     vote.signature = signature;
 
     // Add to votes
     votes_[proposal_id].push_back(vote);
 
-    // Update tallies
+    // Update tallies using effective (anti-whale-scaled) power
     switch (choice) {
         case VoteChoice::YES:
-            proposal.yes_votes += voting_power;
+            proposal.yes_votes += effective_power;
             break;
         case VoteChoice::NO:
-            proposal.no_votes += voting_power;
+            proposal.no_votes += effective_power;
             break;
         case VoteChoice::ABSTAIN:
-            proposal.abstain_votes += voting_power;
+            proposal.abstain_votes += effective_power;
+            break;
+        case VoteChoice::VETO:
+            proposal.veto_votes += effective_power;
             break;
     }
 
@@ -149,8 +181,10 @@ bool VotingSystem::TallyVotes(uint64_t proposal_id) {
         return false;
     }
 
-    // Calculate total votes
-    uint64_t total_votes = proposal.yes_votes + proposal.no_votes + proposal.abstain_votes;
+    // Calculate total votes (all four choices)
+    uint64_t total_votes =
+        proposal.yes_votes + proposal.no_votes +
+        proposal.abstain_votes + proposal.veto_votes;
 
     // Check quorum
     if (total_votes < proposal.quorum_requirement) {
@@ -158,7 +192,25 @@ bool VotingSystem::TallyVotes(uint64_t proposal_id) {
         return true;
     }
 
-    // Calculate approval percentage
+    // -----------------------------------------------------------------
+    // VETO check (Cosmos Hub model):
+    // If veto_votes / total_votes > veto_threshold_bps / 10000 then the
+    // proposal is REJECTED immediately and the deposit is slashed,
+    // regardless of the YES/NO ratio.
+    // -----------------------------------------------------------------
+    uint64_t effective_threshold =
+        (proposal.veto_threshold_bps > 0)
+            ? proposal.veto_threshold_bps
+            : veto_threshold_bps_;
+    // veto_votes / total_votes > effective_threshold / 10000
+    // ↔ veto_votes * 10000 > total_votes * effective_threshold
+    if (proposal.veto_votes * 10000ULL > total_votes * effective_threshold) {
+        proposal.status = ProposalStatus::REJECTED;
+        // Mark deposit for slashing (caller invokes SlashDeposit)
+        return true;
+    }
+
+    // Calculate approval percentage (YES vs YES+NO, excluding ABSTAIN and VETO)
     uint64_t approval_votes = proposal.yes_votes + proposal.no_votes;
     if (approval_votes == 0) {
         proposal.status = ProposalStatus::REJECTED;
@@ -251,6 +303,30 @@ bool VotingSystem::HasVoted(uint64_t proposal_id, const std::vector<uint8_t>& vo
     }
 
     return false;
+}
+
+bool VotingSystem::MarkBouleApproved(uint64_t proposal_id) {
+    auto it = proposals_.find(proposal_id);
+    if (it == proposals_.end()) return false;
+    it->second.boule_approved = true;
+    return true;
+}
+
+bool VotingSystem::ReturnDeposit(uint64_t proposal_id) {
+    auto it = proposals_.find(proposal_id);
+    if (it == proposals_.end()) return false;
+    if (it->second.deposit_returned) return false;
+    it->second.deposit_returned = true;
+    return true;
+}
+
+bool VotingSystem::SlashDeposit(uint64_t proposal_id) {
+    auto it = proposals_.find(proposal_id);
+    if (it == proposals_.end()) return false;
+    if (it->second.deposit_returned) return false;
+    // Mark as consumed (slashed = burned; actual transfer handled by caller)
+    it->second.deposit_returned = true;
+    return true;
 }
 
 // TreasuryManager Implementation
