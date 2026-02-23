@@ -34,6 +34,8 @@ GovernanceParams::Params GovernanceParams::Defaults() {
     p.ostracism_ban_duration_blocks = 50400;
     p.ostracism_required_votes      = 10;
 
+    p.veto_threshold_bps            = 3334;   // 33.34 % – Cosmos Hub model
+
     return p;
 }
 
@@ -44,6 +46,10 @@ GovernanceParams::GovernanceParams(const Params& initial) : params_(initial) {}
 // ---------------------------------------------------------------------------
 
 bool GovernanceParams::ValidateUint(const std::string& key, uint64_t value) const {
+    if (key == "veto_threshold_bps") {
+        return value >= kLimits.min_veto_threshold &&
+               value <= kLimits.max_veto_threshold;
+    }
     if (key == "voting_period_blocks") {
         return value >= kLimits.min_voting_period_blocks &&
                value <= kLimits.max_voting_period_blocks;
@@ -88,6 +94,7 @@ bool GovernanceParams::UpdateParam(const std::string& key, uint64_t value,
     else if (key == "boule_size")                   { old_value = params_.boule_size;                   params_.boule_size                   = static_cast<uint32_t>(value); }
     else if (key == "boule_term_blocks")            { old_value = params_.boule_term_blocks;             params_.boule_term_blocks            = value; }
     else if (key == "boule_min_stake")              { old_value = params_.boule_min_stake;               params_.boule_min_stake              = value; }
+    else if (key == "veto_threshold_bps")           { old_value = params_.veto_threshold_bps;            params_.veto_threshold_bps           = value; }
     else if (key == "ostracism_ban_duration_blocks"){ old_value = params_.ostracism_ban_duration_blocks; params_.ostracism_ban_duration_blocks= value; }
     else if (key == "ostracism_required_votes")     { old_value = params_.ostracism_required_votes;      params_.ostracism_required_votes     = value; }
     else { found = false; }

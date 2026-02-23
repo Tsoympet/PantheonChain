@@ -20,6 +20,7 @@ VotingSystem::VotingSystem()
       default_threshold_(50)  // 50% approval
       ,
       total_supply_(0),
+      veto_threshold_bps_(3334),  // 33.34 % – Cosmos Hub model
       anti_whale_(nullptr),
       boule_(nullptr),
       require_boule_approval_(false)
@@ -154,6 +155,9 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
         case VoteChoice::ABSTAIN:
             proposal.abstain_votes += effective_power;
             break;
+        case VoteChoice::VETO:
+            proposal.veto_votes += effective_power;
+            break;
     }
 
     // Update status
@@ -177,8 +181,10 @@ bool VotingSystem::TallyVotes(uint64_t proposal_id) {
         return false;
     }
 
-    // Calculate total votes
-    uint64_t total_votes = proposal.yes_votes + proposal.no_votes + proposal.abstain_votes;
+    // Calculate total votes (all four choices)
+    uint64_t total_votes =
+        proposal.yes_votes + proposal.no_votes +
+        proposal.abstain_votes + proposal.veto_votes;
 
     // Check quorum
     if (total_votes < proposal.quorum_requirement) {
@@ -186,7 +192,25 @@ bool VotingSystem::TallyVotes(uint64_t proposal_id) {
         return true;
     }
 
-    // Calculate approval percentage
+    // -----------------------------------------------------------------
+    // VETO check (Cosmos Hub model):
+    // If veto_votes / total_votes > veto_threshold_bps / 10000 then the
+    // proposal is REJECTED immediately and the deposit is slashed,
+    // regardless of the YES/NO ratio.
+    // -----------------------------------------------------------------
+    uint64_t effective_threshold =
+        (proposal.veto_threshold_bps > 0)
+            ? proposal.veto_threshold_bps
+            : veto_threshold_bps_;
+    // veto_votes / total_votes > effective_threshold / 10000
+    // ↔ veto_votes * 10000 > total_votes * effective_threshold
+    if (proposal.veto_votes * 10000ULL > total_votes * effective_threshold) {
+        proposal.status = ProposalStatus::REJECTED;
+        // Mark deposit for slashing (caller invokes SlashDeposit)
+        return true;
+    }
+
+    // Calculate approval percentage (YES vs YES+NO, excluding ABSTAIN and VETO)
     uint64_t approval_votes = proposal.yes_votes + proposal.no_votes;
     if (approval_votes == 0) {
         proposal.status = ProposalStatus::REJECTED;

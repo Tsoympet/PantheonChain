@@ -136,14 +136,51 @@ Remaining:
   Rounding remainder goes to burn so amounts always sum exactly to total fee (no satoshi leakage).
   All routes log to `GovernanceEventLog` and update cumulative `SourceStats`.
 
+
+#### What is also now in place (supply policy, snapshot, vesting, VETO)
+
+- **`supply_policy.h/.cpp`** – Named supply-bonded thresholds (5 % / 10 % / 50 %) for each
+  asset, expressed as absolute base-unit constants and runtime helpers:
+
+  | Asset | 5 % (TIER_LOW)   | 10 % (TIER_MID)  | 50 % (TIER_HIGH)    |
+  |-------|-------------------|-------------------|----------------------|
+  | TALN  | 1 050 000 TALN   | 2 100 000 TALN   | 10 500 000 TALN     |
+  | DRM   | 2 050 000 DRM    | 4 100 000 DRM    | 20 500 000 DRM      |
+  | OBL   | 3 050 000 OBL    | 6 100 000 OBL    | 30 500 000 OBL      |
+
+  Helpers: `IsBondingHealthy()` (5 % floor), `ExceedsTreasuryCap()` (50 % ceiling),
+  `IsWhale()` (10 % threshold), `ComputeBondedQuorum()` (quorum = 5 % of bonded supply).
+
+- **`snapshot.h/.cpp`** – `SnapshotRegistry`: voting power frozen at the proposal's
+  `voting_start` block, preventing last-block stake-manipulation attacks. Immutable once
+  created; zero-power entries excluded; independent per proposal.
+
+- **`vesting.h/.cpp`** – `VestingRegistry`: cliff + linear vesting for treasury grants and
+  team allocations. Governance-revocable (returns unvested tokens to treasury). Complements
+  `Treasury::CreateGrant()` milestone releases.
+
+- **`VoteChoice::VETO`** – Fourth vote option added to `VoteChoice` enum. `TallyVotes()`
+  now implements the Cosmos Hub veto model: if veto share of total votes exceeds
+  `veto_threshold_bps` (default 3334 ≈ 33.34 %), the proposal is **immediately REJECTED**
+  regardless of the YES/NO ratio, and the deposit should be slashed by the caller.
+  ABSTAIN votes are included in total (reducing veto %) matching the Cosmos spec.
+
+- **`GovernanceParams`** – Added `veto_threshold_bps` field (default 3334 bps) with
+  constitutional limits [1000, 5000] bps (cannot be set below 10 % or above 50 %).
+  Wired into `UpdateParam()` / `ValidateUint()` / `GetChangeHistory()`.
+
 #### Remaining work
 - Persist all governance state (proposals, Boule council, ostracism records, stake, treasury
   balances) to LevelDB/RocksDB so state survives restarts.
-- Wire `UpdateBlockHeight()` and `FeeRouter::Route()` calls into the consensus/mining layer
-  so they advance automatically on every mined block.
+- Wire `UpdateBlockHeight()`, `FeeRouter::Route()`, and snapshot creation into the
+  consensus/mining layer so they advance automatically on every mined block.
+- Wire `SnapshotRegistry::CreateSnapshot()` into `VotingSystem::CreateProposal()` (or its
+  consensus hook) so snapshots are automatically taken at `voting_start`.
+- Wire `VestingRegistry` into `Treasury::CreateGrant()` so grants can optionally use
+  vesting schedules instead of (or in addition to) milestone releases.
 - Implement actual per-`ProposalType` execution handlers (currently placeholder).
 - Add RPC and CLI endpoints for proposal creation, voting, Boule review, ostracism queries,
-  treasury balance checks, and fee-route configuration.
+  treasury balance checks, fee-route configuration, vesting queries.
 - Integrate voter eligibility against ledger stake: call `StakingRegistry::GetVotingPower()`
   to derive the `voting_power` argument passed to `VotingSystem::CastVote()`.
 - Replace LCG in `Boule::ConductSortition` with a VRF for cryptographic sortition.

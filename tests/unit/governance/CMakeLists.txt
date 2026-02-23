@@ -89,3 +89,36 @@ target_link_libraries(test_fee_router PRIVATE
     parthenon_governance
 )
 add_test(NAME test_fee_router COMMAND test_fee_router)
+
+add_executable(test_supply_policy
+    test_supply_policy.cpp
+)
+target_link_libraries(test_supply_policy PRIVATE
+    parthenon_governance
+)
+add_test(NAME test_supply_policy COMMAND test_supply_policy)
+
+add_executable(test_snapshot
+    test_snapshot.cpp
+)
+target_link_libraries(test_snapshot PRIVATE
+    parthenon_governance
+)
+add_test(NAME test_snapshot COMMAND test_snapshot)
+
+add_executable(test_vesting
+    test_vesting.cpp
+)
+target_link_libraries(test_vesting PRIVATE
+    parthenon_governance
+)
+add_test(NAME test_vesting COMMAND test_vesting)
+
+add_executable(test_veto_and_params
+    test_veto_and_params.cpp
+)
+target_link_libraries(test_veto_and_params PRIVATE
+    parthenon_governance
+    parthenon_crypto
+)
+add_test(NAME test_veto_and_params COMMAND test_veto_and_params)

@@ -57,6 +57,10 @@ class GovernanceParams {
         uint64_t boule_min_stake;            // Dokimasia: min stake to register
         bool     boule_screening_required;   // Must pass Boule before assembly vote
 
+        // ---- Voting thresholds (including VETO) ----------------------------
+        uint64_t veto_threshold_bps;         // If veto share > this → auto-reject + slash
+                                             // Default: 3334 bps (≈ 33.34 % – Cosmos Hub)
+
         // ---- Ostracism (Athenian safety valve) -----------------------------
         uint64_t ostracism_ban_duration_blocks;
         uint64_t ostracism_required_votes;
@@ -72,6 +76,8 @@ class GovernanceParams {
         uint64_t min_constitutional_threshold; // Floor: 5001 bps (> 50 %)
         uint64_t min_default_threshold;        // Floor: 3334 bps (> 1/3)
         uint64_t max_boule_size;               // Ceiling: 500 (Athens had 500)
+        uint64_t min_veto_threshold;           // Floor: 1000 bps (10 %) – can't be too easy to veto
+        uint64_t max_veto_threshold;           // Ceiling: 5000 bps (50 %) – veto must be reachable
     };
 
     static constexpr Limits kLimits{
@@ -80,6 +86,8 @@ class GovernanceParams {
         /*min_constitutional_threshold =*/5001,
         /*min_default_threshold        =*/3334,
         /*max_boule_size               =*/500,
+        /*min_veto_threshold           =*/1000,
+        /*max_veto_threshold           =*/5000,
     };
 
     // Default sensible parameters at genesis

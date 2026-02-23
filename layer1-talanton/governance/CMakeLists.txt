@@ -21,6 +21,12 @@ add_library(parthenon_governance
     eventlog.h
     fee_router.cpp
     fee_router.h
+    supply_policy.cpp
+    supply_policy.h
+    snapshot.cpp
+    snapshot.h
+    vesting.cpp
+    vesting.h
 )
 
 target_include_directories(parthenon_governance PUBLIC

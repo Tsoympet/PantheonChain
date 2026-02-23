@@ -43,8 +43,14 @@ enum class ProposalStatus {
 
 /**
  * Vote Choice
+ *
+ * VETO – "strongly against; reject regardless of YES/NO ratio and slash the
+ *         proposer's deposit."  If the veto share of all non-ABSTAIN votes
+ *         exceeds veto_threshold_bps (default 3334 bps ≈ 33.34 %), the
+ *         proposal is immediately REJECTED and the deposit is slashed.
+ *         Modelled on the Cosmos Hub veto mechanism.
  */
-enum class VoteChoice { YES, NO, ABSTAIN };
+enum class VoteChoice { YES, NO, ABSTAIN, VETO };
 
 /**
  * Governance Proposal
@@ -66,10 +72,13 @@ struct Proposal {
     uint64_t yes_votes;
     uint64_t no_votes;
     uint64_t abstain_votes;
+    uint64_t veto_votes;   // VETO ballots; if share > veto_threshold → reject + slash
 
     // Requirements
     uint64_t quorum_requirement;
     uint64_t approval_threshold;  // Percentage (0-100)
+    uint64_t veto_threshold_bps;  // basis points; if veto share > this → auto-reject + slash deposit
+                                  // default: 3334 (≈ 33.34 % – Cosmos Hub model)
 
     // Proposal deposit (Isegoria – anti-spam)
     uint64_t deposit_amount;   // tokens locked by proposer
@@ -89,8 +98,10 @@ struct Proposal {
           yes_votes(0),
           no_votes(0),
           abstain_votes(0),
+          veto_votes(0),
           quorum_requirement(0),
           approval_threshold(50),
+          veto_threshold_bps(3334),
           deposit_amount(0),
           deposit_returned(false),
           boule_approved(false) {}
@@ -220,6 +231,8 @@ class VotingSystem {
     void SetVotingPeriod(uint64_t blocks) { voting_period_ = blocks; }
     void SetDefaultQuorum(uint64_t amount) { default_quorum_ = amount; }
     void SetDefaultThreshold(uint64_t percent) { default_threshold_ = percent; }
+    /** Veto threshold in basis points (default 3334 ≈ 33.34 %) */
+    void SetVetoThreshold(uint64_t bps) { veto_threshold_bps_ = bps; }
 
     /**
      * Get voting parameters
@@ -227,6 +240,7 @@ class VotingSystem {
     uint64_t GetVotingPeriod() const { return voting_period_; }
     uint64_t GetDefaultQuorum() const { return default_quorum_; }
     uint64_t GetDefaultThreshold() const { return default_threshold_; }
+    uint64_t GetVetoThreshold() const { return veto_threshold_bps_; }
 
   private:
     uint64_t next_proposal_id_;
@@ -235,6 +249,7 @@ class VotingSystem {
     uint64_t default_quorum_;
     uint64_t default_threshold_;
     uint64_t total_supply_;
+    uint64_t veto_threshold_bps_;  // system-wide default veto threshold
 
     AntiWhaleGuard* anti_whale_;    // optional, not owned
     Boule*          boule_;         // optional, not owned
