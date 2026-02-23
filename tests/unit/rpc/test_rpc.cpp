@@ -3,6 +3,7 @@
 
 #include "node/node.h"
 #include "rpc/rpc_server.h"
+#include "rpc/validation.h"
 #include "wallet/wallet.h"
 
 #include <cassert>
@@ -119,6 +120,27 @@ void TestSendRawTransactionRejectsInvalidHex() {
     std::cout << "  ✓ Passed (invalid hex)" << std::endl;
 }
 
+
+void TestValidationParsingAndSanitization() {
+    std::cout << "Test: input validator parsing/sanitization" << std::endl;
+
+    using parthenon::rpc::InputValidator;
+
+    // ParseUint64 strict-decimal behavior
+    assert(InputValidator::ParseUint64("0").has_value());
+    assert(InputValidator::ParseUint64("18446744073709551615").has_value());
+    assert(!InputValidator::ParseUint64("18446744073709551616").has_value());
+    assert(!InputValidator::ParseUint64("1abc").has_value());
+    assert(!InputValidator::ParseUint64("+1").has_value());
+
+    // SanitizeString should keep safe chars and strip control/non-ASCII bytes
+    const std::string dangerous = std::string("Asset-01_ ") + "\x01" + "\xff" + "<>";
+    const std::string sanitized = InputValidator::SanitizeString(dangerous);
+    assert(sanitized == "Asset-01_ ");
+
+    std::cout << "  ✓ Passed (validator strict parsing)" << std::endl;
+}
+
 void TestMonetarySpecEndpoint() {
     std::cout << "Test: monetary spec endpoint" << std::endl;
 
@@ -193,6 +215,7 @@ int main() {
     TestServerStartStopLifecycle();
     TestSendRawTransactionRejectsInvalidHex();
     TestSendToAddressRejectsInvalidAmountAndHex();
+    TestValidationParsingAndSanitization();
     TestMonetarySpecEndpoint();
 
     std::cout << "✓ All RPC server tests passed!" << std::endl;

@@ -5,9 +5,11 @@
 #define PARTHENON_RPC_VALIDATION_H
 
 #include <cstdint>
+#include <cctype>
 #include <optional>
 #include <regex>
 #include <string>
+#include <vector>
 
 namespace parthenon {
 namespace rpc {
@@ -85,7 +87,8 @@ class InputValidator {
 
         for (char c : input) {
             // Allow alphanumeric, spaces, and basic punctuation
-            if (std::isalnum(c) || c == ' ' || c == '-' || c == '_' || c == '.') {
+            unsigned char uc = static_cast<unsigned char>(c);
+            if (std::isalnum(uc) || c == ' ' || c == '-' || c == '_' || c == '.') {
                 output += c;
             }
         }
@@ -108,19 +111,25 @@ class InputValidator {
             return std::nullopt;
         }
 
-        try {
-            size_t pos;
-            uint64_t value = std::stoull(str, &pos);
-
-            // Ensure entire string was parsed
-            if (pos != str.length()) {
+        size_t pos = 0;
+        for (; pos < str.length(); ++pos) {
+            unsigned char uc = static_cast<unsigned char>(str[pos]);
+            if (!std::isdigit(uc)) {
                 return std::nullopt;
             }
-
-            return value;
-        } catch (...) {
-            return std::nullopt;
         }
+
+        // Manual conversion with overflow check (avoids exception-based parsing).
+        uint64_t value = 0;
+        for (char c : str) {
+            uint64_t digit = static_cast<uint64_t>(c - '0');
+            if (value > (UINT64_MAX - digit) / 10ULL) {
+                return std::nullopt;
+            }
+            value = value * 10ULL + digit;
+        }
+
+        return value;
     }
 
     /**
