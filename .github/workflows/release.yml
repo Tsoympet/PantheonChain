@@ -109,8 +109,32 @@ jobs:
         & $makensis /VERSION
 
     - name: Configure CMake
-      run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-    
+      shell: pwsh
+      run: |
+        $opensslLocations = @(
+          "C:\Program Files\OpenSSL-Win64",
+          "C:\Program Files\OpenSSL",
+          "C:\Program Files (x86)\OpenSSL-Win64",
+          "C:\Program Files (x86)\OpenSSL"
+        )
+        if ($env:OPENSSL_ROOT_DIR) {
+          $opensslLocations = @($env:OPENSSL_ROOT_DIR) + $opensslLocations
+        }
+        $opensslRoot = $opensslLocations | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if (-not $opensslRoot) {
+          $searchPaths = @($env:ProgramFiles)
+          $programFilesX86 = ${env:ProgramFiles(x86)}
+          if ($programFilesX86) { $searchPaths += $programFilesX86 }
+          $opensslRoot = $searchPaths |
+            ForEach-Object { Get-ChildItem -Path $_ -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue } |
+            Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
+        }
+        if (-not $opensslRoot) {
+          throw "OpenSSL installation not found after choco install. Searched: $($opensslLocations -join ', ')"
+        }
+        Write-Host "Found OpenSSL at: $opensslRoot"
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DOPENSSL_ROOT_DIR="$opensslRoot"
+
     - name: Build
       run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
 
@@ -300,7 +324,9 @@ jobs:
         if [ "${{ matrix.package }}" = "rpm" ]; then
           # The RPM itself is built inside a Fedora container below, so host-side
           # rpmbuild packages are intentionally not required on ubuntu-22.04.
-          sudo apt-get install -y --no-install-recommends docker.io
+          # Docker is pre-installed on GitHub Actions ubuntu-22.04 runners;
+          # installing docker.io would conflict with the pre-installed containerd package.
+          :
         fi
 
         cmake --version

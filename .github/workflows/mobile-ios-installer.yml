@@ -60,6 +60,11 @@ jobs:
         run: |
           npx eas-cli init --force --non-interactive
 
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+          pod --version
+
       - name: Validate EAS build profile is configured for simulator
         run: |
           node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['ios-release']; if(!profile){ console.error('Missing build.ios-release profile in eas.json.'); process.exit(1);} if(!profile.ios?.simulator){ console.error('build.ios-release.ios.simulator must be true for CI builds without Apple distribution credentials.'); process.exit(1);} console.log('ios-release profile is configured for simulator build (no distribution certificate required).');"
