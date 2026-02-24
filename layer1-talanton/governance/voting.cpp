@@ -10,6 +10,16 @@
 namespace parthenon {
 namespace governance {
 
+// ---------------------------------------------------------------------------
+// File-scope helper: decode a uint64_t from 8 bytes stored little-endian.
+// ---------------------------------------------------------------------------
+static inline uint64_t ReadLE64(const uint8_t* p) {
+    uint64_t v = 0;
+    for (int i = 0; i < 8; ++i)
+        v |= static_cast<uint64_t>(p[i]) << (8 * i);
+    return v;
+}
+
 // VotingSystem Implementation
 VotingSystem::VotingSystem()
     : next_proposal_id_(1),
@@ -282,13 +292,6 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
         }
     } else {
         // Built-in dispatch: route to the appropriate subsystem based on type.
-        // Helper: decode a uint64_t from 8 bytes stored little-endian.
-        auto read_le64 = [](const uint8_t* p) -> uint64_t {
-            uint64_t v = 0;
-            for (int i = 0; i < 8; ++i)
-                v |= static_cast<uint64_t>(p[i]) << (8 * i);
-            return v;
-        };
         switch (proposal.type) {
             case ProposalType::PARAMETER_CHANGE: {
                 // execution_data encodes: [key_len(1)] [key_bytes] [value_le8(8)]
@@ -301,7 +304,7 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
                             reinterpret_cast<const char*>(
                                 proposal.execution_data.data() + 1),
                             key_len);
-                        uint64_t value = read_le64(
+                        uint64_t value = ReadLE64(
                             proposal.execution_data.data() + 1 + key_len);
                         gov_params_->UpdateParam(key, value,
                                                  proposal.proposal_id,
@@ -314,7 +317,7 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
                 // execution_data encodes: [amount_le8(8)] [addr_len(1)] [addr_bytes]
                 if (treasury_ != nullptr &&
                     proposal.execution_data.size() >= 10) {
-                    uint64_t amount = read_le64(proposal.execution_data.data());
+                    uint64_t amount = ReadLE64(proposal.execution_data.data());
                     uint8_t addr_len = proposal.execution_data[8];
                     if (9 + static_cast<size_t>(addr_len) <=
                         proposal.execution_data.size() && amount > 0) {

@@ -410,6 +410,27 @@ void RPCServer::InitializeStandardMethods() {
     RegisterMethod("commitments/submit", [this](const RPCRequest& req) { return HandleCommitmentSubmit(req); });
     RegisterMethod("commitments/list", [this](const RPCRequest& req) { return HandleCommitmentList(req); });
     RegisterMethod("evm/deploy", [this](const RPCRequest& req) { return HandleEvmDeploy(req); });
+    RegisterMethod("evm/call", [this](const RPCRequest& req) {
+        // Execute a read-only EVM contract call (eth_call equivalent).
+        RPCResponse response;
+        response.id = req.id;
+        json result;
+        result["status"] = "ok";
+        result["return_data"] = "0x";  // Placeholder: real EVM exec returns ABI-encoded bytes
+        result["note"] = "Wire the L3 EVM execution engine to return actual return data.";
+        response.result = result.dump();
+        return response;
+    });
+    RegisterMethod("evm/estimate_gas", [this](const RPCRequest& req) {
+        // Estimate gas for a transaction (eth_estimateGas equivalent).
+        RPCResponse response;
+        response.id = req.id;
+        // Default 21000 gas for a simple transfer; contract calls cost more.
+        // Wire the L3 EVM execution engine for accurate estimates.
+        json result = 21000;
+        response.result = result.dump();
+        return response;
+    });
 
     // Governance endpoints
     RegisterMethod("governance/submit_proposal",

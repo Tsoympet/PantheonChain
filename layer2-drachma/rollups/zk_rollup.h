@@ -75,13 +75,20 @@ class ZKRollupState {
     /**
      * Get merkle proof for account
      */
-    std::vector<std::array<uint8_t, 32>> GetMerkleProof(const std::vector<uint8_t>& account) const;
+    /**
+     * Returns a positional Merkle proof for `account`.
+     * Each entry is a (sibling_hash, is_right_sibling) pair:
+     *   is_right_sibling = true  → sibling appears to the RIGHT of the current node.
+     *   is_right_sibling = false → sibling appears to the LEFT of the current node.
+     */
+    std::vector<std::pair<std::array<uint8_t, 32>, bool>>
+    GetMerkleProof(const std::vector<uint8_t>& account) const;
 
     /**
-     * Verify merkle proof
+     * Verify a positional merkle proof produced by GetMerkleProof().
      */
     bool VerifyMerkleProof(const std::vector<uint8_t>& account,
-                           const std::vector<std::array<uint8_t, 32>>& proof,
+                           const std::vector<std::pair<std::array<uint8_t, 32>, bool>>& proof,
                            const std::array<uint8_t, 32>& root) const;
 
     /**
@@ -251,7 +258,7 @@ class ZKRollupExitManager {
         std::vector<uint8_t> account;
         uint64_t amount;
         std::array<uint8_t, 32> merkle_root;
-        std::vector<std::array<uint8_t, 32>> merkle_proof;
+        std::vector<std::pair<std::array<uint8_t, 32>, bool>> merkle_proof;
         privacy::zksnark::ZKProof ownership_proof;
         uint64_t request_block;
         bool processed;
