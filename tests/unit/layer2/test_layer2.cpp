@@ -215,8 +215,8 @@ void test_rollup_lifecycle() {
     proof.claimed_state_root = batch.state_root_after;
     proof.correct_state_root = batch.state_root_before;
     proof.witness_data = {0x01, 0x02};
-    proof.state_proof_before = {0xAA, 0xBB};  // pre-state witness
-    proof.state_proof_after  = {0xCC, 0xDD};  // post-state witness
+    proof.state_proof_before = {0xAA, 0xBB}; // pre-state witness
+    proof.state_proof_after = {0xCC, 0xDD};  // post-state witness
     assert(rollup.SubmitFraudProof(proof));
     assert(!rollup.FinalizeBatch(1));
 
