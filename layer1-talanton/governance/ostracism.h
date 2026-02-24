@@ -110,6 +110,11 @@ class Ostracism {
 
     std::optional<Record> GetRecord(const std::vector<uint8_t>& address) const;
 
+    /**
+     * Returns all records whose ban is currently active at block_height.
+     */
+    std::vector<Record> GetActiveBans(uint64_t block_height) const;
+
     // ------------------------------------------------------------------ //
     //  Rehabilitation                                                      //
     // ------------------------------------------------------------------ //

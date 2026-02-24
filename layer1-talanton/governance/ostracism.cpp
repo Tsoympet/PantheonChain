@@ -94,6 +94,18 @@ Ostracism::GetRecord(const std::vector<uint8_t>& address) const {
     return it->second;
 }
 
+std::vector<Ostracism::Record>
+Ostracism::GetActiveBans(uint64_t block_height) const {
+    std::vector<Record> result;
+    for (const auto& [addr, rec] : records_) {
+        if (rec.state == State::OSTRACIZED &&
+            (rec.ban_end_block == 0 || block_height < rec.ban_end_block)) {
+            result.push_back(rec);
+        }
+    }
+    return result;
+}
+
 bool Ostracism::Rehabilitate(const std::vector<uint8_t>& address,
                               uint64_t block_height) {
     auto it = records_.find(address);

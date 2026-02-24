@@ -26,6 +26,14 @@ class Node;
 namespace wallet {
 class Wallet;
 }
+namespace governance {
+class VotingSystem;
+class StakingRegistry;
+class Treasury;
+class GovernanceParams;
+class SnapshotRegistry;
+class Ostracism;
+}
 }  // namespace parthenon
 
 namespace parthenon {
@@ -76,6 +84,17 @@ class RPCServer {
      * Set wallet instance for wallet operations
      */
     void SetWallet(wallet::Wallet* wallet);
+
+    /**
+     * Attach governance subsystems so that governance/* RPC methods work.
+     * All pointers are optional; unset subsystems return "not available" errors.
+     */
+    void SetVotingSystem(governance::VotingSystem* vs)       { voting_system_   = vs; }
+    void SetStakingRegistry(governance::StakingRegistry* sr) { staking_registry_ = sr; }
+    void SetTreasury(governance::Treasury* t)                { treasury_         = t; }
+    void SetGovernanceParams(governance::GovernanceParams* p){ gov_params_       = p; }
+    void SetSnapshotRegistry(governance::SnapshotRegistry* s){ snapshot_registry_= s; }
+    void SetOstracism(governance::Ostracism* o)              { ostracism_        = o; }
 
     /**
      * Start the RPC server
@@ -139,6 +158,14 @@ class RPCServer {
     // Component references
     node::Node* node_;
     wallet::Wallet* wallet_;
+
+    // Governance subsystems (optional, not owned)
+    governance::VotingSystem*    voting_system_{nullptr};
+    governance::StakingRegistry* staking_registry_{nullptr};
+    governance::Treasury*        treasury_{nullptr};
+    governance::GovernanceParams* gov_params_{nullptr};
+    governance::SnapshotRegistry* snapshot_registry_{nullptr};
+    governance::Ostracism*        ostracism_{nullptr};
     
     // Rate limiting
     std::unique_ptr<RateLimiter> rate_limiter_;
@@ -172,6 +199,20 @@ class RPCServer {
     RPCResponse HandleCommitmentSubmit(const RPCRequest& req);
     RPCResponse HandleCommitmentList(const RPCRequest& req);
     RPCResponse HandleEvmDeploy(const RPCRequest& req);
+
+    // Governance RPC handlers
+    RPCResponse HandleGovernanceSubmitProposal(const RPCRequest& req);
+    RPCResponse HandleGovernanceVote(const RPCRequest& req);
+    RPCResponse HandleGovernanceTally(const RPCRequest& req);
+    RPCResponse HandleGovernanceGetProposal(const RPCRequest& req);
+    RPCResponse HandleGovernanceListProposals(const RPCRequest& req);
+    RPCResponse HandleGovernanceExecute(const RPCRequest& req);
+    RPCResponse HandleStakingStake(const RPCRequest& req);
+    RPCResponse HandleStakingUnstake(const RPCRequest& req);
+    RPCResponse HandleStakingGetPower(const RPCRequest& req);
+    RPCResponse HandleTreasuryBalance(const RPCRequest& req);
+    RPCResponse HandleOstracismNominate(const RPCRequest& req);
+    RPCResponse HandleOstracismListBans(const RPCRequest& req);
 };
 
 }  // namespace rpc

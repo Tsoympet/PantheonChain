@@ -9,6 +9,12 @@
 #include "common/monetary/units.h"
 #include "validation.h"
 #include "wallet/wallet.h"
+#include "governance/voting.h"
+#include "governance/staking.h"
+#include "governance/treasury.h"
+#include "governance/params.h"
+#include "governance/snapshot.h"
+#include "governance/ostracism.h"
 
 #include <httplib.h>
 #include <algorithm>
@@ -404,6 +410,32 @@ void RPCServer::InitializeStandardMethods() {
     RegisterMethod("commitments/submit", [this](const RPCRequest& req) { return HandleCommitmentSubmit(req); });
     RegisterMethod("commitments/list", [this](const RPCRequest& req) { return HandleCommitmentList(req); });
     RegisterMethod("evm/deploy", [this](const RPCRequest& req) { return HandleEvmDeploy(req); });
+
+    // Governance endpoints
+    RegisterMethod("governance/submit_proposal",
+        [this](const RPCRequest& r){ return HandleGovernanceSubmitProposal(r); });
+    RegisterMethod("governance/vote",
+        [this](const RPCRequest& r){ return HandleGovernanceVote(r); });
+    RegisterMethod("governance/tally",
+        [this](const RPCRequest& r){ return HandleGovernanceTally(r); });
+    RegisterMethod("governance/get_proposal",
+        [this](const RPCRequest& r){ return HandleGovernanceGetProposal(r); });
+    RegisterMethod("governance/list_proposals",
+        [this](const RPCRequest& r){ return HandleGovernanceListProposals(r); });
+    RegisterMethod("governance/execute",
+        [this](const RPCRequest& r){ return HandleGovernanceExecute(r); });
+    RegisterMethod("staking/stake",
+        [this](const RPCRequest& r){ return HandleStakingStake(r); });
+    RegisterMethod("staking/unstake",
+        [this](const RPCRequest& r){ return HandleStakingUnstake(r); });
+    RegisterMethod("staking/get_power",
+        [this](const RPCRequest& r){ return HandleStakingGetPower(r); });
+    RegisterMethod("treasury/balance",
+        [this](const RPCRequest& r){ return HandleTreasuryBalance(r); });
+    RegisterMethod("ostracism/nominate",
+        [this](const RPCRequest& r){ return HandleOstracismNominate(r); });
+    RegisterMethod("ostracism/list_bans",
+        [this](const RPCRequest& r){ return HandleOstracismListBans(r); });
 }
 
 RPCResponse RPCServer::HandleGetInfo(const RPCRequest& req) {
@@ -945,6 +977,402 @@ RPCResponse RPCServer::HandleEvmDeploy(const RPCRequest& req) {
     result["fee_note"] = "L3 gas is paid in OBOLOS; DRACHMA/TALANTON equivalents are reporting-only.";
     result["params"] = req.params.empty() ? json::array() : json::parse(req.params, nullptr, false);
     response.result = result.dump();
+    return response;
+}
+
+// ---------------------------------------------------------------------------
+// Governance RPC handlers
+// ---------------------------------------------------------------------------
+
+namespace {
+// Decode a hex string to bytes.  Returns empty on invalid input.
+std::vector<uint8_t> HexToBytes(const std::string& hex) {
+    if (hex.size() % 2 != 0) return {};
+    std::vector<uint8_t> bytes;
+    bytes.reserve(hex.size() / 2);
+    for (size_t i = 0; i < hex.size(); i += 2) {
+        auto c2v = [](char c) -> int {
+            if (c >= '0' && c <= '9') return c - '0';
+            if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+            if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+            return -1;
+        };
+        int hi = c2v(hex[i]), lo = c2v(hex[i + 1]);
+        if (hi < 0 || lo < 0) return {};
+        bytes.push_back(static_cast<uint8_t>((hi << 4) | lo));
+    }
+    return bytes;
+}
+
+std::string BytesToHexRpc(const std::vector<uint8_t>& b) {
+    static const char* kHex = "0123456789abcdef";
+    std::string s;
+    s.reserve(b.size() * 2);
+    for (uint8_t byte : b) {
+        s.push_back(kHex[byte >> 4]);
+        s.push_back(kHex[byte & 0xF]);
+    }
+    return s;
+}
+}  // namespace
+
+RPCResponse RPCServer::HandleGovernanceSubmitProposal(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!voting_system_) {
+        response.error = "Governance not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        std::string type_str  = p.value("type", "GENERAL");
+        std::string title     = InputValidator::SanitizeString(p.value("title", ""));
+        std::string desc      = InputValidator::SanitizeString(p.value("description", ""));
+        std::string proposer_hex = p.value("proposer", "");
+        uint64_t    deposit   = p.value("deposit", 0ULL);
+
+        auto proposer = HexToBytes(proposer_hex);
+        if (proposer.empty()) {
+            response.error = "Invalid proposer address";
+            return response;
+        }
+
+        governance::ProposalType ptype = governance::ProposalType::GENERAL;
+        if      (type_str == "PARAMETER_CHANGE")  ptype = governance::ProposalType::PARAMETER_CHANGE;
+        else if (type_str == "TREASURY_SPENDING")  ptype = governance::ProposalType::TREASURY_SPENDING;
+        else if (type_str == "PROTOCOL_UPGRADE")   ptype = governance::ProposalType::PROTOCOL_UPGRADE;
+        else if (type_str == "CONSTITUTIONAL")     ptype = governance::ProposalType::CONSTITUTIONAL;
+        else if (type_str == "EMERGENCY")          ptype = governance::ProposalType::EMERGENCY;
+
+        std::string exec_hex = p.value("execution_data", "");
+        std::vector<uint8_t> exec_data = HexToBytes(exec_hex);
+
+        uint64_t proposal_id = voting_system_->CreateProposal(
+            proposer, ptype, title, desc, exec_data, deposit);
+
+        json result;
+        result["proposal_id"] = proposal_id;
+        result["status"] = "submitted";
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleGovernanceVote(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!voting_system_) {
+        response.error = "Governance not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        uint64_t    proposal_id  = p.value("proposal_id", 0ULL);
+        std::string voter_hex    = p.value("voter", "");
+        std::string choice_str   = p.value("choice", "YES");
+        uint64_t    power        = p.value("voting_power", 0ULL);
+        std::string sig_hex      = p.value("signature", "");
+
+        auto voter = HexToBytes(voter_hex);
+        auto sig   = HexToBytes(sig_hex);
+        if (voter.empty() || sig.empty()) {
+            response.error = "Invalid voter or signature";
+            return response;
+        }
+
+        governance::VoteChoice choice = governance::VoteChoice::YES;
+        if      (choice_str == "NO")     choice = governance::VoteChoice::NO;
+        else if (choice_str == "ABSTAIN") choice = governance::VoteChoice::ABSTAIN;
+        else if (choice_str == "VETO")    choice = governance::VoteChoice::VETO;
+
+        bool ok = voting_system_->CastVote(proposal_id, voter, choice, power, sig);
+        json result;
+        result["success"] = ok;
+        result["proposal_id"] = proposal_id;
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleGovernanceTally(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!voting_system_) {
+        response.error = "Governance not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        uint64_t proposal_id = p.value("proposal_id", 0ULL);
+        bool ok = voting_system_->TallyVotes(proposal_id);
+        auto prop_opt = voting_system_->GetProposal(proposal_id);
+        json result;
+        result["success"] = ok;
+        if (prop_opt) {
+            result["status"] = static_cast<int>(prop_opt->status);
+            result["yes_votes"]    = prop_opt->yes_votes;
+            result["no_votes"]     = prop_opt->no_votes;
+            result["abstain_votes"]= prop_opt->abstain_votes;
+            result["veto_votes"]   = prop_opt->veto_votes;
+        }
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleGovernanceGetProposal(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!voting_system_) {
+        response.error = "Governance not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        uint64_t proposal_id = p.value("proposal_id", 0ULL);
+        auto prop = voting_system_->GetProposal(proposal_id);
+        if (!prop) {
+            response.error = "Proposal not found";
+            return response;
+        }
+        json result;
+        result["proposal_id"]   = prop->proposal_id;
+        result["title"]         = prop->title;
+        result["description"]   = prop->description;
+        result["type"]          = static_cast<int>(prop->type);
+        result["status"]        = static_cast<int>(prop->status);
+        result["yes_votes"]     = prop->yes_votes;
+        result["no_votes"]      = prop->no_votes;
+        result["abstain_votes"] = prop->abstain_votes;
+        result["veto_votes"]    = prop->veto_votes;
+        result["voting_start"]  = prop->voting_start;
+        result["voting_end"]    = prop->voting_end;
+        result["execution_time"]= prop->execution_time;
+        result["deposit_amount"]= prop->deposit_amount;
+        result["boule_approved"]= prop->boule_approved;
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleGovernanceListProposals(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!voting_system_) {
+        response.error = "Governance not available";
+        return response;
+    }
+    auto proposals = voting_system_->GetActiveProposals();
+    json result = json::array();
+    for (const auto& prop : proposals) {
+        json entry;
+        entry["proposal_id"] = prop.proposal_id;
+        entry["title"]       = prop.title;
+        entry["type"]        = static_cast<int>(prop.type);
+        entry["status"]      = static_cast<int>(prop.status);
+        entry["voting_start"]= prop.voting_start;
+        entry["voting_end"]  = prop.voting_end;
+        result.push_back(entry);
+    }
+    json resp_obj;
+    resp_obj["proposals"] = result;
+    resp_obj["count"]     = proposals.size();
+    response.result = resp_obj.dump();
+    return response;
+}
+
+RPCResponse RPCServer::HandleGovernanceExecute(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!voting_system_) {
+        response.error = "Governance not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        uint64_t proposal_id = p.value("proposal_id", 0ULL);
+        bool ok = voting_system_->ExecuteProposal(proposal_id);
+        json result;
+        result["success"]     = ok;
+        result["proposal_id"] = proposal_id;
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleStakingStake(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!staking_registry_) {
+        response.error = "Staking not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        std::string addr_hex  = p.value("address", "");
+        uint64_t    amount    = p.value("amount", 0ULL);
+        uint64_t    lock_for  = p.value("lock_for_blocks", 0ULL);
+        uint64_t    height    = p.value("block_height", 0ULL);
+
+        auto addr = HexToBytes(addr_hex);
+        if (addr.empty()) {
+            response.error = "Invalid address";
+            return response;
+        }
+        bool ok = staking_registry_->Stake(addr, amount, lock_for, height);
+        json result;
+        result["success"] = ok;
+        result["address"] = addr_hex;
+        result["amount"]  = amount;
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleStakingUnstake(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!staking_registry_) {
+        response.error = "Staking not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        std::string addr_hex = p.value("address", "");
+        uint64_t    amount   = p.value("amount", 0ULL);
+        uint64_t    height   = p.value("block_height", 0ULL);
+
+        auto addr = HexToBytes(addr_hex);
+        if (addr.empty()) {
+            response.error = "Invalid address";
+            return response;
+        }
+        bool ok = staking_registry_->RequestUnstake(addr, amount, height);
+        json result;
+        result["success"] = ok;
+        result["address"] = addr_hex;
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleStakingGetPower(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!staking_registry_) {
+        response.error = "Staking not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        std::string addr_hex = p.value("address", "");
+        auto addr = HexToBytes(addr_hex);
+        if (addr.empty()) {
+            response.error = "Invalid address";
+            return response;
+        }
+        uint64_t power = staking_registry_->GetVotingPower(addr);
+        uint64_t total = staking_registry_->GetTotalVotingPower();
+        json result;
+        result["address"]     = addr_hex;
+        result["voting_power"]= power;
+        result["total_power"] = total;
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleTreasuryBalance(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!treasury_) {
+        response.error = "Treasury not available";
+        return response;
+    }
+    json result;
+    result["total"]            = treasury_->GetTotalBalance();
+    result["core_development"] = treasury_->GetTrackBalance(governance::Treasury::Track::CORE_DEVELOPMENT);
+    result["grants"]           = treasury_->GetTrackBalance(governance::Treasury::Track::GRANTS);
+    result["operations"]       = treasury_->GetTrackBalance(governance::Treasury::Track::OPERATIONS);
+    result["emergency"]        = treasury_->GetTrackBalance(governance::Treasury::Track::EMERGENCY);
+    result["uncategorized"]    = treasury_->GetTrackBalance(governance::Treasury::Track::UNCATEGORIZED);
+    result["reserve"]          = treasury_->GetReserveBalance();
+    response.result = result.dump();
+    return response;
+}
+
+RPCResponse RPCServer::HandleOstracismNominate(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!ostracism_) {
+        response.error = "Ostracism not available";
+        return response;
+    }
+    try {
+        auto p = json::parse(req.params);
+        std::string target_hex  = p.value("target", "");
+        std::string nominator_hex = p.value("nominator", "");
+        std::string reason      = InputValidator::SanitizeString(p.value("reason", ""));
+        uint64_t    height      = p.value("block_height", 0ULL);
+
+        auto target    = HexToBytes(target_hex);
+        auto nominator = HexToBytes(nominator_hex);
+        if (target.empty() || nominator.empty()) {
+            response.error = "Invalid target or nominator address";
+            return response;
+        }
+        bool ok = ostracism_->Nominate(target, nominator, reason, height);
+        json result;
+        result["success"] = ok;
+        response.result = result.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
+    return response;
+}
+
+RPCResponse RPCServer::HandleOstracismListBans(const RPCRequest& req) {
+    RPCResponse response;
+    response.id = req.id;
+    if (!ostracism_) {
+        response.error = "Ostracism not available";
+        return response;
+    }
+    try {
+        auto p = req.params.empty() ? json::parse("{}") : json::parse(req.params);
+        uint64_t height = p.value("block_height", 0ULL);
+        auto bans = ostracism_->GetActiveBans(height);
+        json result = json::array();
+        for (const auto& ban : bans) {
+            json entry;
+            entry["address"]   = BytesToHexRpc(ban.subject);
+            entry["ban_end"]   = ban.ban_end_block;
+            entry["reason"]    = ban.reason;
+            result.push_back(entry);
+        }
+        json resp_obj;
+        resp_obj["bans"]  = result;
+        resp_obj["count"] = bans.size();
+        response.result = resp_obj.dump();
+    } catch (const std::exception& e) {
+        response.error = std::string("Parse error: ") + e.what();
+    }
     return response;
 }
 
