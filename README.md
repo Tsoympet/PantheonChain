@@ -3,7 +3,7 @@
 [![Build Test Devnet](https://github.com/Tsoympet/PantheonChain/actions/workflows/build-test-devnet.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/build-test-devnet.yml)
 [![Build Test Testnet](https://github.com/Tsoympet/PantheonChain/actions/workflows/build-test-testnet.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/build-test-testnet.yml)
 [![Build](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/build.yml)
-[![Tests](https://github.com/Tsoympet/PantheonChain/actions/workflows/tests.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/tests.yml)
+[![Tests](https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/test.yml)
 [![Lint](https://github.com/Tsoympet/PantheonChain/actions/workflows/lint.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/lint.yml)
 [![Security](https://github.com/Tsoympet/PantheonChain/actions/workflows/security.yml/badge.svg)](https://github.com/Tsoympet/PantheonChain/actions/workflows/security.yml)
 
