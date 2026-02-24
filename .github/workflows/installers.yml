@@ -66,3 +66,25 @@ jobs:
           exit 1
         }
         Write-Host 'OK'
+
+    - name: NSIS File references exist
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $nsi = Get-Content installers/windows/parthenon-installer.nsi
+        $missing = $false
+        foreach ($line in $nsi) {
+          if ($line -match '^\s*File\s+"([^"]+)"') {
+            $rel = $matches[1] -replace '\\', '/'
+            # Skip paths with NSIS variables (e.g. ${NSISDIR}) or build artifacts
+            if ($rel -match '\$\{' -or $rel -match '/build/') { continue }
+            $abs = Join-Path 'installers/windows' $rel
+            $resolved = [System.IO.Path]::GetFullPath($abs)
+            if (-not (Test-Path $resolved)) {
+              Write-Host "NSIS references missing file: $rel (resolved: $resolved)" -ForegroundColor Red
+              $missing = $true
+            }
+          }
+        }
+        if ($missing) { exit 1 }
+        Write-Host 'All NSIS source-file references resolved OK'

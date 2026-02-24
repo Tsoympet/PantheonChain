@@ -134,7 +134,7 @@ Section "Documentation" SecDocs
   File "..\..\README.md"
   File "..\..\LICENSE"
   File "..\..\CHANGELOG.md"
-  File "..\..\docs\PHASE*.md"
+  File "..\..\docs\INSTALLATION.md"
 SectionEnd
 
 Section -Post
