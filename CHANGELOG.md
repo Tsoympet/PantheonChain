@@ -1,9 +1,49 @@
 # Changelog
 
-All notable changes to ParthenonChain will be documented in this file.
+All notable changes to PantheonChain will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.1.0] - 2026-01-20
+
+### Added
+
+#### Governance
+- VRF sortition for Boule (council) candidate selection — on-chain verifiable randomness for fair validator rotation
+- Snapshot voting: voting power is captured at proposal-creation block height to prevent flash-stake manipulation
+- Vesting grants: Treasury can issue milestone-based token grants with cliff + linear vesting schedules
+- Per-type execution dispatch: STANDARD, CONSTITUTIONAL, EMERGENCY, PARAMETER_CHANGE, and TREASURY_SPENDING proposals each have independent execution paths and threshold rules
+- `Apophasis` board: ratification body for Emergency Council actions to ensure post-hoc accountability
+
+#### RPC
+- 12 new JSON-RPC endpoints covering governance, staking, treasury, and ostracism:
+  - `governance_getProposal`, `governance_listProposals`, `governance_castVote`
+  - `governance_submitProposal`, `governance_executeProposal`, `governance_getVoteRecord`
+  - `staking_getValidator`, `staking_listValidators`, `staking_getDelegation`
+  - `treasury_getBalance`, `treasury_listGrants`, `ostracism_getStatus`
+
+#### Layer 2 / DRACHMA
+- Positional Merkle tree: O(log n) membership proofs for Plasma exit verification
+- Plasma `ChallengeExit` verification: on-chain fraud proof handler for invalid exit claims
+
+#### Operations
+- SBOM (Software Bill of Materials) generation in CI pipeline (CycloneDX format)
+- Build provenance attestation via SLSA Level 2 CI workflow
+- Runbooks added: `backup-restore.md`, `key-compromise.md`, `incident-response.md`
+
+#### Documentation
+- `docs/CONSTITUTION.md`: full on-chain Governance Constitution with ancient Athenian democratic principles
+- Removed internal planning and audit documents from repository
+
+### Fixed
+
+#### CI
+- Resolved `clang-format` violations across `layer2-drachma/` and `layer3-obolos/` source trees
+- Fixed GCC `-Wcomment` warning caused by nested comment sequences (`*/` inside block comments)
+- Lint and Security CI workflows now passing
+
+---
 
 ## [1.0.0] - 2026-01-13
 
@@ -110,6 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **2.1.0** (2026-01-20): Governance VRF sortition, 12 new RPC endpoints, Layer 2 Plasma improvements, SBOM/provenance CI, runbooks, Constitution
 - **1.0.0** (2026-01-13): Core blockchain complete, ready for testnet
 - **0.1.0** (2026-01-01): Initial development setup
 
