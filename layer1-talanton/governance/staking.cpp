@@ -148,6 +148,19 @@ uint64_t StakingRegistry::GetTotalVotingPower() const {
     return total;
 }
 
+std::vector<std::pair<std::vector<uint8_t>, uint64_t>>
+StakingRegistry::GetAllVotingPowers() const {
+    std::vector<std::pair<std::vector<uint8_t>, uint64_t>> result;
+    result.reserve(stakes_.size());
+    for (const auto& [addr, rec] : stakes_) {
+        uint64_t power = GetVotingPower(addr);
+        if (power > 0) {
+            result.emplace_back(addr, power);
+        }
+    }
+    return result;
+}
+
 const std::vector<StakingRegistry::SlashRecord>&
 StakingRegistry::GetSlashHistory() const {
     return slash_history_;

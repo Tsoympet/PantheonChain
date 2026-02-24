@@ -120,10 +120,12 @@ primitives::Block CreateGenesisBlock(const GenesisConfig& config) {
             
             // Validate parsed address (should be 32 bytes for x-only Schnorr pubkey)
             if (pubkey_script.size() != 32) {
-                std::cerr << "Warning: Invalid address length (" << pubkey_script.size() 
-                         << " bytes, expected 32): " << addr_hex << std::endl;
-                std::cerr << "Using dummy 32-byte address instead" << std::endl;
-                pubkey_script = std::vector<uint8_t>(32, 0);  // Fallback to dummy
+                std::cerr << "Error: Invalid premine address '" << addr_hex
+                         << "' (parsed " << pubkey_script.size()
+                         << " bytes; expected a 32-byte hex-encoded x-only Schnorr public key).\n"
+                         << "Skipping this address – do NOT use a zero-key fallback in production "
+                         << "as it creates an anyone-can-spend output." << std::endl;
+                continue;
             }
             
             primitives::TxOutput tal_output;

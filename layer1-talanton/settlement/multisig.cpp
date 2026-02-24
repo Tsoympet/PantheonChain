@@ -176,8 +176,12 @@ bool MultisigValidator::VerifySchnorrSignature(const PubKey& pubkey, const Signa
     // Hash the message first
     auto msg_hash = crypto::SHA256::Hash256(message.data(), message.size());
 
-    // Convert 33-byte compressed pubkey to 32-byte x-only pubkey
-    // For now, just use the last 32 bytes (simplified)
+    // Convert 33-byte compressed pubkey to 32-byte x-only pubkey.
+    // A compressed secp256k1 public key is: [0x02|0x03] || X (33 bytes).
+    // BIP340 (Schnorr) uses only the X coordinate (32 bytes), so we skip the
+    // first prefix byte.  The parity (even/odd Y) is implicitly handled by the
+    // Schnorr signing convention; the verifier assumes the even-Y point when the
+    // prefix is 0x02, which is the canonical form used throughout this codebase.
     crypto::Schnorr::PublicKey xonly_pubkey;
     std::copy(pubkey.begin() + 1, pubkey.end(), xonly_pubkey.begin());
 

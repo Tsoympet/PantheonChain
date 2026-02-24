@@ -59,11 +59,11 @@ std::array<uint8_t, 32> HashBytes(const std::vector<uint8_t>& data) {
     return HashBytes(data.data(), data.size());
 }
 
-std::array<uint8_t, 32> HashPair(std::array<uint8_t, 32> left, std::array<uint8_t, 32> right) {
-    // Order siblings lexicographically for deterministic hashing in this simplified tree (value-sorted pairs).
-    if (std::lexicographical_compare(right.begin(), right.end(), left.begin(), left.end())) {
-        std::swap(left, right);
-    }
+std::array<uint8_t, 32> HashPair(const std::array<uint8_t, 32>& left,
+                                  const std::array<uint8_t, 32>& right) {
+    // Positional Merkle tree: left child always goes first, right child second.
+    // The parent hash is SHA256(left || right) so the tree is index-aware and
+    // compatible with standard ZK-rollup circuit verifiers.
     crypto::SHA256 hasher;
     hasher.Write(left.data(), left.size());
     hasher.Write(right.data(), right.size());
@@ -97,9 +97,9 @@ ComputeMerkleRoot(const std::vector<std::array<uint8_t, 32>>& leaves) {
     return layer.front();
 }
 
-std::vector<std::array<uint8_t, 32>>
+std::vector<std::pair<std::array<uint8_t, 32>, bool>>
 BuildMerkleProof(const std::vector<std::array<uint8_t, 32>>& leaves, size_t index) {
-    std::vector<std::array<uint8_t, 32>> proof;
+    std::vector<std::pair<std::array<uint8_t, 32>, bool>> proof;
     if (leaves.empty() || index >= leaves.size()) {
         return proof;
     }
@@ -110,9 +110,19 @@ BuildMerkleProof(const std::vector<std::array<uint8_t, 32>>& leaves, size_t inde
         if (layer.size() % 2 != 0) {
             layer.push_back(layer.back());
         }
-        size_t sibling = (idx % 2 == 0) ? idx + 1 : idx - 1;
-        if (sibling < layer.size()) {
-            proof.push_back(layer[sibling]);
+        // For a positional tree, record both the sibling hash and whether it is
+        // the RIGHT sibling (current node is left child, idx % 2 == 0) or the
+        // LEFT sibling (current node is right child, idx % 2 == 1).
+        // After padding, layer.size() is always even, so idx % 2 == 0 guarantees
+        // idx + 1 < layer.size().
+        if (idx % 2 == 0) {
+            // current is left child → sibling is to the right (always valid after padding)
+            if (idx + 1 < layer.size()) {
+                proof.emplace_back(layer[idx + 1], /*is_right_sibling=*/true);
+            }
+        } else {
+            // current is right child → sibling is to the left
+            proof.emplace_back(layer[idx - 1], /*is_right_sibling=*/false);
         }
         std::vector<std::array<uint8_t, 32>> next;
         next.reserve(layer.size() / 2);
@@ -213,7 +223,7 @@ bool ZKRollupState::ApplyTransaction(const ZKTransaction& tx) {
     return true;
 }
 
-std::vector<std::array<uint8_t, 32>>
+std::vector<std::pair<std::array<uint8_t, 32>, bool>>
 ZKRollupState::GetMerkleProof(const std::vector<uint8_t>& account) const {
     if (account.empty()) {
         return {};
@@ -241,15 +251,22 @@ ZKRollupState::GetMerkleProof(const std::vector<uint8_t>& account) const {
 }
 
 bool ZKRollupState::VerifyMerkleProof(
-    const std::vector<uint8_t>& account, const std::vector<std::array<uint8_t, 32>>& proof,
+    const std::vector<uint8_t>& account,
+    const std::vector<std::pair<std::array<uint8_t, 32>, bool>>& proof,
     const std::array<uint8_t, 32>& root) const {
     if (account.empty()) {
         return false;
     }
 
     auto current_hash = HashAccount(account);
-    for (const auto& sibling : proof) {
-        current_hash = HashPair(current_hash, sibling);
+    for (const auto& [sibling, is_right] : proof) {
+        if (is_right) {
+            // current node is the left child
+            current_hash = HashPair(current_hash, sibling);
+        } else {
+            // current node is the right child
+            current_hash = HashPair(sibling, current_hash);
+        }
     }
 
     return current_hash == root;
@@ -575,8 +592,12 @@ bool ZKRollupExitManager::VerifyExitProof(const ExitRequest& request) const {
     }
 
     auto current_hash = HashAccount(request.account);
-    for (const auto& sibling : request.merkle_proof) {
-        current_hash = HashPair(current_hash, sibling);
+    for (const auto& [sibling, is_right] : request.merkle_proof) {
+        if (is_right) {
+            current_hash = HashPair(current_hash, sibling);
+        } else {
+            current_hash = HashPair(sibling, current_hash);
+        }
     }
 
     if (current_hash != request.merkle_root) {

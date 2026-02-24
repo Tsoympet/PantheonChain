@@ -943,7 +943,28 @@ void MobileClient::CallContract(const ContractCall& call, ContractCallCallback c
         callback(std::nullopt, "Contract address must not be empty");
         return;
     }
-    callback(std::nullopt, "Contract calls are not supported by the current SDK implementation");
+
+    // Build an eth_call-compatible JSON-RPC request.
+    // The PantheonChain L3 EVM node accepts this under the "evm/call" method.
+    std::string error;
+    json params = json::array();
+    json tx_obj;
+    tx_obj["to"]   = call.contract_address;
+    tx_obj["data"] = call.function_name;  // ABI-encoded selector + args
+    if (call.gas_limit > 0) {
+        tx_obj["gas"] = call.gas_limit;
+    }
+    params.push_back(tx_obj);
+    params.push_back("latest");
+
+    auto result = RpcRequest(impl_->config_, "evm/call", params, error);
+    if (!result) {
+        callback(std::nullopt, error.empty() ? "Contract call failed" : error);
+        return;
+    }
+    std::string return_data = result->is_string() ? result->get<std::string>()
+                                                  : result->dump();
+    callback(return_data, std::nullopt);
 }
 
 void MobileClient::DeployContract(const std::vector<uint8_t>& bytecode, TransactionCallback callback) {
@@ -951,7 +972,38 @@ void MobileClient::DeployContract(const std::vector<uint8_t>& bytecode, Transact
         callback(std::nullopt, "Bytecode must not be empty");
         return;
     }
-    callback(std::nullopt, "Contract deployment is not supported by the current SDK implementation");
+
+    // Hex-encode the bytecode for the RPC call.
+    static const char* kHex = "0123456789abcdef";
+    std::string hex;
+    hex.reserve(2 + bytecode.size() * 2);
+    hex = "0x";
+    for (uint8_t b : bytecode) {
+        hex.push_back(kHex[b >> 4]);
+        hex.push_back(kHex[b & 0xF]);
+    }
+
+    // Build an eth_sendRawTransaction-compatible request for L3 contract deployment.
+    std::string error;
+    json params = json::array();
+    json tx_obj;
+    tx_obj["data"] = hex;
+    params.push_back(tx_obj);
+
+    auto result = RpcRequest(impl_->config_, "evm/deploy", params, error);
+    if (!result) {
+        callback(std::nullopt, error.empty() ? "Contract deployment failed" : error);
+        return;
+    }
+
+    // The L3 node returns {"txid": "...", "status": "accepted"}.
+    std::string txid;
+    if (result->contains("txid") && (*result)["txid"].is_string()) {
+        txid = (*result)["txid"].get<std::string>();
+    } else {
+        txid = result->dump();
+    }
+    callback(txid, std::nullopt);
 }
 
 void MobileClient::SubscribeToBlocks(BlockCallback callback) {
@@ -1061,7 +1113,50 @@ void MobileClient::EstimateGas(const Transaction& tx, GasEstimateCallback callba
         callback(std::nullopt, "Transaction destination address must not be empty");
         return;
     }
-    callback(std::nullopt, "Gas estimation is not supported by the current SDK implementation");
+
+    // Build an eth_estimateGas-compatible request for the L3 EVM layer.
+    std::string error;
+    json params = json::array();
+    json tx_obj;
+    tx_obj["to"]    = tx.to;
+    tx_obj["value"] = tx.amount;
+    if (!tx.from.empty()) {
+        tx_obj["from"] = tx.from;
+    }
+    params.push_back(tx_obj);
+
+    auto result = RpcRequest(impl_->config_, "evm/estimate_gas", params, error);
+    if (!result) {
+        callback(std::nullopt, error.empty() ? "Gas estimation failed" : error);
+        return;
+    }
+
+    // The node returns an integer gas estimate.
+    if (result->is_number_unsigned() || result->is_number()) {
+        callback(result->get<uint64_t>(), std::nullopt);
+    } else if (result->is_string()) {
+        // Some nodes return a hex string e.g. "0x5208"
+        std::string hex_val = result->get<std::string>();
+        if (hex_val.size() > 2 && hex_val[0] == '0' && hex_val[1] == 'x') {
+            hex_val = hex_val.substr(2);
+        }
+        uint64_t gas = 0;
+        bool parse_ok = true;
+        for (char c : hex_val) {
+            gas <<= 4;
+            if (c >= '0' && c <= '9') gas |= static_cast<uint64_t>(c - '0');
+            else if (c >= 'a' && c <= 'f') gas |= static_cast<uint64_t>(c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F') gas |= static_cast<uint64_t>(c - 'A' + 10);
+            else { parse_ok = false; break; }
+        }
+        if (!parse_ok) {
+            callback(std::nullopt, "Invalid hex character in gas estimate response");
+            return;
+        }
+        callback(gas, std::nullopt);
+    } else {
+        callback(std::nullopt, "Unexpected gas estimate response format");
+    }
 }
 
 void MobileClient::GetNetworkStatus(NetworkStatusCallback callback) {

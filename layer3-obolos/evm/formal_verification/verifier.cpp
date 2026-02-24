@@ -63,9 +63,11 @@ ContractVerifier::VerifySource(const std::string& source_code,
         return result;
     }
 
-    // Source-to-bytecode compilation is not yet implemented.
-    // Mark all critical properties as unverified so callers know the analysis
-    // was not performed rather than silently reporting VERIFIED.
+    // Source-to-bytecode compilation is not yet integrated.
+    // All properties are reported as failed so callers receive an explicit
+    // FAILED result rather than a silent VERIFIED that would be misleading.
+    // Wire a real Solidity/Vyper compiler (e.g. via solc or the ethers.js ABI
+    // encoder) and re-run the bytecode verifier to enable this code path.
     result.status = VerificationStatus::FAILED;
     for (const auto& prop : properties) {
         result.failed_properties.push_back(prop);

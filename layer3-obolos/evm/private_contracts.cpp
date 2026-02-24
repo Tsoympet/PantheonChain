@@ -118,9 +118,13 @@ bool PrivateVoting::CastVote(const Vote& vote) {
 }
 
 std::map<std::string, uint64_t> PrivateVoting::TallyVotes() {
-    // Votes use encrypted choices; since we cannot decrypt them here,
-    // we split by index (first half = yes, second half = no) as a
-    // deterministic placeholder consistent with the encrypted-ballot model.
+    // Votes use encrypted choices; decryption requires the tally private key
+    // which is held by the threshold decryption committee and is not available
+    // on-chain at tally time.  Until the threshold decryption integration is
+    // wired in, tallying falls back to an even split (floor(n/2) yes, ceil(n/2) no)
+    // so that the interface remains usable in offline tests.
+    // NOTE: Replace this with a call to the threshold decryption service before
+    // deploying to a production network.
     std::map<std::string, uint64_t> results;
     results["yes"] = votes_.size() / 2;
     results["no"] = votes_.size() - results["yes"];

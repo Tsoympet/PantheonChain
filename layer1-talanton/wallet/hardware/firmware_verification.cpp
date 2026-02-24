@@ -113,7 +113,12 @@ namespace hardware {
 // FirmwareVerifier implementation
 FirmwareVerifier::FirmwareVerifier() {
     // Initialize with known vendor keys (loaded from embedded constants in production).
-    // Placeholder keys: replace with real vendor certificate bytes.
+    // NOTE: The public keys below are compile-time placeholders.  Before shipping
+    // a production build, replace each entry's public_keys vector with the real
+    // vendor certificate bytes obtained from the respective vendor's secure-boot
+    // documentation (Ledger: https://www.ledger.com/certificates,
+    // Trezor: https://trezor.io/security).  Leaving placeholder values will cause
+    // all firmware signature verifications to fail against real devices.
 
     // Ledger public keys
     VendorKeys ledger_keys;
@@ -616,7 +621,11 @@ bool BootloaderVerifier::VerifySecureBoot(const std::vector<uint8_t>& device_id)
     if (device_id.empty()) {
         return false;
     }
-    // Placeholder attestation check for tests until device APIs are available.
+    // NOTE: Real secure-boot attestation requires querying the hardware attestation
+    // API (e.g. via FIDO2/CTAP or a vendor-specific transport).  Until those device
+    // APIs are integrated, this function verifies only that device_id is non-zero,
+    // which is sufficient for offline unit tests but MUST be replaced before
+    // connecting to real hardware.
     return std::any_of(device_id.begin(), device_id.end(), [](uint8_t byte) { return byte != 0; });
 }
 

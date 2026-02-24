@@ -130,9 +130,41 @@ bool PlasmaChain::ChallengeExit(const std::array<uint8_t, 32>& tx_hash,
         return false;
     }
 
-    // Verify fraud proof (simplified)
-    if (fraud_proof.empty()) {
+    // Verify fraud proof: must be non-empty and must contain the 32-byte tx_hash
+    // of the challenged exit as its first 32 bytes, proving the challenger is
+    // referencing a specific transaction rather than submitting a generic blob.
+    // Bytes [32..end] carry a Merkle inclusion proof structured as
+    // N × 33 bytes: [direction(1)] || [sibling_hash(32)].
+    //   direction = 0 → sibling is the RIGHT child; current is LEFT.
+    //   direction = 1 → sibling is the LEFT child;  current is RIGHT.
+    // The proof is verified against the Merkle root of the Plasma block that
+    // contains the exit request, confirming the cited tx is actually included
+    // in that block.
+    if (fraud_proof.size() < 32) {
         return false;
+    }
+    std::array<uint8_t, 32> proof_tx_hash;
+    std::memcpy(proof_tx_hash.data(), fraud_proof.data(), 32);
+    if (proof_tx_hash != tx_hash) {
+        return false;
+    }
+
+    // If a Plasma block Merkle proof is provided, verify it.
+    const size_t merkle_bytes = fraud_proof.size() - 32;
+    if (merkle_bytes > 0) {
+        if (merkle_bytes % 33 != 0) {
+            return false;  // Malformed proof: not a multiple of 33 bytes
+        }
+        auto block_opt = GetBlock(it->second.plasma_block_number);
+        if (!block_opt) {
+            return false;  // Referenced block not found
+        }
+        // Build the proof vector from the trailing bytes.
+        std::vector<uint8_t> inclusion_proof(
+            fraud_proof.begin() + 32, fraud_proof.end());
+        if (!VerifyMerkleProof(tx_hash, block_opt->merkle_root, inclusion_proof)) {
+            return false;  // Merkle proof invalid
+        }
     }
 
     // Mark as challenged
