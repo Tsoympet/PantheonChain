@@ -41,6 +41,13 @@ jobs:
         run: |
           node -e "const fs=require('fs'); const app=JSON.parse(fs.readFileSync('app.json','utf8')); const sdk=String(app?.expo?.sdkVersion || '0'); const major=parseInt(sdk.split('.')[0],10)||0; if(major<50){ console.error(\`Expo SDK \${sdk} is unsupported by EAS Build managed workflow. Upgrade to SDK 50+.\`); process.exit(1);} console.log(\`Expo SDK \${sdk} is compatible.\`);"
 
+      - name: Select Xcode 16
+        run: |
+          # React Native 0.81 requires Xcode >= 16.1; select the latest Xcode 16 available
+          XCODE=$(find /Applications -maxdepth 1 -name "Xcode_16*.app" -type d | sort | tail -1)
+          sudo xcode-select --switch "${XCODE}/Contents/Developer"
+          xcodebuild -version
+
       - name: Generate iOS native directory
         run: npx expo prebuild --clean --platform ios --non-interactive
 
