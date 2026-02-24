@@ -60,7 +60,13 @@ std::array<uint8_t, 32> HashBytes(const std::vector<uint8_t>& data) {
 }
 
 std::array<uint8_t, 32> HashPair(std::array<uint8_t, 32> left, std::array<uint8_t, 32> right) {
-    // Order siblings lexicographically for deterministic hashing in this simplified tree (value-sorted pairs).
+    // Sort siblings lexicographically before hashing so the Merkle root is
+    // independent of the order in which leaves are presented.  This is a
+    // non-positional (sorted) tree suitable for set-membership proofs.
+    // NOTE: A production ZK-rollup typically uses a *positional* Merkle tree
+    // where the left/right order is determined by the leaf index, not value
+    // ordering.  Replace this sorting with index-based ordering when wiring in
+    // a real proving backend.
     if (std::lexicographical_compare(right.begin(), right.end(), left.begin(), left.end())) {
         std::swap(left, right);
     }

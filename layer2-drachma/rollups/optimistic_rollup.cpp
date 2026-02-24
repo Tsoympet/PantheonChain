@@ -132,7 +132,16 @@ bool OptimisticRollup::VerifyFraudProof(const FraudProof& proof) const {
         return false;
     }
 
-    // Additional verification would happen here
+    // Verify state proofs are provided (challenger must supply pre- and post-state
+    // witnesses so that full re-execution can confirm the correct state root).
+    if (proof.state_proof_before.empty() || proof.state_proof_after.empty()) {
+        return false;
+    }
+
+    // NOTE: Full re-execution of the disputed transaction against the provided
+    // state witnesses (state_proof_before / state_proof_after) is required here
+    // before this function can be used in production.  The current check confirms
+    // that all required proof fields are present and structurally valid.
     return true;
 }
 
@@ -276,8 +285,11 @@ bool RollupVerifier::VerifyBatch(const RollupBatch& batch) const {
         return false;
     }
 
-    // Verify state roots are different (some change occurred)
-    // This is a simplified check
+    // Verify state roots are different (some change occurred).
+    // NOTE: A full batch verifier must re-execute every transaction in the batch
+    // against state_root_before and confirm the resulting root equals
+    // state_root_after.  The current check only confirms the roots differ, which
+    // is a necessary but not sufficient condition for correctness.
     bool roots_differ = false;
     for (size_t i = 0; i < 32; ++i) {
         if (batch.state_root_before[i] != batch.state_root_after[i]) {

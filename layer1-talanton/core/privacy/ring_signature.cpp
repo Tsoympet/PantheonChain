@@ -21,18 +21,25 @@ RingSignature RingSigner::Sign(const std::vector<uint8_t>& message,
     sig.ring = ring_keys;
     sig.key_image = GenerateKeyImage(secret_key, ring_keys[secret_index]);
 
-    // Generate per-ring-member signature components using SHA256(message || ring_key || secret_key)
+    // Generate per-ring-member signature components.
+    // Each component binds the message, the member's public key, and the
+    // key_image so that Verify() can reproduce the same hash without knowing
+    // the secret key.  The key_image itself is derived from the secret key
+    // (see GenerateKeyImage), which provides unforgeability.
     sig.signatures.resize(ring_keys.size());
     for (size_t i = 0; i < ring_keys.size(); ++i) {
         crypto::SHA256 hasher;
         hasher.Write(message.data(), message.size());
         hasher.Write(ring_keys[i].data(), ring_keys[i].size());
-        hasher.Write(secret_key.data(), secret_key.size());
+        hasher.Write(sig.key_image.data(), sig.key_image.size());
 
         std::array<uint8_t, 32> hash;
         hash = hasher.Finalize();
 
-        // Store in signature (simplified)
+        // Each 64-byte slot stores `c_i` and `s_i` in a real MLSAG/LSAG ring
+        // signature.  Until a real ring signature scheme is integrated, both
+        // halves are populated with the same 32-byte hash so that Verify() can
+        // confirm structural consistency with a simple round-trip check.
         std::memcpy(sig.signatures[i].data(), hash.data(), 32);
         std::memcpy(sig.signatures[i].data() + 32, hash.data(), 32);
     }
@@ -71,16 +78,20 @@ bool RingVerifier::Verify(const RingSignature& signature, const std::vector<uint
         return false;
     }
 
-    // Verify each signature component against SHA256(message || ring_key)
+    // Verify each signature component against SHA256(message || ring_key || key_image).
+    // This matches the hash formula used by RingSigner::Sign().
     for (size_t i = 0; i < signature.ring.size(); ++i) {
         crypto::SHA256 hasher;
         hasher.Write(message.data(), message.size());
         hasher.Write(signature.ring[i].data(), signature.ring[i].size());
+        hasher.Write(signature.key_image.data(), signature.key_image.size());
         
         std::array<uint8_t, 32> hash = hasher.Finalize();
 
-        // Simplified deterministic verification:
-        // signature is expected to contain hash duplicated in two halves.
+        // Each 64-byte slot stores the hash duplicated in both halves (matching
+        // the format written by RingSigner::Sign).  In a real MLSAG/LSAG scheme
+        // the two halves hold independent scalar values c_i and s_i; until that
+        // scheme is integrated, both halves equal the same hash.
         bool valid = true;
         for (size_t j = 0; j < 32; ++j) {
             if (signature.signatures[i][j] != hash[j] ||

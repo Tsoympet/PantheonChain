@@ -130,8 +130,20 @@ bool PlasmaChain::ChallengeExit(const std::array<uint8_t, 32>& tx_hash,
         return false;
     }
 
-    // Verify fraud proof (simplified)
-    if (fraud_proof.empty()) {
+    // Verify fraud proof: must be non-empty and must contain the 32-byte tx_hash
+    // of the challenged exit as its first 32 bytes, proving the challenger is
+    // referencing a specific transaction rather than submitting a generic blob.
+    // The bytes after the first 32 should carry a Merkle inclusion proof of a
+    // conflicting spend in the same slot (33 bytes each: direction || sibling_hash),
+    // structured identically to the proofs accepted by VerifyMerkleProof().
+    // Full re-execution of the conflicting spend against the referenced Plasma block
+    // is required before this function can be considered production-complete.
+    if (fraud_proof.size() < 32) {
+        return false;
+    }
+    std::array<uint8_t, 32> proof_tx_hash;
+    std::memcpy(proof_tx_hash.data(), fraud_proof.data(), 32);
+    if (proof_tx_hash != tx_hash) {
         return false;
     }
 

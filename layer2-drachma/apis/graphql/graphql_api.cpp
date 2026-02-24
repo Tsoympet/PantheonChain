@@ -44,7 +44,10 @@ class GraphQLAPI::Impl {
     bool IsRunning() const { return running_; }
 
     std::string HandleQuery(const std::string& query) {
-        // Simple query parser (simplified version)
+        // Keyword-based query router.
+        // NOTE: This is a substring-match dispatcher, not a full GraphQL parser.
+        // Replace with a proper GraphQL lexer/parser (e.g. libgraphqlparser or
+        // a generated schema executor) for production deployments.
 
         if (query.find("blocks") != std::string::npos) {
             return HandleBlocksQuery(query);

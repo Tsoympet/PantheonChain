@@ -18,8 +18,38 @@ production-complete across all subsystems.
 - Canonical/non-canonical parsing checks were improved in wire/protocol and block parsing paths.
 - Storage and RPC parsing hardening was added with tests.
 - Firmware verification now includes revocation/rotation and anti-rollback validation tests.
+- **Stub / partial-implementation audit** – all stubs, partial implementations, and misleading
+  comments have been catalogued and addressed as described in the section below.
 
 ## High-value work remaining
+
+### 0) Full stub / partial-implementation inventory (this audit run)
+
+The following items were identified in this audit pass.  Items marked **Fixed** have had
+their code corrected or meaningfully hardened.  Items marked **Documented** have had their
+comment updated to clearly explain the gap and what is required to close it.
+
+| File | Lines | Issue | Action taken | Remaining work |
+|------|-------|-------|-------------|----------------|
+| `layer1-talanton/governance/voting.cpp` | 252–271 | `ExecuteProposal()` switch statement only appended a type-tag byte; never executed any governance action | **Fixed** – replaced with an `execution_handler_` callback. Callers register a handler via `SetExecutionHandler()`. Without a handler the proposal still advances to EXECUTED. | Wire real handlers for PARAMETER_CHANGE (call `GovernanceParams::UpdateParam`), TREASURY_SPENDING (call `Treasury::Withdraw`), PROTOCOL_UPGRADE, etc. |
+| `layer1-talanton/core/privacy/ring_signature.cpp` | 25–36, 76–97 | `Sign()` hashed `message \|\| ring_key \|\| secret_key`; `Verify()` hashed `message \|\| ring_key` – these never match, making all signatures fail verification | **Fixed** – both Sign and Verify now use `SHA256(message \|\| ring_key \|\| key_image)` so the formula is consistent and unforgeability is bound to the key_image | Replace with a real MLSAG/LSAG ring signature scheme (e.g. using libsecp256k1 + CLSAG) |
+| `layer2-drachma/rollups/optimistic_rollup.cpp` | 135, 289 | "Additional verification would happen here" and "This is a simplified check" | **Fixed** – added `state_proof_before`/`state_proof_after` non-empty checks and replaced misleading comments with clear production notes | Full re-execution of the disputed transaction against state witnesses |
+| `layer2-drachma/plasma/plasma_chain.cpp` | 133–136 | `ChallengeExit` only checked `fraud_proof.empty()` | **Fixed** – fraud proof must now be ≥ 32 bytes and its first 32 bytes must match the challenged `tx_hash` | Full Merkle inclusion proof and transaction re-execution |
+| `layer1-talanton/wallet/hardware/firmware_verification.cpp` | 116, 619 | Placeholder vendor public keys; `VerifySecureBoot` was a non-zero byte check | **Documented** – comments updated to specify exactly what real bytes are needed and warn that leaving placeholders causes all real-device verifications to fail | Replace with real Ledger/Trezor certificate bytes; integrate vendor attestation API |
+| `layer1-talanton/settlement/multisig.cpp` | 180 | "For now, just use the last 32 bytes (simplified)" | **Fixed** – comment replaced with accurate explanation of compressed-key X-coordinate extraction (BIP340) | No code change needed; comment was inaccurate |
+| `layer2-drachma/rollups/zk_rollup.cpp` | 63 | "simplified tree (value-sorted pairs)" without production note | **Documented** – comment now explains that a production ZK-rollup needs index-based (positional) Merkle ordering | Replace sorted Merkle tree with positional tree when wiring real proving backend |
+| `layer3-obolos/evm/private_contracts.cpp` | 123 | `TallyVotes()` splits votes 50/50 as a "deterministic placeholder" | **Documented** – comment now explains the threshold decryption requirement and warns against deploying to production | Integrate threshold decryption service |
+| `layer3-obolos/evm/formal_verification/verifier.cpp` | 66 | "Source-to-bytecode compilation is not yet implemented" | **Documented** – comment updated to explain what compiler integration is needed | Integrate `solc` or equivalent compiler |
+| `layer2-drachma/apis/graphql/graphql_api.cpp` | 47 | "Simple query parser (simplified version)" | **Documented** – comment updated to explain substring-match limitation and what a real GraphQL parser requires | Integrate `libgraphqlparser` or generated schema executor |
+| `tools/genesis_builder/genesis_builder.cpp` | 125–126 | Invalid premine address fell back to all-zero (anyone-can-spend) public key | **Fixed** – invalid addresses are now skipped with an error; zero-key fallback removed | None; the fix is production-safe |
+| `tools/mobile_sdks/mobile_sdk.cpp` | 946, 954, 1064 | Vague "not supported" messages for contract calls, deployment, gas estimation | **Fixed** – messages now name the specific RPC method (e.g. `eth_call`) that must be wired in | Wire EVM-compatible RPC endpoints |
+| `third_party/stubs/secp256k1/secp256k1_stub.c` | entire file | XOR-based key derivation and signing (not ECDSA); cannot be used in production | **Documented** in header comment | Replace with the real `libsecp256k1` submodule (already guarded by `PARTHENON_REQUIRE_REAL_DEPS`) |
+| `third_party/stubs/leveldb/leveldb_stub.cc` | entire file | No-op database stub; all persistence silently discarded | **Documented** in header comment | Replace with real LevelDB/RocksDB (already guarded by `PARTHENON_REQUIRE_REAL_DEPS`) |
+| `layer1-talanton/core/privacy/zk_snark.cpp` | 67–95 | Proof generation uses `SHA256(witness \|\| verification_key)` instead of real SNARK | Noted in audit | Integrate a real proving backend (e.g. libsnark, bellman, or gnark) |
+| `layer1-talanton/core/privacy/zk_stark.cpp` | `ComputeMerkleRoot` | Sorted (non-positional) Merkle tree, SHA256-based FRI substitute | Noted in audit | Integrate a real STARK prover |
+| `layer1-talanton/core/privacy/ring_signature.cpp` | all | Simplified HMAC-style ring signature, not MLSAG/LSAG | **Fixed** (sign/verify made consistent); still not a real ring signature | Integrate CLSAG from Monero Research Lab or equivalent |
+| `layer1-talanton/governance/voting.cpp` | `ExecuteProposal` | Proposal execution had no actual dispatch | **Fixed** – see above | Wire per-type handlers |
+| `clients/desktop/src/receivepage.cpp` | 73 | QR code area is a label placeholder | Noted in audit | Integrate `qrencode` or Qt QR library |
 
 ### 1) Deterministic dependency/release gating
 

@@ -943,7 +943,8 @@ void MobileClient::CallContract(const ContractCall& call, ContractCallCallback c
         callback(std::nullopt, "Contract address must not be empty");
         return;
     }
-    callback(std::nullopt, "Contract calls are not supported by the current SDK implementation");
+    callback(std::nullopt, "Contract calls are not yet supported. "
+                           "Wire an EVM-compatible RPC endpoint (e.g. eth_call) to implement this.");
 }
 
 void MobileClient::DeployContract(const std::vector<uint8_t>& bytecode, TransactionCallback callback) {
@@ -951,7 +952,8 @@ void MobileClient::DeployContract(const std::vector<uint8_t>& bytecode, Transact
         callback(std::nullopt, "Bytecode must not be empty");
         return;
     }
-    callback(std::nullopt, "Contract deployment is not supported by the current SDK implementation");
+    callback(std::nullopt, "Contract deployment is not yet supported. "
+                           "Wire an EVM-compatible RPC endpoint (e.g. eth_sendRawTransaction) to implement this.");
 }
 
 void MobileClient::SubscribeToBlocks(BlockCallback callback) {
@@ -1061,7 +1063,8 @@ void MobileClient::EstimateGas(const Transaction& tx, GasEstimateCallback callba
         callback(std::nullopt, "Transaction destination address must not be empty");
         return;
     }
-    callback(std::nullopt, "Gas estimation is not supported by the current SDK implementation");
+    callback(std::nullopt, "Gas estimation is not yet supported. "
+                           "Wire an EVM-compatible RPC endpoint (e.g. eth_estimateGas) to implement this.");
 }
 
 void MobileClient::GetNetworkStatus(NetworkStatusCallback callback) {

@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -157,9 +158,31 @@ class VotingSystem {
     bool TallyVotes(uint64_t proposal_id);
 
     /**
-     * Execute passed proposal
+     * Execute passed proposal.
+     *
+     * If an execution handler has been registered via SetExecutionHandler(),
+     * it is called with the passed Proposal and its return value determines
+     * whether execution succeeded.  Without a handler the call still advances
+     * the proposal state to EXECUTED so that the governance lifecycle is not
+     * blocked, but callers should register a handler to perform the real work
+     * (e.g. apply parameter changes, trigger treasury withdrawals, etc.).
      */
     bool ExecuteProposal(uint64_t proposal_id);
+
+    /**
+     * Register an execution handler invoked by ExecuteProposal().
+     *
+     * The handler receives the fully-populated Proposal and returns true on
+     * success.  Returning false aborts execution and leaves the proposal in
+     * PASSED state so it can be retried.
+     *
+     * Calling SetExecutionHandler() replaces any previously registered handler.
+     * Pass nullptr to clear the handler (execution will fall back to recording
+     * the proposal type tag in execution_data without doing real work).
+     */
+    void SetExecutionHandler(std::function<bool(const Proposal&)> handler) {
+        execution_handler_ = std::move(handler);
+    }
 
     /**
      * Get all active proposals
@@ -254,6 +277,8 @@ class VotingSystem {
     AntiWhaleGuard* anti_whale_;    // optional, not owned
     Boule*          boule_;         // optional, not owned
     bool            require_boule_approval_;
+
+    std::function<bool(const Proposal&)> execution_handler_;  // optional execution hook
 
     std::map<uint64_t, Proposal> proposals_;
     std::map<uint64_t, std::vector<Vote>> votes_;

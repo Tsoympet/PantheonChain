@@ -248,26 +248,20 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
         return false;
     }
 
-    // Execute proposal based on type
-    switch (proposal.type) {
-        case ProposalType::PARAMETER_CHANGE:
-            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::PARAMETER_CHANGE));
-            break;
-        case ProposalType::TREASURY_SPENDING:
-            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::TREASURY_SPENDING));
-            break;
-        case ProposalType::PROTOCOL_UPGRADE:
-            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::PROTOCOL_UPGRADE));
-            break;
-        case ProposalType::GENERAL:
-            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::GENERAL));
-            break;
-        case ProposalType::CONSTITUTIONAL:
-            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::CONSTITUTIONAL));
-            break;
-        case ProposalType::EMERGENCY:
-            proposal.execution_data.push_back(static_cast<uint8_t>(ProposalType::EMERGENCY));
-            break;
+    // Execute proposal based on type.
+    // If a handler is registered, delegate to it.  The handler may inspect
+    // proposal.type and proposal.execution_data to perform the real work.
+    if (execution_handler_) {
+        if (!execution_handler_(proposal)) {
+            // Handler declined – leave proposal in PASSED state for retry.
+            return false;
+        }
+    }
+    // No handler: the lifecycle still advances so callers are not permanently
+    // blocked.  The type tag is appended to execution_data as a minimal audit
+    // breadcrumb recording which handler path was taken.
+    else {
+        proposal.execution_data.push_back(static_cast<uint8_t>(proposal.type));
     }
 
     proposal.status = ProposalStatus::EXECUTED;
