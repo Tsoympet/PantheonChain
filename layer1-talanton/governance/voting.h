@@ -2,6 +2,10 @@
 #define PARTHENON_GOVERNANCE_VOTING_H
 
 #include "antiwhale.h"
+#include "params.h"
+#include "snapshot.h"
+#include "staking.h"
+#include "treasury.h"
 
 #include <array>
 #include <cstdint>
@@ -242,6 +246,27 @@ class VotingSystem {
     void SetBoule(Boule* boule) { boule_ = boule; }
 
     /**
+     * Attach a SnapshotRegistry. When set, CreateProposal() automatically
+     * creates a voting-power snapshot for each new proposal using the
+     * attached StakingRegistry.  CastVote() then uses the snapshot power
+     * for that proposal instead of the caller-supplied voting_power.
+     */
+    void SetSnapshotRegistry(SnapshotRegistry* registry) { snapshot_registry_ = registry; }
+    void SetStakingRegistry(StakingRegistry* staking)    { staking_registry_   = staking; }
+
+    /**
+     * Attach a GovernanceParams instance for PARAMETER_CHANGE proposal execution.
+     * Pass nullptr to detach.
+     */
+    void SetGovernanceParams(GovernanceParams* params) { gov_params_ = params; }
+
+    /**
+     * Attach a Treasury instance for TREASURY_SPENDING proposal execution.
+     * Pass nullptr to detach.
+     */
+    void SetTreasury(Treasury* treasury) { treasury_ = treasury; }
+
+    /**
      * When enabled, CastVote is rejected unless the proposal's
      * boule_approved flag is set (or a Boule is attached and reports approval).
      */
@@ -277,6 +302,11 @@ class VotingSystem {
     AntiWhaleGuard* anti_whale_;    // optional, not owned
     Boule*          boule_;         // optional, not owned
     bool            require_boule_approval_;
+
+    SnapshotRegistry* snapshot_registry_;  // optional, not owned
+    StakingRegistry*  staking_registry_;   // optional, not owned
+    GovernanceParams* gov_params_;  // optional, not owned
+    Treasury*         treasury_;    // optional, not owned
 
     std::function<bool(const Proposal&)> execution_handler_;  // optional execution hook
 

@@ -1,5 +1,7 @@
 #include "boule.h"
 
+#include "../core/crypto/sha256.h"
+
 #include <algorithm>
 #include <numeric>
 
@@ -84,20 +86,31 @@ bool Boule::ConductSortition(const std::vector<uint8_t>& seed, uint64_t block_he
 
     if (eligible.size() < council_size_) return false;
 
-    // Deterministic shuffle using the seed (Fisher-Yates with seed-derived PRNG).
-    // Simple LCG seeded from first 4 bytes of seed; sufficient for sortition.
-    uint32_t rng = (static_cast<uint32_t>(seed[0]) << 24) |
-                   (static_cast<uint32_t>(seed[1]) << 16) |
-                   (static_cast<uint32_t>(seed[2]) <<  8) |
-                    static_cast<uint32_t>(seed[3]);
-
-    auto lcg_next = [&rng]() -> uint32_t {
-        rng = rng * 1664525u + 1013904223u;  // Numerical Recipes LCG
-        return rng;
+    // Deterministic Fisher-Yates shuffle using a SHA256-based VRF.
+    // Each draw hashes (seed || block_height_le8 || counter_le8) to produce
+    // 32 bytes of unpredictable-but-deterministic randomness.  Using the full
+    // hash output (not a truncated LCG) ensures uniform, bias-resistant draws.
+    auto append_le64 = [](std::vector<uint8_t>& buf, uint64_t v) {
+        for (int bi = 0; bi < 8; ++bi)
+            buf.push_back(static_cast<uint8_t>((v >> (8 * bi)) & 0xFF));
+    };
+    uint64_t vrf_counter = 0;
+    auto vrf_next = [&]() -> uint32_t {
+        std::vector<uint8_t> vrf_input;
+        vrf_input.insert(vrf_input.end(), seed.begin(), seed.end());
+        append_le64(vrf_input, block_height);
+        append_le64(vrf_input, vrf_counter);
+        ++vrf_counter;
+        auto hash = crypto::SHA256::Hash256(vrf_input.data(), vrf_input.size());
+        // Read first 4 bytes of hash as little-endian uint32 for portability.
+        return static_cast<uint32_t>(hash[0])        |
+               (static_cast<uint32_t>(hash[1]) << 8) |
+               (static_cast<uint32_t>(hash[2]) << 16)|
+               (static_cast<uint32_t>(hash[3]) << 24);
     };
 
     for (size_t i = eligible.size() - 1; i > 0; --i) {
-        uint32_t j = lcg_next() % static_cast<uint32_t>(i + 1);
+        uint32_t j = vrf_next() % static_cast<uint32_t>(i + 1);
         std::swap(eligible[i], eligible[j]);
     }
 

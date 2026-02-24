@@ -149,6 +149,12 @@ class StakingRegistry {
      */
     uint64_t GetTotalVotingPower() const;
 
+    /**
+     * Returns a snapshot-ready vector of (address, voting_power) pairs
+     * for every staker with non-zero voting power.
+     */
+    std::vector<std::pair<std::vector<uint8_t>, uint64_t>> GetAllVotingPowers() const;
+
     const std::vector<SlashRecord>& GetSlashHistory() const;
 
     // ------------------------------------------------------------------ //

@@ -5,6 +5,7 @@
 #include "../core/crypto/sha256.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace parthenon {
 namespace governance {
@@ -23,7 +24,11 @@ VotingSystem::VotingSystem()
       veto_threshold_bps_(3334),  // 33.34 % – Cosmos Hub model
       anti_whale_(nullptr),
       boule_(nullptr),
-      require_boule_approval_(false)
+      require_boule_approval_(false),
+      snapshot_registry_(nullptr),
+      staking_registry_(nullptr),
+      gov_params_(nullptr),
+      treasury_(nullptr)
 {}
 
 VotingSystem::~VotingSystem() = default;
@@ -52,6 +57,16 @@ uint64_t VotingSystem::CreateProposal(const std::vector<uint8_t>& proposer, Prop
     proposal.boule_approved = !require_boule_approval_;  // pre-approved when screening off
 
     proposals_[proposal.proposal_id] = proposal;
+
+    // Create a voting-power snapshot at the proposal's voting_start block.
+    // This freezes each staker's power so late-staking/flash-stake attacks
+    // cannot influence an ongoing vote.
+    if (snapshot_registry_ != nullptr && staking_registry_ != nullptr) {
+        auto powers = staking_registry_->GetAllVotingPowers();
+        snapshot_registry_->CreateSnapshot(proposal.proposal_id,
+                                           proposal.voting_start,
+                                           powers);
+    }
 
     return proposal.proposal_id;
 }
@@ -124,6 +139,17 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
 
     if (!crypto::Schnorr::Verify(voter_pubkey, vote_hash.data(), schnorr_sig)) {
         return false;
+    }
+
+    // If a snapshot exists for this proposal, override the caller-supplied
+    // voting_power with the frozen snapshot power.  This prevents a voter from
+    // accumulating tokens after the snapshot block to inflate their weight.
+    if (snapshot_registry_ != nullptr &&
+        snapshot_registry_->HasSnapshot(proposal_id)) {
+        voting_power = snapshot_registry_->GetSnapshotPower(proposal_id, voter);
+        if (voting_power == 0) {
+            return false;  // Voter had no stake at snapshot time
+        }
     }
 
     // Apply anti-whale scaling to raw voting_power before tallying.
@@ -249,19 +275,69 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
     }
 
     // Execute proposal based on type.
-    // If a handler is registered, delegate to it.  The handler may inspect
-    // proposal.type and proposal.execution_data to perform the real work.
+    // If a custom execution_handler_ is registered, delegate to it.
     if (execution_handler_) {
         if (!execution_handler_(proposal)) {
-            // Handler declined – leave proposal in PASSED state for retry.
-            return false;
+            return false;  // Handler declined – leave in PASSED state for retry.
         }
-    }
-    // No handler: the lifecycle still advances so callers are not permanently
-    // blocked.  The type tag is appended to execution_data as a minimal audit
-    // breadcrumb recording which handler path was taken.
-    else {
-        proposal.execution_data.push_back(static_cast<uint8_t>(proposal.type));
+    } else {
+        // Built-in dispatch: route to the appropriate subsystem based on type.
+        // Helper: decode a uint64_t from 8 bytes stored little-endian.
+        auto read_le64 = [](const uint8_t* p) -> uint64_t {
+            uint64_t v = 0;
+            for (int i = 0; i < 8; ++i)
+                v |= static_cast<uint64_t>(p[i]) << (8 * i);
+            return v;
+        };
+        switch (proposal.type) {
+            case ProposalType::PARAMETER_CHANGE: {
+                // execution_data encodes: [key_len(1)] [key_bytes] [value_le8(8)]
+                if (gov_params_ != nullptr &&
+                    proposal.execution_data.size() >= 10) {
+                    uint8_t key_len = proposal.execution_data[0];
+                    if (1 + static_cast<size_t>(key_len) + 8 <=
+                        proposal.execution_data.size()) {
+                        std::string key(
+                            reinterpret_cast<const char*>(
+                                proposal.execution_data.data() + 1),
+                            key_len);
+                        uint64_t value = read_le64(
+                            proposal.execution_data.data() + 1 + key_len);
+                        gov_params_->UpdateParam(key, value,
+                                                 proposal.proposal_id,
+                                                 current_block_height_);
+                    }
+                }
+                break;
+            }
+            case ProposalType::TREASURY_SPENDING: {
+                // execution_data encodes: [amount_le8(8)] [addr_len(1)] [addr_bytes]
+                if (treasury_ != nullptr &&
+                    proposal.execution_data.size() >= 10) {
+                    uint64_t amount = read_le64(proposal.execution_data.data());
+                    uint8_t addr_len = proposal.execution_data[8];
+                    if (9 + static_cast<size_t>(addr_len) <=
+                        proposal.execution_data.size() && amount > 0) {
+                        std::vector<uint8_t> recipient(
+                            proposal.execution_data.begin() + 9,
+                            proposal.execution_data.begin() + 9 + addr_len);
+                        treasury_->Spend(amount, recipient,
+                                         proposal.proposal_id,
+                                         Treasury::Track::UNCATEGORIZED,
+                                         "proposal execution",
+                                         current_block_height_);
+                    }
+                }
+                break;
+            }
+            default:
+                // GENERAL, PROTOCOL_UPGRADE, CONSTITUTIONAL, EMERGENCY:
+                // append type tag as audit breadcrumb; caller wires real logic
+                // via SetExecutionHandler() for these types.
+                proposal.execution_data.push_back(
+                    static_cast<uint8_t>(proposal.type));
+                break;
+        }
     }
 
     proposal.status = ProposalStatus::EXECUTED;

@@ -225,7 +225,9 @@ uint64_t Treasury::CreateGrant(uint64_t proposal_id,
                                 const std::vector<uint8_t>& recipient,
                                 const std::string& purpose,
                                 const std::vector<std::pair<std::string, uint64_t>>& milestones,
-                                uint64_t block_height) {
+                                uint64_t block_height,
+                                uint64_t vesting_cliff_blocks,
+                                uint64_t vesting_duration_blocks) {
     if (proposal_id == 0 || recipient.empty() || milestones.empty()) return 0;
 
     uint64_t total = 0;
@@ -249,6 +251,16 @@ uint64_t Treasury::CreateGrant(uint64_t proposal_id,
     // Reserve the total amount from the GRANTS track balance
     balances_[Track::GRANTS] -= total;
     grants_[grant.grant_id] = grant;
+
+    // Optionally create a cliff+linear vesting schedule so the recipient
+    // cannot withdraw the entire grant immediately.
+    if (vesting_registry_ != nullptr && vesting_duration_blocks > 0) {
+        vesting_registry_->CreateSchedule(recipient, total, block_height,
+                                          vesting_cliff_blocks,
+                                          vesting_duration_blocks,
+                                          grant.grant_id);
+    }
+
     return grant.grant_id;
 }
 

@@ -1,6 +1,8 @@
 #ifndef PARTHENON_GOVERNANCE_TREASURY_H
 #define PARTHENON_GOVERNANCE_TREASURY_H
 
+#include "vesting.h"
+
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -151,6 +153,13 @@ class Treasury {
     explicit Treasury(uint32_t multisig_required = 2,
                       uint64_t reserve_ratio_bps = 1000);  // 10 %
 
+    /**
+     * Attach a VestingRegistry so that CreateGrant() can optionally create
+     * a cliff+linear vesting schedule instead of milestone-only release.
+     * Pass nullptr to detach.
+     */
+    void SetVestingRegistry(VestingRegistry* reg) { vesting_registry_ = reg; }
+
     // ------------------------------------------------------------------ //
     //  Guardians (multi-sig authorisation for EMERGENCY track)            //
     // ------------------------------------------------------------------ //
@@ -232,7 +241,9 @@ class Treasury {
                          const std::vector<uint8_t>& recipient,
                          const std::string& purpose,
                          const std::vector<std::pair<std::string, uint64_t>>& milestones,
-                         uint64_t block_height);
+                         uint64_t block_height,
+                         uint64_t vesting_cliff_blocks  = 0,
+                         uint64_t vesting_duration_blocks = 0);
 
     /**
      * Release the next unreleased milestone to the recipient.
@@ -278,6 +289,8 @@ class Treasury {
   private:
     uint32_t multisig_required_;
     uint64_t reserve_ratio_bps_;
+
+    VestingRegistry* vesting_registry_{nullptr};  // optional, not owned
 
     std::map<Track, uint64_t>                   balances_;
     std::vector<std::vector<uint8_t>>           guardians_;
