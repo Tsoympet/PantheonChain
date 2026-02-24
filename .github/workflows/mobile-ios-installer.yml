@@ -4,7 +4,7 @@ on:
   workflow_call:
     secrets:
       EXPO_TOKEN:
-        required: true
+        required: false
   workflow_dispatch:
   push:
     branches: [ main, develop ]
@@ -21,19 +21,10 @@ jobs:
     defaults:
       run:
         working-directory: clients/mobile/react-native
-    env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Validate Expo token
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "EXPO_TOKEN secret is required to build iOS installers with EAS."
-            exit 1
-          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -50,40 +41,47 @@ jobs:
         run: |
           node -e "const fs=require('fs'); const app=JSON.parse(fs.readFileSync('app.json','utf8')); const sdk=String(app?.expo?.sdkVersion || '0'); const major=parseInt(sdk.split('.')[0],10)||0; if(major<50){ console.error(\`Expo SDK \${sdk} is unsupported by EAS Build managed workflow. Upgrade to SDK 50+.\`); process.exit(1);} console.log(\`Expo SDK \${sdk} is compatible.\`);"
 
-      - name: Setup Expo and EAS
-        uses: expo/expo-github-action@v8
-        with:
-          token: ${{ secrets.EXPO_TOKEN }}
-          eas-version: latest
-
-      - name: Ensure EAS project is configured
-        run: |
-          npx eas-cli init --force --non-interactive
+      - name: Generate iOS native directory
+        run: npx expo prebuild --clean --platform ios --non-interactive
 
       - name: Install CocoaPods
         run: |
           gem install cocoapods
           pod --version
 
-      - name: Validate EAS build profile is configured for simulator
-        run: |
-          node -e "const fs=require('fs'); const eas=JSON.parse(fs.readFileSync('eas.json','utf8')); const profile=eas?.build?.['ios-release']; if(!profile){ console.error('Missing build.ios-release profile in eas.json.'); process.exit(1);} if(!profile.ios?.simulator){ console.error('build.ios-release.ios.simulator must be true for CI builds without Apple distribution credentials.'); process.exit(1);} console.log('ios-release profile is configured for simulator build (no distribution certificate required).');"
+      - name: Install CocoaPods dependencies
+        working-directory: clients/mobile/react-native/ios
+        run: pod install
 
-      - name: Build iOS simulator installer
-        run: npx eas-cli build --platform ios --profile ios-release --local --non-interactive
+      - name: Build iOS simulator app
+        working-directory: clients/mobile/react-native/ios
+        run: |
+          WORKSPACE=$(find . -maxdepth 2 -name "*.xcworkspace" -not -path "*/Pods/*" | head -1)
+          if [ -z "$WORKSPACE" ]; then
+            echo "No Xcode workspace found after expo prebuild" >&2
+            exit 1
+          fi
+          SCHEME=$(basename "${WORKSPACE%.xcworkspace}")
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Locate and stage iOS simulator artifact
         run: |
-          ARCHIVE=
-          for f in *.tar.gz; do [ -f "$f" ] && ARCHIVE="$f" && break; done
-          if [ -z "$ARCHIVE" ]; then
-            ARCHIVE=$(find . -maxdepth 3 -name "*.tar.gz" 2>/dev/null | head -1)
-          fi
-          if [ -z "$ARCHIVE" ]; then
-            echo "No iOS simulator artifact found after local build" >&2
+          # xcodebuild -derivedDataPath build places the .app at build/Build/Products/<config>-iphonesimulator/
+          APP=$(find ios/build/Build/Products -name "*.app" -type d 2>/dev/null | head -1)
+          if [ -z "$APP" ]; then
+            echo "No iOS simulator .app found after build" >&2
             exit 1
           fi
-          cp "$ARCHIVE" parthenon-mobile-ios-simulator.tar.gz
+          tar -czf parthenon-mobile-ios-simulator.tar.gz -C "$(dirname "$APP")" "$(basename "$APP")"
 
       - name: Upload iOS simulator installer
         uses: actions/upload-artifact@v4
