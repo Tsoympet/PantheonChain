@@ -52,6 +52,7 @@ jobs:
 
       - name: Generate Android signing keystore
         run: |
+          mkdir -p android/app
           keytool -genkeypair -v \
             -keystore android/app/android-release.jks \
             -alias parthenon \
