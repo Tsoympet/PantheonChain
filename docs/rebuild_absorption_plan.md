@@ -43,7 +43,7 @@ a tracking issue:
 
 - `repo-audit.sh` fails on a newly required file or directory.
 - `build.sh` exits non-zero on the CI runner image.
-- More than 1 % of unit tests regress.
+- More than 1% of unit tests regress.
 - Integration smoke fails end-to-end commitment anchoring.
 
 ## Owners
