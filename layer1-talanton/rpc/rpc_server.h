@@ -86,7 +86,7 @@ class RPCServer {
     void SetWallet(wallet::Wallet* wallet);
 
     /**
-     * Attach governance subsystems so that governance/* RPC methods work.
+     * Attach governance subsystems so that governance/... RPC methods work.
      * All pointers are optional; unset subsystems return "not available" errors.
      */
     void SetVotingSystem(governance::VotingSystem* vs)       { voting_system_   = vs; }
