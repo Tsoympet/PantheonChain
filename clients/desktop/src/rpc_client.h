@@ -17,22 +17,22 @@ class QNetworkReply;
 //  Network type                                                          //
 // -------------------------------------------------------------------- //
 enum class NetworkType {
-    Mainnet,   //!< Production network  (default port 8332)
-    Testnet,   //!< Public test network (default port 18332)
-    Devnet     //!< Developer network   (default port 18443) — role-gated
+    Mainnet, //!< Production network  (default port 8332)
+    Testnet, //!< Public test network (default port 18332)
+    Devnet   //!< Developer network   (default port 18443) — role-gated
 };
 
 struct NetworkStatus {
     NetworkType network;
-    bool        connected;
-    int         blockHeight;
-    int         peerCount;
-    int         latencyMs;
-    QString     nodeVersion;
+    bool connected;
+    int blockHeight;
+    int peerCount;
+    int latencyMs;
+    QString nodeVersion;
 
     NetworkStatus()
-        : network(NetworkType::Mainnet), connected(false),
-          blockHeight(0), peerCount(0), latencyMs(-1) {}
+        : network(NetworkType::Mainnet), connected(false), blockHeight(0), peerCount(0),
+          latencyMs(-1) {}
 };
 
 struct TransactionRecord {
@@ -156,8 +156,8 @@ class RPCClient : public QObject {
     //  Ostracism (Article VIII)                                         //
     // ---------------------------------------------------------------- //
     void listActiveBans(quint64 blockHeight = 0);
-    void nominateOstracism(const QString &target, const QString &nominator,
-                           const QString &reason, quint64 blockHeight = 0);
+    void nominateOstracism(const QString &target, const QString &nominator, const QString &reason,
+                           quint64 blockHeight = 0);
 
     QList<OstracismRecord> activeBans() const { return activeBansList; }
 
@@ -200,7 +200,7 @@ class RPCClient : public QObject {
     QString rpcUser;
     QString rpcPassword;
 
-    NetworkType   currentNetwork;
+    NetworkType currentNetwork;
     NetworkStatus netStatus;
 
     QMap<QString, double> balances;

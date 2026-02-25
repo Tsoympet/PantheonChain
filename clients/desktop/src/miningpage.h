@@ -25,19 +25,19 @@ class MiningPage : public QWidget {
     void setupUI();
     void updateMiningStatus();
 
-    RPCClient   *rpcClient;
-    bool         miningActive;
-    quint64      totalShares;
-    quint64      acceptedShares;
+    RPCClient *rpcClient;
+    bool miningActive;
+    quint64 totalShares;
+    quint64 acceptedShares;
 
-    QLabel       *statusLabel;
-    QLabel       *hashrateLabel;
-    QLabel       *sharesLabel;
-    QLabel       *acceptedLabel;
-    QLabel       *rejectedLabel;
-    QLabel       *estimatedEarningsLabel;
-    QSpinBox     *cpuThreadsSpinBox;
-    QPushButton  *toggleButton;
+    QLabel *statusLabel;
+    QLabel *hashrateLabel;
+    QLabel *sharesLabel;
+    QLabel *acceptedLabel;
+    QLabel *rejectedLabel;
+    QLabel *estimatedEarningsLabel;
+    QSpinBox *cpuThreadsSpinBox;
+    QPushButton *toggleButton;
     QProgressBar *cpuUsageBar;
 };
 

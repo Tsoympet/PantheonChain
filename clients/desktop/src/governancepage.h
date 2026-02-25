@@ -57,37 +57,37 @@ class GovernancePage : public QWidget {
 
     // ---- Proposals tab ----
     QTableWidget *proposalTable;
-    QPushButton  *refreshButton;
-    QComboBox    *statusFilter;
-    QLabel       *detailIdLabel;
-    QLabel       *detailTypeLabel;
-    QLabel       *detailStatusLabel;
-    QLabel       *detailTitleLabel;
-    QLabel       *detailDescLabel;
-    QLabel       *detailVotesLabel;
-    QLabel       *detailQuorumLabel;
-    QPushButton  *voteYesButton;
-    QPushButton  *voteNoButton;
-    QPushButton  *voteAbstainButton;
-    QPushButton  *voteVetoButton;
-    QLabel       *voteStatusLabel;
-    QComboBox    *proposalTypeCombo;
-    QLineEdit    *proposalTitleEdit;
-    QTextEdit    *proposalDescEdit;
-    QPushButton  *submitButton;
-    QLabel       *submitStatusLabel;
-    QLabel       *treasuryTotalLabel;
-    QLabel       *treasuryCorDevLabel;
-    QLabel       *treasuryGrantsLabel;
-    QLabel       *treasuryOpsLabel;
-    QLabel       *treasuryEmergencyLabel;
+    QPushButton *refreshButton;
+    QComboBox *statusFilter;
+    QLabel *detailIdLabel;
+    QLabel *detailTypeLabel;
+    QLabel *detailStatusLabel;
+    QLabel *detailTitleLabel;
+    QLabel *detailDescLabel;
+    QLabel *detailVotesLabel;
+    QLabel *detailQuorumLabel;
+    QPushButton *voteYesButton;
+    QPushButton *voteNoButton;
+    QPushButton *voteAbstainButton;
+    QPushButton *voteVetoButton;
+    QLabel *voteStatusLabel;
+    QComboBox *proposalTypeCombo;
+    QLineEdit *proposalTitleEdit;
+    QTextEdit *proposalDescEdit;
+    QPushButton *submitButton;
+    QLabel *submitStatusLabel;
+    QLabel *treasuryTotalLabel;
+    QLabel *treasuryCorDevLabel;
+    QLabel *treasuryGrantsLabel;
+    QLabel *treasuryOpsLabel;
+    QLabel *treasuryEmergencyLabel;
 
     // ---- Ostracism tab ----
     QTableWidget *bansTable;
-    QLineEdit    *ostracismTargetEdit;
-    QLineEdit    *ostracismReasonEdit;
-    QPushButton  *ostracismNominateButton;
-    QLabel       *ostracismStatusLabel;
+    QLineEdit *ostracismTargetEdit;
+    QLineEdit *ostracismReasonEdit;
+    QPushButton *ostracismNominateButton;
+    QLabel *ostracismStatusLabel;
 
     quint64 selectedProposalId;
 };

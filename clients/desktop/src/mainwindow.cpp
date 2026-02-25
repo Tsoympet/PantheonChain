@@ -23,8 +23,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), centralStack(nullptr), overviewPage(nullptr), sendPage(nullptr),
-      receivePage(nullptr), transactionPage(nullptr), governancePage(nullptr),
-      stakingPage(nullptr), miningPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
+      receivePage(nullptr), transactionPage(nullptr), governancePage(nullptr), stakingPage(nullptr),
+      miningPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
     setWindowTitle("ParthenonChain Wallet");
     resize(1000, 700);
 
@@ -32,8 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     rpcClient = new RPCClient(this);
     connect(rpcClient, &RPCClient::connectionStatusChanged, this,
             &MainWindow::onConnectionStatusChanged);
-    connect(rpcClient, &RPCClient::networkTypeChanged, this,
-            &MainWindow::onNetworkTypeChanged);
+    connect(rpcClient, &RPCClient::networkTypeChanged, this, &MainWindow::onNetworkTypeChanged);
     connect(rpcClient, &RPCClient::balanceChanged, this, &MainWindow::onBalanceChanged);
     connect(rpcClient, &RPCClient::blockHeightChanged, this, &MainWindow::onBlockHeightChanged);
 
@@ -42,14 +41,14 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralStack);
 
     // Create pages
-    overviewPage    = new OverviewPage(rpcClient, this);
-    sendPage        = new SendPage(rpcClient, this);
-    receivePage     = new ReceivePage(rpcClient, this);
+    overviewPage = new OverviewPage(rpcClient, this);
+    sendPage = new SendPage(rpcClient, this);
+    receivePage = new ReceivePage(rpcClient, this);
     transactionPage = new TransactionPage(rpcClient, this);
-    governancePage  = new GovernancePage(rpcClient, this);
-    stakingPage     = new StakingPage(rpcClient, this);
-    miningPage      = new MiningPage(rpcClient, this);
-    settingsPage    = new SettingsPage(rpcClient, this);
+    governancePage = new GovernancePage(rpcClient, this);
+    stakingPage = new StakingPage(rpcClient, this);
+    miningPage = new MiningPage(rpcClient, this);
+    settingsPage = new SettingsPage(rpcClient, this);
 
     // Connect overview page signals
     connect(overviewPage, &OverviewPage::sendRequested, this, &MainWindow::showSend);
@@ -160,15 +159,15 @@ void MainWindow::onNetworkTypeChanged(NetworkType type) {
     const QString name = RPCClient::networkName(type);
     networkLabel->setText(tr("[%1]").arg(name));
     switch (type) {
-        case NetworkType::Testnet:
-            networkLabel->setStyleSheet("QLabel { color: #fd7e14; font-weight: bold; }");
-            break;
-        case NetworkType::Devnet:
-            networkLabel->setStyleSheet("QLabel { color: #6f42c1; font-weight: bold; }");
-            break;
-        default:
-            networkLabel->setStyleSheet("QLabel { color: #1f2a44; font-weight: bold; }");
-            break;
+    case NetworkType::Testnet:
+        networkLabel->setStyleSheet("QLabel { color: #fd7e14; font-weight: bold; }");
+        break;
+    case NetworkType::Devnet:
+        networkLabel->setStyleSheet("QLabel { color: #6f42c1; font-weight: bold; }");
+        break;
+    default:
+        networkLabel->setStyleSheet("QLabel { color: #1f2a44; font-weight: bold; }");
+        break;
     }
 }
 
@@ -281,8 +280,8 @@ void MainWindow::createToolBars() {
 }
 
 void MainWindow::createStatusBar() {
-    connectionLabel  = new QLabel(tr("● Connecting…"));
-    networkLabel     = new QLabel(tr("[Mainnet]"));
+    connectionLabel = new QLabel(tr("● Connecting…"));
+    networkLabel = new QLabel(tr("[Mainnet]"));
     blockHeightLabel = new QLabel(tr("Block: 0"));
     syncProgressLabel = new QLabel(tr("Synced"));
 

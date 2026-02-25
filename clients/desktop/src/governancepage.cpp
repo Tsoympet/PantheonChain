@@ -21,20 +21,30 @@
 #include <QVBoxLayout>
 
 static QString proposalTypeLabel(const QString &type) {
-    if (type == "PARAMETER_CHANGE")  return "Parameter Change";
-    if (type == "TREASURY_SPENDING") return "Treasury Spending";
-    if (type == "PROTOCOL_UPGRADE")  return "Protocol Upgrade";
-    if (type == "CONSTITUTIONAL")    return "Constitutional";
-    if (type == "EMERGENCY")         return "Emergency";
+    if (type == "PARAMETER_CHANGE")
+        return "Parameter Change";
+    if (type == "TREASURY_SPENDING")
+        return "Treasury Spending";
+    if (type == "PROTOCOL_UPGRADE")
+        return "Protocol Upgrade";
+    if (type == "CONSTITUTIONAL")
+        return "Constitutional";
+    if (type == "EMERGENCY")
+        return "Emergency";
     return "General";
 }
 
 static QString proposalStatusLabel(const QString &status) {
-    if (status == "ACTIVE")   return "Active";
-    if (status == "PASSED")   return "Passed";
-    if (status == "REJECTED") return "Rejected";
-    if (status == "EXECUTED") return "Executed";
-    if (status == "EXPIRED")  return "Expired";
+    if (status == "ACTIVE")
+        return "Active";
+    if (status == "PASSED")
+        return "Passed";
+    if (status == "REJECTED")
+        return "Rejected";
+    if (status == "EXECUTED")
+        return "Executed";
+    if (status == "EXPIRED")
+        return "Expired";
     return "Pending";
 }
 
@@ -63,13 +73,17 @@ GovernancePage::GovernancePage(RPCClient *rpc, QWidget *parent)
     setupUI();
 
     if (rpcClient) {
-        connect(rpcClient, &RPCClient::proposalsUpdated,      this, &GovernancePage::onProposalsUpdated);
-        connect(rpcClient, &RPCClient::treasuryBalanceUpdated,this, &GovernancePage::onTreasuryUpdated);
-        connect(rpcClient, &RPCClient::voteCast,              this, &GovernancePage::onVoteCast);
-        connect(rpcClient, &RPCClient::proposalSubmitted,     this, &GovernancePage::onProposalSubmitted);
-        connect(rpcClient, &RPCClient::activeBansUpdated,     this, &GovernancePage::onActiveBansUpdated);
-        connect(rpcClient, &RPCClient::ostracismNominated,    this, &GovernancePage::onOstracismNominated);
-        connect(rpcClient, &RPCClient::errorOccurred,         this, &GovernancePage::onError);
+        connect(rpcClient, &RPCClient::proposalsUpdated, this, &GovernancePage::onProposalsUpdated);
+        connect(rpcClient, &RPCClient::treasuryBalanceUpdated, this,
+                &GovernancePage::onTreasuryUpdated);
+        connect(rpcClient, &RPCClient::voteCast, this, &GovernancePage::onVoteCast);
+        connect(rpcClient, &RPCClient::proposalSubmitted, this,
+                &GovernancePage::onProposalSubmitted);
+        connect(rpcClient, &RPCClient::activeBansUpdated, this,
+                &GovernancePage::onActiveBansUpdated);
+        connect(rpcClient, &RPCClient::ostracismNominated, this,
+                &GovernancePage::onOstracismNominated);
+        connect(rpcClient, &RPCClient::errorOccurred, this, &GovernancePage::onError);
     }
 }
 
@@ -79,7 +93,9 @@ void GovernancePage::setupUI() {
     mainLayout->setContentsMargins(6, 6, 6, 6);
 
     QLabel *titleLabel = new QLabel(tr("Governance"), this);
-    QFont f = titleLabel->font(); f.setPointSize(18); f.setBold(true);
+    QFont f = titleLabel->font();
+    f.setPointSize(18);
+    f.setBold(true);
     titleLabel->setFont(f);
     mainLayout->addWidget(titleLabel);
 
@@ -118,10 +134,10 @@ void GovernancePage::setupProposalsTab(QWidget *tab) {
     // Treasury strip
     QGroupBox *treasuryBox = new QGroupBox(tr("Treasury Balances"), tab);
     QHBoxLayout *tl = new QHBoxLayout(treasuryBox);
-    treasuryTotalLabel    = new QLabel(tr("Total: 0"), tab);
-    treasuryCorDevLabel   = new QLabel(tr("Core Dev: 0"), tab);
-    treasuryGrantsLabel   = new QLabel(tr("Grants: 0"), tab);
-    treasuryOpsLabel      = new QLabel(tr("Ops: 0"), tab);
+    treasuryTotalLabel = new QLabel(tr("Total: 0"), tab);
+    treasuryCorDevLabel = new QLabel(tr("Core Dev: 0"), tab);
+    treasuryGrantsLabel = new QLabel(tr("Grants: 0"), tab);
+    treasuryOpsLabel = new QLabel(tr("Ops: 0"), tab);
     treasuryEmergencyLabel = new QLabel(tr("Emergency: 0"), tab);
     tl->addWidget(treasuryTotalLabel);
     tl->addWidget(treasuryCorDevLabel);
@@ -137,13 +153,13 @@ void GovernancePage::setupProposalsTab(QWidget *tab) {
     // Left: proposal list
     QWidget *listW = new QWidget(splitter);
     QVBoxLayout *ll = new QVBoxLayout(listW);
-    ll->setContentsMargins(0,0,4,0);
+    ll->setContentsMargins(0, 0, 4, 0);
 
     QHBoxLayout *filterRow = new QHBoxLayout();
     filterRow->addWidget(new QLabel(tr("Status:"), listW));
     statusFilter = new QComboBox(listW);
-    statusFilter->addItems({tr("All"), tr("Active"), tr("Passed"), tr("Rejected"),
-                             tr("Pending"), tr("Expired"), tr("Executed")});
+    statusFilter->addItems({tr("All"), tr("Active"), tr("Passed"), tr("Rejected"), tr("Pending"),
+                            tr("Expired"), tr("Executed")});
     connect(statusFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [this](int) { loadProposals(); });
     filterRow->addWidget(statusFilter);
@@ -170,36 +186,51 @@ void GovernancePage::setupProposalsTab(QWidget *tab) {
     // Right: detail + submit
     QWidget *rightW = new QWidget(splitter);
     QVBoxLayout *rl = new QVBoxLayout(rightW);
-    rl->setContentsMargins(4,0,0,0);
+    rl->setContentsMargins(4, 0, 0, 0);
 
     QGroupBox *detailBox = new QGroupBox(tr("Proposal Detail"), rightW);
     QVBoxLayout *dl = new QVBoxLayout(detailBox);
-    detailIdLabel     = new QLabel("—", detailBox); dl->addWidget(detailIdLabel);
-    detailTypeLabel   = new QLabel("—", detailBox); dl->addWidget(detailTypeLabel);
-    detailStatusLabel = new QLabel("—", detailBox); dl->addWidget(detailStatusLabel);
-    detailTitleLabel  = new QLabel("—", detailBox); detailTitleLabel->setWordWrap(true); dl->addWidget(detailTitleLabel);
-    detailDescLabel   = new QLabel("—", detailBox); detailDescLabel->setWordWrap(true); dl->addWidget(detailDescLabel);
-    detailVotesLabel  = new QLabel("—", detailBox); dl->addWidget(detailVotesLabel);
-    detailQuorumLabel = new QLabel("—", detailBox); dl->addWidget(detailQuorumLabel);
-    voteStatusLabel   = new QLabel(detailBox); voteStatusLabel->setWordWrap(true); dl->addWidget(voteStatusLabel);
+    detailIdLabel = new QLabel("—", detailBox);
+    dl->addWidget(detailIdLabel);
+    detailTypeLabel = new QLabel("—", detailBox);
+    dl->addWidget(detailTypeLabel);
+    detailStatusLabel = new QLabel("—", detailBox);
+    dl->addWidget(detailStatusLabel);
+    detailTitleLabel = new QLabel("—", detailBox);
+    detailTitleLabel->setWordWrap(true);
+    dl->addWidget(detailTitleLabel);
+    detailDescLabel = new QLabel("—", detailBox);
+    detailDescLabel->setWordWrap(true);
+    dl->addWidget(detailDescLabel);
+    detailVotesLabel = new QLabel("—", detailBox);
+    dl->addWidget(detailVotesLabel);
+    detailQuorumLabel = new QLabel("—", detailBox);
+    dl->addWidget(detailQuorumLabel);
+    voteStatusLabel = new QLabel(detailBox);
+    voteStatusLabel->setWordWrap(true);
+    dl->addWidget(voteStatusLabel);
 
     QHBoxLayout *vl = new QHBoxLayout();
-    voteYesButton     = new QPushButton(tr("YES"),     detailBox);
-    voteNoButton      = new QPushButton(tr("NO"),      detailBox);
+    voteYesButton = new QPushButton(tr("YES"), detailBox);
+    voteNoButton = new QPushButton(tr("NO"), detailBox);
     voteAbstainButton = new QPushButton(tr("ABSTAIN"), detailBox);
-    voteVetoButton    = new QPushButton(tr("VETO"),    detailBox);
+    voteVetoButton = new QPushButton(tr("VETO"), detailBox);
     voteYesButton->setStyleSheet("QPushButton{background:#28a745;color:white;}");
     voteNoButton->setStyleSheet("QPushButton{background:#dc3545;color:white;}");
     voteAbstainButton->setStyleSheet("QPushButton{background:#6c757d;color:white;}");
     voteVetoButton->setStyleSheet("QPushButton{background:#fd7e14;color:white;}");
-    voteYesButton->setEnabled(false); voteNoButton->setEnabled(false);
-    voteAbstainButton->setEnabled(false); voteVetoButton->setEnabled(false);
-    connect(voteYesButton,     &QPushButton::clicked, this, &GovernancePage::onVoteYes);
-    connect(voteNoButton,      &QPushButton::clicked, this, &GovernancePage::onVoteNo);
+    voteYesButton->setEnabled(false);
+    voteNoButton->setEnabled(false);
+    voteAbstainButton->setEnabled(false);
+    voteVetoButton->setEnabled(false);
+    connect(voteYesButton, &QPushButton::clicked, this, &GovernancePage::onVoteYes);
+    connect(voteNoButton, &QPushButton::clicked, this, &GovernancePage::onVoteNo);
     connect(voteAbstainButton, &QPushButton::clicked, this, &GovernancePage::onVoteAbstain);
-    connect(voteVetoButton,    &QPushButton::clicked, this, &GovernancePage::onVoteVeto);
-    vl->addWidget(voteYesButton); vl->addWidget(voteNoButton);
-    vl->addWidget(voteAbstainButton); vl->addWidget(voteVetoButton);
+    connect(voteVetoButton, &QPushButton::clicked, this, &GovernancePage::onVoteVeto);
+    vl->addWidget(voteYesButton);
+    vl->addWidget(voteNoButton);
+    vl->addWidget(voteAbstainButton);
+    vl->addWidget(voteVetoButton);
     dl->addLayout(vl);
     rl->addWidget(detailBox);
 
@@ -208,19 +239,23 @@ void GovernancePage::setupProposalsTab(QWidget *tab) {
     QHBoxLayout *tr2 = new QHBoxLayout();
     tr2->addWidget(new QLabel(tr("Type:"), submitBox));
     proposalTypeCombo = new QComboBox(submitBox);
-    proposalTypeCombo->addItems({"GENERAL","PARAMETER_CHANGE","TREASURY_SPENDING",
-                                  "PROTOCOL_UPGRADE","CONSTITUTIONAL","EMERGENCY"});
-    tr2->addWidget(proposalTypeCombo); tr2->addStretch();
+    proposalTypeCombo->addItems({"GENERAL", "PARAMETER_CHANGE", "TREASURY_SPENDING",
+                                 "PROTOCOL_UPGRADE", "CONSTITUTIONAL", "EMERGENCY"});
+    tr2->addWidget(proposalTypeCombo);
+    tr2->addStretch();
     sl->addLayout(tr2);
     proposalTitleEdit = new QLineEdit(submitBox);
-    proposalTitleEdit->setPlaceholderText(tr("Proposal title")); sl->addWidget(proposalTitleEdit);
-    proposalDescEdit  = new QTextEdit(submitBox);
+    proposalTitleEdit->setPlaceholderText(tr("Proposal title"));
+    sl->addWidget(proposalTitleEdit);
+    proposalDescEdit = new QTextEdit(submitBox);
     proposalDescEdit->setPlaceholderText(tr("Proposal description…"));
-    proposalDescEdit->setMaximumHeight(70); sl->addWidget(proposalDescEdit);
+    proposalDescEdit->setMaximumHeight(70);
+    sl->addWidget(proposalDescEdit);
     submitButton = new QPushButton(tr("Submit Proposal"), submitBox);
     connect(submitButton, &QPushButton::clicked, this, &GovernancePage::onSubmitProposal);
     sl->addWidget(submitButton);
-    submitStatusLabel = new QLabel(submitBox); submitStatusLabel->setWordWrap(true);
+    submitStatusLabel = new QLabel(submitBox);
+    submitStatusLabel->setWordWrap(true);
     sl->addWidget(submitStatusLabel);
     rl->addWidget(submitBox);
     rl->addStretch();
@@ -253,7 +288,8 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
     };
 
     // Boule (Article I)
-    addSection(tr("Boule (βουλή) — The Council  [Article I]"),
+    addSection(
+        tr("Boule (βουλή) — The Council  [Article I]"),
         tr("<b>Size:</b> 500 seats on Layer 3 (OBOLOS).<br>"
            "<b>Selection:</b> VRF sortition (Kleroteria) using the OBOLOS block hash of the last "
            "block of the preceding epoch. No validator can predict or manipulate selection.<br>"
@@ -265,15 +301,18 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
            "conviction, or falling below minimum stake."));
 
     // Prytany (Article I §1.4)
-    addSection(tr("Prytany (πρυτανεία) — Executive Committee  [Article I §1.4]"),
+    addSection(
+        tr("Prytany (πρυτανεία) — Executive Committee  [Article I §1.4]"),
         tr("<b>Size:</b> 50 Boule members randomly selected at the start of each epoch.<br>"
            "<b>Powers:</b> Holds keys to fast-track EMERGENCY proposals.<br>"
            "<b>Epistates:</b> One presiding officer chosen daily from the Prytany; may not serve "
            "twice in the same Prytany term.<br>"
-           "<b>Restriction:</b> Prytany members may not simultaneously serve on the EmergencyCouncil."));
+           "<b>Restriction:</b> Prytany members may not simultaneously serve on the "
+           "EmergencyCouncil."));
 
     // Ekklesia (Article II)
-    addSection(tr("Ekklesia (ἐκκλησία) — The Assembly  [Article II]"),
+    addSection(
+        tr("Ekklesia (ἐκκλησία) — The Assembly  [Article II]"),
         tr("<b>Membership:</b> All addresses with a positive staked balance on L3 at the "
            "proposal snapshot block.<br>"
            "<b>Proposal submission:</b> Requires staked balance ≥ MIN_PROPOSAL_STAKE, no active "
@@ -288,9 +327,11 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
            "Anti-flash-stake cooldown prevents last-minute stake manipulation."));
 
     // EmergencyCouncil (Article IX)
-    addSection(tr("EmergencyCouncil  [Article IX]"),
+    addSection(
+        tr("EmergencyCouncil  [Article IX]"),
         tr("<b>Structure:</b> M-of-N multi-signature body — default 5-of-9 guardian signers.<br>"
-           "<b>Composition:</b> Established at genesis; changes require a CONSTITUTIONAL proposal.<br>"
+           "<b>Composition:</b> Established at genesis; changes require a CONSTITUTIONAL "
+           "proposal.<br>"
            "<b>Powers (without prior assembly vote):</b><br>"
            "• Pause a contract/method for up to EMERGENCY_PAUSE_TTL (default 48 h).<br>"
            "• Upgrade a contract implementation within EMERGENCY_UPGRADE_TTL (default 72 h) "
@@ -298,10 +339,12 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
            "• Freeze an address's governance participation pending Apophasis review.<br>"
            "<b>Prohibited:</b> Cannot confiscate staked assets, modify supply policy, or override "
            "a completed assembly vote.<br>"
-           "<b>Guardians:</b> Publicly disclosed on-chain; may not simultaneously serve on the Prytany."));
+           "<b>Guardians:</b> Publicly disclosed on-chain; may not simultaneously serve on the "
+           "Prytany."));
 
     // Apophasis (Article IX §9.3)
-    addSection(tr("Apophasis (ἀπόφασις) — Investigative Board  [Article IX §9.3]"),
+    addSection(
+        tr("Apophasis (ἀπόφασις) — Investigative Board  [Article IX §9.3]"),
         tr("<b>Size:</b> 5 members selected by VRF from non-Prytany Boule members each epoch.<br>"
            "<b>Role:</b><br>"
            "• Review all EmergencyCouncil actions within 7 days of execution.<br>"
@@ -311,7 +354,8 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
            "vote within 14 days of publication."));
 
     // Voting (Article IV)
-    addSection(tr("Voting  [Article IV]"),
+    addSection(
+        tr("Voting  [Article IV]"),
         tr("<b>Vote options:</b> YES · NO · ABSTAIN · VETO<br>"
            "<b>VETO rule:</b> If veto votes exceed 33.34% of all votes cast, the proposal is "
            "unconditionally defeated and enters a 14-day re-submission blackout.<br>"
@@ -321,7 +365,8 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
            "<b>Finality (§4.4):</b> Votes are final once cast; changeVote is not available."));
 
     // Staking lock periods (Article VII §7.2)
-    addSection(tr("Staking Lock Periods  [Article VII §7.2]"),
+    addSection(
+        tr("Staking Lock Periods  [Article VII §7.2]"),
         tr("<table border='1' cellpadding='3'>"
            "<tr><th>Lock Period</th><th>Yield Multiplier</th></tr>"
            "<tr><td>No lock (liquid)</td><td>1×</td></tr>"
@@ -334,7 +379,8 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
            "balance) to prevent lock-up strategies from amplifying governance influence."));
 
     // Fee routing (Article X)
-    addSection(tr("Fee Distribution  [Article X]"),
+    addSection(
+        tr("Fee Distribution  [Article X]"),
         tr("<b>Layer 1 (TALANTON):</b><br>"
            "• 60% → L1 Block Producer &nbsp;• 20% → L1 Treasury (OPERATIONS) &nbsp;• 20% → Burn<br>"
            "<b>Layer 2 (DRACHMA):</b><br>"
@@ -348,7 +394,7 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
     layout->addStretch();
     scroll->setWidget(inner);
     QVBoxLayout *tabLayout = new QVBoxLayout(tab);
-    tabLayout->setContentsMargins(0,0,0,0);
+    tabLayout->setContentsMargins(0, 0, 0, 0);
     tabLayout->addWidget(scroll);
 }
 
@@ -365,7 +411,8 @@ void GovernancePage::setupOstracismTab(QWidget *tab) {
            "Community-driven temporary governance exclusion. A successfully ostracized address "
            "may not submit proposals, serve on the Boule/Prytany, or receive treasury grants, "
            "but <i>may</i> continue to vote, stake, transact, and withdraw funds.<br>"
-           "Requires CONSTITUTIONAL supermajority (≥66%) with ≥20% quorum."), tab);
+           "Requires CONSTITUTIONAL supermajority (≥66%) with ≥20% quorum."),
+        tab);
     info->setWordWrap(true);
     info->setStyleSheet("QLabel{background:#fff8e1;border-left:4px solid #ffc107;"
                         "padding:8px;border-radius:4px;}");
@@ -401,8 +448,10 @@ void GovernancePage::setupOstracismTab(QWidget *tab) {
     row2->addWidget(ostracismReasonEdit);
     nl->addLayout(row2);
     ostracismNominateButton = new QPushButton(tr("Submit Nomination"), nomBox);
-    ostracismNominateButton->setStyleSheet("QPushButton{background:#fd7e14;color:white;font-weight:bold;}");
-    connect(ostracismNominateButton, &QPushButton::clicked, this, &GovernancePage::onNominateOstracism);
+    ostracismNominateButton->setStyleSheet(
+        "QPushButton{background:#fd7e14;color:white;font-weight:bold;}");
+    connect(ostracismNominateButton, &QPushButton::clicked, this,
+            &GovernancePage::onNominateOstracism);
     nl->addWidget(ostracismNominateButton);
     ostracismStatusLabel = new QLabel(nomBox);
     ostracismStatusLabel->setWordWrap(true);
@@ -424,24 +473,30 @@ void GovernancePage::setupConstitutionTab(QWidget *tab) {
     QLabel *preamble = new QLabel(
         tr("<b>PantheonChain Governance Constitution</b><br><br>"
            "Governing principles:<br>"
-           "• <b>Isonomia</b> — Equality before the law (all parameters subject to constitutional floors/ceilings)<br>"
-           "• <b>Isegoria</b> — Equal right of speech (any address meeting minimum stake may submit proposals)<br>"
-           "• <b>Demokratia</b> — Power of the people (Ekklesia is the sovereign decision-making body)<br>"
-           "• <b>Sophrosyne</b> — Prudence (veto threshold and supermajority protect the minority)<br>"
+           "• <b>Isonomia</b> — Equality before the law (all parameters subject to constitutional "
+           "floors/ceilings)<br>"
+           "• <b>Isegoria</b> — Equal right of speech (any address meeting minimum stake may "
+           "submit proposals)<br>"
+           "• <b>Demokratia</b> — Power of the people (Ekklesia is the sovereign decision-making "
+           "body)<br>"
+           "• <b>Sophrosyne</b> — Prudence (veto threshold and supermajority protect the "
+           "minority)<br>"
            "• <b>Eunomia</b> — Good order (proposal pipeline enforces mandatory review periods)"),
         inner);
     preamble->setWordWrap(true);
     preamble->setStyleSheet("QLabel{background:#e8f4fd;border-left:4px solid #007AFF;"
-                             "padding:10px;border-radius:4px;}");
+                            "padding:10px;border-radius:4px;}");
     layout->addWidget(preamble);
 
     // Isonomia limits (Article V)
-    QGroupBox *isonomiaBox = new QGroupBox(tr("Article V: Constitutional Limits (Isonomia)"), inner);
+    QGroupBox *isonomiaBox =
+        new QGroupBox(tr("Article V: Constitutional Limits (Isonomia)"), inner);
     QVBoxLayout *il = new QVBoxLayout(isonomiaBox);
     QLabel *isonomiaNote = new QLabel(
         tr("Hard-coded in GovernanceConstants.sol. No proposal — including a CONSTITUTIONAL "
            "proposal — may move a parameter outside these absolute limits without a code-level "
-           "upgrade (itself requiring a CONSTITUTIONAL proposal + 30-day timelock)."), isonomiaBox);
+           "upgrade (itself requiring a CONSTITUTIONAL proposal + 30-day timelock)."),
+        isonomiaBox);
     isonomiaNote->setWordWrap(true);
     il->addWidget(isonomiaNote);
 
@@ -475,49 +530,56 @@ void GovernancePage::setupConstitutionTab(QWidget *tab) {
     QVBoxLayout *sv = new QVBoxLayout(supplyBox);
     sv->addWidget(new QLabel(
         tr("Maximum supplies are hard-coded at the consensus layer — cannot be changed by any "
-           "governance action. Requires a hard fork with community consensus."), supplyBox));
-    sv->addWidget(makeInfoTable({
-        "TALANTON (TALN) | 21 000 000 (Layer 1)",
-        "DRACHMA (DRM) | 41 000 000 (Layer 2)",
-        "OBOLOS (OBL) | 61 000 000 (Layer 3)",
-    }, supplyBox));
+           "governance action. Requires a hard fork with community consensus."),
+        supplyBox));
+    sv->addWidget(makeInfoTable(
+        {
+            "TALANTON (TALN) | 21 000 000 (Layer 1)",
+            "DRACHMA (DRM) | 41 000 000 (Layer 2)",
+            "OBOLOS (OBL) | 61 000 000 (Layer 3)",
+        },
+        supplyBox));
     layout->addWidget(supplyBox);
 
     // Proposal types quick ref (Article III)
     QGroupBox *typesBox = new QGroupBox(tr("Article III: Proposal Types"), inner);
     QVBoxLayout *tv = new QVBoxLayout(typesBox);
-    tv->addWidget(makeInfoTable({
-        "STANDARD | >50% non-abstaining votes · 7-day window · 2-day execution delay",
-        "PARAMETER_CHANGE | >50% · 7-day window · 3-day execution delay",
-        "CONSTITUTIONAL | ≥66% supermajority · 14-day window · 7-day execution delay",
-        "EMERGENCY | Prytany ≥34/50 · assembly ratification within 72 h",
-        "TREASURY_SPENDING | >50% · 10-day window · 3-day execution delay",
-    }, typesBox));
+    tv->addWidget(makeInfoTable(
+        {
+            "STANDARD | >50% non-abstaining votes · 7-day window · 2-day execution delay",
+            "PARAMETER_CHANGE | >50% · 7-day window · 3-day execution delay",
+            "CONSTITUTIONAL | ≥66% supermajority · 14-day window · 7-day execution delay",
+            "EMERGENCY | Prytany ≥34/50 · assembly ratification within 72 h",
+            "TREASURY_SPENDING | >50% · 10-day window · 3-day execution delay",
+        },
+        typesBox));
     layout->addWidget(typesBox);
 
     // Glossary (Appendix B)
     QGroupBox *glossaryBox = new QGroupBox(tr("Appendix B: Glossary of Greek Terms"), inner);
     QVBoxLayout *gv = new QVBoxLayout(glossaryBox);
-    gv->addWidget(makeInfoTable({
-        "Apophasis (ἀπόφασις) | Investigative board that reviews emergency actions",
-        "Boule (βουλή) | Validator council selected by VRF sortition",
-        "Dokimasia (δοκιμασία) | Eligibility screening for council candidates",
-        "Ekklesia (ἐκκλησία) | Full staker assembly — sovereign governance body",
-        "Epistates (ἐπιστάτης) | Presiding officer of the Prytany, chosen daily",
-        "Eunomia (εὐνομία) | Good order — the governance pipeline structure",
-        "Isegoria (ἰσηγορία) | Equal right of proposal submission",
-        "Isonomia (ἰσονομία) | Constitutional parameter bounds enforceable by code",
-        "Kleroteria (κληρωτήρια) | VRF-based sortition mechanism",
-        "Ostrakismos (ὀστρακισμός) | Community-voted temporary governance exclusion",
-        "Prytany (πρυτανεία) | Executive committee of 50 Boule members",
-        "Sophrosyne (σωφροσύνη) | Prudence — veto and supermajority protections",
-    }, glossaryBox));
+    gv->addWidget(makeInfoTable(
+        {
+            "Apophasis (ἀπόφασις) | Investigative board that reviews emergency actions",
+            "Boule (βουλή) | Validator council selected by VRF sortition",
+            "Dokimasia (δοκιμασία) | Eligibility screening for council candidates",
+            "Ekklesia (ἐκκλησία) | Full staker assembly — sovereign governance body",
+            "Epistates (ἐπιστάτης) | Presiding officer of the Prytany, chosen daily",
+            "Eunomia (εὐνομία) | Good order — the governance pipeline structure",
+            "Isegoria (ἰσηγορία) | Equal right of proposal submission",
+            "Isonomia (ἰσονομία) | Constitutional parameter bounds enforceable by code",
+            "Kleroteria (κληρωτήρια) | VRF-based sortition mechanism",
+            "Ostrakismos (ὀστρακισμός) | Community-voted temporary governance exclusion",
+            "Prytany (πρυτανεία) | Executive committee of 50 Boule members",
+            "Sophrosyne (σωφροσύνη) | Prudence — veto and supermajority protections",
+        },
+        glossaryBox));
     layout->addWidget(glossaryBox);
 
     layout->addStretch();
     scroll->setWidget(inner);
     QVBoxLayout *tabLayout = new QVBoxLayout(tab);
-    tabLayout->setContentsMargins(0,0,0,0);
+    tabLayout->setContentsMargins(0, 0, 0, 0);
     tabLayout->addWidget(scroll);
 }
 
@@ -535,7 +597,8 @@ void GovernancePage::onRefresh() {
 void GovernancePage::onProposalsUpdated() { loadProposals(); }
 
 void GovernancePage::onTreasuryUpdated() {
-    if (!rpcClient) return;
+    if (!rpcClient)
+        return;
     TreasuryBalance bal = rpcClient->treasuryBalance();
     treasuryTotalLabel->setText(tr("Total: %1").arg(bal.total));
     treasuryCorDevLabel->setText(tr("Core Dev: %1").arg(bal.coreDevelopment));
@@ -546,11 +609,13 @@ void GovernancePage::onTreasuryUpdated() {
 
 void GovernancePage::loadProposals() {
     proposalTable->setRowCount(0);
-    if (!rpcClient) return;
+    if (!rpcClient)
+        return;
     const QString filter = statusFilter->currentText();
     for (const ProposalRecord &p : rpcClient->proposals()) {
         const QString statusStr = proposalStatusLabel(p.status);
-        if (filter != tr("All") && statusStr != filter) continue;
+        if (filter != tr("All") && statusStr != filter)
+            continue;
         int row = proposalTable->rowCount();
         proposalTable->insertRow(row);
         proposalTable->setItem(row, 0, new QTableWidgetItem(QString::number(p.proposalId)));
@@ -562,12 +627,18 @@ void GovernancePage::loadProposals() {
 }
 
 void GovernancePage::onProposalSelected(int row) {
-    if (row < 0 || !rpcClient) return;
+    if (row < 0 || !rpcClient)
+        return;
     auto *idItem = proposalTable->item(row, 0);
-    if (!idItem) return;
+    if (!idItem)
+        return;
     quint64 id = idItem->data(Qt::UserRole).toULongLong();
     for (const ProposalRecord &p : rpcClient->proposals()) {
-        if (p.proposalId == id) { selectedProposalId = id; showProposalDetail(p); return; }
+        if (p.proposalId == id) {
+            selectedProposalId = id;
+            showProposalDetail(p);
+            return;
+        }
     }
 }
 
@@ -577,37 +648,60 @@ void GovernancePage::showProposalDetail(const ProposalRecord &p) {
     detailStatusLabel->setText(tr("Status: %1").arg(proposalStatusLabel(p.status)));
     detailTitleLabel->setText(p.title);
     detailDescLabel->setText(p.description.isEmpty() ? tr("(no description)") : p.description);
-    detailVotesLabel->setText(
-        tr("YES: %1  NO: %2  ABSTAIN: %3  VETO: %4")
-            .arg(p.yesVotes).arg(p.noVotes).arg(p.abstainVotes).arg(p.vetoVotes));
+    detailVotesLabel->setText(tr("YES: %1  NO: %2  ABSTAIN: %3  VETO: %4")
+                                  .arg(p.yesVotes)
+                                  .arg(p.noVotes)
+                                  .arg(p.abstainVotes)
+                                  .arg(p.vetoVotes));
     detailQuorumLabel->setText(
         tr("Quorum: %1  Threshold: %2%").arg(p.quorumRequirement).arg(p.approvalThreshold));
     voteStatusLabel->clear();
     const bool active = (p.status == "ACTIVE");
-    voteYesButton->setEnabled(active); voteNoButton->setEnabled(active);
-    voteAbstainButton->setEnabled(active); voteVetoButton->setEnabled(active);
+    voteYesButton->setEnabled(active);
+    voteNoButton->setEnabled(active);
+    voteAbstainButton->setEnabled(active);
+    voteVetoButton->setEnabled(active);
 }
 
 void GovernancePage::clearDetail() {
-    detailIdLabel->setText("—"); detailTypeLabel->setText("—");
-    detailStatusLabel->setText("—"); detailTitleLabel->setText("—");
-    detailDescLabel->setText("—"); detailVotesLabel->setText("—");
-    detailQuorumLabel->setText("—"); voteStatusLabel->clear();
-    voteYesButton->setEnabled(false); voteNoButton->setEnabled(false);
-    voteAbstainButton->setEnabled(false); voteVetoButton->setEnabled(false);
+    detailIdLabel->setText("—");
+    detailTypeLabel->setText("—");
+    detailStatusLabel->setText("—");
+    detailTitleLabel->setText("—");
+    detailDescLabel->setText("—");
+    detailVotesLabel->setText("—");
+    detailQuorumLabel->setText("—");
+    voteStatusLabel->clear();
+    voteYesButton->setEnabled(false);
+    voteNoButton->setEnabled(false);
+    voteAbstainButton->setEnabled(false);
+    voteVetoButton->setEnabled(false);
     selectedProposalId = 0;
 }
 
-void GovernancePage::onVoteYes()     { if (rpcClient && selectedProposalId) rpcClient->castVote(selectedProposalId, "YES");     }
-void GovernancePage::onVoteNo()      { if (rpcClient && selectedProposalId) rpcClient->castVote(selectedProposalId, "NO");      }
-void GovernancePage::onVoteAbstain() { if (rpcClient && selectedProposalId) rpcClient->castVote(selectedProposalId, "ABSTAIN"); }
-void GovernancePage::onVoteVeto()    { if (rpcClient && selectedProposalId) rpcClient->castVote(selectedProposalId, "VETO");    }
+void GovernancePage::onVoteYes() {
+    if (rpcClient && selectedProposalId)
+        rpcClient->castVote(selectedProposalId, "YES");
+}
+void GovernancePage::onVoteNo() {
+    if (rpcClient && selectedProposalId)
+        rpcClient->castVote(selectedProposalId, "NO");
+}
+void GovernancePage::onVoteAbstain() {
+    if (rpcClient && selectedProposalId)
+        rpcClient->castVote(selectedProposalId, "ABSTAIN");
+}
+void GovernancePage::onVoteVeto() {
+    if (rpcClient && selectedProposalId)
+        rpcClient->castVote(selectedProposalId, "VETO");
+}
 
 void GovernancePage::onVoteCast(quint64 proposalId, bool success) {
     if (success) {
         voteStatusLabel->setText(tr("Vote recorded for proposal #%1.").arg(proposalId));
         voteStatusLabel->setStyleSheet("QLabel{color:green;}");
-        if (rpcClient) rpcClient->tallyVotes(proposalId);
+        if (rpcClient)
+            rpcClient->tallyVotes(proposalId);
     } else {
         voteStatusLabel->setText(tr("Vote failed for proposal #%1.").arg(proposalId));
         voteStatusLabel->setStyleSheet("QLabel{color:red;}");
@@ -615,11 +709,20 @@ void GovernancePage::onVoteCast(quint64 proposalId, bool success) {
 }
 
 void GovernancePage::onSubmitProposal() {
-    if (!rpcClient) { submitStatusLabel->setText(tr("Error: Not connected")); return; }
+    if (!rpcClient) {
+        submitStatusLabel->setText(tr("Error: Not connected"));
+        return;
+    }
     const QString title = proposalTitleEdit->text().trimmed();
-    const QString desc  = proposalDescEdit->toPlainText().trimmed();
-    if (title.isEmpty()) { submitStatusLabel->setText(tr("Error: Title required")); return; }
-    if (desc.isEmpty())  { submitStatusLabel->setText(tr("Error: Description required")); return; }
+    const QString desc = proposalDescEdit->toPlainText().trimmed();
+    if (title.isEmpty()) {
+        submitStatusLabel->setText(tr("Error: Title required"));
+        return;
+    }
+    if (desc.isEmpty()) {
+        submitStatusLabel->setText(tr("Error: Description required"));
+        return;
+    }
     rpcClient->submitProposal(proposalTypeCombo->currentText(), title, desc);
     submitStatusLabel->setText(tr("Submitting…"));
     submitStatusLabel->setStyleSheet("QLabel{color:blue;}");
@@ -628,8 +731,10 @@ void GovernancePage::onSubmitProposal() {
 void GovernancePage::onProposalSubmitted(quint64 proposalId) {
     submitStatusLabel->setText(tr("Proposal #%1 submitted!").arg(proposalId));
     submitStatusLabel->setStyleSheet("QLabel{color:green;}");
-    proposalTitleEdit->clear(); proposalDescEdit->clear();
-    if (rpcClient) rpcClient->listProposals();
+    proposalTitleEdit->clear();
+    proposalDescEdit->clear();
+    if (rpcClient)
+        rpcClient->listProposals();
 }
 
 // ---------------------------------------------------------------------------
@@ -637,7 +742,8 @@ void GovernancePage::onProposalSubmitted(quint64 proposalId) {
 // ---------------------------------------------------------------------------
 void GovernancePage::onActiveBansUpdated() {
     bansTable->setRowCount(0);
-    if (!rpcClient) return;
+    if (!rpcClient)
+        return;
     for (const OstracismRecord &r : rpcClient->activeBans()) {
         int row = bansTable->rowCount();
         bansTable->insertRow(row);
@@ -676,7 +782,8 @@ void GovernancePage::onOstracismNominated(bool success) {
         ostracismStatusLabel->setStyleSheet("QLabel{color:green;}");
         ostracismTargetEdit->clear();
         ostracismReasonEdit->clear();
-        if (rpcClient) rpcClient->listActiveBans();
+        if (rpcClient)
+            rpcClient->listActiveBans();
     } else {
         ostracismStatusLabel->setText(tr("Nomination failed (already nominated or banned)."));
         ostracismStatusLabel->setStyleSheet("QLabel{color:red;}");

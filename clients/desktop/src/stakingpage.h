@@ -34,8 +34,8 @@ class StakingPage : public QWidget {
     QComboBox *layerCombo;
     QLineEdit *amountEdit;
     QLineEdit *addressEdit;
-    QLabel    *stakingPowerLabel;
-    QLabel    *statusLabel;
+    QLabel *stakingPowerLabel;
+    QLabel *statusLabel;
     QPushButton *stakeButton;
     QPushButton *unstakeButton;
 };
