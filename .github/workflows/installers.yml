@@ -24,7 +24,14 @@ jobs:
     - name: Install build dependencies
       shell: pwsh
       run: |
-        choco install cmake ninja openssl -y --no-progress
+        choco install cmake ninja -y --no-progress
+
+    - name: Install OpenSSL
+      run: choco install openssl --no-progress -y
+
+    - name: Set OPENSSL_ROOT_DIR environment variable
+      shell: pwsh
+      run: echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
 
     - name: Configure CMake
       shell: pwsh
