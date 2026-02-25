@@ -53,6 +53,14 @@ struct TreasuryBalance {
     TreasuryBalance() : total(0), coreDevelopment(0), grants(0), operations(0), emergency(0) {}
 };
 
+struct OstracismRecord {
+    QString address;
+    quint64 banEndBlock;
+    QString reason;
+
+    OstracismRecord() : banEndBlock(0) {}
+};
+
 class RPCClient : public QObject {
     Q_OBJECT
 
@@ -104,6 +112,15 @@ class RPCClient : public QObject {
     void getStakingPower(const QString &address);
     double getLastStakingPower() const { return lastStakingPower; }
 
+    // ---------------------------------------------------------------- //
+    //  Ostracism (Article VIII)                                         //
+    // ---------------------------------------------------------------- //
+    void listActiveBans(quint64 blockHeight = 0);
+    void nominateOstracism(const QString &target, const QString &nominator,
+                           const QString &reason, quint64 blockHeight = 0);
+
+    QList<OstracismRecord> activeBans() const { return activeBansList; }
+
   signals:
     void connectionStatusChanged(bool connected);
     void balanceChanged();
@@ -122,6 +139,9 @@ class RPCClient : public QObject {
     void stakingPowerUpdated(double power);
     void stakeConfirmed(const QString &layer, double amount);
     void unstakeConfirmed(const QString &layer, double amount);
+    // Ostracism signals
+    void activeBansUpdated();
+    void ostracismNominated(bool success);
 
   private slots:
     void handleNetworkReply(QNetworkReply *reply);
@@ -147,6 +167,9 @@ class RPCClient : public QObject {
 
     // Staking state
     double lastStakingPower;
+
+    // Ostracism state
+    QList<OstracismRecord> activeBansList;
 };
 
 #endif // RPC_CLIENT_H

@@ -9,6 +9,8 @@
         <file>settings.svg</file>
         <file>mining.svg</file>
         <file>menu.svg</file>
+        <file>governance.svg</file>
+        <file>staking.svg</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="app-icon.png">icon.png</file>

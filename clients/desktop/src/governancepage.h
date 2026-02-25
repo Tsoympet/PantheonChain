@@ -7,13 +7,13 @@
 
 #include <QWidget>
 
+class QTabWidget;
 class QTableWidget;
 class QPushButton;
 class QLabel;
 class QComboBox;
 class QLineEdit;
 class QTextEdit;
-class QStackedWidget;
 class QGroupBox;
 
 class GovernancePage : public QWidget {
@@ -23,6 +23,7 @@ class GovernancePage : public QWidget {
     explicit GovernancePage(RPCClient *rpc, QWidget *parent = nullptr);
 
   private slots:
+    // Proposals tab
     void onRefresh();
     void onProposalsUpdated();
     void onTreasuryUpdated();
@@ -34,22 +35,30 @@ class GovernancePage : public QWidget {
     void onSubmitProposal();
     void onVoteCast(quint64 proposalId, bool success);
     void onProposalSubmitted(quint64 proposalId);
+    // Ostracism tab
+    void onActiveBansUpdated();
+    void onNominateOstracism();
+    void onOstracismNominated(bool success);
+    // Generic error
     void onError(const QString &error);
 
   private:
     void setupUI();
+    void setupProposalsTab(QWidget *tab);
+    void setupRolesTab(QWidget *tab);
+    void setupOstracismTab(QWidget *tab);
+    void setupConstitutionTab(QWidget *tab);
     void loadProposals();
     void showProposalDetail(const ProposalRecord &proposal);
     void clearDetail();
 
     RPCClient *rpcClient;
+    QTabWidget *tabWidget;
 
-    // Proposal list panel
+    // ---- Proposals tab ----
     QTableWidget *proposalTable;
     QPushButton  *refreshButton;
     QComboBox    *statusFilter;
-
-    // Detail panel
     QLabel       *detailIdLabel;
     QLabel       *detailTypeLabel;
     QLabel       *detailStatusLabel;
@@ -62,20 +71,23 @@ class GovernancePage : public QWidget {
     QPushButton  *voteAbstainButton;
     QPushButton  *voteVetoButton;
     QLabel       *voteStatusLabel;
-
-    // Submit proposal panel
     QComboBox    *proposalTypeCombo;
     QLineEdit    *proposalTitleEdit;
     QTextEdit    *proposalDescEdit;
     QPushButton  *submitButton;
     QLabel       *submitStatusLabel;
-
-    // Treasury panel
     QLabel       *treasuryTotalLabel;
     QLabel       *treasuryCorDevLabel;
     QLabel       *treasuryGrantsLabel;
     QLabel       *treasuryOpsLabel;
     QLabel       *treasuryEmergencyLabel;
+
+    // ---- Ostracism tab ----
+    QTableWidget *bansTable;
+    QLineEdit    *ostracismTargetEdit;
+    QLineEdit    *ostracismReasonEdit;
+    QPushButton  *ostracismNominateButton;
+    QLabel       *ostracismStatusLabel;
 
     quint64 selectedProposalId;
 };

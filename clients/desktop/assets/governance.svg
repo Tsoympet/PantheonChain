@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1f2a44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="governance icon">
+  <!-- Balance/scales representing governance -->
+  <path d="M12 3 V21"/>
+  <path d="M6 21 H18"/>
+  <path d="M9 3 H15"/>
+  <!-- Left pan -->
+  <path d="M5 10 L3 15 H7 Z"/>
+  <path d="M5 10 L9 3"/>
+  <!-- Right pan -->
+  <path d="M19 10 L17 15 H21 Z"/>
+  <path d="M19 10 L15 3"/>
+</svg>

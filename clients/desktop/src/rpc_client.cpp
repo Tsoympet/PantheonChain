@@ -223,6 +223,22 @@ void RPCClient::handleNetworkReply(QNetworkReply *reply) {
     } else if (method == "staking/get_power") {
         lastStakingPower = result.toObject()["voting_power"].toDouble();
         emit stakingPowerUpdated(lastStakingPower);
+    } else if (method == "ostracism/list_bans") {
+        activeBansList.clear();
+        QJsonObject resultObj = result.toObject();
+        QJsonArray bans = resultObj["bans"].toArray();
+        for (const auto &item : bans) {
+            QJsonObject b = item.toObject();
+            OstracismRecord rec;
+            rec.address    = b["address"].toString();
+            rec.banEndBlock = static_cast<quint64>(b["ban_end"].toDouble());
+            rec.reason     = b["reason"].toString();
+            activeBansList.append(rec);
+        }
+        emit activeBansUpdated();
+    } else if (method == "ostracism/nominate") {
+        bool ok = result.toObject()["success"].toBool();
+        emit ostracismNominated(ok);
     }
 
     reply->deleteLater();
@@ -317,4 +333,24 @@ void RPCClient::getStakingPower(const QString &address) {
     QVariantMap params;
     params["address"] = address;
     sendRPCRequest("staking/get_power", {params});
+}
+
+// -------------------------------------------------------------------- //
+//  Ostracism methods (Article VIII)                                      //
+// -------------------------------------------------------------------- //
+
+void RPCClient::listActiveBans(quint64 blockHeight) {
+    QVariantMap params;
+    params["block_height"] = blockHeight;
+    sendRPCRequest("ostracism/list_bans", {params});
+}
+
+void RPCClient::nominateOstracism(const QString &target, const QString &nominator,
+                                  const QString &reason, quint64 blockHeight) {
+    QVariantMap params;
+    params["target"]       = target;
+    params["nominator"]    = nominator;
+    params["reason"]       = reason;
+    params["block_height"] = blockHeight;
+    sendRPCRequest("ostracism/nominate", {params});
 }

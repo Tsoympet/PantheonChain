@@ -280,4 +280,74 @@ describe('GovernanceService', () => {
       expect(GovernanceService.totalVotes({ yes_votes: 5 })).toBe(5);
     });
   });
+
+  // ------------------------------------------------------------------ //
+  //  listActiveBans                                                       //
+  // ------------------------------------------------------------------ //
+  describe('listActiveBans', () => {
+    it('returns the bans array from the RPC result', async () => {
+      const bans = [
+        { address: 'aabb', ban_end: 9000, reason: 'manipulation' },
+        { address: 'ccdd', ban_end: 10000, reason: 'fraud' },
+      ];
+      mockFetch({ bans, count: 2 });
+      const result = await GovernanceService.listActiveBans();
+      expect(result).toHaveLength(2);
+      expect(result[0].address).toBe('aabb');
+    });
+
+    it('returns empty array when result has no bans key', async () => {
+      mockFetch({});
+      const result = await GovernanceService.listActiveBans();
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array on network error', async () => {
+      mockFetchError('timeout');
+      const result = await GovernanceService.listActiveBans();
+      expect(result).toEqual([]);
+    });
+
+    it('sends ostracism/list_bans to RPC', async () => {
+      mockFetch({ bans: [] });
+      await GovernanceService.listActiveBans(42);
+      const body = JSON.parse(fetch.mock.calls[0][1].body);
+      expect(body.method).toBe('ostracism/list_bans');
+      expect(body.params[0].block_height).toBe(42);
+    });
+  });
+
+  // ------------------------------------------------------------------ //
+  //  nominateOstracism                                                    //
+  // ------------------------------------------------------------------ //
+  describe('nominateOstracism', () => {
+    it('returns true when nomination succeeds', async () => {
+      mockFetch({ success: true });
+      const ok = await GovernanceService.nominateOstracism('target', 'nominator', 'reason');
+      expect(ok).toBe(true);
+    });
+
+    it('returns false when success is false', async () => {
+      mockFetch({ success: false });
+      const ok = await GovernanceService.nominateOstracism('target', 'nominator', 'reason');
+      expect(ok).toBe(false);
+    });
+
+    it('sends ostracism/nominate with correct parameters', async () => {
+      mockFetch({ success: true });
+      await GovernanceService.nominateOstracism('addr_t', 'addr_n', 'my reason', 100);
+      const body = JSON.parse(fetch.mock.calls[0][1].body);
+      expect(body.method).toBe('ostracism/nominate');
+      expect(body.params[0].target).toBe('addr_t');
+      expect(body.params[0].reason).toBe('my reason');
+      expect(body.params[0].block_height).toBe(100);
+    });
+
+    it('throws on network error', async () => {
+      mockFetchError('refused');
+      await expect(
+        GovernanceService.nominateOstracism('t', 'n', 'r')
+      ).rejects.toThrow('refused');
+    });
+  });
 });

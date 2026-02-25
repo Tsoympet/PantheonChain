@@ -137,8 +137,49 @@ class GovernanceService {
   }
 
   // ------------------------------------------------------------------ //
-  //  Helpers                                                             //
+  //  Ostracism (Article VIII)                                          //
   // ------------------------------------------------------------------ //
+
+  /**
+   * Fetch active ostracism bans.
+   * @param {number} [blockHeight=0]
+   * @returns {Promise<Array>}  Array of { address, ban_end, reason }
+   */
+  async listActiveBans(blockHeight = 0) {
+    try {
+      const response = await NetworkService.rpcRequest('ostracism/list_bans', [
+        { block_height: blockHeight },
+      ]);
+      return response.result?.bans || [];
+    } catch (error) {
+      console.error('GovernanceService.listActiveBans error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Nominate an address for ostracism.
+   * @param {string} target      - hex address of the target
+   * @param {string} nominator   - hex address of the nominator
+   * @param {string} reason      - reason for nomination
+   * @param {number} [blockHeight=0]
+   * @returns {Promise<boolean>}
+   */
+  async nominateOstracism(target, nominator, reason, blockHeight = 0) {
+    try {
+      const response = await NetworkService.rpcRequest('ostracism/nominate', [
+        { target, nominator, reason, block_height: blockHeight },
+      ]);
+      return response.result?.success === true;
+    } catch (error) {
+      console.error('GovernanceService.nominateOstracism error:', error);
+      throw error;
+    }
+  }
+
+  // ------------------------------------------------------------------ //
+  //  Helpers                                                             //
+  // ------------------------------------------------------------------ /
 
   /**
    * Human-readable label for a ProposalType string.

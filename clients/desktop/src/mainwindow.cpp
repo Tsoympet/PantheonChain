@@ -177,12 +177,12 @@ void MainWindow::createActions() {
     transactionsAction->setCheckable(true);
     connect(transactionsAction, &QAction::triggered, this, &MainWindow::showTransactions);
 
-    governanceAction = new QAction(QIcon(":/icons/menu.svg"), tr("&Governance"), this);
+    governanceAction = new QAction(QIcon(":/icons/governance.svg"), tr("&Governance"), this);
     governanceAction->setStatusTip(tr("View and vote on governance proposals"));
     governanceAction->setCheckable(true);
     connect(governanceAction, &QAction::triggered, this, &MainWindow::showGovernance);
 
-    stakingAction = new QAction(QIcon(":/icons/wallet.svg"), tr("S&taking"), this);
+    stakingAction = new QAction(QIcon(":/icons/staking.svg"), tr("S&taking"), this);
     stakingAction->setStatusTip(tr("Stake tokens on L2/L3"));
     stakingAction->setCheckable(true);
     connect(stakingAction, &QAction::triggered, this, &MainWindow::showStaking);

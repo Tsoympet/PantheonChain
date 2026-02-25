@@ -340,10 +340,272 @@ const SubmitProposalForm = ({ onBack, onSubmitted }) => {
 };
 
 // ------------------------------------------------------------------ //
+//  Roles reference screen                                             //
+// ------------------------------------------------------------------ //
+const RolesScreen = ({ onBack }) => {
+  const sections = [
+    {
+      title: 'Boule (βουλή) — The Council  [Art. I]',
+      body: '500 seats on L3 (OBOLOS). Members selected by VRF sortition (Kleroteria) from the epoch boundary block hash. Term: one epoch (default 14 days), max 4 consecutive terms.\n\nDokimasia screening: min stake ≥ MIN_COUNCIL_STAKE, no slashing in past 4 epochs, uptime ≥ 90%, no active Ostracism.',
+    },
+    {
+      title: 'Prytany (πρυτανεία) — Executive Committee  [Art. I §1.4]',
+      body: '50 Boule members randomly selected per epoch. Holds keys to fast-track EMERGENCY proposals. Epistates (presiding officer) chosen daily; may not serve twice in same Prytany term. Cannot simultaneously serve on EmergencyCouncil.',
+    },
+    {
+      title: 'Ekklesia (ἐκκλησία) — The Assembly  [Art. II]',
+      body: 'All addresses with positive staked balance on L3 at the proposal snapshot block. Proposal submission requires: stake ≥ MIN_PROPOSAL_STAKE, no active Ostracism, no pending proposal from same address.\n\nQuorum: STANDARD 10% · CONSTITUTIONAL 20% · EMERGENCY 5% · PARAMETER_CHANGE 10% · TREASURY_SPENDING 15%\n\nVoting power = floor(√(staked balance at snapshot)).',
+    },
+    {
+      title: 'EmergencyCouncil  [Art. IX]',
+      body: 'M-of-N multi-sig body — default 5-of-9 guardians. Established at genesis; changes require CONSTITUTIONAL proposal.\n\nCan (without prior assembly vote): pause a contract up to 48 h, upgrade contract within 72 h timelock, freeze an address pending Apophasis review.\n\nCannot: confiscate assets, modify supply policy, or override a completed vote.',
+    },
+    {
+      title: 'Apophasis (ἀπόφασις) — Investigative Board  [Art. IX §9.3]',
+      body: '5 members selected by VRF from non-Prytany Boule members each epoch. Reviews all EmergencyCouncil actions within 7 days. Publishes on-chain findings report. Recommendations binding when adopted by STANDARD vote within 14 days.',
+    },
+    {
+      title: 'Voting Options  [Art. IV]',
+      body: 'YES · NO · ABSTAIN · VETO\n\nVETO: if veto votes exceed 33.34% of all votes cast → unconditional defeat + 14-day re-submission blackout.\n\nDelegation (§4.3): revocable at any time, one level only, no transitive delegation, does not transfer token custody.\n\nVotes are final — changeVote is not available.',
+    },
+    {
+      title: 'Staking Lock Periods  [Art. VII §7.2]',
+      body: 'No lock: 1×\n30 days: 1.25×\n90 days: 1.5×\n180 days: 1.75×\n365 days: 2×\n\nLock periods do NOT affect voting power (raw quadratic staked balance) to prevent plutocratic lock-up strategies.',
+    },
+    {
+      title: 'Fee Distribution  [Art. X]',
+      body: 'L1 (TALANTON): 60% → Block Producer · 20% → Treasury (OPS) · 20% → Burn\n\nL2 (DRACHMA): 50% → Validator Pool · 20% → Treasury (CORE_DEV) · 20% → L1 Anchor · 10% → Burn\n\nL3 (OBOLOS): 40% → Validator Pool · 20% → Treasury (GRANTS) · 15% → Treasury (CORE_DEV) · 15% → L2 Anchor · 10% → Burn',
+    },
+  ];
+
+  return (
+    <ScrollView style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
+      <Text style={styles.screenTitle}>Boule & Roles</Text>
+      {sections.map((s) => (
+        <View key={s.title} style={styles.card}>
+          <Text style={styles.cardTitle}>{s.title}</Text>
+          <Text style={styles.bodyText}>{s.body}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+};
+
+// ------------------------------------------------------------------ //
+//  Ostracism screen                                                   //
+// ------------------------------------------------------------------ //
+const OstracismScreen = ({ onBack }) => {
+  const [bans, setBans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [target, setTarget] = useState('');
+  const [reason, setReason] = useState('');
+  const [nominating, setNominating] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const result = await GovernanceService.listActiveBans();
+      setBans(result);
+      setLoading(false);
+    })();
+  }, []);
+
+  const handleNominate = async () => {
+    if (!target.trim()) { Alert.alert('Error', 'Target address is required'); return; }
+    if (!reason.trim()) { Alert.alert('Error', 'Reason is required'); return; }
+    Alert.alert('Confirm', `Nominate address for ostracism?\n\n${target.trim()}\n\nReason: ${reason.trim()}`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Nominate',
+        onPress: async () => {
+          try {
+            setNominating(true);
+            const ok = await GovernanceService.nominateOstracism(target.trim(), 'demo_nominator', reason.trim());
+            if (ok) {
+              Alert.alert('Submitted', 'Ostracism nomination submitted.');
+              setTarget(''); setReason('');
+              const updated = await GovernanceService.listActiveBans();
+              setBans(updated);
+            } else {
+              Alert.alert('Failed', 'Nomination failed (already nominated or banned).');
+            }
+          } catch (err) {
+            Alert.alert('Error', err.message || 'Nomination failed');
+          } finally {
+            setNominating(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
+      <Text style={styles.screenTitle}>Ostracism</Text>
+
+      <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#ffc107' }]}>
+        <Text style={styles.bodyText}>
+          Temporary governance exclusion. An ostracized address may not submit proposals, serve
+          on Boule/Prytany, or receive treasury grants — but may still vote, stake, and transact.{'\n\n'}
+          Requires CONSTITUTIONAL supermajority (≥66%) with ≥20% quorum.  [Art. VIII]
+        </Text>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Active Bans</Text>
+      </View>
+
+      {loading ? (
+        <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 16 }} />
+      ) : bans.length === 0 ? (
+        <Text style={styles.emptyText}>No active bans.</Text>
+      ) : (
+        bans.map((ban, i) => (
+          <View key={i} style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#dc3545' }]}>
+            <Text style={[styles.bodyText, { fontWeight: '700', color: '#dc3545' }]}>
+              {ban.address}
+            </Text>
+            <Text style={styles.bodyText}>Ban ends at block: {ban.ban_end}</Text>
+            <Text style={styles.bodyText}>Reason: {ban.reason || '—'}</Text>
+          </View>
+        ))
+      )}
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Nominate for Ostracism</Text>
+      </View>
+      <View style={styles.card}>
+        <TextInput
+          style={styles.input}
+          placeholder="Target address (hex)"
+          placeholderTextColor="#999"
+          value={target}
+          onChangeText={setTarget}
+        />
+        <TextInput
+          style={[styles.input, styles.inputMultiline]}
+          placeholder="Reason (describe the alleged harm)"
+          placeholderTextColor="#999"
+          value={reason}
+          onChangeText={setReason}
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+        />
+        <TouchableOpacity
+          style={[styles.submitButton, { backgroundColor: '#fd7e14' }, nominating && styles.submitButtonDisabled]}
+          onPress={handleNominate}
+          disabled={nominating}>
+          <Text style={styles.submitButtonText}>
+            {nominating ? 'Submitting…' : 'Submit Nomination'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+};
+
+// ------------------------------------------------------------------ //
+//  Constitutional limits screen                                       //
+// ------------------------------------------------------------------ //
+const ConstitutionScreen = ({ onBack }) => {
+  const isonomia = [
+    ['Boule size', '100 – 1 000 seats'],
+    ['Council term', '3 – 90 days'],
+    ['Prytany size', '10 – 100 members'],
+    ['Standard voting window', '3 – 30 days'],
+    ['Constitutional voting window', '7 – 60 days'],
+    ['Emergency execution TTL', '12 h – 7 days'],
+    ['Standard quorum', '5% – 30% staked supply'],
+    ['Constitutional quorum', '10% – 40%'],
+    ['Supermajority threshold', '60% – 80%'],
+    ['Veto threshold', '20% – 45% of votes'],
+    ['Min proposal stake', '0.001% – 1% staked supply'],
+    ['Min council stake', '0.01% – 5% staked supply'],
+    ['Max concurrent proposals', '5 – 100'],
+    ['Execution delay (standard)', '1 – 14 days'],
+    ['Execution delay (constitutional)', '3 – 30 days'],
+    ['Large grant threshold', '0.1% – 10% treasury'],
+    ['Slashing — double sign', '1% – 30% stake'],
+    ['Slashing — downtime', '0.001% – 5% stake'],
+    ['Anti-flash-stake cooldown', '1 block – 14 days'],
+    ['Ostracism duration', '30 – 365 days'],
+  ];
+
+  const supply = [
+    ['TALANTON (TALN)', '21 000 000 (L1)'],
+    ['DRACHMA (DRM)', '41 000 000 (L2)'],
+    ['OBOLOS (OBL)', '61 000 000 (L3)'],
+  ];
+
+  const proposalTypes = [
+    ['STANDARD', '>50% · 7-day window · 2-day delay'],
+    ['PARAMETER_CHANGE', '>50% · 7-day window · 3-day delay'],
+    ['CONSTITUTIONAL', '≥66% supermajority · 14-day window · 7-day delay'],
+    ['EMERGENCY', 'Prytany ≥34/50 · assembly ratification within 72 h'],
+    ['TREASURY_SPENDING', '>50% · 10-day window · 3-day delay'],
+  ];
+
+  const glossary = [
+    ['Apophasis (ἀπόφασις)', 'Investigative board reviewing emergency actions'],
+    ['Boule (βουλή)', 'Validator council selected by VRF sortition'],
+    ['Dokimasia (δοκιμασία)', 'Eligibility screening for council candidates'],
+    ['Ekklesia (ἐκκλησία)', 'Full staker assembly — sovereign governance body'],
+    ['Epistates (ἐπιστάτης)', 'Presiding officer of Prytany, chosen daily'],
+    ['Eunomia (εὐνομία)', 'Good order — governance pipeline structure'],
+    ['Isegoria (ἰσηγορία)', 'Equal right of proposal submission'],
+    ['Isonomia (ἰσονομία)', 'Constitutional parameter bounds enforceable by code'],
+    ['Kleroteria (κληρωτήρια)', 'VRF-based sortition mechanism'],
+    ['Ostrakismos (ὀστρακισμός)', 'Community-voted temporary governance exclusion'],
+    ['Prytany (πρυτανεία)', 'Executive committee of 50 Boule members'],
+    ['Sophrosyne (σωφροσύνη)', 'Prudence — veto and supermajority protections'],
+  ];
+
+  const Table = ({ title, rows }) => (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{title}</Text>
+      {rows.map(([param, value]) => (
+        <View key={param} style={styles.constitutionRow}>
+          <Text style={styles.constitutionParam}>{param}</Text>
+          <Text style={styles.constitutionValue}>{value}</Text>
+        </View>
+      ))}
+    </View>
+  );
+
+  return (
+    <ScrollView style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
+      <Text style={styles.screenTitle}>Constitution</Text>
+
+      <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#007AFF' }]}>
+        <Text style={styles.bodyText}>
+          Governing principles: Isonomia · Isegoria · Demokratia · Sophrosyne · Eunomia{'\n'}
+          All parameters enforced in code. No proposal may exceed these limits without a hard fork.
+        </Text>
+      </View>
+
+      <Table title="Art. V — Isonomia Limits (Floor – Ceiling)" rows={isonomia} />
+      <Table title="Art. XI — Maximum Token Supplies" rows={supply} />
+      <Table title="Art. III — Proposal Types" rows={proposalTypes} />
+      <Table title="Appendix B — Glossary" rows={glossary} />
+    </ScrollView>
+  );
+};
+
+// ------------------------------------------------------------------ //
 //  Main governance screen                                              //
 // ------------------------------------------------------------------ //
 const GovernanceScreen = ({ onBack }) => {
-  const [view, setView] = useState('list'); // 'list' | 'detail' | 'submit'
+  const [view, setView] = useState('list'); // 'list' | 'detail' | 'submit' | 'roles' | 'ostracism' | 'constitution'
   const [proposals, setProposals] = useState([]);
   const [treasury, setTreasury] = useState({
     total: 0,
@@ -374,10 +636,7 @@ const GovernanceScreen = ({ onBack }) => {
     return (
       <ProposalDetail
         proposal={selectedProposal}
-        onBack={() => {
-          setView('list');
-          loadData();
-        }}
+        onBack={() => { setView('list'); loadData(); }}
       />
     );
   }
@@ -386,12 +645,21 @@ const GovernanceScreen = ({ onBack }) => {
     return (
       <SubmitProposalForm
         onBack={() => setView('list')}
-        onSubmitted={() => {
-          setView('list');
-          loadData();
-        }}
+        onSubmitted={() => { setView('list'); loadData(); }}
       />
     );
+  }
+
+  if (view === 'roles') {
+    return <RolesScreen onBack={() => setView('list')} />;
+  }
+
+  if (view === 'ostracism') {
+    return <OstracismScreen onBack={() => setView('list')} />;
+  }
+
+  if (view === 'constitution') {
+    return <ConstitutionScreen onBack={() => setView('list')} />;
   }
 
   return (
@@ -401,13 +669,30 @@ const GovernanceScreen = ({ onBack }) => {
       </TouchableOpacity>
       <Text style={styles.screenTitle}>Governance</Text>
 
+      {/* Quick-nav tabs */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.navTabRow}>
+        {[
+          { id: 'list', label: '📋 Proposals' },
+          { id: 'roles', label: '🏛 Roles' },
+          { id: 'ostracism', label: '⚖ Ostracism' },
+          { id: 'constitution', label: '📜 Constitution' },
+        ].map((tab) => (
+          <TouchableOpacity
+            key={tab.id}
+            style={[styles.navTab, view === tab.id && styles.navTabActive]}
+            onPress={() => setView(tab.id)}>
+            <Text style={[styles.navTabText, view === tab.id && styles.navTabTextActive]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       <TreasuryPanel treasury={treasury} />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Proposals</Text>
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={() => setView('submit')}>
+        <TouchableOpacity style={styles.submitButton} onPress={() => setView('submit')}>
           <Text style={styles.submitButtonText}>+ Submit</Text>
         </TouchableOpacity>
       </View>
@@ -652,6 +937,54 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 15,
     marginTop: 40,
+  },
+  // Body text (roles/constitution)
+  bodyText: {
+    fontSize: 13,
+    color: '#444',
+    lineHeight: 19,
+  },
+  // Nav tab bar (governance main screen)
+  navTabRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  navTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    backgroundColor: '#e0e0e0',
+    marginRight: 8,
+  },
+  navTabActive: {
+    backgroundColor: '#007AFF',
+  },
+  navTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#555',
+  },
+  navTabTextActive: {
+    color: '#fff',
+  },
+  // Constitution table rows
+  constitutionRow: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#eee',
+  },
+  constitutionParam: {
+    flex: 1,
+    fontSize: 12,
+    color: '#555',
+    fontWeight: '600',
+    paddingRight: 8,
+  },
+  constitutionValue: {
+    flex: 1,
+    fontSize: 12,
+    color: '#333',
   },
 });
 
