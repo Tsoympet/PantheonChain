@@ -5,6 +5,7 @@
 #include "overviewpage.h"
 #include "receivepage.h"
 #include "sendpage.h"
+#include "settingspage.h"
 #include "transactionpage.h"
 
 #include <QAction>
@@ -19,7 +20,7 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), centralStack(nullptr), overviewPage(nullptr), sendPage(nullptr),
-      receivePage(nullptr), transactionPage(nullptr), rpcClient(nullptr) {
+      receivePage(nullptr), transactionPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
     setWindowTitle("ParthenonChain Wallet");
     resize(1000, 700);
 
@@ -39,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     sendPage = new SendPage(rpcClient, this);
     receivePage = new ReceivePage(rpcClient, this);
     transactionPage = new TransactionPage(rpcClient, this);
+    settingsPage = new SettingsPage(rpcClient, this);
 
     // Connect overview page signals
     connect(overviewPage, &OverviewPage::sendRequested, this, &MainWindow::showSend);
@@ -48,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     centralStack->addWidget(sendPage);
     centralStack->addWidget(receivePage);
     centralStack->addWidget(transactionPage);
+    centralStack->addWidget(settingsPage);
 
     // Create UI elements
     createActions();
@@ -87,6 +90,11 @@ void MainWindow::showReceive() {
 void MainWindow::showTransactions() {
     centralStack->setCurrentWidget(transactionPage);
     transactionsAction->setChecked(true);
+}
+
+void MainWindow::showSettings() {
+    centralStack->setCurrentWidget(settingsPage);
+    settingsAction->setChecked(true);
 }
 
 void MainWindow::showAbout() {
@@ -152,6 +160,11 @@ void MainWindow::createActions() {
     transactionsAction->setCheckable(true);
     connect(transactionsAction, &QAction::triggered, this, &MainWindow::showTransactions);
 
+    settingsAction = new QAction(QIcon(":/icons/settings.svg"), tr("Se&ttings"), this);
+    settingsAction->setStatusTip(tr("Configure wallet settings"));
+    settingsAction->setCheckable(true);
+    connect(settingsAction, &QAction::triggered, this, &MainWindow::showSettings);
+
     exitAction = new QAction(tr("E&xit"), this);
     exitAction->setStatusTip(tr("Exit application"));
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
@@ -175,6 +188,9 @@ void MainWindow::createMenus() {
     viewMenu->addAction(receiveAction);
     viewMenu->addAction(transactionsAction);
 
+    toolsMenu = menuBar()->addMenu(tr("&Tools"));
+    toolsMenu->addAction(settingsAction);
+
     helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(aboutAction);
     helpMenu->addAction(aboutQtAction);
@@ -186,6 +202,8 @@ void MainWindow::createToolBars() {
     toolBar->addAction(sendAction);
     toolBar->addAction(receiveAction);
     toolBar->addAction(transactionsAction);
+    toolBar->addSeparator();
+    toolBar->addAction(settingsAction);
     toolBar->setMovable(false);
 }
 

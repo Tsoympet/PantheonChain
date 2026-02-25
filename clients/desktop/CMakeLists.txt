@@ -38,6 +38,8 @@ if(DEFINED PARTHENON_QT_TARGET_PREFIX)
         src/receivepage.h
         src/transactionpage.cpp
         src/transactionpage.h
+        src/settingspage.cpp
+        src/settingspage.h
     )
 
     target_compile_features(parthenon-qt PRIVATE cxx_std_17)

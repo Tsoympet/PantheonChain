@@ -20,6 +20,7 @@ class OverviewPage;
 class SendPage;
 class ReceivePage;
 class TransactionPage;
+class SettingsPage;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -33,6 +34,7 @@ class MainWindow : public QMainWindow {
     void showSend();
     void showReceive();
     void showTransactions();
+    void showSettings();
     void showAbout();
     void updateStatus();
     void onConnectionStatusChanged(bool connected);
@@ -52,12 +54,14 @@ class MainWindow : public QMainWindow {
     SendPage *sendPage;
     ReceivePage *receivePage;
     TransactionPage *transactionPage;
+    SettingsPage *settingsPage;
 
     // Actions
     QAction *overviewAction;
     QAction *sendAction;
     QAction *receiveAction;
     QAction *transactionsAction;
+    QAction *settingsAction;
     QAction *exitAction;
     QAction *aboutAction;
     QAction *aboutQtAction;
@@ -65,6 +69,7 @@ class MainWindow : public QMainWindow {
     // Menus
     QMenu *fileMenu;
     QMenu *viewMenu;
+    QMenu *toolsMenu;
     QMenu *helpMenu;
 
     // Toolbar

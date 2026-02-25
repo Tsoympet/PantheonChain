@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import WalletService from './WalletService';
 import NetworkService from './NetworkService';
+import SettingsScreen from './screens/SettingsScreen';
+import { formatAmount } from './utils/format';
 
 const logoImage = require('../assets/icon.png');
 
@@ -113,7 +115,7 @@ const App = () => {
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Balance</Text>
         <Text style={styles.balanceAmount}>
-          {balances[selectedAsset].toFixed(8)} {selectedAsset}
+          {formatAmount(balances[selectedAsset], selectedAsset)} {selectedAsset}
         </Text>
       </View>
 
@@ -162,6 +164,17 @@ const App = () => {
           accessibilityElementsHidden={true}
           importantForAccessibility="no-hide-descendants">☰</Text>
         <Text style={styles.transactionsButtonText}>View Transactions</Text>
+      </TouchableOpacity>
+
+      {/* Settings Button */}
+      <TouchableOpacity
+        style={[styles.transactionsButton, styles.settingsButton]}
+        onPress={() => setCurrentScreen('settings')}>
+        <Text
+          style={styles.transactionsButtonIcon}
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no-hide-descendants">⚙</Text>
+        <Text style={styles.transactionsButtonText}>Settings</Text>
       </TouchableOpacity>
     </View>
   );
@@ -356,6 +369,8 @@ const App = () => {
         return <ReceiveScreen />;
       case 'transactions':
         return <TransactionsScreen />;
+      case 'settings':
+        return <SettingsScreen onBack={() => setCurrentScreen('wallet')} />;
       default:
         return <WalletScreen />;
     }
@@ -606,6 +621,9 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     marginTop: 50,
+  },
+  settingsButton: {
+    marginTop: 10,
   },
 });
 
