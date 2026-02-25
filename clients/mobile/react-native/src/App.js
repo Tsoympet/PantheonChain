@@ -15,6 +15,7 @@ import {
 import WalletService from './WalletService';
 import NetworkService from './NetworkService';
 import SettingsScreen from './screens/SettingsScreen';
+import GovernanceScreen from './screens/GovernanceScreen';
 import { formatAmount } from './utils/format';
 
 const logoImage = require('../assets/icon.png');
@@ -175,6 +176,17 @@ const App = () => {
           accessibilityElementsHidden={true}
           importantForAccessibility="no-hide-descendants">⚙</Text>
         <Text style={styles.transactionsButtonText}>Settings</Text>
+      </TouchableOpacity>
+
+      {/* Governance Button */}
+      <TouchableOpacity
+        style={[styles.transactionsButton, styles.settingsButton]}
+        onPress={() => setCurrentScreen('governance')}>
+        <Text
+          style={styles.transactionsButtonIcon}
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no-hide-descendants">⚖</Text>
+        <Text style={styles.transactionsButtonText}>Governance</Text>
       </TouchableOpacity>
     </View>
   );
@@ -371,6 +383,8 @@ const App = () => {
         return <TransactionsScreen />;
       case 'settings':
         return <SettingsScreen onBack={() => setCurrentScreen('wallet')} />;
+      case 'governance':
+        return <GovernanceScreen onBack={() => setCurrentScreen('wallet')} />;
       default:
         return <WalletScreen />;
     }
