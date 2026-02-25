@@ -89,7 +89,9 @@ const App = () => {
       {/* Connection Status */}
       <View style={styles.statusBar}>
         <Text style={connected ? styles.statusConnected : styles.statusDisconnected}>
-          {connected ? `● Connected (Block ${blockHeight})` : '● Disconnected'}
+          {connected
+            ? `● Connected [${NetworkService.getCurrentNetworkConfig().name}] (Block ${blockHeight})`
+            : '● Disconnected'}
         </Text>
       </View>
       

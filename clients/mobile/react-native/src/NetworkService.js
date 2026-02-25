@@ -1,12 +1,37 @@
 // ParthenonChain Mobile Wallet - Network Service
 // Handles blockchain connectivity and RPC communication
 
+// Network configurations
+const NETWORK_CONFIG = {
+  mainnet: {
+    name: 'Mainnet',
+    rpcUrl: 'http://127.0.0.1:8332',
+    color: '#1f2a44',
+  },
+  testnet: {
+    name: 'Testnet',
+    rpcUrl: 'http://127.0.0.1:18332',
+    color: '#fd7e14',
+  },
+  devnet: {
+    name: 'Devnet',
+    rpcUrl: 'http://127.0.0.1:18443',
+    color: '#6f42c1',
+    roleRequired: true,
+  },
+};
+
 class NetworkService {
   constructor() {
-    this.rpcUrl = 'http://127.0.0.1:8332';
+    this.network = 'mainnet';
+    this.networkConfig = NETWORK_CONFIG;
+    this.rpcUrl = NETWORK_CONFIG.mainnet.rpcUrl;
     this.connected = false;
     this.blockHeight = 0;
     this.requestId = 1;
+    this.peerCount = 0;
+    this.latencyMs = -1;
+    this.nodeVersion = '';
   }
 
   /**
@@ -29,6 +54,87 @@ class NetworkService {
       this.connected = false;
     }
     return false;
+  }
+
+  /**
+   * Switch to a different network.
+   * @param {'mainnet'|'testnet'|'devnet'} network
+   * @returns {Promise<boolean>} true if connected successfully
+   */
+  async setNetwork(network) {
+    if (!NETWORK_CONFIG[network]) {
+      throw new Error(`Unknown network: ${network}`);
+    }
+    this.network = network;
+    this.rpcUrl  = NETWORK_CONFIG[network].rpcUrl;
+    this.connected = false;
+    return this.connect();
+  }
+
+  /**
+   * Returns the config object for the current network.
+   */
+  getCurrentNetworkConfig() {
+    return NETWORK_CONFIG[this.network] || NETWORK_CONFIG.mainnet;
+  }
+
+  /**
+   * Verify that an address holds a qualifying governance role for Devnet access.
+   * Eligible roles: Boule, Prytany, EmergencyCouncil guardian, Apophasis board.
+   * @param {string} address - hex address to check
+   * @returns {Promise<{granted: boolean, role: string}>}
+   */
+  async checkDevNetAccess(address) {
+    try {
+      const response = await this.rpcRequest('network/check_dev_access', [{ address }]);
+      const result = response.result || {};
+      return {
+        granted: result.granted === true,
+        role: result.role || '',
+      };
+    } catch (error) {
+      console.error('DevNet access check error:', error);
+      return { granted: false, role: '' };
+    }
+  }
+
+  /**
+   * Returns a combined live network status object.
+   * @returns {{ network: string, networkName: string, networkColor: string,
+   *             connected: boolean, blockHeight: number,
+   *             peerCount: number, latencyMs: number, nodeVersion: string }}
+   */
+  getNetworkStatus() {
+    const cfg = this.getCurrentNetworkConfig();
+    return {
+      network:      this.network,
+      networkName:  cfg.name,
+      networkColor: cfg.color,
+      connected:    this.connected,
+      blockHeight:  this.blockHeight,
+      peerCount:    this.peerCount,
+      latencyMs:    this.latencyMs,
+      nodeVersion:  this.nodeVersion,
+    };
+  }
+
+  /**
+   * Fetch live network status from the node (peers, latency, version).
+   * Updates internal fields and returns the status object.
+   */
+  async refreshNetworkStatus() {
+    try {
+      const response = await this.rpcRequest('network/status');
+      if (response && response.result) {
+        const s = response.result;
+        this.peerCount   = s.peer_count  ?? this.peerCount;
+        this.latencyMs   = s.latency_ms  ?? this.latencyMs;
+        this.nodeVersion = s.version     ?? this.nodeVersion;
+      }
+    } catch (error) {
+      console.error('Error refreshing network status:', error);
+    }
+    return this.getNetworkStatus();
   }
 
   /**

@@ -44,6 +44,7 @@ class MainWindow : public QMainWindow {
     void showAbout();
     void updateStatus();
     void onConnectionStatusChanged(bool connected);
+    void onNetworkTypeChanged(NetworkType type);
     void onBalanceChanged();
     void onBlockHeightChanged(int height);
 
@@ -89,6 +90,7 @@ class MainWindow : public QMainWindow {
 
     // Status bar widgets
     QLabel *connectionLabel;
+    QLabel *networkLabel;
     QLabel *blockHeightLabel;
     QLabel *syncProgressLabel;
 

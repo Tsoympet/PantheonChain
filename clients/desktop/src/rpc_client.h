@@ -13,6 +13,28 @@
 class QNetworkAccessManager;
 class QNetworkReply;
 
+// -------------------------------------------------------------------- //
+//  Network type                                                          //
+// -------------------------------------------------------------------- //
+enum class NetworkType {
+    Mainnet,   //!< Production network  (default port 8332)
+    Testnet,   //!< Public test network (default port 18332)
+    Devnet     //!< Developer network   (default port 18443) — role-gated
+};
+
+struct NetworkStatus {
+    NetworkType network;
+    bool        connected;
+    int         blockHeight;
+    int         peerCount;
+    int         latencyMs;
+    QString     nodeVersion;
+
+    NetworkStatus()
+        : network(NetworkType::Mainnet), connected(false),
+          blockHeight(0), peerCount(0), latencyMs(-1) {}
+};
+
 struct TransactionRecord {
     QString dateTime;
     QString type;
@@ -73,6 +95,24 @@ class RPCClient : public QObject {
     void disconnect();
     bool isConnected() const { return connected; }
 
+    // ---------------------------------------------------------------- //
+    //  Network type management                                           //
+    // ---------------------------------------------------------------- //
+    /** Switch to a different network; updates the default port automatically. */
+    void setNetworkType(NetworkType type);
+    NetworkType networkType() const { return currentNetwork; }
+    /** Returns the default RPC port for a given network. */
+    static int defaultPort(NetworkType type);
+    /** Returns a human-readable network name ("Mainnet", "Testnet", "Devnet"). */
+    static QString networkName(NetworkType type);
+
+    /** Request live status (peers, latency, version) from the node. */
+    void refreshNetworkStatus();
+    NetworkStatus lastNetworkStatus() const { return netStatus; }
+
+    /** Verify the caller has a governance role that permits Devnet access. */
+    void checkDevNetAccess(const QString &address);
+
     // Balance queries
     double getBalance(const QString &asset) const;
     void updateBalances();
@@ -129,6 +169,10 @@ class RPCClient : public QObject {
     void transactionHistoryUpdated();
     void newAddressReceived(const QString &address);
     void errorOccurred(const QString &error);
+    // Network signals
+    void networkTypeChanged(NetworkType type);
+    void networkStatusUpdated();
+    void devNetAccessResult(bool granted, const QString &role);
     // Governance signals
     void proposalsUpdated();
     void proposalUpdated(quint64 proposalId);
@@ -155,6 +199,9 @@ class RPCClient : public QObject {
     bool connected;
     QString rpcUser;
     QString rpcPassword;
+
+    NetworkType   currentNetwork;
+    NetworkStatus netStatus;
 
     QMap<QString, double> balances;
     int blockHeight;

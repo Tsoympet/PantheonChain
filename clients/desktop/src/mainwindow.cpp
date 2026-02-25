@@ -32,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
     rpcClient = new RPCClient(this);
     connect(rpcClient, &RPCClient::connectionStatusChanged, this,
             &MainWindow::onConnectionStatusChanged);
+    connect(rpcClient, &RPCClient::networkTypeChanged, this,
+            &MainWindow::onNetworkTypeChanged);
     connect(rpcClient, &RPCClient::balanceChanged, this, &MainWindow::onBalanceChanged);
     connect(rpcClient, &RPCClient::blockHeightChanged, this, &MainWindow::onBlockHeightChanged);
 
@@ -145,12 +147,28 @@ void MainWindow::updateStatus() {
 
 void MainWindow::onConnectionStatusChanged(bool connected) {
     if (connected) {
-        connectionLabel->setText("Connected");
+        connectionLabel->setText(tr("● Connected"));
         connectionLabel->setStyleSheet("QLabel { color: green; }");
         updateStatus();
     } else {
-        connectionLabel->setText("Disconnected");
+        connectionLabel->setText(tr("● Disconnected"));
         connectionLabel->setStyleSheet("QLabel { color: red; }");
+    }
+}
+
+void MainWindow::onNetworkTypeChanged(NetworkType type) {
+    const QString name = RPCClient::networkName(type);
+    networkLabel->setText(tr("[%1]").arg(name));
+    switch (type) {
+        case NetworkType::Testnet:
+            networkLabel->setStyleSheet("QLabel { color: #fd7e14; font-weight: bold; }");
+            break;
+        case NetworkType::Devnet:
+            networkLabel->setStyleSheet("QLabel { color: #6f42c1; font-weight: bold; }");
+            break;
+        default:
+            networkLabel->setStyleSheet("QLabel { color: #1f2a44; font-weight: bold; }");
+            break;
     }
 }
 
@@ -263,11 +281,15 @@ void MainWindow::createToolBars() {
 }
 
 void MainWindow::createStatusBar() {
-    connectionLabel = new QLabel(tr("Connecting..."));
+    connectionLabel  = new QLabel(tr("● Connecting…"));
+    networkLabel     = new QLabel(tr("[Mainnet]"));
     blockHeightLabel = new QLabel(tr("Block: 0"));
     syncProgressLabel = new QLabel(tr("Synced"));
 
+    networkLabel->setStyleSheet("QLabel { color: #1f2a44; font-weight: bold; }");
+
     statusBar()->addWidget(connectionLabel);
+    statusBar()->addWidget(networkLabel);
     statusBar()->addPermanentWidget(blockHeightLabel);
     statusBar()->addPermanentWidget(syncProgressLabel);
 }

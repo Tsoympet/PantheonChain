@@ -13,7 +13,8 @@
 
 RPCClient::RPCClient(QObject *parent)
     : QObject(parent), networkManager(nullptr), rpcHost("127.0.0.1"), rpcPort(8332),
-      connected(false), blockHeight(0), requestId(1), lastStakingPower(0.0) {
+      connected(false), blockHeight(0), requestId(1), lastStakingPower(0.0),
+      currentNetwork(NetworkType::Mainnet) {
 
     networkManager = new QNetworkAccessManager(this);
     connect(networkManager, &QNetworkAccessManager::finished, this, &RPCClient::handleNetworkReply);
@@ -239,6 +240,18 @@ void RPCClient::handleNetworkReply(QNetworkReply *reply) {
     } else if (method == "ostracism/nominate") {
         bool ok = result.toObject()["success"].toBool();
         emit ostracismNominated(ok);
+    } else if (method == "network/status") {
+        QJsonObject s = result.toObject();
+        netStatus.connected   = true;
+        netStatus.peerCount   = s["peer_count"].toInt();
+        netStatus.latencyMs   = s["latency_ms"].toInt(-1);
+        netStatus.nodeVersion = s["version"].toString();
+        netStatus.network     = currentNetwork;
+        emit networkStatusUpdated();
+    } else if (method == "network/check_dev_access") {
+        bool granted   = result.toObject()["granted"].toBool();
+        QString role   = result.toObject()["role"].toString();
+        emit devNetAccessResult(granted, role);
     }
 
     reply->deleteLater();
@@ -353,4 +366,47 @@ void RPCClient::nominateOstracism(const QString &target, const QString &nominato
     params["reason"]       = reason;
     params["block_height"] = blockHeight;
     sendRPCRequest("ostracism/nominate", {params});
+}
+
+// -------------------------------------------------------------------- //
+//  Network type management                                               //
+// -------------------------------------------------------------------- //
+
+int RPCClient::defaultPort(NetworkType type) {
+    switch (type) {
+        case NetworkType::Testnet: return 18332;
+        case NetworkType::Devnet:  return 18443;
+        default:                   return 8332;
+    }
+}
+
+QString RPCClient::networkName(NetworkType type) {
+    switch (type) {
+        case NetworkType::Testnet: return QStringLiteral("Testnet");
+        case NetworkType::Devnet:  return QStringLiteral("Devnet");
+        default:                   return QStringLiteral("Mainnet");
+    }
+}
+
+void RPCClient::setNetworkType(NetworkType type) {
+    if (currentNetwork == type)
+        return;
+    currentNetwork = type;
+    netStatus.network = type;
+    // Update port to network default (caller may override afterward with connectToServer)
+    rpcPort = defaultPort(type);
+    connected = false;
+    emit networkTypeChanged(type);
+    emit connectionStatusChanged(false);
+    sendRPCRequest("getblockcount");
+}
+
+void RPCClient::refreshNetworkStatus() {
+    sendRPCRequest("network/status");
+}
+
+void RPCClient::checkDevNetAccess(const QString &address) {
+    QVariantMap params;
+    params["address"] = address;
+    sendRPCRequest("network/check_dev_access", {params});
 }
