@@ -17,15 +17,16 @@
 
 StakingPage::StakingPage(RPCClient *rpc, QWidget *parent)
     : QWidget(parent), rpcClient(rpc), layerCombo(nullptr), amountEdit(nullptr),
-      addressEdit(nullptr), stakingPowerLabel(nullptr), statusLabel(nullptr),
-      stakeButton(nullptr), unstakeButton(nullptr) {
+      addressEdit(nullptr), stakingPowerLabel(nullptr), statusLabel(nullptr), stakeButton(nullptr),
+      unstakeButton(nullptr) {
     setupUI();
 
     if (rpcClient) {
-        connect(rpcClient, &RPCClient::stakingPowerUpdated, this, &StakingPage::onStakingPowerUpdated);
-        connect(rpcClient, &RPCClient::stakeConfirmed,      this, &StakingPage::onStakeConfirmed);
-        connect(rpcClient, &RPCClient::unstakeConfirmed,    this, &StakingPage::onUnstakeConfirmed);
-        connect(rpcClient, &RPCClient::errorOccurred,       this, &StakingPage::onError);
+        connect(rpcClient, &RPCClient::stakingPowerUpdated, this,
+                &StakingPage::onStakingPowerUpdated);
+        connect(rpcClient, &RPCClient::stakeConfirmed, this, &StakingPage::onStakeConfirmed);
+        connect(rpcClient, &RPCClient::unstakeConfirmed, this, &StakingPage::onUnstakeConfirmed);
+        connect(rpcClient, &RPCClient::errorOccurred, this, &StakingPage::onError);
     }
 }
 
@@ -48,7 +49,7 @@ void StakingPage::setupUI() {
         this);
     infoLabel->setWordWrap(true);
     infoLabel->setStyleSheet("QLabel { background-color: #e8f4fd; border-left: 4px solid #007AFF; "
-                              "padding: 8px; border-radius: 4px; }");
+                             "padding: 8px; border-radius: 4px; }");
     mainLayout->addWidget(infoLabel);
 
     // Staking power display
@@ -70,7 +71,7 @@ void StakingPage::setupUI() {
 
     layerCombo = new QComboBox(formBox);
     layerCombo->addItem(tr("L2 – DRACHMA (DRM)"), "l2");
-    layerCombo->addItem(tr("L3 – OBOLOS (OBL)"),  "l3");
+    layerCombo->addItem(tr("L3 – OBOLOS (OBL)"), "l3");
     connect(layerCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &StakingPage::onLayerChanged);
     formLayout->addRow(tr("Layer:"), layerCombo);
@@ -92,16 +93,16 @@ void StakingPage::setupUI() {
 
     // Action buttons
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-    stakeButton   = new QPushButton(tr("Stake"),   this);
+    stakeButton = new QPushButton(tr("Stake"), this);
     unstakeButton = new QPushButton(tr("Unstake"), this);
     stakeButton->setMinimumHeight(40);
     unstakeButton->setMinimumHeight(40);
     stakeButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; "
-                                "font-weight: bold; }");
+                               "font-weight: bold; }");
     unstakeButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; "
-                                  "font-weight: bold; }");
+                                 "font-weight: bold; }");
 
-    connect(stakeButton,   &QPushButton::clicked, this, &StakingPage::onStakeClicked);
+    connect(stakeButton, &QPushButton::clicked, this, &StakingPage::onStakeClicked);
     connect(unstakeButton, &QPushButton::clicked, this, &StakingPage::onUnstakeClicked);
 
     buttonLayout->addWidget(stakeButton);
@@ -126,16 +127,15 @@ void StakingPage::setupUI() {
 }
 
 void StakingPage::refreshStakingPower() {
-    if (!rpcClient) return;
+    if (!rpcClient)
+        return;
     const QString address = addressEdit->text().trimmed();
     if (!address.isEmpty()) {
         rpcClient->getStakingPower(address);
     }
 }
 
-void StakingPage::onLayerChanged(int /*index*/) {
-    refreshStakingPower();
-}
+void StakingPage::onLayerChanged(int /*index*/) { refreshStakingPower(); }
 
 void StakingPage::onStakeClicked() {
     if (!rpcClient) {
@@ -159,13 +159,13 @@ void StakingPage::onStakeClicked() {
         return;
     }
 
-    const QString layer  = layerCombo->currentData().toString();
-    const QString token  = (layer == "l2") ? "DRM" : "OBL";
+    const QString layer = layerCombo->currentData().toString();
+    const QString token = (layer == "l2") ? "DRM" : "OBL";
 
-    QMessageBox::StandardButton reply =
-        QMessageBox::question(this, tr("Confirm Stake"),
-                              tr("Stake %1 %2 on %3?").arg(amount).arg(token).arg(layerCombo->currentText()),
-                              QMessageBox::Yes | QMessageBox::No);
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this, tr("Confirm Stake"),
+        tr("Stake %1 %2 on %3?").arg(amount).arg(token).arg(layerCombo->currentText()),
+        QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
         statusLabel->setText(tr("Sending stake request…"));
         statusLabel->setStyleSheet("QLabel { color: blue; }");
@@ -198,10 +198,10 @@ void StakingPage::onUnstakeClicked() {
     const QString layer = layerCombo->currentData().toString();
     const QString token = (layer == "l2") ? "DRM" : "OBL";
 
-    QMessageBox::StandardButton reply =
-        QMessageBox::question(this, tr("Confirm Unstake"),
-                              tr("Unstake %1 %2 from %3?").arg(amount).arg(token).arg(layerCombo->currentText()),
-                              QMessageBox::Yes | QMessageBox::No);
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this, tr("Confirm Unstake"),
+        tr("Unstake %1 %2 from %3?").arg(amount).arg(token).arg(layerCombo->currentText()),
+        QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
         statusLabel->setText(tr("Sending unstake request…"));
         statusLabel->setStyleSheet("QLabel { color: blue; }");
@@ -224,8 +224,10 @@ void StakingPage::onStakeConfirmed(const QString &layer, double amount) {
 
 void StakingPage::onUnstakeConfirmed(const QString &layer, double amount) {
     const QString token = (layer == "l2") ? "DRM" : "OBL";
-    statusLabel->setText(
-        tr("Unstake confirmed: %1 %2 from %3.").arg(amount, 0, 'f', 8).arg(token).arg(layer.toUpper()));
+    statusLabel->setText(tr("Unstake confirmed: %1 %2 from %3.")
+                             .arg(amount, 0, 'f', 8)
+                             .arg(token)
+                             .arg(layer.toUpper()));
     statusLabel->setStyleSheet("QLabel { color: green; }");
     amountEdit->clear();
     refreshStakingPower();

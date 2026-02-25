@@ -20,36 +20,41 @@
 // Maps combo index → NetworkType
 static NetworkType indexToNetwork(int i) {
     switch (i) {
-        case 1:  return NetworkType::Testnet;
-        case 2:  return NetworkType::Devnet;
-        default: return NetworkType::Mainnet;
+    case 1:
+        return NetworkType::Testnet;
+    case 2:
+        return NetworkType::Devnet;
+    default:
+        return NetworkType::Mainnet;
     }
 }
 static int networkToIndex(NetworkType t) {
     switch (t) {
-        case NetworkType::Testnet: return 1;
-        case NetworkType::Devnet:  return 2;
-        default:                   return 0;
+    case NetworkType::Testnet:
+        return 1;
+    case NetworkType::Devnet:
+        return 2;
+    default:
+        return 0;
     }
 }
 
 SettingsPage::SettingsPage(RPCClient *rpc, QWidget *parent)
-    : QWidget(parent), rpcClient(rpc),
-      rpcHostEdit(nullptr), rpcPortEdit(nullptr),
-      rpcUserEdit(nullptr), rpcPasswordEdit(nullptr),
-      networkCombo(nullptr), networkStatusBadge(nullptr),
-      peerCountLabel(nullptr), latencyLabel(nullptr), nodeVersionLabel(nullptr),
-      devNetGateWidget(nullptr), devNetAddressEdit(nullptr),
-      verifyDevNetButton(nullptr), devNetStatusLabel(nullptr),
-      autoConnectCheck(nullptr), statusLabel(nullptr),
-      saveButton(nullptr), resetButton(nullptr),
-      devNetVerified(false), pendingNetworkIndex(0) {
+    : QWidget(parent), rpcClient(rpc), rpcHostEdit(nullptr), rpcPortEdit(nullptr),
+      rpcUserEdit(nullptr), rpcPasswordEdit(nullptr), networkCombo(nullptr),
+      networkStatusBadge(nullptr), peerCountLabel(nullptr), latencyLabel(nullptr),
+      nodeVersionLabel(nullptr), devNetGateWidget(nullptr), devNetAddressEdit(nullptr),
+      verifyDevNetButton(nullptr), devNetStatusLabel(nullptr), autoConnectCheck(nullptr),
+      statusLabel(nullptr), saveButton(nullptr), resetButton(nullptr), devNetVerified(false),
+      pendingNetworkIndex(0) {
     setupUI();
     loadSettings();
 
     if (rpcClient) {
-        connect(rpcClient, &RPCClient::devNetAccessResult,   this, &SettingsPage::onDevNetAccessResult);
-        connect(rpcClient, &RPCClient::networkStatusUpdated, this, &SettingsPage::onNetworkStatusUpdated);
+        connect(rpcClient, &RPCClient::devNetAccessResult, this,
+                &SettingsPage::onDevNetAccessResult);
+        connect(rpcClient, &RPCClient::networkStatusUpdated, this,
+                &SettingsPage::onNetworkStatusUpdated);
         connect(rpcClient, &RPCClient::connectionStatusChanged, this,
                 &SettingsPage::onConnectionStatusChanged);
     }
@@ -61,7 +66,9 @@ void SettingsPage::setupUI() {
 
     // ---- Title ----
     QLabel *titleLabel = new QLabel(tr("Settings"), this);
-    QFont f = titleLabel->font(); f.setPointSize(18); f.setBold(true);
+    QFont f = titleLabel->font();
+    f.setPointSize(18);
+    f.setBold(true);
     titleLabel->setFont(f);
     mainLayout->addWidget(titleLabel);
 
@@ -70,14 +77,16 @@ void SettingsPage::setupUI() {
     QVBoxLayout *sl = new QVBoxLayout(statusBox);
 
     networkStatusBadge = new QLabel(tr("● Checking…"), statusBox);
-    QFont bf = networkStatusBadge->font(); bf.setBold(true); bf.setPointSize(13);
+    QFont bf = networkStatusBadge->font();
+    bf.setBold(true);
+    bf.setPointSize(13);
     networkStatusBadge->setFont(bf);
     sl->addWidget(networkStatusBadge);
 
     QHBoxLayout *statsRow = new QHBoxLayout();
-    peerCountLabel   = new QLabel(tr("Peers: —"),   statusBox);
-    latencyLabel     = new QLabel(tr("Latency: —"), statusBox);
-    nodeVersionLabel = new QLabel(tr("Node: —"),    statusBox);
+    peerCountLabel = new QLabel(tr("Peers: —"), statusBox);
+    latencyLabel = new QLabel(tr("Latency: —"), statusBox);
+    nodeVersionLabel = new QLabel(tr("Node: —"), statusBox);
     statsRow->addWidget(peerCountLabel);
     statsRow->addWidget(latencyLabel);
     statsRow->addWidget(nodeVersionLabel);
@@ -86,7 +95,8 @@ void SettingsPage::setupUI() {
 
     QPushButton *refreshBtn = new QPushButton(tr("Refresh Status"), statusBox);
     connect(refreshBtn, &QPushButton::clicked, this, [this] {
-        if (rpcClient) rpcClient->refreshNetworkStatus();
+        if (rpcClient)
+            rpcClient->refreshNetworkStatus();
     });
     sl->addWidget(refreshBtn);
     mainLayout->addWidget(statusBox);
@@ -96,11 +106,11 @@ void SettingsPage::setupUI() {
     QFormLayout *netForm = new QFormLayout(netBox);
 
     networkCombo = new QComboBox(netBox);
-    networkCombo->addItem(tr("Mainnet  (port 8332)"),  0);
+    networkCombo->addItem(tr("Mainnet  (port 8332)"), 0);
     networkCombo->addItem(tr("Testnet  (port 18332)"), 1);
     networkCombo->addItem(tr("Devnet   (port 18443) — governance role required"), 2);
-    connect(networkCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &SettingsPage::onNetworkComboChanged);
+    connect(networkCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &SettingsPage::onNetworkComboChanged);
     netForm->addRow(tr("Network:"), networkCombo);
 
     autoConnectCheck = new QCheckBox(tr("Auto-connect on startup"), netBox);
@@ -109,8 +119,8 @@ void SettingsPage::setupUI() {
 
     // ---- DevNet gate (hidden unless Devnet is selected) ----
     devNetGateWidget = new QWidget(this);
-    devNetGateWidget->setStyleSheet(
-        "QWidget { background:#fff8e1; border:1px solid #ffc107; border-radius:4px; padding:4px; }");
+    devNetGateWidget->setStyleSheet("QWidget { background:#fff8e1; border:1px solid #ffc107; "
+                                    "border-radius:4px; padding:4px; }");
     QVBoxLayout *dv = new QVBoxLayout(devNetGateWidget);
     dv->setContentsMargins(10, 10, 10, 10);
     QLabel *devInfo = new QLabel(
@@ -135,7 +145,8 @@ void SettingsPage::setupUI() {
         verifyDevNetButton->setEnabled(false);
         devNetStatusLabel->setText(tr("Verifying…"));
         devNetStatusLabel->setStyleSheet("QLabel{color:blue;}");
-        if (rpcClient) rpcClient->checkDevNetAccess(addr);
+        if (rpcClient)
+            rpcClient->checkDevNetAccess(addr);
     });
     dvRow->addWidget(verifyDevNetButton);
     dv->addLayout(dvRow);
@@ -178,7 +189,7 @@ void SettingsPage::setupUI() {
     saveButton->setMinimumHeight(40);
     resetButton = new QPushButton(tr("Reset to Defaults"), this);
     resetButton->setMinimumHeight(40);
-    connect(saveButton,  &QPushButton::clicked, this, &SettingsPage::onSaveClicked);
+    connect(saveButton, &QPushButton::clicked, this, &SettingsPage::onSaveClicked);
     connect(resetButton, &QPushButton::clicked, this, &SettingsPage::onResetClicked);
     buttonLayout->addWidget(saveButton);
     buttonLayout->addWidget(resetButton);
@@ -211,7 +222,8 @@ void SettingsPage::onNetworkComboChanged(int index) {
         // Don't change the underlying RPCClient yet
     } else {
         devNetGateWidget->setVisible(false);
-        if (index != 2) devNetVerified = false; // reset if leaving devnet
+        if (index != 2)
+            devNetVerified = false; // reset if leaving devnet
     }
     // Auto-fill default port
     rpcPortEdit->setText(QString::number(RPCClient::defaultPort(indexToNetwork(index))));
@@ -239,13 +251,9 @@ void SettingsPage::onDevNetAccessResult(bool granted, const QString &role) {
     }
 }
 
-void SettingsPage::onNetworkStatusUpdated() {
-    updateNetworkStatusBadge();
-}
+void SettingsPage::onNetworkStatusUpdated() { updateNetworkStatusBadge(); }
 
-void SettingsPage::onConnectionStatusChanged(bool /*connected*/) {
-    updateNetworkStatusBadge();
-}
+void SettingsPage::onConnectionStatusChanged(bool /*connected*/) { updateNetworkStatusBadge(); }
 
 void SettingsPage::updateNetworkStatusBadge() {
     if (!rpcClient) {
@@ -255,20 +263,16 @@ void SettingsPage::updateNetworkStatusBadge() {
     }
 
     const NetworkStatus ns = rpcClient->lastNetworkStatus();
-    const bool conn        = rpcClient->isConnected();
-    const QString netName  = RPCClient::networkName(rpcClient->networkType());
+    const bool conn = rpcClient->isConnected();
+    const QString netName = RPCClient::networkName(rpcClient->networkType());
 
     QString badge;
     QString style;
     if (conn) {
-        badge = tr("● %1  ·  Connected  ·  Block %2")
-                    .arg(netName)
-                    .arg(rpcClient->getBlockHeight());
-        style = (rpcClient->networkType() == NetworkType::Mainnet)
-                    ? "QLabel{color:#28a745;}"
-                    : (rpcClient->networkType() == NetworkType::Testnet)
-                          ? "QLabel{color:#fd7e14;}"
-                          : "QLabel{color:#6f42c1;}";
+        badge = tr("● %1  ·  Connected  ·  Block %2").arg(netName).arg(rpcClient->getBlockHeight());
+        style = (rpcClient->networkType() == NetworkType::Mainnet)   ? "QLabel{color:#28a745;}"
+                : (rpcClient->networkType() == NetworkType::Testnet) ? "QLabel{color:#fd7e14;}"
+                                                                     : "QLabel{color:#6f42c1;}";
     } else {
         badge = tr("● %1  ·  Disconnected").arg(netName);
         style = "QLabel{color:#dc3545;}";
@@ -285,16 +289,16 @@ void SettingsPage::updateNetworkStatusBadge() {
 }
 
 void SettingsPage::onSaveClicked() {
-    const QString host    = rpcHostEdit->text().trimmed();
+    const QString host = rpcHostEdit->text().trimmed();
     const QString portStr = rpcPortEdit->text().trimmed();
-    const int idx         = networkCombo->currentIndex();
+    const int idx = networkCombo->currentIndex();
 
     if (host.isEmpty()) {
         statusLabel->setText(tr("Error: Host cannot be empty"));
         statusLabel->setStyleSheet("QLabel{color:red;}");
         return;
     }
-    bool ok   = false;
+    bool ok = false;
     const int port = portStr.toInt(&ok);
     if (!ok || port <= 0 || port > 65535) {
         statusLabel->setText(tr("Error: Invalid port number"));
@@ -302,17 +306,18 @@ void SettingsPage::onSaveClicked() {
         return;
     }
     if (idx == 2 && !devNetVerified) {
-        statusLabel->setText(tr("Error: Devnet access not verified. Verify your governance role first."));
+        statusLabel->setText(
+            tr("Error: Devnet access not verified. Verify your governance role first."));
         statusLabel->setStyleSheet("QLabel{color:red;}");
         return;
     }
 
     const QStringList networkKeys = {"mainnet", "testnet", "devnet"};
     QSettings settings("ParthenonChain", "Wallet");
-    settings.setValue("rpc/host",    host);
-    settings.setValue("rpc/port",    port);
-    settings.setValue("rpc/user",    rpcUserEdit->text().trimmed());
-    settings.setValue("network",     networkKeys.value(idx, "mainnet"));
+    settings.setValue("rpc/host", host);
+    settings.setValue("rpc/port", port);
+    settings.setValue("rpc/user", rpcUserEdit->text().trimmed());
+    settings.setValue("network", networkKeys.value(idx, "mainnet"));
     settings.setValue("autoConnect", autoConnectCheck->isChecked());
 
     if (rpcClient) {
@@ -329,8 +334,7 @@ void SettingsPage::onSaveClicked() {
 
 void SettingsPage::onResetClicked() {
     QMessageBox::StandardButton reply =
-        QMessageBox::question(this, tr("Reset Settings"),
-                              tr("Reset all settings to defaults?"),
+        QMessageBox::question(this, tr("Reset Settings"), tr("Reset all settings to defaults?"),
                               QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
         rpcHostEdit->setText("127.0.0.1");
@@ -345,4 +349,3 @@ void SettingsPage::onResetClicked() {
         statusLabel->setStyleSheet("QLabel{color:blue;}");
     }
 }
-

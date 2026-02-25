@@ -42,15 +42,14 @@ void MiningPage::setupUI() {
         this);
     infoLabel->setWordWrap(true);
     infoLabel->setStyleSheet("QLabel { background-color: #e8f4fd; border-left: 4px solid #007AFF; "
-                              "padding: 8px; border-radius: 4px; }");
+                             "padding: 8px; border-radius: 4px; }");
     mainLayout->addWidget(infoLabel);
 
     // Start / Stop button
     toggleButton = new QPushButton(tr("Start Mining"), this);
     toggleButton->setMinimumHeight(48);
-    toggleButton->setStyleSheet(
-        "QPushButton { background-color: #28a745; color: white; "
-        "font-size: 15px; font-weight: bold; border-radius: 4px; }");
+    toggleButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; "
+                                "font-size: 15px; font-weight: bold; border-radius: 4px; }");
     connect(toggleButton, &QPushButton::clicked, this, &MiningPage::onToggleMining);
     mainLayout->addWidget(toggleButton);
 
@@ -94,9 +93,9 @@ void MiningPage::setupUI() {
     QGroupBox *statsBox = new QGroupBox(tr("Statistics"), this);
     QVBoxLayout *statsLayout = new QVBoxLayout(statsBox);
 
-    sharesLabel            = new QLabel(tr("Total Shares: 0"),                       statsBox);
-    acceptedLabel          = new QLabel(tr("Accepted Shares: 0"),                    statsBox);
-    rejectedLabel          = new QLabel(tr("Rejected Shares: 0"),                    statsBox);
+    sharesLabel = new QLabel(tr("Total Shares: 0"), statsBox);
+    acceptedLabel = new QLabel(tr("Accepted Shares: 0"), statsBox);
+    rejectedLabel = new QLabel(tr("Rejected Shares: 0"), statsBox);
     estimatedEarningsLabel = new QLabel(tr("Estimated Earnings: 0.00000000 TALN/day"), statsBox);
 
     statsLayout->addWidget(sharesLabel);
@@ -112,7 +111,7 @@ void MiningPage::onToggleMining() {
     miningActive = !miningActive;
     if (!miningActive) {
         // Reset counters when stopped
-        totalShares    = 0;
+        totalShares = 0;
         acceptedShares = 0;
     }
     updateMiningStatus();
@@ -147,16 +146,14 @@ void MiningPage::updateMiningStatus() {
         statusLabel->setText(tr("Status: Mining"));
         statusLabel->setStyleSheet("QLabel { color: green; }");
         toggleButton->setText(tr("Stop Mining"));
-        toggleButton->setStyleSheet(
-            "QPushButton { background-color: #dc3545; color: white; "
-            "font-size: 15px; font-weight: bold; border-radius: 4px; }");
+        toggleButton->setStyleSheet("QPushButton { background-color: #dc3545; color: white; "
+                                    "font-size: 15px; font-weight: bold; border-radius: 4px; }");
     } else {
         statusLabel->setText(tr("Status: Stopped"));
         statusLabel->setStyleSheet("QLabel { color: #888; }");
         toggleButton->setText(tr("Start Mining"));
-        toggleButton->setStyleSheet(
-            "QPushButton { background-color: #28a745; color: white; "
-            "font-size: 15px; font-weight: bold; border-radius: 4px; }");
+        toggleButton->setStyleSheet("QPushButton { background-color: #28a745; color: white; "
+                                    "font-size: 15px; font-weight: bold; border-radius: 4px; }");
         hashrateLabel->setText(tr("Hashrate: 0 H/s"));
         cpuUsageBar->setValue(0);
         sharesLabel->setText(tr("Total Shares: 0"));

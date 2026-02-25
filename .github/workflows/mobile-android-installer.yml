@@ -15,7 +15,7 @@ on:
 jobs:
   build-android-installer:
     name: Build Android APK Installer
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     permissions:
       contents: read
     defaults:

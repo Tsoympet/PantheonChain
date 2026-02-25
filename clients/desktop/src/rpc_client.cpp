@@ -143,20 +143,20 @@ void RPCClient::handleNetworkReply(QNetworkReply *reply) {
         for (const auto &item : proposals) {
             QJsonObject p = item.toObject();
             ProposalRecord rec;
-            rec.proposalId    = static_cast<quint64>(p["proposal_id"].toDouble());
-            rec.type          = p["type"].toString();
-            rec.status        = p["status"].toString();
-            rec.title         = p["title"].toString();
-            rec.description   = p["description"].toString();
-            rec.proposer      = p["proposer"].toString();
-            rec.yesVotes      = static_cast<quint64>(p["yes_votes"].toDouble());
-            rec.noVotes       = static_cast<quint64>(p["no_votes"].toDouble());
-            rec.abstainVotes  = static_cast<quint64>(p["abstain_votes"].toDouble());
-            rec.vetoVotes     = static_cast<quint64>(p["veto_votes"].toDouble());
-            rec.quorumRequirement  = static_cast<quint64>(p["quorum_requirement"].toDouble());
-            rec.approvalThreshold  = static_cast<quint64>(p["approval_threshold"].toDouble());
-            rec.depositAmount      = static_cast<quint64>(p["deposit_amount"].toDouble());
-            rec.bouleApproved      = p["boule_approved"].toBool();
+            rec.proposalId = static_cast<quint64>(p["proposal_id"].toDouble());
+            rec.type = p["type"].toString();
+            rec.status = p["status"].toString();
+            rec.title = p["title"].toString();
+            rec.description = p["description"].toString();
+            rec.proposer = p["proposer"].toString();
+            rec.yesVotes = static_cast<quint64>(p["yes_votes"].toDouble());
+            rec.noVotes = static_cast<quint64>(p["no_votes"].toDouble());
+            rec.abstainVotes = static_cast<quint64>(p["abstain_votes"].toDouble());
+            rec.vetoVotes = static_cast<quint64>(p["veto_votes"].toDouble());
+            rec.quorumRequirement = static_cast<quint64>(p["quorum_requirement"].toDouble());
+            rec.approvalThreshold = static_cast<quint64>(p["approval_threshold"].toDouble());
+            rec.depositAmount = static_cast<quint64>(p["deposit_amount"].toDouble());
+            rec.bouleApproved = p["boule_approved"].toBool();
             proposalList.append(rec);
         }
         emit proposalsUpdated();
@@ -168,26 +168,26 @@ void RPCClient::handleNetworkReply(QNetworkReply *reply) {
             bool found = false;
             for (auto &rec : proposalList) {
                 if (rec.proposalId == id) {
-                    rec.yesVotes     = static_cast<quint64>(p["yes_votes"].toDouble());
-                    rec.noVotes      = static_cast<quint64>(p["no_votes"].toDouble());
+                    rec.yesVotes = static_cast<quint64>(p["yes_votes"].toDouble());
+                    rec.noVotes = static_cast<quint64>(p["no_votes"].toDouble());
                     rec.abstainVotes = static_cast<quint64>(p["abstain_votes"].toDouble());
-                    rec.vetoVotes    = static_cast<quint64>(p["veto_votes"].toDouble());
-                    rec.status       = p["status"].toString();
+                    rec.vetoVotes = static_cast<quint64>(p["veto_votes"].toDouble());
+                    rec.status = p["status"].toString();
                     found = true;
                     break;
                 }
             }
             if (!found) {
                 ProposalRecord rec;
-                rec.proposalId   = id;
-                rec.type         = p["type"].toString();
-                rec.status       = p["status"].toString();
-                rec.title        = p["title"].toString();
-                rec.description  = p["description"].toString();
-                rec.yesVotes     = static_cast<quint64>(p["yes_votes"].toDouble());
-                rec.noVotes      = static_cast<quint64>(p["no_votes"].toDouble());
+                rec.proposalId = id;
+                rec.type = p["type"].toString();
+                rec.status = p["status"].toString();
+                rec.title = p["title"].toString();
+                rec.description = p["description"].toString();
+                rec.yesVotes = static_cast<quint64>(p["yes_votes"].toDouble());
+                rec.noVotes = static_cast<quint64>(p["no_votes"].toDouble());
                 rec.abstainVotes = static_cast<quint64>(p["abstain_votes"].toDouble());
-                rec.vetoVotes    = static_cast<quint64>(p["veto_votes"].toDouble());
+                rec.vetoVotes = static_cast<quint64>(p["veto_votes"].toDouble());
                 proposalList.append(rec);
             }
             emit proposalUpdated(id);
@@ -206,11 +206,12 @@ void RPCClient::handleNetworkReply(QNetworkReply *reply) {
     } else if (method == "treasury/balance") {
         if (result.isObject()) {
             QJsonObject b = result.toObject();
-            lastTreasuryBalance.total           = static_cast<quint64>(b["total"].toDouble());
-            lastTreasuryBalance.coreDevelopment = static_cast<quint64>(b["core_development"].toDouble());
-            lastTreasuryBalance.grants          = static_cast<quint64>(b["grants"].toDouble());
-            lastTreasuryBalance.operations      = static_cast<quint64>(b["operations"].toDouble());
-            lastTreasuryBalance.emergency       = static_cast<quint64>(b["emergency"].toDouble());
+            lastTreasuryBalance.total = static_cast<quint64>(b["total"].toDouble());
+            lastTreasuryBalance.coreDevelopment =
+                static_cast<quint64>(b["core_development"].toDouble());
+            lastTreasuryBalance.grants = static_cast<quint64>(b["grants"].toDouble());
+            lastTreasuryBalance.operations = static_cast<quint64>(b["operations"].toDouble());
+            lastTreasuryBalance.emergency = static_cast<quint64>(b["emergency"].toDouble());
             emit treasuryBalanceUpdated();
         }
     } else if (method == "staking/stake") {
@@ -231,9 +232,9 @@ void RPCClient::handleNetworkReply(QNetworkReply *reply) {
         for (const auto &item : bans) {
             QJsonObject b = item.toObject();
             OstracismRecord rec;
-            rec.address    = b["address"].toString();
+            rec.address = b["address"].toString();
             rec.banEndBlock = static_cast<quint64>(b["ban_end"].toDouble());
-            rec.reason     = b["reason"].toString();
+            rec.reason = b["reason"].toString();
             activeBansList.append(rec);
         }
         emit activeBansUpdated();
@@ -242,15 +243,15 @@ void RPCClient::handleNetworkReply(QNetworkReply *reply) {
         emit ostracismNominated(ok);
     } else if (method == "network/status") {
         QJsonObject s = result.toObject();
-        netStatus.connected   = true;
-        netStatus.peerCount   = s["peer_count"].toInt();
-        netStatus.latencyMs   = s["latency_ms"].toInt(-1);
+        netStatus.connected = true;
+        netStatus.peerCount = s["peer_count"].toInt();
+        netStatus.latencyMs = s["latency_ms"].toInt(-1);
         netStatus.nodeVersion = s["version"].toString();
-        netStatus.network     = currentNetwork;
+        netStatus.network = currentNetwork;
         emit networkStatusUpdated();
     } else if (method == "network/check_dev_access") {
-        bool granted   = result.toObject()["granted"].toBool();
-        QString role   = result.toObject()["role"].toString();
+        bool granted = result.toObject()["granted"].toBool();
+        QString role = result.toObject()["role"].toString();
         emit devNetAccessResult(granted, role);
     }
 
@@ -296,21 +297,21 @@ void RPCClient::getProposal(quint64 proposalId) {
 void RPCClient::submitProposal(const QString &type, const QString &title,
                                const QString &description, quint64 depositAmount) {
     QVariantMap params;
-    params["proposer"]        = QString(); // filled in by the node from auth credentials
-    params["type"]            = type;
-    params["title"]           = title;
-    params["description"]     = description;
-    params["deposit_amount"]  = depositAmount;
+    params["proposer"] = QString(); // filled in by the node from auth credentials
+    params["type"] = type;
+    params["title"] = title;
+    params["description"] = description;
+    params["deposit_amount"] = depositAmount;
     sendRPCRequest("governance/submit_proposal", {params});
 }
 
 void RPCClient::castVote(quint64 proposalId, const QString &choice) {
     QVariantMap params;
-    params["proposal_id"]  = proposalId;
-    params["choice"]       = choice;
-    params["voter"]        = QString();  // filled in by the node from auth credentials
+    params["proposal_id"] = proposalId;
+    params["choice"] = choice;
+    params["voter"] = QString(); // filled in by the node from auth credentials
     params["voting_power"] = 1;
-    params["signature"]    = QString();
+    params["signature"] = QString();
     sendRPCRequest("governance/vote", {params});
 }
 
@@ -329,16 +330,16 @@ void RPCClient::getTreasuryBalance() { sendRPCRequest("treasury/balance"); }
 void RPCClient::stakeTokens(const QString &address, double amount, const QString &layer) {
     QVariantMap params;
     params["address"] = address;
-    params["amount"]  = amount;
-    params["layer"]   = layer;
+    params["amount"] = amount;
+    params["layer"] = layer;
     sendRPCRequest("staking/stake", {params});
 }
 
 void RPCClient::unstakeTokens(const QString &address, double amount, const QString &layer) {
     QVariantMap params;
     params["address"] = address;
-    params["amount"]  = amount;
-    params["layer"]   = layer;
+    params["amount"] = amount;
+    params["layer"] = layer;
     sendRPCRequest("staking/unstake", {params});
 }
 
@@ -361,9 +362,9 @@ void RPCClient::listActiveBans(quint64 blockHeight) {
 void RPCClient::nominateOstracism(const QString &target, const QString &nominator,
                                   const QString &reason, quint64 blockHeight) {
     QVariantMap params;
-    params["target"]       = target;
-    params["nominator"]    = nominator;
-    params["reason"]       = reason;
+    params["target"] = target;
+    params["nominator"] = nominator;
+    params["reason"] = reason;
     params["block_height"] = blockHeight;
     sendRPCRequest("ostracism/nominate", {params});
 }
@@ -374,17 +375,23 @@ void RPCClient::nominateOstracism(const QString &target, const QString &nominato
 
 int RPCClient::defaultPort(NetworkType type) {
     switch (type) {
-        case NetworkType::Testnet: return 18332;
-        case NetworkType::Devnet:  return 18443;
-        default:                   return 8332;
+    case NetworkType::Testnet:
+        return 18332;
+    case NetworkType::Devnet:
+        return 18443;
+    default:
+        return 8332;
     }
 }
 
 QString RPCClient::networkName(NetworkType type) {
     switch (type) {
-        case NetworkType::Testnet: return QStringLiteral("Testnet");
-        case NetworkType::Devnet:  return QStringLiteral("Devnet");
-        default:                   return QStringLiteral("Mainnet");
+    case NetworkType::Testnet:
+        return QStringLiteral("Testnet");
+    case NetworkType::Devnet:
+        return QStringLiteral("Devnet");
+    default:
+        return QStringLiteral("Mainnet");
     }
 }
 
@@ -401,9 +408,7 @@ void RPCClient::setNetworkType(NetworkType type) {
     sendRPCRequest("getblockcount");
 }
 
-void RPCClient::refreshNetworkStatus() {
-    sendRPCRequest("network/status");
-}
+void RPCClient::refreshNetworkStatus() { sendRPCRequest("network/status"); }
 
 void RPCClient::checkDevNetAccess(const QString &address) {
     QVariantMap params;

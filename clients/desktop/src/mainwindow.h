@@ -57,14 +57,14 @@ class MainWindow : public QMainWindow {
 
     // Pages
     QStackedWidget *centralStack;
-    OverviewPage    *overviewPage;
-    SendPage        *sendPage;
-    ReceivePage     *receivePage;
+    OverviewPage *overviewPage;
+    SendPage *sendPage;
+    ReceivePage *receivePage;
     TransactionPage *transactionPage;
-    GovernancePage  *governancePage;
-    StakingPage     *stakingPage;
-    MiningPage      *miningPage;
-    SettingsPage    *settingsPage;
+    GovernancePage *governancePage;
+    StakingPage *stakingPage;
+    MiningPage *miningPage;
+    SettingsPage *settingsPage;
 
     // Actions
     QAction *overviewAction;

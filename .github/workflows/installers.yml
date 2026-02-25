@@ -10,6 +10,145 @@ env:
   BUILD_TYPE: Release
 
 jobs:
+  build-windows-installer:
+    name: Windows NSIS Installer
+    runs-on: windows-latest
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install NSIS
+      shell: pwsh
+      run: choco install nsis -y --no-progress
+
+    - name: Install build dependencies
+      shell: pwsh
+      run: |
+        choco install cmake ninja openssl -y --no-progress
+
+    - name: Configure CMake
+      shell: pwsh
+      run: |
+        $opensslRoot = @(
+          "C:\Program Files\OpenSSL-Win64",
+          "C:\Program Files\OpenSSL",
+          "C:\Program Files (x86)\OpenSSL-Win64"
+        ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if (-not $opensslRoot) {
+          $opensslRoot = Get-ChildItem "$env:ProgramFiles" -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
+        }
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+          $(if ($opensslRoot) { "-DOPENSSL_ROOT_DIR=$opensslRoot" })
+
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+    - name: Ensure daemon config
+      shell: pwsh
+      run: |
+        $configPath = "build/clients/core-daemon/parthenond.conf"
+        if (-Not (Test-Path $configPath)) {
+          New-Item -ItemType Directory -Path (Split-Path -Parent $configPath) -Force | Out-Null
+          @(
+            "# Auto-generated default configuration",
+            "network_port=8333","max_connections=125","rpc_enabled=true",
+            "rpc_port=8332","rpc_user=parthenonrpc","rpc_password=change-me",
+            "data_dir=/var/lib/parthenon","log_level=info","mining_enabled=false"
+          ) -join "`n" | Set-Content $configPath
+        }
+
+    - name: Build NSIS Installer
+      shell: pwsh
+      run: |
+        $nsisDir = @(
+          "C:\ProgramData\chocolatey\bin",
+          "C:\Program Files (x86)\NSIS",
+          "C:\Program Files\NSIS"
+        ) | Where-Object { Test-Path (Join-Path $_ "makensis.exe") } | Select-Object -First 1
+        if ($nsisDir) { $env:Path = "$nsisDir;$env:Path" }
+        Set-Location installers/windows
+        pwsh -ExecutionPolicy Bypass -File build.ps1
+
+    - name: Upload Windows Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-installer
+        path: installers/windows/*.exe
+        retention-days: 14
+
+  build-ubuntu-installer:
+    name: Ubuntu DEB Installer
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ ninja-build \
+          libssl-dev libboost-all-dev qt6-base-dev
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+    - name: Ensure daemon config
+      run: |
+        CONFIG="build/clients/core-daemon/parthenond.conf"
+        if [ ! -f "$CONFIG" ]; then
+          mkdir -p "$(dirname "$CONFIG")"
+          printf '%s\n' '# Auto-generated default configuration' \
+            'network_port=8333' 'max_connections=125' 'rpc_enabled=true' \
+            'rpc_port=8332' 'rpc_user=parthenonrpc' 'rpc_password=change-me' \
+            'data_dir=/var/lib/parthenon' 'log_level=info' 'mining_enabled=false' > "$CONFIG"
+        fi
+
+    - name: Build DEB Package
+      run: |
+        cd installers/linux
+        chmod +x build.sh
+        ./build.sh deb
+
+    - name: Upload Ubuntu DEB
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-deb
+        path: installers/linux/*.deb
+        retention-days: 14
+
+  build-macos-installer:
+    name: macOS DMG Installer
+    runs-on: macos-latest
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install dependencies
+      run: brew install cmake openssl boost qt
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+    - name: Build macOS DMG
+      run: |
+        cd installers/macos
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Upload macOS DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-dmg
+        path: installers/macos/*.dmg
+        retention-days: 14
+
   test-installer-scripts:
     runs-on: ${{ matrix.os }}
     strategy:

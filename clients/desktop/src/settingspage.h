@@ -35,36 +35,36 @@ class SettingsPage : public QWidget {
     void loadSettings();
     void updateNetworkStatusBadge();
 
-    RPCClient  *rpcClient;
+    RPCClient *rpcClient;
 
     // RPC connection
-    QLineEdit  *rpcHostEdit;
-    QLineEdit  *rpcPortEdit;
-    QLineEdit  *rpcUserEdit;
-    QLineEdit  *rpcPasswordEdit;
+    QLineEdit *rpcHostEdit;
+    QLineEdit *rpcPortEdit;
+    QLineEdit *rpcUserEdit;
+    QLineEdit *rpcPasswordEdit;
 
     // Network selector
-    QComboBox  *networkCombo;
-    QLabel     *networkStatusBadge;   //!< Live coloured badge: "● Mainnet · Connected"
-    QLabel     *peerCountLabel;
-    QLabel     *latencyLabel;
-    QLabel     *nodeVersionLabel;
+    QComboBox *networkCombo;
+    QLabel *networkStatusBadge; //!< Live coloured badge: "● Mainnet · Connected"
+    QLabel *peerCountLabel;
+    QLabel *latencyLabel;
+    QLabel *nodeVersionLabel;
 
     // DevNet gate
-    QWidget    *devNetGateWidget;     //!< Shown only when Devnet is selected
-    QLineEdit  *devNetAddressEdit;    //!< Address used for role check
+    QWidget *devNetGateWidget;    //!< Shown only when Devnet is selected
+    QLineEdit *devNetAddressEdit; //!< Address used for role check
     QPushButton *verifyDevNetButton;
-    QLabel     *devNetStatusLabel;
+    QLabel *devNetStatusLabel;
 
     // Misc
-    QCheckBox  *autoConnectCheck;
-    QLabel     *statusLabel;
+    QCheckBox *autoConnectCheck;
+    QLabel *statusLabel;
     QPushButton *saveButton;
     QPushButton *resetButton;
 
     // Tracks whether devnet access has been verified this session
     bool devNetVerified;
-    int  pendingNetworkIndex;   //!< Saved so we can revert if devnet check fails
+    int pendingNetworkIndex; //!< Saved so we can revert if devnet check fails
 };
 
 #endif // SETTINGSPAGE_H
