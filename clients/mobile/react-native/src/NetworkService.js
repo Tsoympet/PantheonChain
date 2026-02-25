@@ -155,6 +155,59 @@ class NetworkService {
       throw error;
     }
   }
+
+  // ------------------------------------------------------------------ //
+  //  Staking                                                             //
+  // ------------------------------------------------------------------ //
+
+  /**
+   * Stake tokens on a given layer.
+   * @param {string} address   - staker address (hex)
+   * @param {number} amount    - amount to stake
+   * @param {string} layer     - 'l2' or 'l3'
+   * @returns {Promise<Object>}
+   */
+  async stake(address, amount, layer = 'l2') {
+    try {
+      const response = await this.rpcRequest('staking/stake', [{ address, amount, layer }]);
+      return response.result;
+    } catch (error) {
+      console.error('Error staking:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unstake tokens from a given layer.
+   * @param {string} address
+   * @param {number} amount
+   * @param {string} layer     - 'l2' or 'l3'
+   * @returns {Promise<Object>}
+   */
+  async unstake(address, amount, layer = 'l2') {
+    try {
+      const response = await this.rpcRequest('staking/unstake', [{ address, amount, layer }]);
+      return response.result;
+    } catch (error) {
+      console.error('Error unstaking:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get staking power for an address.
+   * @param {string} address
+   * @returns {Promise<Object>}  { address, voting_power, layer }
+   */
+  async getStakingPower(address) {
+    try {
+      const response = await this.rpcRequest('staking/get_power', [{ address }]);
+      return response.result || { address, voting_power: 0 };
+    } catch (error) {
+      console.error('Error getting staking power:', error);
+      return { address, voting_power: 0 };
+    }
+  }
 }
 
 export default new NetworkService();

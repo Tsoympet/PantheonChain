@@ -21,6 +21,8 @@ class SendPage;
 class ReceivePage;
 class TransactionPage;
 class SettingsPage;
+class GovernancePage;
+class StakingPage;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -34,6 +36,8 @@ class MainWindow : public QMainWindow {
     void showSend();
     void showReceive();
     void showTransactions();
+    void showGovernance();
+    void showStaking();
     void showSettings();
     void showAbout();
     void updateStatus();
@@ -50,17 +54,21 @@ class MainWindow : public QMainWindow {
 
     // Pages
     QStackedWidget *centralStack;
-    OverviewPage *overviewPage;
-    SendPage *sendPage;
-    ReceivePage *receivePage;
+    OverviewPage    *overviewPage;
+    SendPage        *sendPage;
+    ReceivePage     *receivePage;
     TransactionPage *transactionPage;
-    SettingsPage *settingsPage;
+    GovernancePage  *governancePage;
+    StakingPage     *stakingPage;
+    SettingsPage    *settingsPage;
 
     // Actions
     QAction *overviewAction;
     QAction *sendAction;
     QAction *receiveAction;
     QAction *transactionsAction;
+    QAction *governanceAction;
+    QAction *stakingAction;
     QAction *settingsAction;
     QAction *exitAction;
     QAction *aboutAction;

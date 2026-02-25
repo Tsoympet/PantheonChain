@@ -2,10 +2,12 @@
 
 #include "mainwindow.h"
 
+#include "governancepage.h"
 #include "overviewpage.h"
 #include "receivepage.h"
 #include "sendpage.h"
 #include "settingspage.h"
+#include "stakingpage.h"
 #include "transactionpage.h"
 
 #include <QAction>
@@ -20,7 +22,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), centralStack(nullptr), overviewPage(nullptr), sendPage(nullptr),
-      receivePage(nullptr), transactionPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
+      receivePage(nullptr), transactionPage(nullptr), governancePage(nullptr),
+      stakingPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
     setWindowTitle("ParthenonChain Wallet");
     resize(1000, 700);
 
@@ -36,11 +39,13 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralStack);
 
     // Create pages
-    overviewPage = new OverviewPage(rpcClient, this);
-    sendPage = new SendPage(rpcClient, this);
-    receivePage = new ReceivePage(rpcClient, this);
+    overviewPage    = new OverviewPage(rpcClient, this);
+    sendPage        = new SendPage(rpcClient, this);
+    receivePage     = new ReceivePage(rpcClient, this);
     transactionPage = new TransactionPage(rpcClient, this);
-    settingsPage = new SettingsPage(rpcClient, this);
+    governancePage  = new GovernancePage(rpcClient, this);
+    stakingPage     = new StakingPage(rpcClient, this);
+    settingsPage    = new SettingsPage(rpcClient, this);
 
     // Connect overview page signals
     connect(overviewPage, &OverviewPage::sendRequested, this, &MainWindow::showSend);
@@ -50,6 +55,8 @@ MainWindow::MainWindow(QWidget *parent)
     centralStack->addWidget(sendPage);
     centralStack->addWidget(receivePage);
     centralStack->addWidget(transactionPage);
+    centralStack->addWidget(governancePage);
+    centralStack->addWidget(stakingPage);
     centralStack->addWidget(settingsPage);
 
     // Create UI elements
@@ -90,6 +97,16 @@ void MainWindow::showReceive() {
 void MainWindow::showTransactions() {
     centralStack->setCurrentWidget(transactionPage);
     transactionsAction->setChecked(true);
+}
+
+void MainWindow::showGovernance() {
+    centralStack->setCurrentWidget(governancePage);
+    governanceAction->setChecked(true);
+}
+
+void MainWindow::showStaking() {
+    centralStack->setCurrentWidget(stakingPage);
+    stakingAction->setChecked(true);
 }
 
 void MainWindow::showSettings() {
@@ -160,6 +177,16 @@ void MainWindow::createActions() {
     transactionsAction->setCheckable(true);
     connect(transactionsAction, &QAction::triggered, this, &MainWindow::showTransactions);
 
+    governanceAction = new QAction(QIcon(":/icons/menu.svg"), tr("&Governance"), this);
+    governanceAction->setStatusTip(tr("View and vote on governance proposals"));
+    governanceAction->setCheckable(true);
+    connect(governanceAction, &QAction::triggered, this, &MainWindow::showGovernance);
+
+    stakingAction = new QAction(QIcon(":/icons/wallet.svg"), tr("S&taking"), this);
+    stakingAction->setStatusTip(tr("Stake tokens on L2/L3"));
+    stakingAction->setCheckable(true);
+    connect(stakingAction, &QAction::triggered, this, &MainWindow::showStaking);
+
     settingsAction = new QAction(QIcon(":/icons/settings.svg"), tr("Se&ttings"), this);
     settingsAction->setStatusTip(tr("Configure wallet settings"));
     settingsAction->setCheckable(true);
@@ -187,6 +214,9 @@ void MainWindow::createMenus() {
     viewMenu->addAction(sendAction);
     viewMenu->addAction(receiveAction);
     viewMenu->addAction(transactionsAction);
+    viewMenu->addSeparator();
+    viewMenu->addAction(governanceAction);
+    viewMenu->addAction(stakingAction);
 
     toolsMenu = menuBar()->addMenu(tr("&Tools"));
     toolsMenu->addAction(settingsAction);
@@ -202,6 +232,9 @@ void MainWindow::createToolBars() {
     toolBar->addAction(sendAction);
     toolBar->addAction(receiveAction);
     toolBar->addAction(transactionsAction);
+    toolBar->addSeparator();
+    toolBar->addAction(governanceAction);
+    toolBar->addAction(stakingAction);
     toolBar->addSeparator();
     toolBar->addAction(settingsAction);
     toolBar->setMovable(false);
