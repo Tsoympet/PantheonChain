@@ -26,27 +26,20 @@ jobs:
       run: |
         choco install cmake ninja -y --no-progress
 
-    - name: Install OpenSSL
-      run: choco install openssl --no-progress -y
+    - name: Install OpenSSL (MinGW-compatible via MSYS2)
+      shell: pwsh
+      run: |
+        & C:\msys64\usr\bin\pacman.exe -S --noconfirm --needed mingw-w64-x86_64-openssl
 
     - name: Set OPENSSL_ROOT_DIR environment variable
       shell: pwsh
-      run: echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
+      run: echo "OPENSSL_ROOT_DIR=C:\msys64\mingw64" >> $env:GITHUB_ENV
 
     - name: Configure CMake
       shell: pwsh
       run: |
-        $opensslRoot = @(
-          "C:\Program Files\OpenSSL-Win64",
-          "C:\Program Files\OpenSSL",
-          "C:\Program Files (x86)\OpenSSL-Win64"
-        ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-        if (-not $opensslRoot) {
-          $opensslRoot = Get-ChildItem "$env:ProgramFiles" -Directory -Filter 'OpenSSL*' -ErrorAction SilentlyContinue |
-            Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
-        }
         cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-          $(if ($opensslRoot) { "-DOPENSSL_ROOT_DIR=$opensslRoot" })
+          -DOPENSSL_ROOT_DIR="C:\msys64\mingw64"
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
