@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 0
@@ -46,7 +46,7 @@ jobs:
     - name: Mark /workspace as safe for git
       run: git config --global --add safe.directory /workspace
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: false
 
@@ -253,7 +253,7 @@ jobs:
     - name: Mark /workspace as safe for git
       run: git config --global --add safe.directory /workspace
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: false
 
@@ -299,7 +299,7 @@ jobs:
     - name: Mark /workspace as safe for git
       run: git config --global --add safe.directory /workspace
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: false
 
@@ -423,10 +423,10 @@ jobs:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
     
     - name: Download All Artifacts
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v4
 
     - name: Generate SBOM (SPDX JSON)
       uses: anchore/sbom-action@v0
@@ -458,7 +458,7 @@ jobs:
         GPG_KEY_ID=$GPG_KEY_ID ./sign-release.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm ../../parthenon-mobile-android-apk/*.apk ../../parthenon-mobile-ios-ipa/*.ipa
     
     - name: Attest release provenance
-      uses: actions/attest-build-provenance@v3
+      uses: actions/attest-build-provenance@v2
       with:
         subject-path: |
           installers/checksums/parthenon-*-checksums.txt
