@@ -8,10 +8,14 @@ const NetworkService = NetworkServiceModule.default || NetworkServiceModule;
 describe('NetworkService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    NetworkService.connected = false;
-    NetworkService.blockHeight = 0;
-    NetworkService.rpcUrl = 'http://127.0.0.1:8332';
-    NetworkService.requestId = 1;
+    NetworkService.network      = 'mainnet';
+    NetworkService.connected    = false;
+    NetworkService.blockHeight  = 0;
+    NetworkService.rpcUrl       = 'http://127.0.0.1:8332';
+    NetworkService.requestId    = 1;
+    NetworkService.peerCount    = 0;
+    NetworkService.latencyMs    = -1;
+    NetworkService.nodeVersion  = '';
   });
 
   describe('connect', () => {
@@ -130,8 +134,8 @@ describe('NetworkService', () => {
   describe('getTransactions', () => {
     it('returns transaction array from RPC result', async () => {
       const txs = [
-        { asset: 'TALN', amount: 1.0, time: 1700000000 },  // 2023-11-14T22:13:20Z
-        { asset: 'DRM', amount: -0.5, time: 1700001000 },  // 2023-11-14T22:29:40Z
+        { asset: 'TALN', amount: 1.0, time: 1700000000 },
+        { asset: 'DRM', amount: -0.5, time: 1700001000 },
       ];
       fetch.mockResolvedValueOnce({
         ok: true,
@@ -200,4 +204,167 @@ describe('NetworkService', () => {
       expect(body.params).toEqual(['TALN']);
     });
   });
+
+  // ------------------------------------------------------------------ //
+  //  getNetworkStatus                                                    //
+  // ------------------------------------------------------------------ //
+  describe('getNetworkStatus', () => {
+    it('returns mainnet status when on mainnet', () => {
+      const s = NetworkService.getNetworkStatus();
+      expect(s.network).toBe('mainnet');
+      expect(s.networkName).toBe('Mainnet');
+      expect(s.networkColor).toBe('#1f2a44');
+      expect(s.connected).toBe(false);
+    });
+
+    it('reflects connected state and blockHeight', () => {
+      NetworkService.connected   = true;
+      NetworkService.blockHeight = 42;
+      const s = NetworkService.getNetworkStatus();
+      expect(s.connected).toBe(true);
+      expect(s.blockHeight).toBe(42);
+    });
+  });
+
+  // ------------------------------------------------------------------ //
+  //  setNetwork                                                          //
+  // ------------------------------------------------------------------ //
+  describe('setNetwork', () => {
+    it('switches to testnet and updates rpcUrl', async () => {
+      fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ result: 100 }) });
+      await NetworkService.setNetwork('testnet');
+      expect(NetworkService.network).toBe('testnet');
+      expect(NetworkService.rpcUrl).toBe('http://127.0.0.1:18332');
+    });
+
+    it('switches to devnet and updates rpcUrl', async () => {
+      fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ result: 5 }) });
+      await NetworkService.setNetwork('devnet');
+      expect(NetworkService.network).toBe('devnet');
+      expect(NetworkService.rpcUrl).toBe('http://127.0.0.1:18443');
+    });
+
+    it('returns true when connection succeeds', async () => {
+      fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ result: 99 }) });
+      const ok = await NetworkService.setNetwork('testnet');
+      expect(ok).toBe(true);
+      expect(NetworkService.connected).toBe(true);
+      expect(NetworkService.blockHeight).toBe(99);
+    });
+
+    it('returns false when connection fails', async () => {
+      fetch.mockRejectedValueOnce(new Error('connection refused'));
+      const ok = await NetworkService.setNetwork('testnet');
+      expect(ok).toBe(false);
+      expect(NetworkService.connected).toBe(false);
+    });
+
+    it('throws for unknown network key', async () => {
+      await expect(NetworkService.setNetwork('invalid')).rejects.toThrow('Unknown network');
+    });
+
+    it('sends getblockcount to the correct testnet URL', async () => {
+      fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ result: 1 }) });
+      await NetworkService.setNetwork('testnet');
+      expect(fetch.mock.calls[0][0]).toBe('http://127.0.0.1:18332');
+    });
+
+    it('getCurrentNetworkConfig returns testnet config after switch', async () => {
+      fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ result: 1 }) });
+      await NetworkService.setNetwork('testnet');
+      const cfg = NetworkService.getCurrentNetworkConfig();
+      expect(cfg.name).toBe('Testnet');
+      expect(cfg.color).toBe('#fd7e14');
+    });
+  });
+
+  // ------------------------------------------------------------------ //
+  //  checkDevNetAccess                                                   //
+  // ------------------------------------------------------------------ //
+  describe('checkDevNetAccess', () => {
+    it('returns granted=true and role when access is allowed', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ result: { granted: true, role: 'Boule' } }),
+      });
+      const result = await NetworkService.checkDevNetAccess('0xabc');
+      expect(result.granted).toBe(true);
+      expect(result.role).toBe('Boule');
+    });
+
+    it('returns granted=false when access is denied', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ result: { granted: false, role: '' } }),
+      });
+      const result = await NetworkService.checkDevNetAccess('0xdeadbeef');
+      expect(result.granted).toBe(false);
+    });
+
+    it('returns granted=false on network error (safe default)', async () => {
+      fetch.mockRejectedValueOnce(new Error('timeout'));
+      const result = await NetworkService.checkDevNetAccess('0xabc');
+      expect(result.granted).toBe(false);
+    });
+
+    it('sends network/check_dev_access with correct address', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ result: { granted: true, role: 'Prytany' } }),
+      });
+      await NetworkService.checkDevNetAccess('myaddr');
+      const body = JSON.parse(fetch.mock.calls[0][1].body);
+      expect(body.method).toBe('network/check_dev_access');
+      expect(body.params[0].address).toBe('myaddr');
+    });
+
+    it('supports all qualifying governance roles', async () => {
+      for (const role of ['Boule', 'Prytany', 'EmergencyCouncil', 'Apophasis']) {
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ result: { granted: true, role } }),
+        });
+        const result = await NetworkService.checkDevNetAccess('addr');
+        expect(result.granted).toBe(true);
+        expect(result.role).toBe(role);
+      }
+    });
+  });
+
+  // ------------------------------------------------------------------ //
+  //  refreshNetworkStatus                                                //
+  // ------------------------------------------------------------------ //
+  describe('refreshNetworkStatus', () => {
+    it('updates peerCount, latencyMs, nodeVersion from RPC response', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ result: { peer_count: 12, latency_ms: 45, version: 'parthenon/1.0.0' } }),
+      });
+      const s = await NetworkService.refreshNetworkStatus();
+      expect(NetworkService.peerCount).toBe(12);
+      expect(NetworkService.latencyMs).toBe(45);
+      expect(NetworkService.nodeVersion).toBe('parthenon/1.0.0');
+      expect(s.peerCount).toBe(12);
+    });
+
+    it('returns current status even on RPC error (does not throw)', async () => {
+      fetch.mockRejectedValueOnce(new Error('timeout'));
+      NetworkService.peerCount = 7;
+      const s = await NetworkService.refreshNetworkStatus();
+      expect(s).toBeDefined();
+      expect(NetworkService.peerCount).toBe(7);
+    });
+
+    it('sends network/status to the RPC endpoint', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ result: {} }),
+      });
+      await NetworkService.refreshNetworkStatus();
+      const body = JSON.parse(fetch.mock.calls[0][1].body);
+      expect(body.method).toBe('network/status');
+    });
+  });
 });
+
+

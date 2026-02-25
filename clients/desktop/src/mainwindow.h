@@ -20,6 +20,10 @@ class OverviewPage;
 class SendPage;
 class ReceivePage;
 class TransactionPage;
+class SettingsPage;
+class GovernancePage;
+class StakingPage;
+class MiningPage;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -33,9 +37,14 @@ class MainWindow : public QMainWindow {
     void showSend();
     void showReceive();
     void showTransactions();
+    void showGovernance();
+    void showStaking();
+    void showMining();
+    void showSettings();
     void showAbout();
     void updateStatus();
     void onConnectionStatusChanged(bool connected);
+    void onNetworkTypeChanged(NetworkType type);
     void onBalanceChanged();
     void onBlockHeightChanged(int height);
 
@@ -48,16 +57,24 @@ class MainWindow : public QMainWindow {
 
     // Pages
     QStackedWidget *centralStack;
-    OverviewPage *overviewPage;
-    SendPage *sendPage;
-    ReceivePage *receivePage;
+    OverviewPage    *overviewPage;
+    SendPage        *sendPage;
+    ReceivePage     *receivePage;
     TransactionPage *transactionPage;
+    GovernancePage  *governancePage;
+    StakingPage     *stakingPage;
+    MiningPage      *miningPage;
+    SettingsPage    *settingsPage;
 
     // Actions
     QAction *overviewAction;
     QAction *sendAction;
     QAction *receiveAction;
     QAction *transactionsAction;
+    QAction *governanceAction;
+    QAction *stakingAction;
+    QAction *miningAction;
+    QAction *settingsAction;
     QAction *exitAction;
     QAction *aboutAction;
     QAction *aboutQtAction;
@@ -65,6 +82,7 @@ class MainWindow : public QMainWindow {
     // Menus
     QMenu *fileMenu;
     QMenu *viewMenu;
+    QMenu *toolsMenu;
     QMenu *helpMenu;
 
     // Toolbar
@@ -72,6 +90,7 @@ class MainWindow : public QMainWindow {
 
     // Status bar widgets
     QLabel *connectionLabel;
+    QLabel *networkLabel;
     QLabel *blockHeightLabel;
     QLabel *syncProgressLabel;
 

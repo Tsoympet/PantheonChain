@@ -38,6 +38,14 @@ if(DEFINED PARTHENON_QT_TARGET_PREFIX)
         src/receivepage.h
         src/transactionpage.cpp
         src/transactionpage.h
+        src/governancepage.cpp
+        src/governancepage.h
+        src/stakingpage.cpp
+        src/stakingpage.h
+        src/miningpage.cpp
+        src/miningpage.h
+        src/settingspage.cpp
+        src/settingspage.h
     )
 
     target_compile_features(parthenon-qt PRIVATE cxx_std_17)

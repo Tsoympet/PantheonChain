@@ -2,9 +2,13 @@
 
 #include "mainwindow.h"
 
+#include "governancepage.h"
+#include "miningpage.h"
 #include "overviewpage.h"
 #include "receivepage.h"
 #include "sendpage.h"
+#include "settingspage.h"
+#include "stakingpage.h"
 #include "transactionpage.h"
 
 #include <QAction>
@@ -19,7 +23,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), centralStack(nullptr), overviewPage(nullptr), sendPage(nullptr),
-      receivePage(nullptr), transactionPage(nullptr), rpcClient(nullptr) {
+      receivePage(nullptr), transactionPage(nullptr), governancePage(nullptr),
+      stakingPage(nullptr), miningPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
     setWindowTitle("ParthenonChain Wallet");
     resize(1000, 700);
 
@@ -27,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
     rpcClient = new RPCClient(this);
     connect(rpcClient, &RPCClient::connectionStatusChanged, this,
             &MainWindow::onConnectionStatusChanged);
+    connect(rpcClient, &RPCClient::networkTypeChanged, this,
+            &MainWindow::onNetworkTypeChanged);
     connect(rpcClient, &RPCClient::balanceChanged, this, &MainWindow::onBalanceChanged);
     connect(rpcClient, &RPCClient::blockHeightChanged, this, &MainWindow::onBlockHeightChanged);
 
@@ -35,10 +42,14 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralStack);
 
     // Create pages
-    overviewPage = new OverviewPage(rpcClient, this);
-    sendPage = new SendPage(rpcClient, this);
-    receivePage = new ReceivePage(rpcClient, this);
+    overviewPage    = new OverviewPage(rpcClient, this);
+    sendPage        = new SendPage(rpcClient, this);
+    receivePage     = new ReceivePage(rpcClient, this);
     transactionPage = new TransactionPage(rpcClient, this);
+    governancePage  = new GovernancePage(rpcClient, this);
+    stakingPage     = new StakingPage(rpcClient, this);
+    miningPage      = new MiningPage(rpcClient, this);
+    settingsPage    = new SettingsPage(rpcClient, this);
 
     // Connect overview page signals
     connect(overviewPage, &OverviewPage::sendRequested, this, &MainWindow::showSend);
@@ -48,6 +59,10 @@ MainWindow::MainWindow(QWidget *parent)
     centralStack->addWidget(sendPage);
     centralStack->addWidget(receivePage);
     centralStack->addWidget(transactionPage);
+    centralStack->addWidget(governancePage);
+    centralStack->addWidget(stakingPage);
+    centralStack->addWidget(miningPage);
+    centralStack->addWidget(settingsPage);
 
     // Create UI elements
     createActions();
@@ -89,6 +104,26 @@ void MainWindow::showTransactions() {
     transactionsAction->setChecked(true);
 }
 
+void MainWindow::showGovernance() {
+    centralStack->setCurrentWidget(governancePage);
+    governanceAction->setChecked(true);
+}
+
+void MainWindow::showStaking() {
+    centralStack->setCurrentWidget(stakingPage);
+    stakingAction->setChecked(true);
+}
+
+void MainWindow::showMining() {
+    centralStack->setCurrentWidget(miningPage);
+    miningAction->setChecked(true);
+}
+
+void MainWindow::showSettings() {
+    centralStack->setCurrentWidget(settingsPage);
+    settingsAction->setChecked(true);
+}
+
 void MainWindow::showAbout() {
     QMessageBox::about(this, tr("About ParthenonChain Wallet"),
                        tr("<h2>ParthenonChain Wallet v1.0.0</h2>"
@@ -112,12 +147,28 @@ void MainWindow::updateStatus() {
 
 void MainWindow::onConnectionStatusChanged(bool connected) {
     if (connected) {
-        connectionLabel->setText("Connected");
+        connectionLabel->setText(tr("● Connected"));
         connectionLabel->setStyleSheet("QLabel { color: green; }");
         updateStatus();
     } else {
-        connectionLabel->setText("Disconnected");
+        connectionLabel->setText(tr("● Disconnected"));
         connectionLabel->setStyleSheet("QLabel { color: red; }");
+    }
+}
+
+void MainWindow::onNetworkTypeChanged(NetworkType type) {
+    const QString name = RPCClient::networkName(type);
+    networkLabel->setText(tr("[%1]").arg(name));
+    switch (type) {
+        case NetworkType::Testnet:
+            networkLabel->setStyleSheet("QLabel { color: #fd7e14; font-weight: bold; }");
+            break;
+        case NetworkType::Devnet:
+            networkLabel->setStyleSheet("QLabel { color: #6f42c1; font-weight: bold; }");
+            break;
+        default:
+            networkLabel->setStyleSheet("QLabel { color: #1f2a44; font-weight: bold; }");
+            break;
     }
 }
 
@@ -152,11 +203,31 @@ void MainWindow::createActions() {
     transactionsAction->setCheckable(true);
     connect(transactionsAction, &QAction::triggered, this, &MainWindow::showTransactions);
 
+    governanceAction = new QAction(QIcon(":/icons/governance.svg"), tr("&Governance"), this);
+    governanceAction->setStatusTip(tr("View and vote on governance proposals"));
+    governanceAction->setCheckable(true);
+    connect(governanceAction, &QAction::triggered, this, &MainWindow::showGovernance);
+
+    stakingAction = new QAction(QIcon(":/icons/staking.svg"), tr("S&taking"), this);
+    stakingAction->setStatusTip(tr("Stake tokens on L2/L3"));
+    stakingAction->setCheckable(true);
+    connect(stakingAction, &QAction::triggered, this, &MainWindow::showStaking);
+
+    miningAction = new QAction(QIcon(":/icons/mining.svg"), tr("&Mining"), this);
+    miningAction->setStatusTip(tr("Mine TALANTON shares using CPU"));
+    miningAction->setCheckable(true);
+    connect(miningAction, &QAction::triggered, this, &MainWindow::showMining);
+
+    settingsAction = new QAction(QIcon(":/icons/settings.svg"), tr("Se&ttings"), this);
+    settingsAction->setStatusTip(tr("Configure wallet settings"));
+    settingsAction->setCheckable(true);
+    connect(settingsAction, &QAction::triggered, this, &MainWindow::showSettings);
+
     exitAction = new QAction(tr("E&xit"), this);
     exitAction->setStatusTip(tr("Exit application"));
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
 
-    aboutAction = new QAction(tr("&About ParthenonChain"), this);
+    aboutAction = new QAction(QIcon(":/icons/wallet.svg"), tr("&About ParthenonChain"), this);
     aboutAction->setStatusTip(tr("Show information about ParthenonChain"));
     connect(aboutAction, &QAction::triggered, this, &MainWindow::showAbout);
 
@@ -174,6 +245,13 @@ void MainWindow::createMenus() {
     viewMenu->addAction(sendAction);
     viewMenu->addAction(receiveAction);
     viewMenu->addAction(transactionsAction);
+    viewMenu->addSeparator();
+    viewMenu->addAction(governanceAction);
+    viewMenu->addAction(stakingAction);
+    viewMenu->addAction(miningAction);
+
+    toolsMenu = menuBar()->addMenu(tr("&Tools"));
+    toolsMenu->addAction(settingsAction);
 
     helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(aboutAction);
@@ -186,15 +264,32 @@ void MainWindow::createToolBars() {
     toolBar->addAction(sendAction);
     toolBar->addAction(receiveAction);
     toolBar->addAction(transactionsAction);
+    toolBar->addSeparator();
+    toolBar->addAction(governanceAction);
+    toolBar->addAction(stakingAction);
+    toolBar->addAction(miningAction);
+    toolBar->addSeparator();
+    toolBar->addAction(settingsAction);
     toolBar->setMovable(false);
+
+    // Wire menu.svg: toolbar toggle action exposed in View menu
+    QAction *navToggle = toolBar->toggleViewAction();
+    navToggle->setIcon(QIcon(":/icons/menu.svg"));
+    navToggle->setText(tr("Navigation &Toolbar"));
+    viewMenu->addSeparator();
+    viewMenu->addAction(navToggle);
 }
 
 void MainWindow::createStatusBar() {
-    connectionLabel = new QLabel(tr("Connecting..."));
+    connectionLabel  = new QLabel(tr("● Connecting…"));
+    networkLabel     = new QLabel(tr("[Mainnet]"));
     blockHeightLabel = new QLabel(tr("Block: 0"));
     syncProgressLabel = new QLabel(tr("Synced"));
 
+    networkLabel->setStyleSheet("QLabel { color: #1f2a44; font-weight: bold; }");
+
     statusBar()->addWidget(connectionLabel);
+    statusBar()->addWidget(networkLabel);
     statusBar()->addPermanentWidget(blockHeightLabel);
     statusBar()->addPermanentWidget(syncProgressLabel);
 }
