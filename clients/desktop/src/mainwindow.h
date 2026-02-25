@@ -23,6 +23,7 @@ class TransactionPage;
 class SettingsPage;
 class GovernancePage;
 class StakingPage;
+class MiningPage;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -38,6 +39,7 @@ class MainWindow : public QMainWindow {
     void showTransactions();
     void showGovernance();
     void showStaking();
+    void showMining();
     void showSettings();
     void showAbout();
     void updateStatus();
@@ -60,6 +62,7 @@ class MainWindow : public QMainWindow {
     TransactionPage *transactionPage;
     GovernancePage  *governancePage;
     StakingPage     *stakingPage;
+    MiningPage      *miningPage;
     SettingsPage    *settingsPage;
 
     // Actions
@@ -69,6 +72,7 @@ class MainWindow : public QMainWindow {
     QAction *transactionsAction;
     QAction *governanceAction;
     QAction *stakingAction;
+    QAction *miningAction;
     QAction *settingsAction;
     QAction *exitAction;
     QAction *aboutAction;

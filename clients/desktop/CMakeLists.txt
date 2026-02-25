@@ -42,6 +42,8 @@ if(DEFINED PARTHENON_QT_TARGET_PREFIX)
         src/governancepage.h
         src/stakingpage.cpp
         src/stakingpage.h
+        src/miningpage.cpp
+        src/miningpage.h
         src/settingspage.cpp
         src/settingspage.h
     )

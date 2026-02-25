@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 
 #include "governancepage.h"
+#include "miningpage.h"
 #include "overviewpage.h"
 #include "receivepage.h"
 #include "sendpage.h"
@@ -23,7 +24,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), centralStack(nullptr), overviewPage(nullptr), sendPage(nullptr),
       receivePage(nullptr), transactionPage(nullptr), governancePage(nullptr),
-      stakingPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
+      stakingPage(nullptr), miningPage(nullptr), settingsPage(nullptr), rpcClient(nullptr) {
     setWindowTitle("ParthenonChain Wallet");
     resize(1000, 700);
 
@@ -45,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     transactionPage = new TransactionPage(rpcClient, this);
     governancePage  = new GovernancePage(rpcClient, this);
     stakingPage     = new StakingPage(rpcClient, this);
+    miningPage      = new MiningPage(rpcClient, this);
     settingsPage    = new SettingsPage(rpcClient, this);
 
     // Connect overview page signals
@@ -57,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent)
     centralStack->addWidget(transactionPage);
     centralStack->addWidget(governancePage);
     centralStack->addWidget(stakingPage);
+    centralStack->addWidget(miningPage);
     centralStack->addWidget(settingsPage);
 
     // Create UI elements
@@ -107,6 +110,11 @@ void MainWindow::showGovernance() {
 void MainWindow::showStaking() {
     centralStack->setCurrentWidget(stakingPage);
     stakingAction->setChecked(true);
+}
+
+void MainWindow::showMining() {
+    centralStack->setCurrentWidget(miningPage);
+    miningAction->setChecked(true);
 }
 
 void MainWindow::showSettings() {
@@ -187,6 +195,11 @@ void MainWindow::createActions() {
     stakingAction->setCheckable(true);
     connect(stakingAction, &QAction::triggered, this, &MainWindow::showStaking);
 
+    miningAction = new QAction(QIcon(":/icons/mining.svg"), tr("&Mining"), this);
+    miningAction->setStatusTip(tr("Mine TALANTON shares using CPU"));
+    miningAction->setCheckable(true);
+    connect(miningAction, &QAction::triggered, this, &MainWindow::showMining);
+
     settingsAction = new QAction(QIcon(":/icons/settings.svg"), tr("Se&ttings"), this);
     settingsAction->setStatusTip(tr("Configure wallet settings"));
     settingsAction->setCheckable(true);
@@ -196,7 +209,7 @@ void MainWindow::createActions() {
     exitAction->setStatusTip(tr("Exit application"));
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
 
-    aboutAction = new QAction(tr("&About ParthenonChain"), this);
+    aboutAction = new QAction(QIcon(":/icons/wallet.svg"), tr("&About ParthenonChain"), this);
     aboutAction->setStatusTip(tr("Show information about ParthenonChain"));
     connect(aboutAction, &QAction::triggered, this, &MainWindow::showAbout);
 
@@ -217,6 +230,7 @@ void MainWindow::createMenus() {
     viewMenu->addSeparator();
     viewMenu->addAction(governanceAction);
     viewMenu->addAction(stakingAction);
+    viewMenu->addAction(miningAction);
 
     toolsMenu = menuBar()->addMenu(tr("&Tools"));
     toolsMenu->addAction(settingsAction);
@@ -235,9 +249,17 @@ void MainWindow::createToolBars() {
     toolBar->addSeparator();
     toolBar->addAction(governanceAction);
     toolBar->addAction(stakingAction);
+    toolBar->addAction(miningAction);
     toolBar->addSeparator();
     toolBar->addAction(settingsAction);
     toolBar->setMovable(false);
+
+    // Wire menu.svg: toolbar toggle action exposed in View menu
+    QAction *navToggle = toolBar->toggleViewAction();
+    navToggle->setIcon(QIcon(":/icons/menu.svg"));
+    navToggle->setText(tr("Navigation &Toolbar"));
+    viewMenu->addSeparator();
+    viewMenu->addAction(navToggle);
 }
 
 void MainWindow::createStatusBar() {
