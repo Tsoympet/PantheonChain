@@ -184,6 +184,7 @@ else()
 endif()
 
 # P2P library
+set(THREADS_PREFER_PTHREAD_FLAG OFF)
 find_package(Threads REQUIRED)
 
 add_library(parthenon_p2p STATIC

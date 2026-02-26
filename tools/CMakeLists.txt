@@ -1,6 +1,7 @@
 # Tools and SDK libraries
 
 find_package(OpenSSL REQUIRED)
+set(THREADS_PREFER_PTHREAD_FLAG OFF)
 find_package(Threads REQUIRED)
 
 add_library(parthenon_mobile_sdk STATIC

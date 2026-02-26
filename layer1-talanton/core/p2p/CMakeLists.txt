@@ -1,6 +1,7 @@
 # P2P networking module
 
 # Find OpenSSL for TLS support
+set(THREADS_PREFER_PTHREAD_FLAG OFF)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 

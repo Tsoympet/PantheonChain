@@ -11,6 +11,7 @@
 
 ; Modern UI
 !include "MUI2.nsh"
+!include "StrRep.nsh"
 !include "StrFunc.nsh"
 !include "LogicLib.nsh"
 
