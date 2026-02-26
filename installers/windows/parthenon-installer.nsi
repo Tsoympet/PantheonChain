@@ -11,6 +11,8 @@
 
 ; Modern UI
 !include "MUI2.nsh"
+!include "StrFunc.nsh"
+!include "LogicLib.nsh"
 
 ; Output file
 !ifndef BUILD_CONFIG
@@ -93,6 +95,11 @@ RequestExecutionLevel admin
 ; Language
 !insertmacro MUI_LANGUAGE "English"
 
+; Declare string-replacement functions used for PATH manipulation (no plugin required)
+${StrStr}
+${StrRep}
+${un.StrRep}
+
 ; Installer sections
 Section "Core Daemon (parthenond)" SecDaemon
   SectionIn RO
@@ -114,9 +121,13 @@ Section "Command Line Tools (parthenon-cli)" SecCLI
   SetOutPath "$INSTDIR\bin"
   File "${CLI_BINARY_PATH}"
   
-  ; Add to PATH
-  EnVar::SetHKLM
-  EnVar::AddValue "PATH" "$INSTDIR\bin"
+  ; Add to system PATH only if not already present (native registry, no plugin required)
+  ReadRegStr $R0 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
+  ${StrStr} $R1 "$R0" "$INSTDIR\bin"
+  ${If} $R1 == ""
+    WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$R0;$INSTDIR\bin"
+    SendMessage 0xFFFF 0x001A 0 "STR:Environment" /TIMEOUT=5000
+  ${EndIf}
   
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\ParthenonChain CLI.lnk" "$INSTDIR\bin\parthenon-cli.exe"
 SectionEnd
@@ -175,9 +186,21 @@ Section Uninstall
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
   Delete "$DESKTOP\ParthenonChain Wallet.lnk"
   
-  ; Remove from PATH
-  EnVar::SetHKLM
-  EnVar::DeleteValue "PATH" "$INSTDIR\bin"
+  ; Remove $INSTDIR\bin from system PATH (semicolon-delimited to avoid partial matches)
+  ReadRegStr $R8 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
+  StrCpy $R8 "$R8;"  ; normalize: append ; so every entry is followed by ;
+  ${un.StrRep} $R9 "$R8" ";$INSTDIR\bin;" ";"  ; remove entry from middle or end
+  ${un.StrRep} $R9 "$R9" "$INSTDIR\bin;" ""    ; remove entry from start of PATH
+  StrLen $R8 "$R9"
+  ${If} $R8 > 0
+    StrCpy $R7 "$R9" 1 -1  ; read last character
+    ${If} $R7 == ";"
+      IntOp $R8 $R8 - 1
+      StrCpy $R9 "$R9" $R8  ; strip trailing ;
+    ${EndIf}
+  ${EndIf}
+  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$R9"
+  SendMessage 0xFFFF 0x001A 0 "STR:Environment" /TIMEOUT=5000
   
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
