@@ -21,25 +21,57 @@ jobs:
       shell: pwsh
       run: choco install nsis -y --no-progress
 
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
     - name: Install build dependencies
       shell: pwsh
       run: |
-        choco install cmake ninja -y --no-progress
-
-    - name: Install OpenSSL (MinGW-compatible via MSYS2)
-      shell: pwsh
-      run: |
-        & C:\msys64\usr\bin\pacman.exe -S --noconfirm --needed mingw-w64-x86_64-openssl
-
-    - name: Set OPENSSL_ROOT_DIR environment variable
-      shell: pwsh
-      run: echo "OPENSSL_ROOT_DIR=C:\msys64\mingw64" >> $env:GITHUB_ENV
+        $packages = @(
+          @{ Name = "cmake"; Command = "cmake" },
+          @{ Name = "ninja"; Command = "ninja" }
+        )
+        foreach ($package in $packages) {
+          if (-not (Get-Command $package.Command -ErrorAction SilentlyContinue)) {
+            choco install $package.Name -y
+          }
+          else {
+            Write-Host "$($package.Command) already available; skipping Chocolatey install."
+          }
+        }
+        $opensslPaths = @(
+          "C:\Program Files\OpenSSL-Win64",
+          "C:\Program Files\OpenSSL",
+          "C:\Program Files (x86)\OpenSSL-Win64",
+          "C:\Program Files (x86)\OpenSSL"
+        )
+        $opensslAlreadyInstalled = $opensslPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if ($opensslAlreadyInstalled) {
+          Write-Host "OpenSSL already installed at $opensslAlreadyInstalled; skipping Chocolatey install."
+        } else {
+          choco install openssl -y
+        }
 
     - name: Configure CMake
       shell: pwsh
       run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-          -DOPENSSL_ROOT_DIR="C:\msys64\mingw64"
+        $opensslLocations = @(
+          "C:\Program Files\OpenSSL-Win64",
+          "C:\Program Files\OpenSSL",
+          "C:\Program Files (x86)\OpenSSL-Win64",
+          "C:\Program Files (x86)\OpenSSL"
+        )
+        if ($env:OPENSSL_ROOT_DIR) {
+          $opensslLocations = @($env:OPENSSL_ROOT_DIR) + $opensslLocations
+        }
+        $opensslRoot = $opensslLocations | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if (-not $opensslRoot) {
+          throw "OpenSSL not found. Searched: $($opensslLocations -join ', ')"
+        }
+        Write-Host "Found OpenSSL at: $opensslRoot"
+        cmake -B build -G Ninja `
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+          -DOPENSSL_ROOT_DIR="$opensslRoot"
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
