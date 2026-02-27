@@ -1,5 +1,6 @@
 # RPC module
 
+set(THREADS_PREFER_PTHREAD_FLAG OFF)
 find_package(Threads REQUIRED)
 add_library(parthenon_rpc STATIC
     rpc_server.cpp

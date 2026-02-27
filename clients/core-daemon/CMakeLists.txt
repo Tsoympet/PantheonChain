@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 # parthenond executable
+set(THREADS_PREFER_PTHREAD_FLAG OFF)
 find_package(Threads REQUIRED)
 add_executable(parthenond
     main.cpp
