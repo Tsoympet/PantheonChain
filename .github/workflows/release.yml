@@ -58,6 +58,9 @@ jobs:
       run: |
         choco install nsis -y --no-progress
 
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
     - name: Install build dependencies
       shell: pwsh
       run: |
