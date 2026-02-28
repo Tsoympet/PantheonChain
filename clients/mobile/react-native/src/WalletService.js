@@ -47,26 +47,19 @@ class WalletService {
 
   /**
    * Sign a transaction
+   *
+   * NOTE: This is a stub. Production signing MUST use Schnorr BIP-340 with the
+   * address private key loaded from secure storage. A plain SHA-256 hash of the
+   * transaction data is NOT a signature — it provides no authentication.
    */
   async signTransaction(transaction) {
-    // In production, this would:
-    // 1. Serialize transaction data
-    // 2. Create signature using Schnorr BIP-340
-    // 3. Return signed transaction
-    
-    const txData = JSON.stringify(transaction);
-    try {
-      const signature = await sha256(txData);
-      return {
-        ...transaction,
-        signature,
-        signed: true,
-        timestamp: Date.now()
-      };
-    } catch (error) {
-      console.error('Error signing transaction:', error);
-      throw error;
-    }
+    // TODO: Replace with Schnorr BIP-340 signing using the private key
+    // corresponding to the sending address (loaded from secure storage).
+    // DO NOT use a hash function as a substitute for a digital signature.
+    throw new Error(
+      'signTransaction is not yet implemented. ' +
+      'Integrate Schnorr BIP-340 signing before enabling transaction submission.'
+    );
   }
 
   /**

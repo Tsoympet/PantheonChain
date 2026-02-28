@@ -5,6 +5,7 @@
 #include "common/monetary/units.h"
 #include "primitives/asset.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <map>
 #include <string>
@@ -279,7 +280,13 @@ int main(int argc, char *argv[]) {
     std::string host = "127.0.0.1";
     int port = 8332;
     std::string user = "parthenon";
-    std::string password = "changeme";
+    const char *env_password = std::getenv("PARTHENON_RPC_PASSWORD");
+    if (!env_password || env_password[0] == '\0') {
+        std::cerr << "Warning: PARTHENON_RPC_PASSWORD is not set. "
+                     "Set it to the RPC password to authenticate with the node.\n"
+                     "If the node requires authentication, requests will be rejected.\n";
+    }
+    std::string password = env_password ? env_password : "";
 
     parthenon::CLI cli(host, port, user, password);
 

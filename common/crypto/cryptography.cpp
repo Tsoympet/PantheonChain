@@ -1,20 +1,22 @@
 #include "cryptography.h"
 
-#include <functional>
+#include "crypto/sha256.h"
+
 #include <iomanip>
 #include <sstream>
 
 namespace pantheon::common {
 
 std::string PseudoSha256d(const std::string& payload) {
-    const std::hash<std::string> hasher;
-    const auto first = hasher(payload);
-    const auto second = hasher(std::to_string(first));
+    const auto hash = parthenon::crypto::SHA256d::Hash256d(
+        reinterpret_cast<const uint8_t*>(payload.data()), payload.size());
 
     std::ostringstream stream;
-    stream << std::hex << std::setfill('0') << std::setw(16) << first << std::setw(16) << second;
-    const auto digest = stream.str();
-    return digest + digest;
+    stream << std::hex << std::setfill('0');
+    for (const uint8_t byte : hash) {
+        stream << std::setw(2) << static_cast<int>(byte);
+    }
+    return stream.str();
 }
 
 }  // namespace pantheon::common

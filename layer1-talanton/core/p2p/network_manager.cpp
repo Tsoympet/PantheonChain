@@ -78,10 +78,20 @@ bool PeerConnection::Connect() {
         // Set non-blocking
 #ifdef _WIN32
         u_long mode = 1;
-        ioctlsocket(static_cast<SOCKET>(socket_fd_), FIONBIO, &mode);
+        if (ioctlsocket(static_cast<SOCKET>(socket_fd_), FIONBIO, &mode) != 0) {
+            std::cerr << "Failed to set non-blocking mode" << std::endl;
+            CLOSE_SOCKET(socket_fd_);
+            socket_fd_ = -1;
+            return false;
+        }
 #else
         int flags = fcntl(socket_fd_, F_GETFL, 0);
-        fcntl(socket_fd_, F_SETFL, flags | O_NONBLOCK);
+        if (flags == -1 || fcntl(socket_fd_, F_SETFL, flags | O_NONBLOCK) == -1) {
+            std::cerr << "Failed to set non-blocking mode" << std::endl;
+            CLOSE_SOCKET(socket_fd_);
+            socket_fd_ = -1;
+            return false;
+        }
 #endif
 
         // Connect to peer
@@ -407,7 +417,13 @@ bool NetworkManager::CreateListenSocket() {
 
     // Set socket options
     int opt = 1;
-    setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&opt), sizeof(opt));
+    if (setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR,
+                   reinterpret_cast<const char*>(&opt), sizeof(opt)) < 0) {
+        std::cerr << "Failed to set SO_REUSEADDR" << std::endl;
+        CLOSE_SOCKET(listen_socket_);
+        listen_socket_ = -1;
+        return false;
+    }
 
     // Bind to port
     struct sockaddr_in addr {};

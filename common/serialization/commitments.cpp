@@ -72,7 +72,18 @@ CommitmentValidationResult ValidateFinalityQuorum(const Commitment& commitment,
     }
 
     const uint64_t signed_weight = SignedStakeWeight(commitment);
-    if (signed_weight * minimum_denominator < active_stake * minimum_numerator) {
+    // Guard cross-multiplication against uint64_t overflow.
+    // signed_weight / active_stake >= minimum_numerator / minimum_denominator
+    // ↔ signed_weight * minimum_denominator >= active_stake * minimum_numerator
+    const uint64_t lhs = (minimum_denominator == 0 ||
+                          signed_weight <= UINT64_MAX / minimum_denominator)
+                             ? signed_weight * minimum_denominator
+                             : UINT64_MAX;
+    const uint64_t rhs = (minimum_numerator == 0 ||
+                          active_stake <= UINT64_MAX / minimum_numerator)
+                             ? active_stake * minimum_numerator
+                             : UINT64_MAX;
+    if (lhs < rhs) {
         return {false, "finality quorum not reached"};
     }
     return {true, ""};
