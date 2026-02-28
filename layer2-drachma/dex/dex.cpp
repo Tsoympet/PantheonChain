@@ -334,13 +334,26 @@ AutomatedMarketMaker::RemoveLiquidity(const std::vector<uint8_t>& pool_id, uint6
     if (pool.total_shares == 0) {
         return {0, 0};
     }
-    
-    uint64_t amount_a = (shares > UINT64_MAX / pool.reserve_a)
-                            ? (pool.reserve_a / pool.total_shares * shares)
-                            : (shares * pool.reserve_a) / pool.total_shares;
-    uint64_t amount_b = (shares > UINT64_MAX / pool.reserve_b)
-                            ? (pool.reserve_b / pool.total_shares * shares)
-                            : (shares * pool.reserve_b) / pool.total_shares;
+
+    // Compute (shares * reserve) / total_shares safely.
+    // Invariant: shares <= pool.total_shares => result <= reserve.
+    auto safe_amount = [](uint64_t shares, uint64_t reserve, uint64_t total_shares) -> uint64_t {
+        if (reserve == 0 || shares == 0) {
+            return 0;
+        }
+        if (shares <= UINT64_MAX / reserve) {
+            return (shares * reserve) / total_shares;
+        }
+        // Overflow path: divide-first (slight underestimate); result is bounded by reserve.
+        const uint64_t per_share = reserve / total_shares;
+        const uint64_t amount = (per_share > 0 && shares > UINT64_MAX / per_share)
+                                    ? reserve   // hard cap: invariant guarantees result <= reserve
+                                    : per_share * shares;
+        return amount;
+    };
+
+    uint64_t amount_a = safe_amount(shares, pool.reserve_a, pool.total_shares);
+    uint64_t amount_b = safe_amount(shares, pool.reserve_b, pool.total_shares);
 
     pool.reserve_a -= amount_a;
     pool.reserve_b -= amount_b;

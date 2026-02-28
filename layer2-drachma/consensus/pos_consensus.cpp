@@ -1,5 +1,6 @@
 #include "pos_consensus.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace pantheon::drachma {
@@ -44,7 +45,8 @@ SlashingEvent BuildSlashingEvent(const Validator& validator, const std::string& 
     }
     const uint64_t slashed = (ratio_numerator == 0 || validator.stake <= UINT64_MAX / ratio_numerator)
                                  ? (validator.stake * ratio_numerator) / ratio_denominator
-                                 : (validator.stake / ratio_denominator) * ratio_numerator;
+                                 : std::min(validator.stake,
+                                            (validator.stake / ratio_denominator) * ratio_numerator);
     return {validator.id, reason, slashed};
 }
 }  // namespace

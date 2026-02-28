@@ -264,9 +264,18 @@ bool VotingSystem::TallyVotes(uint64_t proposal_id) {
         return true;
     }
 
-    uint64_t approval_percent = (proposal.yes_votes <= UINT64_MAX / 100)
-                                    ? (proposal.yes_votes * 100) / approval_votes
-                                    : 100;  // yes_votes >= approval_votes, so 100%
+    uint64_t approval_percent;
+    if (proposal.yes_votes <= UINT64_MAX / 100) {
+        approval_percent = (proposal.yes_votes * 100) / approval_votes;
+    } else {
+        // yes_votes > UINT64_MAX/100: exceeds any realistic supply cap, but handle defensively.
+        // Both yes_votes and approval_votes are large; divide denominator by 100 to avoid overflow.
+        const uint64_t scaled_denom = approval_votes / 100;
+        approval_percent = (scaled_denom > 0) ? proposal.yes_votes / scaled_denom : 100;
+        if (approval_percent > 100) {
+            approval_percent = 100;
+        }
+    }
 
     // Check if passed
     if (approval_percent >= proposal.approval_threshold) {

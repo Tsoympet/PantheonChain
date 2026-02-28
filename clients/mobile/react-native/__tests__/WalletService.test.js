@@ -87,21 +87,16 @@ describe('WalletService', () => {
   });
 
   describe('signTransaction', () => {
-    it('returns a signed transaction object with signature and timestamp', async () => {
+    it('throws an error because Schnorr BIP-340 signing is not yet implemented', async () => {
       const tx = { asset: 'TALN', to: 'parthenon1q' + 'b'.repeat(38), amount: 1.5, memo: '' };
-      const signed = await WalletService.signTransaction(tx);
-      expect(signed.signed).toBe(true);
-      expect(signed.signature).toBeTruthy();
-      expect(typeof signed.timestamp).toBe('number');
-      expect(signed.asset).toBe('TALN');
-      expect(signed.amount).toBe(1.5);
+      await expect(WalletService.signTransaction(tx)).rejects.toThrow(
+        'signTransaction is not yet implemented'
+      );
     });
 
-    it('preserves original transaction fields', async () => {
+    it('throws for any transaction input', async () => {
       const tx = { asset: 'DRM', to: 'parthenon1q' + 'c'.repeat(38), amount: 0.5, memo: 'test' };
-      const signed = await WalletService.signTransaction(tx);
-      expect(signed.memo).toBe('test');
-      expect(signed.to).toBe(tx.to);
+      await expect(WalletService.signTransaction(tx)).rejects.toThrow();
     });
   });
 });
