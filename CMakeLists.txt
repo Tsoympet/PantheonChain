@@ -79,6 +79,9 @@ add_subdirectory(layer2-drachma)
 # Layer 1 full library set (parthenon_node, parthenon_wallet, parthenon_rpc, etc.)
 add_subdirectory(layer1-talanton)
 
+# pantheon_common uses parthenon::crypto::SHA256d::Hash256d from parthenon_crypto
+target_link_libraries(pantheon_common PUBLIC parthenon_crypto)
+
 # Client applications: parthenond (daemon), parthenon-cli, parthenon-qt (desktop wallet)
 add_subdirectory(clients)
 
