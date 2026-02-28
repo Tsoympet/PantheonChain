@@ -239,11 +239,22 @@ bool VotingSystem::TallyVotes(uint64_t proposal_id) {
             ? proposal.veto_threshold_bps
             : veto_threshold_bps_;
     // veto_votes / total_votes > effective_threshold / 10000
-    // ↔ veto_votes * 10000 > total_votes * effective_threshold
-    if (proposal.veto_votes * 10000ULL > total_votes * effective_threshold) {
-        proposal.status = ProposalStatus::REJECTED;
-        // Mark deposit for slashing (caller invokes SlashDeposit)
-        return true;
+    // Rearranged: veto_votes * 10000 > total_votes * effective_threshold
+    // Use overflow-safe comparison: divide both sides by common factor where possible.
+    // Since effective_threshold <= 10000, we compare veto_votes / total_votes
+    // using cross-multiplication guarded against uint64_t overflow.
+    {
+        const uint64_t lhs = (proposal.veto_votes <= UINT64_MAX / 10000ULL)
+                                 ? proposal.veto_votes * 10000ULL
+                                 : UINT64_MAX;
+        const uint64_t rhs = (effective_threshold == 0 || total_votes <= UINT64_MAX / effective_threshold)
+                                 ? total_votes * effective_threshold
+                                 : UINT64_MAX;
+        if (lhs > rhs) {
+            proposal.status = ProposalStatus::REJECTED;
+            // Mark deposit for slashing (caller invokes SlashDeposit)
+            return true;
+        }
     }
 
     // Calculate approval percentage (YES vs YES+NO, excluding ABSTAIN and VETO)
@@ -253,7 +264,9 @@ bool VotingSystem::TallyVotes(uint64_t proposal_id) {
         return true;
     }
 
-    uint64_t approval_percent = (proposal.yes_votes * 100) / approval_votes;
+    uint64_t approval_percent = (proposal.yes_votes <= UINT64_MAX / 100)
+                                    ? (proposal.yes_votes * 100) / approval_votes
+                                    : 100;  // yes_votes >= approval_votes, so 100%
 
     // Check if passed
     if (approval_percent >= proposal.approval_threshold) {

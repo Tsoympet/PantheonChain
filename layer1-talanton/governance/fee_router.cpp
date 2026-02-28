@@ -70,9 +70,14 @@ FeeRouter::RouteResult FeeRouter::Route(FeeSource source,
                                         uint64_t block_height) {
     const SplitConfig& cfg = configs_.at(source);
 
-    // Integer split (basis-point arithmetic)
-    uint64_t producer_amount = total_fee * cfg.producer_bps / 10000u;
-    uint64_t treasury_amount = total_fee * cfg.treasury_bps / 10000u;
+    // Integer split (basis-point arithmetic); guard against overflow.
+    // cfg.*_bps are in [0, 10000], so overflow occurs only for enormous fees.
+    uint64_t producer_amount = (cfg.producer_bps == 0 || total_fee <= UINT64_MAX / cfg.producer_bps)
+                                   ? total_fee * cfg.producer_bps / 10000u
+                                   : total_fee / 10000u * cfg.producer_bps;
+    uint64_t treasury_amount = (cfg.treasury_bps == 0 || total_fee <= UINT64_MAX / cfg.treasury_bps)
+                                   ? total_fee * cfg.treasury_bps / 10000u
+                                   : total_fee / 10000u * cfg.treasury_bps;
     // Assign remainder to burn to avoid any satoshi leakage
     uint64_t burn_amount     = total_fee - producer_amount - treasury_amount;
 

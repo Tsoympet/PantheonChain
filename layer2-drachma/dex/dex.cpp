@@ -266,30 +266,28 @@ uint64_t AutomatedMarketMaker::AddLiquidity(const std::vector<uint8_t>& pool_id,
             shares = amount_a * amount_b;
         }
     } else {
-        shares = std::min((amount_a * pool.total_shares) / pool.reserve_a,
-                          (amount_b * pool.total_shares) / pool.reserve_b);
-        // Check for division by zero and overflow
+        // Check for division by zero
         if (pool.reserve_a == 0 || pool.reserve_b == 0) {
             return 0;
         }
-        
+
         uint64_t shares_a = 0;
         uint64_t shares_b = 0;
-        
-        // Safe calculation of shares_a
-        if (amount_a > UINT64_MAX / pool.total_shares) {
+
+        // Safe calculation of shares_a (guard against overflow before multiply)
+        if (pool.total_shares > 0 && amount_a > UINT64_MAX / pool.total_shares) {
             shares_a = UINT64_MAX;
         } else {
             shares_a = (amount_a * pool.total_shares) / pool.reserve_a;
         }
-        
-        // Safe calculation of shares_b
-        if (amount_b > UINT64_MAX / pool.total_shares) {
+
+        // Safe calculation of shares_b (guard against overflow before multiply)
+        if (pool.total_shares > 0 && amount_b > UINT64_MAX / pool.total_shares) {
             shares_b = UINT64_MAX;
         } else {
             shares_b = (amount_b * pool.total_shares) / pool.reserve_b;
         }
-        
+
         shares = std::min(shares_a, shares_b);
     }
     
@@ -337,8 +335,12 @@ AutomatedMarketMaker::RemoveLiquidity(const std::vector<uint8_t>& pool_id, uint6
         return {0, 0};
     }
     
-    uint64_t amount_a = (shares * pool.reserve_a) / pool.total_shares;
-    uint64_t amount_b = (shares * pool.reserve_b) / pool.total_shares;
+    uint64_t amount_a = (shares > UINT64_MAX / pool.reserve_a)
+                            ? (pool.reserve_a / pool.total_shares * shares)
+                            : (shares * pool.reserve_a) / pool.total_shares;
+    uint64_t amount_b = (shares > UINT64_MAX / pool.reserve_b)
+                            ? (pool.reserve_b / pool.total_shares * shares)
+                            : (shares * pool.reserve_b) / pool.total_shares;
 
     pool.reserve_a -= amount_a;
     pool.reserve_b -= amount_b;

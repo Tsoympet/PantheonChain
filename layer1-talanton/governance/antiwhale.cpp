@@ -40,8 +40,16 @@ bool AntiWhaleGuard::IsWhale(uint64_t raw_power, uint64_t total_supply) const {
         return false;
     }
     // raw_power / total_supply > whale_threshold_bps / 10000
-    // i.e. raw_power * 10000 > total_supply * whale_threshold_bps
-    return (raw_power * 10000 > total_supply * config_.whale_threshold_bps);
+    // Rearranged: raw_power * 10000 > total_supply * whale_threshold_bps
+    // Guard against uint64_t overflow on both sides.
+    const uint64_t lhs = (raw_power <= UINT64_MAX / 10000)
+                             ? raw_power * 10000
+                             : UINT64_MAX;
+    const uint64_t rhs = (config_.whale_threshold_bps == 0 ||
+                          total_supply <= UINT64_MAX / config_.whale_threshold_bps)
+                             ? total_supply * config_.whale_threshold_bps
+                             : UINT64_MAX;
+    return lhs > rhs;
 }
 
 }  // namespace governance

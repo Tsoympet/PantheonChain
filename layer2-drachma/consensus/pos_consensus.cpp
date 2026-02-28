@@ -42,7 +42,9 @@ SlashingEvent BuildSlashingEvent(const Validator& validator, const std::string& 
     if (ratio_denominator == 0 || ratio_numerator > ratio_denominator) {
         throw std::invalid_argument("invalid slash ratio");
     }
-    const uint64_t slashed = (validator.stake * ratio_numerator) / ratio_denominator;
+    const uint64_t slashed = (ratio_numerator == 0 || validator.stake <= UINT64_MAX / ratio_numerator)
+                                 ? (validator.stake * ratio_numerator) / ratio_denominator
+                                 : (validator.stake / ratio_denominator) * ratio_numerator;
     return {validator.id, reason, slashed};
 }
 }  // namespace
