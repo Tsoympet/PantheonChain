@@ -43,6 +43,9 @@ SlashingEvent BuildSlashingEvent(const Validator& validator, const std::string& 
     if (ratio_denominator == 0 || ratio_numerator > ratio_denominator) {
         throw std::invalid_argument("invalid slash ratio");
     }
+    // Overflow fallback divides first; since ratio_numerator <= ratio_denominator, this underestimates
+    // by at most (ratio_denominator - 1) / ratio_denominator < 1 token unit.
+    // std::min caps at validator.stake so slashing never exceeds the total stake.
     const uint64_t slashed = (ratio_numerator == 0 || validator.stake <= UINT64_MAX / ratio_numerator)
                                  ? (validator.stake * ratio_numerator) / ratio_denominator
                                  : std::min(validator.stake,

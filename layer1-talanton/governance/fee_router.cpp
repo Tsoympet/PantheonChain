@@ -72,6 +72,8 @@ FeeRouter::RouteResult FeeRouter::Route(FeeSource source,
 
     // Integer split (basis-point arithmetic); guard against overflow.
     // cfg.*_bps are in [0, 10000], so overflow occurs only for enormous fees.
+    // Overflow fallback divides first then multiplies, which may truncate by at most
+    // (10000 - 1) / 10000 < 1 token unit; acceptable given real-world fee sizes.
     uint64_t producer_amount = (cfg.producer_bps == 0 || total_fee <= UINT64_MAX / cfg.producer_bps)
                                    ? total_fee * cfg.producer_bps / 10000u
                                    : total_fee / 10000u * cfg.producer_bps;
