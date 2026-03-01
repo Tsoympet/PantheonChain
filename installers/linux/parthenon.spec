@@ -11,11 +11,14 @@ BuildRequires:  cmake >= 3.15
 BuildRequires:  gcc-c++
 BuildRequires:  openssl-devel
 BuildRequires:  boost-devel
+BuildRequires:  qt6-qtbase-devel
 
 Requires:       openssl >= 3.0.0
 Requires:       boost-system
 Requires:       boost-filesystem
 Requires:       boost-thread
+Requires:       qt6-qtbase
+Requires:       qt6-qtbase-gui
 
 %description
 ParthenonChain is a production-grade Layer-1 blockchain featuring:

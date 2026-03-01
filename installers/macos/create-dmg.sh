@@ -29,6 +29,56 @@ cp "${BUILD_DIR}/clients/desktop/parthenon-qt" "${APP_BUNDLE}/Contents/MacOS/"
 # Make executables executable
 chmod +x "${APP_BUNDLE}/Contents/MacOS"/*
 
+# Bundle Qt frameworks so the app starts on machines without Qt installed.
+resolve_macdeployqt() {
+    # 1) On PATH already
+    if command -v macdeployqt >/dev/null 2>&1; then
+        command -v macdeployqt
+        return
+    fi
+
+    # 2) Via environment variable (e.g. set by jurplel/install-qt-action or by
+    #    the caller who found Qt via cmake --find-package)
+    for envvar in QTDIR Qt6_DIR Qt6_ROOT Qt5_DIR Qt5_ROOT; do
+        local envval
+        envval="${!envvar:-}"
+        if [ -n "$envval" ]; then
+            for candidate in \
+                "$envval/bin/macdeployqt" \
+                "$envval/../../../bin/macdeployqt" \
+                "$envval/../../bin/macdeployqt"
+            do
+                if [ -x "$candidate" ]; then
+                    echo "$candidate"
+                    return
+                fi
+            done
+        fi
+    done
+
+    # 3) Homebrew – check well-known static prefixes first (fast), then fall
+    #    back to `brew --prefix` for non-standard installations (slower).
+    for brew_prefix in \
+        "/opt/homebrew/opt/qt" \
+        "/usr/local/opt/qt" \
+        "$(brew --prefix qt 2>/dev/null || true)"
+    do
+        if [ -x "$brew_prefix/bin/macdeployqt" ]; then
+            echo "$brew_prefix/bin/macdeployqt"
+            return
+        fi
+    done
+}
+
+MACDEPLOYQT="$(resolve_macdeployqt)"
+if [ -n "$MACDEPLOYQT" ]; then
+    echo "Bundling Qt frameworks with macdeployqt: $MACDEPLOYQT"
+    "$MACDEPLOYQT" "${APP_BUNDLE}"
+else
+    echo "Warning: macdeployqt not found; Qt frameworks will not be bundled."
+    echo "Install Qt (e.g. 'brew install qt') to produce a self-contained app bundle."
+fi
+
 # Create Info.plist
 cat > "${APP_BUNDLE}/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>

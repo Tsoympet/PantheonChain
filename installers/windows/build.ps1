@@ -115,6 +115,47 @@ function Resolve-BuildArtifactPath {
     exit 1
 }
 
+function Resolve-WinDeployQtPath {
+    $candidates = [System.Collections.Generic.List[string]]::new()
+
+    $windeploy = Get-Command windeployqt -ErrorAction SilentlyContinue
+    if ($windeploy) { $candidates.Add($windeploy.Source) }
+
+    foreach ($envVar in @("QTDIR", "Qt6_DIR", "Qt6_ROOT", "Qt5_DIR", "Qt5_ROOT")) {
+        $envVal = [System.Environment]::GetEnvironmentVariable($envVar)
+        if ($envVal) {
+            $candidates.Add((Join-Path $envVal "bin\windeployqt.exe"))
+            $candidates.Add((Join-Path $envVal "..\..\..\bin\windeployqt.exe"))
+            $candidates.Add((Join-Path $envVal "..\..\bin\windeployqt.exe"))
+        }
+    }
+
+    return $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+
+function Invoke-WinDeployQt {
+    param(
+        [Parameter(Mandatory=$true)][string]$executablePath,
+        [Parameter(Mandatory=$true)][string]$targetDirectory
+    )
+
+    $windeployqtExe = Resolve-WinDeployQtPath
+    if (-not $windeployqtExe) {
+        Write-Host "Warning: windeployqt not found; Qt DLLs will not be bundled." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Running windeployqt: $windeployqtExe" -ForegroundColor Cyan
+    New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+    & $windeployqtExe --release --no-translations --dir $targetDirectory $executablePath
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Qt DLLs deployed to: $targetDirectory" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Warning: windeployqt exited with code $LASTEXITCODE" -ForegroundColor Yellow
+    }
+}
+
 function Stage-ArtifactForNsis {
     param(
         [Parameter(Mandatory=$true)][string]$sourcePath,
@@ -193,6 +234,10 @@ if (Test-Path ".\parthenon-installer.nsi") {
     $stagedCliBinaryPath = Stage-ArtifactForNsis -sourcePath $cliBinaryPath -outputFileName "parthenon-cli.exe" -stagingDirectory $nsisStagingDirectory
     $stagedDesktopBinaryPath = Stage-ArtifactForNsis -sourcePath $desktopBinaryPath -outputFileName "parthenon-qt.exe" -stagingDirectory $nsisStagingDirectory
 
+    # Collect Qt runtime DLLs alongside the desktop binary so the installed app can start
+    $qtDeployDirectory = Join-Path $nsisStagingDirectory "qt-deploy"
+    Invoke-WinDeployQt -executablePath $stagedDesktopBinaryPath -targetDirectory $qtDeployDirectory
+
     Write-Host "NSIS BUILD_CONFIG: $buildConfig" -ForegroundColor Cyan
     Write-Host "Resolved parthenond binary: $daemonBinaryPath" -ForegroundColor Cyan
     Write-Host "Resolved parthenon-cli binary: $cliBinaryPath" -ForegroundColor Cyan
@@ -211,7 +256,7 @@ if (Test-Path ".\parthenon-installer.nsi") {
         Write-Host "Warning: build directory not found at ..\..\build" -ForegroundColor Yellow
     }
 
-    & $makensisPath "/DBUILD_CONFIG=$buildConfig" "/DDAEMON_BINARY_PATH=$stagedDaemonBinaryPath" "/DCLI_BINARY_PATH=$stagedCliBinaryPath" "/DDESKTOP_BINARY_PATH=$stagedDesktopBinaryPath" parthenon-installer.nsi
+    & $makensisPath "/DBUILD_CONFIG=$buildConfig" "/DDAEMON_BINARY_PATH=$stagedDaemonBinaryPath" "/DCLI_BINARY_PATH=$stagedCliBinaryPath" "/DDESKTOP_BINARY_PATH=$stagedDesktopBinaryPath" "/DQT_DEPLOY_DIR=$([System.IO.Path]::GetFullPath($qtDeployDirectory))" parthenon-installer.nsi
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Windows installer build complete!" -ForegroundColor Green
