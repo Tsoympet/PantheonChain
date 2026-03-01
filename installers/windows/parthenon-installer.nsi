@@ -98,7 +98,7 @@ RequestExecutionLevel admin
 ; Declare string-replacement functions used for PATH manipulation (no plugin required)
 ${StrStr}
 ${StrRep}
-${un.StrRep}
+${UnStrRep}
 
 ; Installer sections
 Section "Core Daemon (parthenond)" SecDaemon
@@ -189,8 +189,8 @@ Section Uninstall
   ; Remove $INSTDIR\bin from system PATH (semicolon-delimited to avoid partial matches)
   ReadRegStr $R8 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
   StrCpy $R8 "$R8;"  ; normalize: append ; so every entry is followed by ;
-  ${un.StrRep} $R9 "$R8" ";$INSTDIR\bin;" ";"  ; remove entry from middle or end
-  ${un.StrRep} $R9 "$R9" "$INSTDIR\bin;" ""    ; remove entry from start of PATH
+  ${UnStrRep} $R9 "$R8" ";$INSTDIR\bin;" ";"  ; remove entry from middle or end
+  ${UnStrRep} $R9 "$R9" "$INSTDIR\bin;" ""    ; remove entry from start of PATH
   StrLen $R8 "$R9"
   ${If} $R8 > 0
     StrCpy $R7 "$R9" 1 -1  ; read last character
