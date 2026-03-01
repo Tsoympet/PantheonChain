@@ -30,7 +30,12 @@ Version: ${VERSION}
 Section: net
 Priority: optional
 Architecture: ${ARCH}
-Depends: libssl3 (>= 3.0.0), libboost-system1.74.0, libboost-filesystem1.74.0, libboost-thread1.74.0
+Depends: libssl3 (>= 3.0.0), libboost-system1.74.0, libboost-filesystem1.74.0, libboost-thread1.74.0,
+ libqt6core6 (>= 6.2.0) | libqt5core5a,
+ libqt6gui6 (>= 6.2.0) | libqt5gui5,
+ libqt6widgets6 (>= 6.2.0) | libqt5widgets5,
+ libqt6network6 (>= 6.2.0) | libqt5network5,
+ libgl1
 Maintainer: ParthenonChain Foundation <dev@parthenonchain.org>
 Description: ParthenonChain - Multi-Asset Proof-of-Work Blockchain
  ParthenonChain is a production-grade Layer-1 blockchain with:

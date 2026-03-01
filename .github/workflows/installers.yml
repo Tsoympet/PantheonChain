@@ -177,7 +177,9 @@ jobs:
       run: brew install cmake openssl boost qt
 
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      run: |
+        Qt6_DIR="$(brew --prefix qt)/lib/cmake/Qt6"
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DQt6_DIR="$Qt6_DIR"
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
