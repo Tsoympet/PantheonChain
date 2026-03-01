@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-ios-installer:
-    name: Build iOS Simulator Installer
+    name: Build iOS IPA Installer
     runs-on: macos-14
     permissions:
       contents: read
@@ -60,7 +60,7 @@ jobs:
         working-directory: clients/mobile/react-native/ios
         run: pod install
 
-      - name: Build iOS simulator app
+      - name: Build iOS app for device
         working-directory: clients/mobile/react-native/ios
         run: |
           WORKSPACE=$(find . -maxdepth 2 -name "*.xcworkspace" -not -path "*/Pods/*" | head -1)
@@ -73,26 +73,30 @@ jobs:
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
-            -sdk iphonesimulator \
+            -sdk iphoneos \
             -derivedDataPath build \
             build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM=""
 
-      - name: Locate and stage iOS simulator artifact
+      - name: Package iOS IPA artifact
         run: |
-          # xcodebuild -derivedDataPath build places the .app at build/Build/Products/<config>-iphonesimulator/
-          APP=$(find ios/build/Build/Products -name "*.app" -type d 2>/dev/null | head -1)
+          # xcodebuild -derivedDataPath build places the .app at build/Build/Products/Release-iphoneos/
+          APP=$(find ios/build/Build/Products/Release-iphoneos -name "*.app" -type d 2>/dev/null | head -1)
           if [ -z "$APP" ]; then
-            echo "No iOS simulator .app found after build" >&2
+            echo "No iOS device .app found after build" >&2
             exit 1
           fi
-          tar -czf parthenon-mobile-ios-simulator.tar.gz -C "$(dirname "$APP")" "$(basename "$APP")"
+          mkdir -p ipa_staging/Payload
+          cp -r "$APP" ipa_staging/Payload/
+          (cd ipa_staging && zip -r ../parthenon-mobile-ios.ipa Payload)
+          rm -rf ipa_staging
 
-      - name: Upload iOS simulator installer
+      - name: Upload iOS IPA installer
         uses: actions/upload-artifact@v4
         with:
-          name: parthenon-mobile-ios-simulator
-          path: clients/mobile/react-native/parthenon-mobile-ios-simulator.tar.gz
+          name: parthenon-mobile-ios-ipa
+          path: clients/mobile/react-native/parthenon-mobile-ios.ipa
           retention-days: 14
