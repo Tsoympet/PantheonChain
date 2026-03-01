@@ -136,6 +136,24 @@ Section "Desktop Wallet (parthenon-qt)" SecGUI
   SetOutPath "$INSTDIR\bin"
   File "${DESKTOP_BINARY_PATH}"
   
+  ; Copy Qt runtime DLLs and plugins collected by windeployqt during the build.
+  ; /nonfatal allows the installer to continue gracefully if no DLLs were staged
+  ; (e.g. when Qt was not available at build time).
+  !ifdef QT_DEPLOY_DIR
+    File /nonfatal "${QT_DEPLOY_DIR}\*.dll"
+    SetOutPath "$INSTDIR\bin\platforms"
+    File /nonfatal "${QT_DEPLOY_DIR}\platforms\*.dll"
+    SetOutPath "$INSTDIR\bin\styles"
+    File /nonfatal "${QT_DEPLOY_DIR}\styles\*.dll"
+    SetOutPath "$INSTDIR\bin\imageformats"
+    File /nonfatal "${QT_DEPLOY_DIR}\imageformats\*.dll"
+    SetOutPath "$INSTDIR\bin\networkinformation"
+    File /nonfatal "${QT_DEPLOY_DIR}\networkinformation\*.dll"
+    SetOutPath "$INSTDIR\bin\tls"
+    File /nonfatal "${QT_DEPLOY_DIR}\tls\*.dll"
+    SetOutPath "$INSTDIR\bin"
+  !endif
+  
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\ParthenonChain Wallet.lnk" "$INSTDIR\bin\parthenon-qt.exe"
   CreateShortCut "$DESKTOP\ParthenonChain Wallet.lnk" "$INSTDIR\bin\parthenon-qt.exe"
 SectionEnd
@@ -175,9 +193,15 @@ Section Uninstall
   Delete "$INSTDIR\bin\parthenond.conf"
   Delete "$INSTDIR\bin\parthenon-cli.exe"
   Delete "$INSTDIR\bin\parthenon-qt.exe"
+  Delete "$INSTDIR\bin\*.dll"
   Delete "$INSTDIR\docs\*.*"
   Delete "$INSTDIR\uninst.exe"
   
+  RMDir /r "$INSTDIR\bin\platforms"
+  RMDir /r "$INSTDIR\bin\styles"
+  RMDir /r "$INSTDIR\bin\imageformats"
+  RMDir /r "$INSTDIR\bin\networkinformation"
+  RMDir /r "$INSTDIR\bin\tls"
   RMDir "$INSTDIR\bin"
   RMDir "$INSTDIR\docs"
   RMDir "$INSTDIR"

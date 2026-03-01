@@ -24,6 +24,13 @@ jobs:
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
 
+    - name: Install Qt6
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.7.*'
+        arch: 'win64_msvc2019_64'
+        cache: true
+
     - name: Install build dependencies
       shell: pwsh
       run: |
@@ -69,9 +76,16 @@ jobs:
           throw "OpenSSL not found. Searched: $($opensslLocations -join ', ')"
         }
         Write-Host "Found OpenSSL at: $opensslRoot"
-        cmake -B build -G Ninja `
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-          -DOPENSSL_ROOT_DIR="$opensslRoot"
+        $cmakeArgs = @(
+          "-B", "build",
+          "-G", "Ninja",
+          "-DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}",
+          "-DOPENSSL_ROOT_DIR=$opensslRoot"
+        )
+        if ($env:Qt6_DIR) {
+          $cmakeArgs += "-DQt6_DIR=$env:Qt6_DIR"
+        }
+        cmake @cmakeArgs
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
