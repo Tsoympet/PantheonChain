@@ -335,24 +335,24 @@ AutomatedMarketMaker::RemoveLiquidity(const std::vector<uint8_t>& pool_id, uint6
         return {0, 0};
     }
 
-    // Compute (shares * reserve) / total_shares safely.
-    // Invariant: shares <= pool.total_shares => result <= reserve.
-    auto safe_amount = [](uint64_t shares, uint64_t reserve, uint64_t total_shares) -> uint64_t {
-        if (reserve == 0 || shares == 0) {
+    // Compute (n_shares * reserve) / total_shares safely.
+    // Invariant: n_shares <= pool.total_shares => result <= reserve.
+    auto safe_amount = [](uint64_t n_shares, uint64_t reserve, uint64_t total_shares) -> uint64_t {
+        if (reserve == 0 || n_shares == 0) {
             return 0;
         }
-        if (shares <= UINT64_MAX / reserve) {
-            return (shares * reserve) / total_shares;
+        if (n_shares <= UINT64_MAX / reserve) {
+            return (n_shares * reserve) / total_shares;
         }
-        // Overflow path: use per-share value * shares.
+        // Overflow path: use per-share value * n_shares.
         // When reserve < total_shares, per_share == 0 and amount == 0 (correct: no withdrawable
-        // amount per share). When per_share > 0, the product per_share * shares fits in uint64_t
-        // because per_share <= reserve/total_shares and shares <= total_shares, so the product
+        // amount per share). When per_share > 0, the product per_share * n_shares fits in uint64_t
+        // because per_share <= reserve/total_shares and n_shares <= total_shares, so the product
         // <= reserve. The hard cap is a final defensive bound.
         const uint64_t per_share = reserve / total_shares;
-        const uint64_t amount = (per_share > 0 && shares > UINT64_MAX / per_share)
+        const uint64_t amount = (per_share > 0 && n_shares > UINT64_MAX / per_share)
                                     ? reserve   // hard cap: invariant guarantees result <= reserve
-                                    : per_share * shares;
+                                    : per_share * n_shares;
         return amount;
     };
 
