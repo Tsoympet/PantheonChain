@@ -95,7 +95,7 @@ jobs:
           rm -rf ipa_staging
 
       - name: Upload iOS IPA installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: parthenon-mobile-ios-ipa
           path: clients/mobile/react-native/parthenon-mobile-ios.ipa

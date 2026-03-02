@@ -119,7 +119,7 @@ jobs:
           echo "hashes=${HASH}" >> "$GITHUB_OUTPUT"
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pantheonchain-sbom
           path: |
@@ -130,7 +130,7 @@ jobs:
       # Attest the SBOM itself so consumers can verify it was produced by this
       # workflow run without modification.
       - name: Attest SBOM provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: sbom.json
         continue-on-error: true  # Non-fatal: requires id-token write permission
@@ -146,7 +146,7 @@ jobs:
       contents: write
     steps:
       - name: Download SBOM artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: pantheonchain-sbom
 
