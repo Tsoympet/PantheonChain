@@ -130,7 +130,7 @@ jobs:
       # Attest the SBOM itself so consumers can verify it was produced by this
       # workflow run without modification.
       - name: Attest SBOM provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: sbom.json
         continue-on-error: true  # Non-fatal: requires id-token write permission

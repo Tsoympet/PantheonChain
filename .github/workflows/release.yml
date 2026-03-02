@@ -461,7 +461,7 @@ jobs:
         GPG_KEY_ID=$GPG_KEY_ID ./sign-release.sh ../../windows-installer/*.exe ../../macos-dmg/*.dmg ../../linux-deb/*.deb ../../linux-rpm/*.rpm ../../parthenon-mobile-android-apk/*.apk ../../parthenon-mobile-ios-ipa/*.ipa
     
     - name: Attest release provenance
-      uses: actions/attest-build-provenance@v2
+      uses: actions/attest-build-provenance@v4
       with:
         subject-path: |
           installers/checksums/parthenon-*-checksums.txt
