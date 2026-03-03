@@ -1,0 +1,39 @@
+name: Create Labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/labels.yml'
+
+jobs:
+  create-labels:
+    name: Create repository labels
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Create labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          create_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+            gh label create "$name" --color "$color" --description "$description" --repo "$REPO" --force
+          }
+
+          create_label "dependencies"   "0075ca" "Pull requests that update a dependency file"
+          create_label "github-actions" "000000" "Pull requests that update GitHub Actions"
+          create_label "automation"     "e4e669" "Automated changes"
+          create_label "docker"         "0db7ed" "Pull requests that update Docker configuration"
+          create_label "security"       "e11d48" "Security-related changes"
+          create_label "submodules"     "bfd4f2" "Pull requests that update git submodules"
+          create_label "third-party"    "d4c5f9" "Third-party library updates"
+          create_label "npm"            "cb3837" "Pull requests that update npm packages"
+          create_label "mobile"         "84b6eb" "Mobile application changes"
+          create_label "react-native"   "61dafb" "React Native application changes"
