@@ -208,8 +208,8 @@ class Handler(BaseHTTPRequestHandler):
             banned = any(b.get("address") == addr for b in state["ostracism"]["banned"])
             res = {"address": addr, "banned": banned,
                    "ban_end": 0 if not banned else next(
-                       b.get("ban_end", 0) for b in state["ostracism"]["banned"]
-                       if b.get("address") == addr)}
+                       (b.get("ban_end", 0) for b in state["ostracism"]["banned"]
+                        if b.get("address") == addr), 0)}
         else:
             self._send({"jsonrpc": "2.0", "id": rid, "error": {"message": "method not found"}}, 400)
             return
