@@ -1,5 +1,9 @@
-// ParthenonChain – StakingRegistry Unit Tests
+// ParthenonChain – Governance Staking / Balance-Voting Unit Tests
+//
+// Staking is DISABLED; Stake() and RequestUnstake() always return false.
+// Voting power is now derived from token balances via BalanceVotingRegistry.
 
+#include "governance/balance_voting.h"
 #include "governance/staking.h"
 
 #include <cassert>
@@ -9,165 +13,119 @@ using namespace parthenon::governance;
 
 static std::vector<uint8_t> Addr(uint8_t b) { return std::vector<uint8_t>(32, b); }
 
-void TestStakeAndVotingPower() {
-    std::cout << "Test: Stake and GetVotingPower" << std::endl;
+// ---------------------------------------------------------------------------
+// StakingRegistry: verify that staking operations are now disabled
+// ---------------------------------------------------------------------------
+void TestStakingDisabled() {
+    std::cout << "Test: Staking operations are disabled" << std::endl;
 
     StakingRegistry sr(100);
 
-    assert(sr.GetStake(Addr(0x01))        == 0);
-    assert(sr.GetVotingPower(Addr(0x01))  == 0);
-    assert(sr.GetTotalStaked()            == 0);
+    // All mutation methods must return false
+    assert(!sr.Stake(Addr(0x01), 1000, 0, 10));
+    assert(!sr.RequestUnstake(Addr(0x01), 100, 20));
+    assert(!sr.ClaimUnstake(Addr(0x01), 300));
 
-    assert(sr.Stake(Addr(0x01), 1000, 0, 10));
-    assert(sr.GetStake(Addr(0x01))        == 1000);
-    assert(sr.GetVotingPower(Addr(0x01))  == 1000);
-
-    // Staking more accumulates
-    assert(sr.Stake(Addr(0x01), 500, 0, 11));
-    assert(sr.GetStake(Addr(0x01))        == 1500);
-
-    assert(sr.Stake(Addr(0x02), 200, 0, 12));
-    assert(sr.GetTotalStaked()            == 1700);
-    assert(sr.GetTotalVotingPower()       == 1700);
-
-    // Edge cases
-    assert(!sr.Stake({}, 100, 0, 1));   // empty address
-    assert(!sr.Stake(Addr(0x03), 0, 0, 1));  // zero amount
+    // No stakes were created
+    assert(sr.GetStake(Addr(0x01))       == 0);
+    assert(sr.GetVotingPower(Addr(0x01)) == 0);
+    assert(sr.GetTotalStaked()           == 0);
+    assert(sr.GetTotalVotingPower()      == 0);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestRequestAndClaimUnstake() {
-    std::cout << "Test: RequestUnstake and ClaimUnstake with cooldown" << std::endl;
+// ---------------------------------------------------------------------------
+// BalanceVotingRegistry: core voting-power queries
+// ---------------------------------------------------------------------------
+void TestBalanceVotingBasic() {
+    std::cout << "Test: BalanceVotingRegistry – basic voting power" << std::endl;
 
-    StakingRegistry sr(/*cooldown=*/200);
-    sr.Stake(Addr(0x01), 1000, 0, 0);
+    BalanceVotingRegistry bvr;
 
-    // Request 400 unstake
-    assert(sr.RequestUnstake(Addr(0x01), 400, 100));
+    assert(bvr.GetVotingPower(Addr(0x01)) == 0);
+    assert(bvr.GetTotalVotingPower()      == 0);
 
-    // Voting power reduced immediately by pending amount
-    assert(sr.GetVotingPower(Addr(0x01))  == 600);
-    assert(sr.GetStake(Addr(0x01))        == 1000);  // still staked
+    bvr.UpdateBalance(Addr(0x01), 1000);
+    assert(bvr.GetVotingPower(Addr(0x01)) == 1000);
+    assert(bvr.GetTotalVotingPower()      == 1000);
 
-    // Cannot request again (one pending per address)
-    assert(!sr.RequestUnstake(Addr(0x01), 100, 101));
+    bvr.UpdateBalance(Addr(0x02), 500);
+    assert(bvr.GetVotingPower(Addr(0x02)) == 500);
+    assert(bvr.GetTotalVotingPower()      == 1500);
 
-    // Claim before cooldown expires must fail
-    assert(!sr.ClaimUnstake(Addr(0x01), 299));
+    // Update existing entry
+    bvr.UpdateBalance(Addr(0x01), 2000);
+    assert(bvr.GetVotingPower(Addr(0x01)) == 2000);
+    assert(bvr.GetTotalVotingPower()      == 2500);
 
-    // Claim after cooldown
-    assert(sr.ClaimUnstake(Addr(0x01), 300));  // claimable at 100+200=300
-    assert(sr.GetStake(Addr(0x01))        == 600);
-    assert(sr.GetVotingPower(Addr(0x01))  == 600);
-
-    // Cannot claim twice
-    assert(!sr.ClaimUnstake(Addr(0x01), 400));
-
-    // Over-amount request must fail
-    assert(!sr.RequestUnstake(Addr(0x01), 601, 400));
-
-    std::cout << "  \u2713 Passed" << std::endl;
-}
-
-void TestStakeLock() {
-    std::cout << "Test: Stake lock prevents early unstake" << std::endl;
-
-    StakingRegistry sr(50);
-    sr.Stake(Addr(0x01), 1000, /*lock_period=*/500, /*block=*/100);
-
-    // Locked until block 600
-    assert(sr.IsStakeLocked(Addr(0x01), 599));
-    assert(!sr.IsStakeLocked(Addr(0x01), 600));
-
-    // Cannot unstake while locked
-    assert(!sr.RequestUnstake(Addr(0x01), 100, 150));
-
-    // Can unstake after lock expires
-    assert(sr.RequestUnstake(Addr(0x01), 100, 600));
+    // Zero removes entry
+    bvr.UpdateBalance(Addr(0x01), 0);
+    assert(bvr.GetVotingPower(Addr(0x01)) == 0);
+    assert(bvr.GetTotalVotingPower()      == 500);
+    assert(bvr.Size()                     == 1);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestSlash() {
-    std::cout << "Test: Slash" << std::endl;
+void TestBalanceVotingSetBalances() {
+    std::cout << "Test: BalanceVotingRegistry – SetBalances replaces map" << std::endl;
 
-    StakingRegistry sr(100);
-    sr.Stake(Addr(0x01), 1000, 0, 0);
-    sr.RequestUnstake(Addr(0x01), 400, 0);  // 400 pending
+    BalanceVotingRegistry bvr;
+    bvr.UpdateBalance(Addr(0x01), 9999);
 
-    // Slash 300
-    assert(sr.Slash(Addr(0x01), 300, "governance attack", 50));
-    assert(sr.GetStake(Addr(0x01)) == 700);
+    std::map<std::vector<uint8_t>, uint64_t> snap;
+    snap[Addr(0x10)] = 300;
+    snap[Addr(0x11)] = 700;
+    snap[Addr(0x12)] = 0;  // zero entries should be skipped
 
-    // Slash history recorded
-    assert(sr.GetSlashHistory().size() == 1);
-    assert(sr.GetSlashHistory()[0].reason == "governance attack");
-    assert(sr.GetSlashHistory()[0].amount == 300);
+    bvr.SetBalances(snap);
 
-    // Cannot slash non-existent address
-    assert(!sr.Slash(Addr(0xFF), 100, "bad", 50));
-
-    // Cannot slash more than staked
-    assert(!sr.Slash(Addr(0x01), 9999, "too much", 50));
-
-    // Zero-amount slash must fail
-    assert(!sr.Slash(Addr(0x01), 0, "zero", 50));
+    assert(bvr.GetVotingPower(Addr(0x01)) == 0);  // old entry gone
+    assert(bvr.GetVotingPower(Addr(0x10)) == 300);
+    assert(bvr.GetVotingPower(Addr(0x11)) == 700);
+    assert(bvr.GetVotingPower(Addr(0x12)) == 0);  // zero not stored
+    assert(bvr.GetTotalVotingPower()      == 1000);
+    assert(bvr.Size()                     == 2);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestStakeRecordQuery() {
-    std::cout << "Test: GetStakeRecord and GetUnstakeRequest" << std::endl;
+void TestBalanceVotingGetAllPowers() {
+    std::cout << "Test: BalanceVotingRegistry – GetAllVotingPowers" << std::endl;
 
-    StakingRegistry sr(100);
-    assert(!sr.GetStakeRecord(Addr(0x01)).has_value());
-    assert(!sr.GetUnstakeRequest(Addr(0x01)).has_value());
+    BalanceVotingRegistry bvr;
+    bvr.UpdateBalance(Addr(0xAA), 400);
+    bvr.UpdateBalance(Addr(0xBB), 600);
 
-    sr.Stake(Addr(0x01), 500, 0, 10);
-    auto rec = sr.GetStakeRecord(Addr(0x01));
-    assert(rec.has_value() && rec->staked_amount == 500);
+    auto powers = bvr.GetAllVotingPowers();
+    assert(powers.size() == 2);
 
-    sr.RequestUnstake(Addr(0x01), 200, 20);
-    auto req = sr.GetUnstakeRequest(Addr(0x01));
-    assert(req.has_value() && req->amount == 200);
-    assert(req->claimable_at_block == 120);
-
-    std::cout << "  \u2713 Passed" << std::endl;
-}
-
-void TestTotalVotingPower() {
-    std::cout << "Test: GetTotalVotingPower excludes pending unstake" << std::endl;
-
-    StakingRegistry sr(50);
-    sr.Stake(Addr(0x01), 1000, 0, 0);
-    sr.Stake(Addr(0x02), 500, 0, 0);
-
-    assert(sr.GetTotalVotingPower() == 1500);
-
-    sr.RequestUnstake(Addr(0x01), 300, 0);
-    assert(sr.GetTotalVotingPower() == 1200);
+    uint64_t total = 0;
+    for (const auto& [addr, power] : powers) {
+        total += power;
+    }
+    assert(total == 1000);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
 int main() {
-    std::cout << "=============================================" << std::endl;
-    std::cout << "StakingRegistry Unit Test Suite" << std::endl;
-    std::cout << "=============================================" << std::endl << std::endl;
+    std::cout << "==========================================" << std::endl;
+    std::cout << "Governance Voting Unit Tests" << std::endl;
+    std::cout << "  (Staking disabled; balance-based voting)" << std::endl;
+    std::cout << "==========================================" << std::endl << std::endl;
 
     try {
-        TestStakeAndVotingPower();
-        TestRequestAndClaimUnstake();
-        TestStakeLock();
-        TestSlash();
-        TestStakeRecordQuery();
-        TestTotalVotingPower();
+        TestStakingDisabled();
+        TestBalanceVotingBasic();
+        TestBalanceVotingSetBalances();
+        TestBalanceVotingGetAllPowers();
 
         std::cout << std::endl;
-        std::cout << "=============================================" << std::endl;
-        std::cout << "All StakingRegistry tests passed! \u2713" << std::endl;
-        std::cout << "=============================================" << std::endl;
+        std::cout << "==========================================" << std::endl;
+        std::cout << "All governance voting tests passed! \u2713" << std::endl;
+        std::cout << "==========================================" << std::endl;
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Test failed: " << e.what() << std::endl;

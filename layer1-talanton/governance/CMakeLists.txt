@@ -5,6 +5,8 @@ add_library(parthenon_governance
     voting.h
     antiwhale.cpp
     antiwhale.h
+    balance_voting.cpp
+    balance_voting.h
     boule.cpp
     boule.h
     ostracism.cpp

@@ -74,13 +74,13 @@ A Boule member may be removed mid-term by a supermajority (66 %) vote of the ful
 
 ### Section 2.1 — Membership
 
-All addresses with a positive staked balance on Layer 3 (OBOLOS) at the snapshot block of a given proposal are members of the Ekklesia for that proposal. There is no minimum stake required to vote; the minimum stake requirement applies only to proposal submission (see Section 2.2).
+All addresses with a positive **token balance** on any PantheonChain layer at the snapshot block of a given proposal are members of the Ekklesia for that proposal. No staking is required to vote; any token holder may participate in governance directly.
 
 ### Section 2.2 — Proposal Submission Rights
 
 Any address satisfying ALL of the following conditions may submit a governance proposal:
 
-1. Staked balance ≥ `MIN_PROPOSAL_STAKE` at the time of submission.
+1. Token balance ≥ `MIN_PROPOSAL_BALANCE` at the time of submission.
 2. Not under active Ostracism (Article VIII).
 3. No pending unexecuted proposal from the same address (one-proposal-at-a-time rule).
 
@@ -88,7 +88,7 @@ Implementation: `VotingSystem::submitProposal(proposalType, calldata, descriptio
 
 ### Section 2.3 — Quorum
 
-Each proposal type has its own quorum requirement expressed as a percentage of total staked supply at the snapshot block:
+Each proposal type has its own quorum requirement expressed as a percentage of total token balance at the snapshot block:
 
 | Proposal Type | Quorum |
 |--------------|--------|
@@ -164,19 +164,20 @@ Each voter may cast exactly one of the following:
 
 ### Section 4.2 — Voting Power and Anti-Whale Protection
 
+Voting power is derived directly from **token balance** (no staking required).  
 To prevent plutocratic capture, voting power is computed using **quadratic weighting**:
 
 ```
-votingPower(address) = floor(sqrt(stakedBalance(address, snapshotBlock)))
+votingPower(address) = floor(sqrt(tokenBalance(address, snapshotBlock)))
 ```
 
-The snapshot block is the block at which the proposal was created (`proposalBlock`). Tokens staked after `proposalBlock` do not count toward this proposal.
+The snapshot block is the block at which the proposal was created (`proposalBlock`). Tokens acquired after `proposalBlock` do not count toward this proposal.
 
-Implementation: `VotingSystem::getVotingPower(address, snapshotBlock)`.
+Implementation: `BalanceVotingRegistry` + `VotingSystem::getVotingPower(address, snapshotBlock)`.
 
 ### Section 4.3 — Delegation
 
-A staker may delegate their voting power to another address via `VotingSystem::delegate(delegatee)`. Delegation:
+A token holder may delegate their voting power to another address via `VotingSystem::delegate(delegatee)`. Delegation:
 - Is revocable at any time, effective at the next proposal snapshot.
 - Does not transfer token custody.
 - Is limited to one level (no transitive delegation).
@@ -187,7 +188,9 @@ Votes are final once cast and cannot be changed. The voting contract does not ex
 
 ### Section 4.5 — Snapshot Integrity
 
-The staking snapshot mechanism is implemented in `Staking::snapshotAt(address, blockNumber)` and relies on an EIP-712 signed checkpoint system. Flash-stake attacks are mitigated by the anti-flash-stake cooldown defined in Article VII, Section 7.4.
+The balance snapshot mechanism is implemented in `BalanceVotingRegistry::SetBalances()`.
+Snapshots are taken at the proposal's `voting_start` block, preventing last-block balance
+attacks from inflating a holder's voting power for an ongoing vote.
 
 ---
 
@@ -434,9 +437,10 @@ Fee routing is implemented in `layer3-obolos/fees/FeeRouter.sol` and `layer2-dra
 | Token | Maximum Supply | Layer |
 |-------|---------------|-------|
 | TALANTON (TALN) | 21 000 000 | L1 |
-| DRACHMA (DRM) | 41 000 000 | L2 |
-| OBOLOS (OBL) | 61 000 000 | L3 |
+| DRACHMA (DRM) | 100 000 000 000 | L2 |
+| OBOLOS (OBL) | 100 000 000 000 | L3 |
 
+DRACHMA and OBOLOS maximum supplies are set to **100 billion** (matching the XRP maximum supply) and are PoW-mined.  
 These maximum supplies are hard-coded at the consensus layer and cannot be changed by any governance action. Changing them requires a hard fork with community consensus.
 
 ### Section 11.2 — Supply Governance Thresholds

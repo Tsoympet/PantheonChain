@@ -51,10 +51,9 @@ int main() {
     const auto &l3_proposer_b = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
     assert(l3_proposer_a.id == l3_proposer_b.id);
 
-    auto slash_double_sign = drachma::SlashDoubleSign(l2_validators.front(), 1, 20);
-    assert(slash_double_sign.slashed_amount == 4);
-    auto slash_equivocation = drachma::SlashEquivocation(l2_validators.front(), 1, 10);
-    assert(slash_equivocation.slashed_amount == 8);
+    // NOTE: Slashing (SlashDoubleSign / SlashEquivocation) was removed in the
+    // transition from PoS to PoW.  PoW miners are penalised by orphaned blocks
+    // (wasted electricity), not by on-chain token slashing.
 
     drachma::PaymentsStateMachine payments;
     payments.Credit("alice", 1000);

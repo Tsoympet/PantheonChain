@@ -37,6 +37,7 @@ VotingSystem::VotingSystem()
       require_boule_approval_(false),
       snapshot_registry_(nullptr),
       staking_registry_(nullptr),
+      balance_registry_(nullptr),
       gov_params_(nullptr),
       treasury_(nullptr)
 {}
@@ -69,13 +70,22 @@ uint64_t VotingSystem::CreateProposal(const std::vector<uint8_t>& proposer, Prop
     proposals_[proposal.proposal_id] = proposal;
 
     // Create a voting-power snapshot at the proposal's voting_start block.
-    // This freezes each staker's power so late-staking/flash-stake attacks
-    // cannot influence an ongoing vote.
-    if (snapshot_registry_ != nullptr && staking_registry_ != nullptr) {
-        auto powers = staking_registry_->GetAllVotingPowers();
-        snapshot_registry_->CreateSnapshot(proposal.proposal_id,
-                                           proposal.voting_start,
-                                           powers);
+    // Voting power is derived from token balances (balance_registry_) when
+    // available, falling back to the legacy staking registry.
+    // This freezes each holder's power so last-block attacks cannot influence
+    // an ongoing vote.
+    if (snapshot_registry_ != nullptr) {
+        std::vector<std::pair<std::vector<uint8_t>, uint64_t>> voting_powers;
+        if (balance_registry_ != nullptr) {
+            voting_powers = balance_registry_->GetAllVotingPowers();
+        } else if (staking_registry_ != nullptr) {
+            voting_powers = staking_registry_->GetAllVotingPowers();
+        }
+        if (!voting_powers.empty()) {
+            snapshot_registry_->CreateSnapshot(proposal.proposal_id,
+                                               proposal.voting_start,
+                                               voting_powers);
+        }
     }
 
     return proposal.proposal_id;

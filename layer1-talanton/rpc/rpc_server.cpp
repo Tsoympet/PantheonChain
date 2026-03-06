@@ -9,6 +9,7 @@
 #include "common/monetary/units.h"
 #include "validation.h"
 #include "wallet/wallet.h"
+#include "governance/balance_voting.h"
 #include "governance/voting.h"
 #include "governance/staking.h"
 #include "governance/treasury.h"
@@ -1234,70 +1235,25 @@ RPCResponse RPCServer::HandleGovernanceExecute(const RPCRequest& req) {
 RPCResponse RPCServer::HandleStakingStake(const RPCRequest& req) {
     RPCResponse response;
     response.id = req.id;
-    if (!staking_registry_) {
-        response.error = "Staking not available";
-        return response;
-    }
-    try {
-        auto p = json::parse(req.params);
-        std::string addr_hex  = p.value("address", "");
-        uint64_t    amount    = p.value("amount", 0ULL);
-        uint64_t    lock_for  = p.value("lock_for_blocks", 0ULL);
-        uint64_t    height    = p.value("block_height", 0ULL);
-
-        auto addr = HexToBytes(addr_hex);
-        if (addr.empty()) {
-            response.error = "Invalid address";
-            return response;
-        }
-        bool ok = staking_registry_->Stake(addr, amount, lock_for, height);
-        json result;
-        result["success"] = ok;
-        result["address"] = addr_hex;
-        result["amount"]  = amount;
-        response.result = result.dump();
-    } catch (const std::exception& e) {
-        response.error = std::string("Parse error: ") + e.what();
-    }
+    // Staking is disabled.  All tokens are PoW-mined; voting power is derived
+    // from token balance.  Use the wallet to acquire tokens and cast votes directly.
+    response.error = "Staking is disabled. Voting power is based on token balance. "
+                     "Acquire tokens via PoW mining to participate in governance.";
     return response;
 }
 
 RPCResponse RPCServer::HandleStakingUnstake(const RPCRequest& req) {
     RPCResponse response;
     response.id = req.id;
-    if (!staking_registry_) {
-        response.error = "Staking not available";
-        return response;
-    }
-    try {
-        auto p = json::parse(req.params);
-        std::string addr_hex = p.value("address", "");
-        uint64_t    amount   = p.value("amount", 0ULL);
-        uint64_t    height   = p.value("block_height", 0ULL);
-
-        auto addr = HexToBytes(addr_hex);
-        if (addr.empty()) {
-            response.error = "Invalid address";
-            return response;
-        }
-        bool ok = staking_registry_->RequestUnstake(addr, amount, height);
-        json result;
-        result["success"] = ok;
-        result["address"] = addr_hex;
-        response.result = result.dump();
-    } catch (const std::exception& e) {
-        response.error = std::string("Parse error: ") + e.what();
-    }
+    response.error = "Staking is disabled. There are no staked tokens to unstake.";
     return response;
 }
 
 RPCResponse RPCServer::HandleStakingGetPower(const RPCRequest& req) {
     RPCResponse response;
     response.id = req.id;
-    if (!staking_registry_) {
-        response.error = "Staking not available";
-        return response;
-    }
+    // Return the token balance as voting power for the requested address.
+    // Staking is disabled; voting power is derived from balance.
     try {
         auto p = json::parse(req.params);
         std::string addr_hex = p.value("address", "");
@@ -1306,12 +1262,23 @@ RPCResponse RPCServer::HandleStakingGetPower(const RPCRequest& req) {
             response.error = "Invalid address";
             return response;
         }
-        uint64_t power = staking_registry_->GetVotingPower(addr);
-        uint64_t total = staking_registry_->GetTotalVotingPower();
+        // Look up the address's voting power from the balance registry.
+        uint64_t power = 0;
+        uint64_t total = 0;
+        if (balance_registry_) {
+            power = balance_registry_->GetVotingPower(addr);
+            total = balance_registry_->GetTotalVotingPower();
+        } else if (wallet_) {
+            // Fallback: if no balance registry, return the wallet's own balance
+            // (only valid when querying the wallet's own address).
+            power = wallet_->GetBalance(primitives::AssetID::TALANTON);
+        }
         json result;
-        result["address"]     = addr_hex;
-        result["voting_power"]= power;
-        result["total_power"] = total;
+        result["address"]         = addr_hex;
+        result["voting_power"]    = power;
+        result["total_power"]     = total;
+        result["source"]          = "token_balance";
+        result["staking_enabled"] = false;
         response.result = result.dump();
     } catch (const std::exception& e) {
         response.error = std::string("Parse error: ") + e.what();

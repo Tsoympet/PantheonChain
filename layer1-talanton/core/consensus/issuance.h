@@ -67,18 +67,18 @@ class Issuance {
      * (continuous series with ratio ½; integer right-shift rounds down,
      *  so actual achievable is fractionally below this figure.)
      *
-     *  Asset   reward/block   achievable          hard cap   gap
-     *  ─────── ──────────── ──────────────── ──────────── ──────────
-     *  TALN    50 TALN       21 000 000 TALN  21 000 000   ~0 TALN  ✓
-     *  DRM     97 DRM        40 740 000 DRM   41 000 000  260 000 DRM
-     *  OBL    145 OBL        60 900 000 OBL   61 000 000  100 000 OBL
+     *  Asset   reward/block    achievable              hard cap    gap
+     *  ─────── ──────────── ────────────────────── ─────────────── ────────────────
+     *  TALN     50 TALN       21 000 000 TALN          21 000 000   ~0 TALN  ✓
+     *  DRM     238 000 DRM   99 960 000 000 DRM    100 000 000 000  40 000 000 DRM
+     *  OBL     238 000 OBL   99 960 000 000 OBL    100 000 000 000  40 000 000 OBL
      *
-     * The hard caps are strict upper bounds enforced by consensus validation.
-     * The achievable figures are the actual ceilings for governance tiers.
+     * DRACHMA and OBOLOS hard caps match the XRP maximum supply (100 billion).
+     * All three layers use PoW mining; no staking is involved in issuance.
      */
     static constexpr uint64_t TALN_INITIAL_REWARD = 50ULL * primitives::AssetSupply::BASE_UNIT;
-    static constexpr uint64_t DRM_INITIAL_REWARD = 97ULL * primitives::AssetSupply::BASE_UNIT;
-    static constexpr uint64_t OBL_INITIAL_REWARD = 145ULL * primitives::AssetSupply::BASE_UNIT;
+    static constexpr uint64_t DRM_INITIAL_REWARD = 238000ULL * primitives::AssetSupply::BASE_UNIT;
+    static constexpr uint64_t OBL_INITIAL_REWARD = 238000ULL * primitives::AssetSupply::BASE_UNIT;
 };
 
 }  // namespace consensus

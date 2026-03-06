@@ -29,6 +29,7 @@ class Wallet;
 namespace governance {
 class VotingSystem;
 class StakingRegistry;
+class BalanceVotingRegistry;
 class Treasury;
 class GovernanceParams;
 class SnapshotRegistry;
@@ -91,6 +92,9 @@ class RPCServer {
      */
     void SetVotingSystem(governance::VotingSystem* vs)       { voting_system_   = vs; }
     void SetStakingRegistry(governance::StakingRegistry* sr) { staking_registry_ = sr; }
+    void SetBalanceVotingRegistry(governance::BalanceVotingRegistry* bvr) {
+        balance_registry_ = bvr;
+    }
     void SetTreasury(governance::Treasury* t)                { treasury_         = t; }
     void SetGovernanceParams(governance::GovernanceParams* p){ gov_params_       = p; }
     void SetSnapshotRegistry(governance::SnapshotRegistry* s){ snapshot_registry_= s; }
@@ -160,12 +164,13 @@ class RPCServer {
     wallet::Wallet* wallet_;
 
     // Governance subsystems (optional, not owned)
-    governance::VotingSystem*    voting_system_{nullptr};
-    governance::StakingRegistry* staking_registry_{nullptr};
-    governance::Treasury*        treasury_{nullptr};
-    governance::GovernanceParams* gov_params_{nullptr};
-    governance::SnapshotRegistry* snapshot_registry_{nullptr};
-    governance::Ostracism*        ostracism_{nullptr};
+    governance::VotingSystem*       voting_system_{nullptr};
+    governance::StakingRegistry*    staking_registry_{nullptr};
+    governance::BalanceVotingRegistry* balance_registry_{nullptr};
+    governance::Treasury*           treasury_{nullptr};
+    governance::GovernanceParams*   gov_params_{nullptr};
+    governance::SnapshotRegistry*   snapshot_registry_{nullptr};
+    governance::Ostracism*          ostracism_{nullptr};
     
     // Rate limiting
     std::unique_ptr<RateLimiter> rate_limiter_;
