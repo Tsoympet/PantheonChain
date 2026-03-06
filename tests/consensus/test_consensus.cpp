@@ -20,8 +20,8 @@ using namespace consensus;
  *
  * Verifies that no issuance schedule can exceed hard caps:
  * - TALANTON: 21M
- * - DRACHMA: 41M
- * - OBOLOS: 61M
+ * - DRACHMA: 100B (XRP-equivalent)
+ * - OBOLOS:  100B (XRP-equivalent)
  */
 void TestSupplyCapEnforcement() {
     std::cout << "Consensus Test: Supply Cap Enforcement" << std::endl;
@@ -30,8 +30,11 @@ void TestSupplyCapEnforcement() {
     uint64_t dra_total = 0;
     uint64_t obl_total = 0;
 
-    // Sum all block rewards until they become zero
-    for (uint32_t height = 0; height < 10000000; height++) {
+    // Sum all block rewards until they become zero.
+    // DRM and OBL start at block 210,000 and 420,000 respectively; the
+    // last halving for a 64-era schedule falls around block 13,650,000
+    // (= 210,000 + 63 × 210,000).  Use 15,000,000 as a safe upper bound.
+    for (uint32_t height = 0; height < 15000000; height++) {
         tal_total += Issuance::GetBlockReward(height, AssetID::TALANTON);
         dra_total += Issuance::GetBlockReward(height, AssetID::DRACHMA);
         obl_total += Issuance::GetBlockReward(height, AssetID::OBOLOS);

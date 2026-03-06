@@ -13,7 +13,7 @@ enum class SourceChain {
 
 struct FinalitySignature {
     std::string validator_id;
-    uint64_t stake_weight = 0;
+    uint64_t hash_power = 0;   // PoW hash-power contribution (was stake_weight in PoS)
     std::string signature;
 };
 

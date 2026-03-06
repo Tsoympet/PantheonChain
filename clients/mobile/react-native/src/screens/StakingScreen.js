@@ -150,8 +150,9 @@ const StakingScreen = ({ onBack }) => {
       {/* Info banner */}
       <View style={styles.infoBanner}>
         <Text style={styles.infoBannerText}>
-          Stake tokens to participate in Proof-of-Stake consensus and earn governance voting power.
-          L2 uses DRACHMA; L3 uses OBOLOS.
+          Stake tokens to participate in Proof-of-Stake consensus on L2 and L3.
+          Note: staking does NOT affect governance voting weight — every token holder
+          gets exactly one vote regardless of stake size (1A1V model).
         </Text>
       </View>
 
@@ -224,7 +225,7 @@ const StakingScreen = ({ onBack }) => {
           • Staked tokens are locked during the unbonding period.
         </Text>
         <Text style={styles.notesText}>
-          • Staking increases your governance voting power proportionally.
+          • Staking does NOT increase governance voting power — all holders vote equally (1A1V).
         </Text>
         <Text style={styles.notesText}>
           • Slashing may apply for validator misbehaviour.

@@ -87,16 +87,61 @@ describe('WalletService', () => {
   });
 
   describe('signTransaction', () => {
-    it('throws an error because Schnorr BIP-340 signing is not yet implemented', async () => {
-      const tx = { asset: 'TALN', to: 'parthenon1q' + 'b'.repeat(38), amount: 1.5, memo: '' };
+    it('returns a signature object for a valid transaction', async () => {
+      const to = 'parthenon1q' + 'b'.repeat(38);
+      const tx = { asset: 'TALN', to, amount: 1.5, memo: '' };
+      const result = await WalletService.signTransaction(tx);
+      expect(result).toBeTruthy();
+      expect(typeof result.txid_hash).toBe('string');
+      expect(typeof result.signature).toBe('string');
+      expect(typeof result.payload_hex).toBe('string');
+      expect(result.payload_hex.length).toBeGreaterThan(0);
+    });
+
+    it('includes asset, recipient, and amount in the payload hex', async () => {
+      const to = 'parthenon1q' + 'b'.repeat(38);
+      const tx = { asset: 'TALN', to, amount: 1.0, memo: 'test' };
+      const result = await WalletService.signTransaction(tx);
+      // Encode using TextEncoder to match the implementation (no Buffer / Node.js API)
+      const enc = new TextEncoder();
+      const toHexLocal = (arr) =>
+        Array.from(arr).map((b) => b.toString(16).padStart(2, '0')).join('');
+      const assetHex = toHexLocal(enc.encode('TALN'));
+      const addrHex  = toHexLocal(enc.encode(to));
+      expect(result.payload_hex).toContain(assetHex);
+      expect(result.payload_hex).toContain(addrHex);
+    });
+
+    it('throws for invalid recipient address', async () => {
+      const tx = { asset: 'TALN', to: 'bad_address', amount: 1.0 };
       await expect(WalletService.signTransaction(tx)).rejects.toThrow(
-        'signTransaction is not yet implemented'
+        'invalid recipient address'
       );
     });
 
-    it('throws for any transaction input', async () => {
-      const tx = { asset: 'DRM', to: 'parthenon1q' + 'c'.repeat(38), amount: 0.5, memo: 'test' };
-      await expect(WalletService.signTransaction(tx)).rejects.toThrow();
+    it('throws for non-positive amount', async () => {
+      const to = 'parthenon1q' + 'c'.repeat(38);
+      const tx = { asset: 'TALN', to, amount: -1 };
+      await expect(WalletService.signTransaction(tx)).rejects.toThrow(
+        'invalid transaction fields'
+      );
+    });
+
+    it('throws for zero amount', async () => {
+      const to = 'parthenon1q' + 'd'.repeat(38);
+      const tx = { asset: 'DRM', to, amount: 0 };
+      await expect(WalletService.signTransaction(tx)).rejects.toThrow(
+        'invalid transaction fields'
+      );
+    });
+
+    it('two identical transactions produce the same signature', async () => {
+      const to = 'parthenon1q' + 'e'.repeat(38);
+      const tx = { asset: 'OBL', to, amount: 2.5, memo: 'memo' };
+      const r1 = await WalletService.signTransaction(tx);
+      const r2 = await WalletService.signTransaction(tx);
+      expect(r1.signature).toBe(r2.signature);
+      expect(r1.payload_hex).toBe(r2.payload_hex);
     });
   });
 });

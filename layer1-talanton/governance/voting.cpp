@@ -37,6 +37,7 @@ VotingSystem::VotingSystem()
       require_boule_approval_(false),
       snapshot_registry_(nullptr),
       staking_registry_(nullptr),
+      balance_registry_(nullptr),
       gov_params_(nullptr),
       treasury_(nullptr)
 {}
@@ -69,13 +70,22 @@ uint64_t VotingSystem::CreateProposal(const std::vector<uint8_t>& proposer, Prop
     proposals_[proposal.proposal_id] = proposal;
 
     // Create a voting-power snapshot at the proposal's voting_start block.
-    // This freezes each staker's power so late-staking/flash-stake attacks
-    // cannot influence an ongoing vote.
-    if (snapshot_registry_ != nullptr && staking_registry_ != nullptr) {
-        auto powers = staking_registry_->GetAllVotingPowers();
-        snapshot_registry_->CreateSnapshot(proposal.proposal_id,
-                                           proposal.voting_start,
-                                           powers);
+    // Voting power is derived from token balances (balance_registry_) when
+    // available, falling back to the legacy staking registry.
+    // This freezes each holder's power so last-block attacks cannot influence
+    // an ongoing vote.
+    if (snapshot_registry_ != nullptr) {
+        std::vector<std::pair<std::vector<uint8_t>, uint64_t>> voting_powers;
+        if (balance_registry_ != nullptr) {
+            voting_powers = balance_registry_->GetAllVotingPowers();
+        } else if (staking_registry_ != nullptr) {
+            voting_powers = staking_registry_->GetAllVotingPowers();
+        }
+        if (!voting_powers.empty()) {
+            snapshot_registry_->CreateSnapshot(proposal.proposal_id,
+                                               proposal.voting_start,
+                                               voting_powers);
+        }
     }
 
     return proposal.proposal_id;
@@ -152,23 +162,27 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
     }
 
     // If a snapshot exists for this proposal, override the caller-supplied
-    // voting_power with the frozen snapshot power.  This prevents a voter from
-    // accumulating tokens after the snapshot block to inflate their weight.
+    // voting_power with the frozen snapshot power.
+    // In the one-address-one-vote model every eligible voter has power == 1
+    // at snapshot time; voters who held no tokens at the snapshot block
+    // have power == 0 and are denied the vote.
     if (snapshot_registry_ != nullptr &&
         snapshot_registry_->HasSnapshot(proposal_id)) {
         voting_power = snapshot_registry_->GetSnapshotPower(proposal_id, voter);
         if (voting_power == 0) {
-            return false;  // Voter had no stake at snapshot time
+            return false;  // Voter held no tokens at snapshot block
         }
     }
 
-    // Apply anti-whale scaling to raw voting_power before tallying.
+    // Optional post-processing by AntiWhaleGuard.
+    // In the 1A1V model the snapshot always gives power == 1, so the guard
+    // is effectively a no-op for live governance votes (floor(sqrt(1)) = 1).
     uint64_t effective_power = voting_power;
     if (anti_whale_ != nullptr) {
         effective_power = anti_whale_->ComputeEffectivePower(voting_power, total_supply_);
     }
 
-    // Create vote record (record raw power for auditability)
+    // Create vote record (record power for auditability)
     Vote vote;
     vote.proposal_id = proposal_id;
     vote.voter = voter;
@@ -180,7 +194,7 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
     // Add to votes
     votes_[proposal_id].push_back(vote);
 
-    // Update tallies using effective (anti-whale-scaled) power
+    // Update tallies using (snapshot-overridden) effective power
     switch (choice) {
         case VoteChoice::YES:
             proposal.yes_votes += effective_power;

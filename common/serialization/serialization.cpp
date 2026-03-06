@@ -18,7 +18,7 @@ std::string EncodeCommitment(const Commitment& commitment) {
         if (i != 0) {
             stream << ',';
         }
-        stream << signature.validator_id << '|' << signature.stake_weight << '|'
+        stream << signature.validator_id << '|' << signature.hash_power << '|'
                << signature.signature;
     }
     return stream.str();
@@ -84,9 +84,9 @@ CommitmentValidationResult DecodeCommitment(const std::string& encoded,
             FinalitySignature signature;
             signature.validator_id = item.substr(0, first);
             try {
-                signature.stake_weight = std::stoull(item.substr(first + 1, second - first - 1));
+                signature.hash_power = std::stoull(item.substr(first + 1, second - first - 1));
             } catch (const std::exception&) {
-                return {false, "validator stake_weight must be an unsigned integer"};
+                return {false, "miner hash_power must be an unsigned integer"};
             }
             signature.signature = item.substr(second + 1);
             commitment.signatures.push_back(signature);

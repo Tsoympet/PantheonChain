@@ -408,7 +408,24 @@ std::filesystem::path StorageRoot() {
     if (!home) {
         home = std::getenv("USERPROFILE");
     }
-    std::filesystem::path root = home ? std::filesystem::path(home) : std::filesystem::temp_directory_path();
+    std::filesystem::path root;
+    if (home) {
+        // Validate the home path: it must be absolute and must not contain
+        // path traversal sequences, to prevent path injection via the
+        // HOME / USERPROFILE environment variable.
+        std::string home_str(home);
+        if (home_str.find("..") == std::string::npos) {
+            std::error_code ec;
+            auto candidate = std::filesystem::weakly_canonical(
+                std::filesystem::path(home_str), ec);
+            if (!ec && candidate.is_absolute()) {
+                root = candidate;
+            }
+        }
+    }
+    if (root.empty()) {
+        root = std::filesystem::temp_directory_path();
+    }
     return root / ".parthenon_mobile_sdk";
 }
 

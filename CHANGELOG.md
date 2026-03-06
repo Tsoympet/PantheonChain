@@ -5,6 +5,32 @@ All notable changes to PantheonChain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-03-06
+
+### Changed
+
+#### Governance — One-Address-One-Vote (1A1V)
+- **Voting model**: Replaced balance-proportional voting with **one-address-one-vote (1A1V)**.
+  Every address holding any token balance gets exactly **1 vote** regardless of how many
+  tokens it holds. A holder with 1 TALN and a holder with 1 billion DRM cast votes of
+  identical weight.
+- `BalanceVotingRegistry::GetVotingPower()` now returns `1` for any holder, `0` otherwise
+  (was: token balance amount).
+- `BalanceVotingRegistry::GetTotalVotingPower()` now returns the count of eligible voters
+  (was: sum of all balances).
+- `BalanceVotingRegistry::GetAllVotingPowers()` now returns `(address, 1)` for each holder
+  (was: `(address, balance)`).
+- `GovernanceParams::quadratic_voting_enabled` default changed to `false` (was `true`).
+- `AntiWhaleGuard::kDefaultConfig.quadratic_voting_enabled` changed to `false`.
+  The guard is retained as a utility class but has no effect on live votes because
+  snapshot power is always 1.
+- `staking/get_power` RPC endpoint now returns `source: "one_address_one_vote"` and
+  `total_voters` (count of eligible voters) instead of `total_power` (sum of balances).
+- All docs (`CONSTITUTION.md`, `WHITEPAPER.md`, `consensus.md`, runbooks, desktop UI,
+  mobile UI) updated to reflect 1A1V semantics.
+
+---
+
 ## [2.1.0] - 2026-01-20
 
 ### Added

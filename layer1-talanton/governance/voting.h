@@ -2,6 +2,7 @@
 #define PARTHENON_GOVERNANCE_VOTING_H
 
 #include "antiwhale.h"
+#include "balance_voting.h"
 #include "params.h"
 #include "snapshot.h"
 #include "staking.h"
@@ -228,14 +229,21 @@ class VotingSystem {
     bool SlashDeposit(uint64_t proposal_id);
 
     /**
-     * Set total token supply so the anti-whale guard can compute percentages.
+     * Set total token supply for informational / anti-whale utility use.
+     * In the 1A1V model snapshot power is always 1, so this value has no
+     * effect on vote tallies.
      */
     void SetTotalSupply(uint64_t supply) { total_supply_ = supply; }
     uint64_t GetTotalSupply() const { return total_supply_; }
 
     /**
      * Attach an AntiWhaleGuard. Ownership stays with the caller.
-     * Pass nullptr to detach (voting power passes through unmodified).
+     * Pass nullptr to detach.
+     *
+     * NOTE: In the 1A1V model BalanceVotingRegistry snapshots give every
+     * voter power == 1, so an attached AntiWhaleGuard has no practical
+     * effect on live governance votes (floor(sqrt(1)) = 1; cap(1) = 1).
+     * Kept for future experimental use.
      */
     void SetAntiWhaleGuard(AntiWhaleGuard* guard) { anti_whale_ = guard; }
 
@@ -248,11 +256,21 @@ class VotingSystem {
     /**
      * Attach a SnapshotRegistry. When set, CreateProposal() automatically
      * creates a voting-power snapshot for each new proposal using the
-     * attached StakingRegistry.  CastVote() then uses the snapshot power
-     * for that proposal instead of the caller-supplied voting_power.
+     * attached BalanceVotingRegistry (preferred) or StakingRegistry (fallback).
+     * CastVote() then uses the snapshot power for that proposal instead of
+     * the caller-supplied voting_power.
      */
     void SetSnapshotRegistry(SnapshotRegistry* registry) { snapshot_registry_ = registry; }
     void SetStakingRegistry(StakingRegistry* staking)    { staking_registry_   = staking; }
+
+    /**
+     * Attach a BalanceVotingRegistry so that voting power is derived from
+     * token balances rather than staked amounts.  When set, this takes
+     * precedence over any attached StakingRegistry for snapshot creation.
+     */
+    void SetBalanceVotingRegistry(BalanceVotingRegistry* registry) {
+        balance_registry_ = registry;
+    }
 
     /**
      * Attach a GovernanceParams instance for PARAMETER_CHANGE proposal execution.
@@ -304,7 +322,8 @@ class VotingSystem {
     bool            require_boule_approval_;
 
     SnapshotRegistry* snapshot_registry_;  // optional, not owned
-    StakingRegistry*  staking_registry_;   // optional, not owned
+    StakingRegistry*  staking_registry_;   // optional, not owned (deprecated – prefer balance_registry_)
+    BalanceVotingRegistry* balance_registry_; // optional, not owned; preferred voting-power source
     GovernanceParams* gov_params_;  // optional, not owned
     Treasury*         treasury_;    // optional, not owned
 

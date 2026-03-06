@@ -354,7 +354,7 @@ const RolesScreen = ({ onBack }) => {
     },
     {
       title: 'Ekklesia (ἐκκλησία) — The Assembly  [Art. II]',
-      body: 'All addresses with positive staked balance on L3 at the proposal snapshot block. Proposal submission requires: stake ≥ MIN_PROPOSAL_STAKE, no active Ostracism, no pending proposal from same address.\n\nQuorum: STANDARD 10% · CONSTITUTIONAL 20% · EMERGENCY 5% · PARAMETER_CHANGE 10% · TREASURY_SPENDING 15%\n\nVoting power = floor(√(staked balance at snapshot)).',
+      body: 'All addresses holding any token balance (TALN, DRM, or OBL) at the proposal snapshot block. Proposal submission requires: no active Ostracism, no pending proposal from same address.\n\nQuorum: STANDARD 10% · CONSTITUTIONAL 20% · EMERGENCY 5% · PARAMETER_CHANGE 10% · TREASURY_SPENDING 15% (% of eligible voters)\n\nVoting model: One-address-one-vote (1A1V). Every holder gets exactly 1 vote regardless of balance size.',
     },
     {
       title: 'EmergencyCouncil  [Art. IX]',
@@ -369,8 +369,8 @@ const RolesScreen = ({ onBack }) => {
       body: 'YES · NO · ABSTAIN · VETO\n\nVETO: if veto votes exceed 33.34% of all votes cast → unconditional defeat + 14-day re-submission blackout.\n\nDelegation (§4.3): revocable at any time, one level only, no transitive delegation, does not transfer token custody.\n\nVotes are final — changeVote is not available.',
     },
     {
-      title: 'Staking Lock Periods  [Art. VII §7.2]',
-      body: 'No lock: 1×\n30 days: 1.25×\n90 days: 1.5×\n180 days: 1.75×\n365 days: 2×\n\nLock periods do NOT affect voting power (raw quadratic staked balance) to prevent plutocratic lock-up strategies.',
+      title: 'Token Holder Voting Rights  [Art. VII]',
+      body: 'Eligibility: any address holding ≥ 1 token of any asset (TALN, DRM, OBL).\n\nVoting power: exactly 1 vote per address — balance size is irrelevant.\n\nSnapshot: eligibility is frozen at the proposal\'s voting_start block. Addresses that acquire tokens after the snapshot cannot vote on that proposal.\n\nNo staking required.',
     },
     {
       title: 'Fee Distribution  [Art. X]',
@@ -522,19 +522,16 @@ const ConstitutionScreen = ({ onBack }) => {
     ['Standard voting window', '3 – 30 days'],
     ['Constitutional voting window', '7 – 60 days'],
     ['Emergency execution TTL', '12 h – 7 days'],
-    ['Standard quorum', '5% – 30% staked supply'],
+    ['Standard quorum', '5% – 30% eligible voters'],
     ['Constitutional quorum', '10% – 40%'],
     ['Supermajority threshold', '60% – 80%'],
     ['Veto threshold', '20% – 45% of votes'],
-    ['Min proposal stake', '0.001% – 1% staked supply'],
-    ['Min council stake', '0.01% – 5% staked supply'],
+    ['Min proposal balance', '0.001% – 1% eligible voters'],
+    ['Min council balance', '0.01% – 5% eligible voters'],
     ['Max concurrent proposals', '5 – 100'],
     ['Execution delay (standard)', '1 – 14 days'],
     ['Execution delay (constitutional)', '3 – 30 days'],
     ['Large grant threshold', '0.1% – 10% treasury'],
-    ['Slashing — double sign', '1% – 30% stake'],
-    ['Slashing — downtime', '0.001% – 5% stake'],
-    ['Anti-flash-stake cooldown', '1 block – 14 days'],
     ['Ostracism duration', '30 – 365 days'],
   ];
 

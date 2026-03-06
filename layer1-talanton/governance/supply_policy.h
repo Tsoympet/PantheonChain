@@ -9,23 +9,24 @@ namespace governance {
 /**
  * SupplyPolicy
  *
- * Defines the three canonical bonded-supply tiers for PantheonChain
+ * Defines the three canonical token-supply tiers for PantheonChain
  * governance, expressed as percentages of each asset's hard max supply cap.
  *
  *  TIER_LOW   –  5 % of max supply
  *      Minimum governance-participation threshold.  When fewer than 5 % of
- *      tokens are participating (staked + delegated) governance actions lack
- *      legitimacy.  Also used as the QUORUM floor for standard proposals.
+ *      the token supply is held by participating addresses, governance
+ *      actions may lack legitimacy.  Also used as the QUORUM floor for
+ *      standard proposals (as a fraction of eligible voters).
  *
  *  TIER_MID   – 10 % of max supply
- *      Anti-whale / single-entity influence ceiling.  Any address holding
- *      or controlling ≥ 10 % is classified as a whale; quadratic voting and
- *      the hard-cap in AntiWhaleGuard should be calibrated to this boundary.
+ *      Single-entity influence advisory ceiling.  Although 1A1V ensures
+ *      every holder gets exactly 1 vote, this tier is retained for
+ *      treasury and supply-concentration monitoring purposes.
  *
  *  TIER_HIGH  – 50 % of max supply
  *      Treasury hard cap.  The governance treasury must not accumulate more
- *      than 50 % of any asset's total supply — doing so would concentrate too
- *      much economic power in a single governance-controlled account.
+ *      than 50 % of any asset's total supply — doing so would concentrate
+ *      too much economic power in a single governance-controlled account.
  *
  * Per-asset absolute values (base units = whole_tokens × 100_000_000):
  *
@@ -59,7 +60,7 @@ class SupplyPolicy {
     //  DRM     97 DRM        40 740 000 DRM   41 000 000  260 000 DRM
     //  OBL    145 OBL        60 900 000 OBL   61 000 000  100 000 OBL
     //
-    // Governance tiers use ACHIEVABLE_SUPPLY so quorum, whale-cap, and
+    // Governance tiers use ACHIEVABLE_SUPPLY so quorum, supply-concentration, and
     // treasury-ceiling thresholds are calibrated to tokens that can actually
     // be in circulation, not to the never-reachable 41M / 61M hard limits.
     static constexpr uint64_t TALN_ACHIEVABLE_SUPPLY =  21'000'000ULL * BASE_UNIT;
@@ -125,18 +126,18 @@ class SupplyPolicy {
                                    uint64_t total_supply);
 
     /**
-     * Is raw_power a whale position relative to total_supply?
-     * Uses TIER_MID_BPS (10 %) as the threshold.
+     * Is the holder concentration at a level that warrants attention?
+     * Returns true when raw_power / total_supply > TIER_MID_BPS.
+     * In a 1A1V system this reflects supply concentration, not voting power.
      */
     static bool IsWhale(uint64_t raw_power, uint64_t total_supply);
 
     /**
-     * Compute the minimum quorum for a proposal given the current bonded
-     * (staked) supply.  Returns 5 % of bonded_supply — so quorum scales
-     * down naturally as participation falls rather than being an immovable
-     * absolute number.
+     * Compute the minimum quorum for a proposal given the current eligible
+     * voter count (addresses with any positive token balance).
+     * Returns 5 % of eligible_voters — so quorum scales with participation.
      */
-    static uint64_t ComputeBondedQuorum(uint64_t bonded_supply);
+    static uint64_t ComputeEligibleVoterQuorum(uint64_t eligible_voters);
 };
 
 }  // namespace governance

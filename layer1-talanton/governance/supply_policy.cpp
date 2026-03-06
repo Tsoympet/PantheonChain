@@ -39,8 +39,8 @@ bool SupplyPolicy::IsWhale(uint64_t raw_power, uint64_t total_supply) {
     return raw_power * 10000ULL >= total_supply * static_cast<uint64_t>(TIER_MID_BPS);
 }
 
-uint64_t SupplyPolicy::ComputeBondedQuorum(uint64_t bonded_supply) {
-    return ComputeThreshold(bonded_supply, TIER_LOW_BPS);
+uint64_t SupplyPolicy::ComputeEligibleVoterQuorum(uint64_t eligible_voters) {
+    return ComputeThreshold(eligible_voters, TIER_LOW_BPS);
 }
 
 }  // namespace governance

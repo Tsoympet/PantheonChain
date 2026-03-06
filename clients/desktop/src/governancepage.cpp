@@ -318,13 +318,15 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
            "<b>Proposal submission:</b> Requires staked balance ≥ MIN_PROPOSAL_STAKE, no active "
            "Ostracism, and no pending unexecuted proposal from the same address.<br>"
            "<b>Quorum by type:</b><br>"
-           "• STANDARD: 10% of total staked supply<br>"
+           "• STANDARD: 10% of total eligible voters<br>"
            "• CONSTITUTIONAL: 20%<br>"
            "• EMERGENCY: 5% (Prytany initial vote)<br>"
            "• PARAMETER_CHANGE: 10%<br>"
            "• TREASURY_SPENDING: 15%<br>"
-           "<b>Voting power:</b> Quadratic — floor(√(stakedBalance at snapshot)). "
-           "Anti-flash-stake cooldown prevents last-minute stake manipulation."));
+           "<b>Voting power:</b> One-address-one-vote (1A1V) — every token holder gets "
+           "exactly 1 vote regardless of balance size. "
+           "Snapshot is taken at voting_start block; addresses acquiring tokens after "
+           "the snapshot are ineligible for that proposal."));
 
     // EmergencyCouncil (Article IX)
     addSection(
@@ -356,27 +358,24 @@ void GovernancePage::setupRolesTab(QWidget *tab) {
     // Voting (Article IV)
     addSection(
         tr("Voting  [Article IV]"),
-        tr("<b>Vote options:</b> YES · NO · ABSTAIN · VETO<br>"
+        tr("<b>Voting model:</b> One-address-one-vote (1A1V) — every token holder gets "
+           "exactly 1 vote regardless of balance size.<br>"
+           "<b>Vote options:</b> YES · NO · ABSTAIN · VETO<br>"
            "<b>VETO rule:</b> If veto votes exceed 33.34% of all votes cast, the proposal is "
            "unconditionally defeated and enters a 14-day re-submission blackout.<br>"
-           "<b>Delegation (§4.3):</b> A staker may delegate via VotingSystem::delegate(delegatee). "
+           "<b>Delegation (§4.3):</b> A token holder may delegate via VotingSystem::delegate(delegatee). "
            "Revocable at any time; limited to one level (no transitive delegation); "
            "does not transfer token custody.<br>"
            "<b>Finality (§4.4):</b> Votes are final once cast; changeVote is not available."));
 
-    // Staking lock periods (Article VII §7.2)
+    // Token Holder Voting Rights (Article VII)
     addSection(
-        tr("Staking Lock Periods  [Article VII §7.2]"),
-        tr("<table border='1' cellpadding='3'>"
-           "<tr><th>Lock Period</th><th>Yield Multiplier</th></tr>"
-           "<tr><td>No lock (liquid)</td><td>1×</td></tr>"
-           "<tr><td>30 days</td><td>1.25×</td></tr>"
-           "<tr><td>90 days</td><td>1.5×</td></tr>"
-           "<tr><td>180 days</td><td>1.75×</td></tr>"
-           "<tr><td>365 days</td><td>2×</td></tr>"
-           "</table>"
-           "<br>Lock periods do <b>not</b> affect voting power (which uses raw quadratic staked "
-           "balance) to prevent lock-up strategies from amplifying governance influence."));
+        tr("Token Holder Voting Rights  [Article VII]"),
+        tr("<b>Eligibility:</b> Any address holding ≥ 1 token of any asset (TALN, DRM, OBL).<br>"
+           "<b>Voting power:</b> Exactly <b>1 vote per address</b> — balance size is irrelevant.<br>"
+           "<b>Snapshot:</b> Eligibility is frozen at the proposal's voting_start block. "
+           "Addresses that acquire tokens after the snapshot cannot vote on that proposal.<br>"
+           "<b>No staking required.</b>"));
 
     // Fee routing (Article X)
     addSection(

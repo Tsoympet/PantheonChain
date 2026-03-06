@@ -13,33 +13,20 @@ namespace governance {
 /**
  * StakingRegistry
  *
- * Governance-layer staking: token holders lock tokens to gain
- * on-chain voting power.  This connects raw token ownership to the
- * voting_power argument passed to VotingSystem::CastVote().
+ * STAKING IS DISABLED in PantheonChain.  All mutation methods (Stake,
+ * RequestUnstake, ClaimUnstake) unconditionally return false, and all
+ * query methods return 0 or empty.
+ *
+ * Governance voting uses the one-address-one-vote (1A1V) model via
+ * BalanceVotingRegistry — every token holder gets exactly 1 vote
+ * regardless of balance size.  This class is retained for call-site
+ * compatibility and future reference only.
  *
  * Ancient-Greece analogy
  * ----------------------
- *  Timocracy  – Solon's Athenian system allocated political rights
- *               by property/wealth tier.  Here stake replaces property,
- *               and AntiWhaleGuard limits plutocratic dominance.
- *
- *  Ateleia    – Tax exemption / reward for public service.
- *               StakingRewards distributes inflationary rewards to
- *               long-term stakers.
- *
- * Lifecycle
- * ---------
- *  Stake()           – lock tokens; creates or increases a stake record.
- *  RequestUnstake()  – start the cooldown; tokens are locked for
- *                      unstake_cooldown_blocks before they can be claimed.
- *  ClaimUnstake()    – transfer tokens back after cooldown expires.
- *  Slash()           – reduce stake and record the infraction (e.g. for
- *                      governance attacks or Byzantine behaviour).
- *
- * Voting power
- * ------------
- *  GetVotingPower() returns the stake amount for addresses with NO active
- *  pending unstake; partial unstakes reduce voting power proportionally.
+ *  Isonomia – equality before the law: 1A1V replaces the old timocratic
+ *             (wealth-tier) model with equal political rights for all
+ *             token holders.
  */
 class StakingRegistry {
   public:
@@ -128,8 +115,7 @@ class StakingRegistry {
     uint64_t GetStake(const std::vector<uint8_t>& address) const;
 
     /**
-     * Returns effective voting power = staked_amount − pending_unstake.
-     * Tokens in cooldown do not confer voting rights.
+     * Returns 0 (staking is disabled; voting power comes from BalanceVotingRegistry).
      */
     uint64_t GetVotingPower(const std::vector<uint8_t>& address) const;
 
@@ -140,18 +126,18 @@ class StakingRegistry {
     std::optional<UnstakeRequest> GetUnstakeRequest(const std::vector<uint8_t>& address) const;
 
     /**
-     * Sum of all staked tokens (useful as total_supply proxy for anti-whale).
+     * Returns 0 (staking is disabled).
      */
     uint64_t GetTotalStaked() const;
 
     /**
-     * Sum of all voting-power-eligible tokens.
+     * Returns 0 (staking is disabled; total voting power = total holders,
+     * computed by BalanceVotingRegistry::GetTotalVotingPower()).
      */
     uint64_t GetTotalVotingPower() const;
 
     /**
-     * Returns a snapshot-ready vector of (address, voting_power) pairs
-     * for every staker with non-zero voting power.
+     * Returns empty vector (staking is disabled).
      */
     std::vector<std::pair<std::vector<uint8_t>, uint64_t>> GetAllVotingPowers() const;
 

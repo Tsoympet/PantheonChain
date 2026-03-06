@@ -68,7 +68,7 @@ class RPCClient {
         std::string result = "{\"result\": ";
 
         if (method == "getinfo" || method == "chain/info") {
-            result += "{\"version\": \"1.0.0\", \"blocks\": 12345, \"connections\": 8}";
+            result += "{\"version\": \"2.2.0\", \"blocks\": 12345, \"connections\": 8}";
         } else if (method == "chain/monetary_spec") {
             result += "{\"spec_hash\": \"" + common::monetary::MonetarySpecHash() +
                       "\", \"ratio_dr_per_tal\": 6000, \"ratio_ob_per_dr\": 6, "

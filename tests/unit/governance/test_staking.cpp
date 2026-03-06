@@ -1,5 +1,9 @@
-// ParthenonChain – StakingRegistry Unit Tests
+// ParthenonChain – One-Address-One-Vote Unit Tests
+//
+// Staking is DISABLED.  Governance uses one-address-one-vote (1A1V):
+// every token holder gets exactly 1 vote regardless of balance size.
 
+#include "governance/balance_voting.h"
 #include "governance/staking.h"
 
 #include <cassert>
@@ -9,165 +13,143 @@ using namespace parthenon::governance;
 
 static std::vector<uint8_t> Addr(uint8_t b) { return std::vector<uint8_t>(32, b); }
 
-void TestStakeAndVotingPower() {
-    std::cout << "Test: Stake and GetVotingPower" << std::endl;
+// ---------------------------------------------------------------------------
+// StakingRegistry: staking operations are disabled
+// ---------------------------------------------------------------------------
+void TestStakingDisabled() {
+    std::cout << "Test: Staking operations are disabled" << std::endl;
 
     StakingRegistry sr(100);
 
-    assert(sr.GetStake(Addr(0x01))        == 0);
-    assert(sr.GetVotingPower(Addr(0x01))  == 0);
-    assert(sr.GetTotalStaked()            == 0);
+    // All mutation methods must return false
+    assert(!sr.Stake(Addr(0x01), 1000, 0, 10));
+    assert(!sr.RequestUnstake(Addr(0x01), 100, 20));
+    assert(!sr.ClaimUnstake(Addr(0x01), 300));
 
-    assert(sr.Stake(Addr(0x01), 1000, 0, 10));
-    assert(sr.GetStake(Addr(0x01))        == 1000);
-    assert(sr.GetVotingPower(Addr(0x01))  == 1000);
-
-    // Staking more accumulates
-    assert(sr.Stake(Addr(0x01), 500, 0, 11));
-    assert(sr.GetStake(Addr(0x01))        == 1500);
-
-    assert(sr.Stake(Addr(0x02), 200, 0, 12));
-    assert(sr.GetTotalStaked()            == 1700);
-    assert(sr.GetTotalVotingPower()       == 1700);
-
-    // Edge cases
-    assert(!sr.Stake({}, 100, 0, 1));   // empty address
-    assert(!sr.Stake(Addr(0x03), 0, 0, 1));  // zero amount
+    // No stakes were created
+    assert(sr.GetStake(Addr(0x01))       == 0);
+    assert(sr.GetVotingPower(Addr(0x01)) == 0);
+    assert(sr.GetTotalStaked()           == 0);
+    assert(sr.GetTotalVotingPower()      == 0);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestRequestAndClaimUnstake() {
-    std::cout << "Test: RequestUnstake and ClaimUnstake with cooldown" << std::endl;
+// ---------------------------------------------------------------------------
+// BalanceVotingRegistry: one-address-one-vote semantics
+// ---------------------------------------------------------------------------
+void TestOneAddressOneVote_Basic() {
+    std::cout << "Test: 1A1V – every holder has exactly 1 vote" << std::endl;
 
-    StakingRegistry sr(/*cooldown=*/200);
-    sr.Stake(Addr(0x01), 1000, 0, 0);
+    BalanceVotingRegistry bvr;
 
-    // Request 400 unstake
-    assert(sr.RequestUnstake(Addr(0x01), 400, 100));
+    // Address with no balance → 0 votes
+    assert(bvr.GetVotingPower(Addr(0x01)) == 0);
+    assert(bvr.GetTotalVotingPower()      == 0);
 
-    // Voting power reduced immediately by pending amount
-    assert(sr.GetVotingPower(Addr(0x01))  == 600);
-    assert(sr.GetStake(Addr(0x01))        == 1000);  // still staked
+    // Address with any positive balance → exactly 1 vote
+    bvr.UpdateBalance(Addr(0x01), 1);        // minimum holding
+    assert(bvr.GetVotingPower(Addr(0x01)) == 1);
+    assert(bvr.GetTotalVotingPower()      == 1);
 
-    // Cannot request again (one pending per address)
-    assert(!sr.RequestUnstake(Addr(0x01), 100, 101));
+    bvr.UpdateBalance(Addr(0x02), 1000000);  // whale-level holding
+    assert(bvr.GetVotingPower(Addr(0x02)) == 1);
+    assert(bvr.GetTotalVotingPower()      == 2);
 
-    // Claim before cooldown expires must fail
-    assert(!sr.ClaimUnstake(Addr(0x01), 299));
+    // Large balance increase does NOT increase vote power
+    bvr.UpdateBalance(Addr(0x01), 999999999999ULL);
+    assert(bvr.GetVotingPower(Addr(0x01)) == 1);   // still exactly 1
+    assert(bvr.GetTotalVotingPower()      == 2);    // still 2 voters
 
-    // Claim after cooldown
-    assert(sr.ClaimUnstake(Addr(0x01), 300));  // claimable at 100+200=300
-    assert(sr.GetStake(Addr(0x01))        == 600);
-    assert(sr.GetVotingPower(Addr(0x01))  == 600);
-
-    // Cannot claim twice
-    assert(!sr.ClaimUnstake(Addr(0x01), 400));
-
-    // Over-amount request must fail
-    assert(!sr.RequestUnstake(Addr(0x01), 601, 400));
-
-    std::cout << "  \u2713 Passed" << std::endl;
-}
-
-void TestStakeLock() {
-    std::cout << "Test: Stake lock prevents early unstake" << std::endl;
-
-    StakingRegistry sr(50);
-    sr.Stake(Addr(0x01), 1000, /*lock_period=*/500, /*block=*/100);
-
-    // Locked until block 600
-    assert(sr.IsStakeLocked(Addr(0x01), 599));
-    assert(!sr.IsStakeLocked(Addr(0x01), 600));
-
-    // Cannot unstake while locked
-    assert(!sr.RequestUnstake(Addr(0x01), 100, 150));
-
-    // Can unstake after lock expires
-    assert(sr.RequestUnstake(Addr(0x01), 100, 600));
+    // Removing balance removes the vote
+    bvr.UpdateBalance(Addr(0x01), 0);
+    assert(bvr.GetVotingPower(Addr(0x01)) == 0);
+    assert(bvr.GetTotalVotingPower()      == 1);
+    assert(bvr.Size()                     == 1);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestSlash() {
-    std::cout << "Test: Slash" << std::endl;
+void TestOneAddressOneVote_SetBalances() {
+    std::cout << "Test: 1A1V – SetBalances replaces map, each holder = 1 vote" << std::endl;
 
-    StakingRegistry sr(100);
-    sr.Stake(Addr(0x01), 1000, 0, 0);
-    sr.RequestUnstake(Addr(0x01), 400, 0);  // 400 pending
+    BalanceVotingRegistry bvr;
+    bvr.UpdateBalance(Addr(0x01), 9999);   // will be erased
 
-    // Slash 300
-    assert(sr.Slash(Addr(0x01), 300, "governance attack", 50));
-    assert(sr.GetStake(Addr(0x01)) == 700);
+    std::map<std::vector<uint8_t>, uint64_t> snap;
+    snap[Addr(0x10)] = 300;
+    snap[Addr(0x11)] = 700;
+    snap[Addr(0x12)] = 0;   // zero entries should be skipped
 
-    // Slash history recorded
-    assert(sr.GetSlashHistory().size() == 1);
-    assert(sr.GetSlashHistory()[0].reason == "governance attack");
-    assert(sr.GetSlashHistory()[0].amount == 300);
+    bvr.SetBalances(snap);
 
-    // Cannot slash non-existent address
-    assert(!sr.Slash(Addr(0xFF), 100, "bad", 50));
-
-    // Cannot slash more than staked
-    assert(!sr.Slash(Addr(0x01), 9999, "too much", 50));
-
-    // Zero-amount slash must fail
-    assert(!sr.Slash(Addr(0x01), 0, "zero", 50));
+    assert(bvr.GetVotingPower(Addr(0x01)) == 0);   // old entry gone
+    assert(bvr.GetVotingPower(Addr(0x10)) == 1);   // has balance → 1 vote
+    assert(bvr.GetVotingPower(Addr(0x11)) == 1);   // has balance → 1 vote
+    assert(bvr.GetVotingPower(Addr(0x12)) == 0);   // zero not stored
+    assert(bvr.GetTotalVotingPower()      == 2);   // 2 eligible voters
+    assert(bvr.Size()                     == 2);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestStakeRecordQuery() {
-    std::cout << "Test: GetStakeRecord and GetUnstakeRequest" << std::endl;
+void TestOneAddressOneVote_GetAllPowers() {
+    std::cout << "Test: 1A1V – GetAllVotingPowers returns (addr, 1) for each holder" << std::endl;
 
-    StakingRegistry sr(100);
-    assert(!sr.GetStakeRecord(Addr(0x01)).has_value());
-    assert(!sr.GetUnstakeRequest(Addr(0x01)).has_value());
+    BalanceVotingRegistry bvr;
+    bvr.UpdateBalance(Addr(0xAA), 400);
+    bvr.UpdateBalance(Addr(0xBB), 600);
+    bvr.UpdateBalance(Addr(0xCC), 1);    // minimum holding still counts
 
-    sr.Stake(Addr(0x01), 500, 0, 10);
-    auto rec = sr.GetStakeRecord(Addr(0x01));
-    assert(rec.has_value() && rec->staked_amount == 500);
+    auto powers = bvr.GetAllVotingPowers();
+    assert(powers.size() == 3);
 
-    sr.RequestUnstake(Addr(0x01), 200, 20);
-    auto req = sr.GetUnstakeRequest(Addr(0x01));
-    assert(req.has_value() && req->amount == 200);
-    assert(req->claimable_at_block == 120);
+    // Every entry must have voting_power == 1
+    for (const auto& [addr, power] : powers) {
+        assert(power == 1);
+    }
+
+    // Sum of all powers == number of holders
+    uint64_t total = 0;
+    for (const auto& [addr, power] : powers) {
+        total += power;
+    }
+    assert(total == 3);
+    assert(bvr.GetTotalVotingPower() == 3);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestTotalVotingPower() {
-    std::cout << "Test: GetTotalVotingPower excludes pending unstake" << std::endl;
+void TestOneAddressOneVote_WhaleParity() {
+    std::cout << "Test: 1A1V – whale and small holder have identical vote weight" << std::endl;
 
-    StakingRegistry sr(50);
-    sr.Stake(Addr(0x01), 1000, 0, 0);
-    sr.Stake(Addr(0x02), 500, 0, 0);
+    BalanceVotingRegistry bvr;
+    bvr.UpdateBalance(Addr(0x01), 1u);              // smallest possible holding
+    bvr.UpdateBalance(Addr(0x02), UINT64_MAX);       // theoretical maximum
 
-    assert(sr.GetTotalVotingPower() == 1500);
-
-    sr.RequestUnstake(Addr(0x01), 300, 0);
-    assert(sr.GetTotalVotingPower() == 1200);
+    assert(bvr.GetVotingPower(Addr(0x01)) == bvr.GetVotingPower(Addr(0x02)));
+    assert(bvr.GetVotingPower(Addr(0x01)) == 1);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
 int main() {
-    std::cout << "=============================================" << std::endl;
-    std::cout << "StakingRegistry Unit Test Suite" << std::endl;
-    std::cout << "=============================================" << std::endl << std::endl;
+    std::cout << "==========================================" << std::endl;
+    std::cout << "One-Address-One-Vote (1A1V) Unit Tests" << std::endl;
+    std::cout << "  (Staking disabled; every holder = 1 vote)" << std::endl;
+    std::cout << "==========================================" << std::endl << std::endl;
 
     try {
-        TestStakeAndVotingPower();
-        TestRequestAndClaimUnstake();
-        TestStakeLock();
-        TestSlash();
-        TestStakeRecordQuery();
-        TestTotalVotingPower();
+        TestStakingDisabled();
+        TestOneAddressOneVote_Basic();
+        TestOneAddressOneVote_SetBalances();
+        TestOneAddressOneVote_GetAllPowers();
+        TestOneAddressOneVote_WhaleParity();
 
         std::cout << std::endl;
-        std::cout << "=============================================" << std::endl;
-        std::cout << "All StakingRegistry tests passed! \u2713" << std::endl;
-        std::cout << "=============================================" << std::endl;
+        std::cout << "==========================================" << std::endl;
+        std::cout << "All 1A1V tests passed! \u2713" << std::endl;
+        std::cout << "==========================================" << std::endl;
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Test failed: " << e.what() << std::endl;

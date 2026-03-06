@@ -1,72 +1,47 @@
+// PantheonChain — Layer-2 DRACHMA PoW Consensus Implementation
+
 #include "pos_consensus.h"
 
-#include <algorithm>
 #include <stdexcept>
 
 namespace pantheon::drachma {
 
-uint64_t TotalActiveStake(const std::vector<Validator>& validators) {
+uint64_t TotalHashPower(const std::vector<Miner>& miners) {
     uint64_t total = 0;
-    for (const auto& validator : validators) {
-        total += validator.stake;
+    for (const auto& miner : miners) {
+        total += miner.hash_power;
     }
     return total;
 }
 
-const Validator& SelectDeterministicProposer(const std::vector<Validator>& validators,
-                                             uint64_t epoch,
-                                             uint64_t height) {
-    if (validators.empty()) {
-        throw std::invalid_argument("validators cannot be empty");
+const Miner& SelectMiner(const std::vector<Miner>& miners,
+                         uint64_t epoch,
+                         uint64_t height) {
+    if (miners.empty()) {
+        throw std::invalid_argument("miners cannot be empty");
     }
 
-    const uint64_t total_stake = TotalActiveStake(validators);
-    if (total_stake == 0) {
-        throw std::invalid_argument("total active stake cannot be zero");
+    const uint64_t total_pow = TotalHashPower(miners);
+    if (total_pow == 0) {
+        throw std::invalid_argument("total hash power cannot be zero");
     }
 
+    // Deterministic slot assignment: XOR epoch/height, then pick by hash-power range.
     const uint64_t slot = (epoch << 32U) ^ height;
-    uint64_t cursor = slot % total_stake;
-    for (const auto& validator : validators) {
-        if (cursor < validator.stake) {
-            return validator;
+    uint64_t cursor = slot % total_pow;
+    for (const auto& miner : miners) {
+        if (cursor < miner.hash_power) {
+            return miner;
         }
-        cursor -= validator.stake;
+        cursor -= miner.hash_power;
     }
 
-    return validators.back();
-}
-
-namespace {
-SlashingEvent BuildSlashingEvent(const Validator& validator, const std::string& reason,
-                                 uint64_t ratio_numerator, uint64_t ratio_denominator) {
-    if (ratio_denominator == 0 || ratio_numerator > ratio_denominator) {
-        throw std::invalid_argument("invalid slash ratio");
-    }
-    // Overflow fallback divides first; since ratio_numerator <= ratio_denominator, this underestimates
-    // by at most (ratio_denominator - 1) / ratio_denominator < 1 token unit.
-    // std::min caps at validator.stake so slashing never exceeds the total stake.
-    const uint64_t slashed = (ratio_numerator == 0 || validator.stake <= UINT64_MAX / ratio_numerator)
-                                 ? (validator.stake * ratio_numerator) / ratio_denominator
-                                 : std::min(validator.stake,
-                                            (validator.stake / ratio_denominator) * ratio_numerator);
-    return {validator.id, reason, slashed};
-}
-}  // namespace
-
-SlashingEvent SlashDoubleSign(const Validator& validator, uint64_t ratio_numerator,
-                              uint64_t ratio_denominator) {
-    return BuildSlashingEvent(validator, "double-sign", ratio_numerator, ratio_denominator);
-}
-
-SlashingEvent SlashEquivocation(const Validator& validator, uint64_t ratio_numerator,
-                                uint64_t ratio_denominator) {
-    return BuildSlashingEvent(validator, "equivocation", ratio_numerator, ratio_denominator);
+    return miners.back();
 }
 
 common::CommitmentValidationResult ValidateL3Commit(const common::Commitment& commitment,
                                                     uint64_t last_l3_height,
-                                                    uint64_t active_stake) {
+                                                    uint64_t active_pow) {
     if (commitment.source_chain != common::SourceChain::OBOLOS) {
         return {false, "TX_L3_COMMIT must originate from OBOLOS"};
     }
@@ -79,7 +54,8 @@ common::CommitmentValidationResult ValidateL3Commit(const common::Commitment& co
         return encoding;
     }
 
-    return common::ValidateFinalityQuorum(commitment, active_stake);
+    // Quorum check: >=2/3 of contributing hash power must have signed.
+    return common::ValidateFinalityQuorum(commitment, active_pow);
 }
 
 }  // namespace pantheon::drachma

@@ -239,7 +239,7 @@ const SettingsScreen = ({ onBack }) => {
       <Text style={styles.sectionHeader}>About</Text>
       <View style={styles.card}>
         <Text style={styles.infoText}>ParthenonChain Mobile Wallet</Text>
-        <Text style={styles.infoText}>Version 1.1.0</Text>
+        <Text style={styles.infoText}>Version 2.2.0</Text>
         <Text style={styles.infoText}>© 2024 ParthenonChain Developers</Text>
       </View>
     </ScrollView>

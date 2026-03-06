@@ -18,7 +18,8 @@ void TestDefaults() {
     assert(p.execution_delay_blocks       == 1000);
     assert(p.default_threshold_bps        == 5000);
     assert(p.constitutional_threshold_bps == 6667);
-    assert(p.quadratic_voting_enabled);
+    // 1A1V: quadratic voting disabled by default (every holder gets 1 vote)
+    assert(!p.quadratic_voting_enabled);
     assert(p.boule_size                   == 21);
     assert(p.boule_screening_required);
 
@@ -89,17 +90,22 @@ void TestUpdateBoolParam() {
     std::cout << "Test: UpdateBoolParam" << std::endl;
 
     GovernanceParams gp;
-    assert(gp.Get().quadratic_voting_enabled);
-
-    assert(!gp.UpdateBoolParam("quadratic_voting_enabled", false, 0, 0));  // no proposal
-    assert( gp.UpdateBoolParam("quadratic_voting_enabled", false, 1, 0));
+    // Default: quadratic disabled in 1A1V
     assert(!gp.Get().quadratic_voting_enabled);
 
-    assert( gp.UpdateBoolParam("boule_screening_required", false, 2, 10));
+    assert(!gp.UpdateBoolParam("quadratic_voting_enabled", true, 0, 0));  // no proposal
+    assert( gp.UpdateBoolParam("quadratic_voting_enabled", true, 1, 0));
+    assert(gp.Get().quadratic_voting_enabled);
+
+    // Toggle back off
+    assert( gp.UpdateBoolParam("quadratic_voting_enabled", false, 2, 5));
+    assert(!gp.Get().quadratic_voting_enabled);
+
+    assert( gp.UpdateBoolParam("boule_screening_required", false, 3, 10));
     assert(!gp.Get().boule_screening_required);
 
     // Unknown key
-    assert(!gp.UpdateBoolParam("nonexistent_key", true, 3, 0));
+    assert(!gp.UpdateBoolParam("nonexistent_key", true, 4, 0));
 
     std::cout << "  \u2713 Passed" << std::endl;
 }

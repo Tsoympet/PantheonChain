@@ -46,15 +46,19 @@ class GovernanceParams {
         bool     slash_deposit_on_rejection; // Burn deposit when proposal is rejected
         bool     slash_deposit_on_spam;      // Burn deposit when proposal does not meet quorum
 
-        // ---- Anti-whale (Athenian equality principle) ----------------------
-        bool     quadratic_voting_enabled;
-        uint64_t max_voting_power_cap;       // Hard cap per voter; 0 = disabled
-        uint64_t whale_threshold_bps;        // Basis points of supply = whale
+        // ---- One-address-one-vote / anti-whale (retained for backward compat) --
+        // NOTE: In the 1A1V model all snapshot vote powers are 1, so the
+        // fields below have no effect on live governance votes.  They are
+        // kept in the struct so existing PARAMETER_CHANGE proposals can
+        // reference them without breaking serialization.
+        bool     quadratic_voting_enabled;  // deprecated in 1A1V; always effectively false
+        uint64_t max_voting_power_cap;      // deprecated in 1A1V; 0 = no cap
+        uint64_t whale_threshold_bps;       // deprecated in 1A1V; informational only
 
         // ---- Boule (council) -----------------------------------------------
         uint32_t boule_size;                 // Number of council members
         uint64_t boule_term_blocks;          // Council term length
-        uint64_t boule_min_stake;            // Dokimasia: min stake to register
+        uint64_t boule_min_stake;            // Dokimasia: min balance to register
         bool     boule_screening_required;   // Must pass Boule before assembly vote
 
         // ---- Voting thresholds (including VETO) ----------------------------
