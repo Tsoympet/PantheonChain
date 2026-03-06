@@ -165,20 +165,17 @@ void TestIsWhale() {
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestComputeBondedQuorum() {
-    std::cout << "Test: ComputeBondedQuorum = 5 % of bonded supply" << std::endl;
+void TestComputeEligibleVoterQuorum() {
+    std::cout << "Test: ComputeEligibleVoterQuorum = 5 % of eligible voters" << std::endl;
 
-    // 5 % of 2 000 000 = 100 000
-    assert(SupplyPolicy::ComputeBondedQuorum(2'000'000) == 100'000);
+    // 5 % of 2 000 000 eligible voters = 100 000
+    assert(SupplyPolicy::ComputeEligibleVoterQuorum(2'000'000) == 100'000);
 
     // 5 % of 0 = 0
-    assert(SupplyPolicy::ComputeBondedQuorum(0) == 0);
+    assert(SupplyPolicy::ComputeEligibleVoterQuorum(0) == 0);
 
-    // Against TALN staked supply: 5 % of 1 050 000 TALN base units
-    uint64_t staked = 1'050'000ULL * SupplyPolicy::BASE_UNIT;
-    uint64_t quorum = SupplyPolicy::ComputeBondedQuorum(staked);
-    // should equal 52 500 TALN in base units
-    assert(quorum == 52'500ULL * SupplyPolicy::BASE_UNIT);
+    // 5 % of 1 000 eligible voters = 50
+    assert(SupplyPolicy::ComputeEligibleVoterQuorum(1'000) == 50);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
@@ -196,7 +193,7 @@ int main() {
         TestIsBondingHealthy();
         TestExceedsTreasuryCap();
         TestIsWhale();
-        TestComputeBondedQuorum();
+        TestComputeEligibleVoterQuorum();
 
         std::cout << std::endl;
         std::cout << "=============================================" << std::endl;

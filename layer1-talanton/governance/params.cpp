@@ -22,7 +22,7 @@ GovernanceParams::Params GovernanceParams::Defaults() {
     p.slash_deposit_on_rejection   = false;
     p.slash_deposit_on_spam        = false;
 
-    p.quadratic_voting_enabled     = true;
+    p.quadratic_voting_enabled     = false;  // 1A1V: all holders get exactly 1 vote
     p.max_voting_power_cap         = 0;       // disabled
     p.whale_threshold_bps          = 1000;    // 10 %
 

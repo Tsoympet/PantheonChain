@@ -229,14 +229,21 @@ class VotingSystem {
     bool SlashDeposit(uint64_t proposal_id);
 
     /**
-     * Set total token supply so the anti-whale guard can compute percentages.
+     * Set total token supply for informational / anti-whale utility use.
+     * In the 1A1V model snapshot power is always 1, so this value has no
+     * effect on vote tallies.
      */
     void SetTotalSupply(uint64_t supply) { total_supply_ = supply; }
     uint64_t GetTotalSupply() const { return total_supply_; }
 
     /**
      * Attach an AntiWhaleGuard. Ownership stays with the caller.
-     * Pass nullptr to detach (voting power passes through unmodified).
+     * Pass nullptr to detach.
+     *
+     * NOTE: In the 1A1V model BalanceVotingRegistry snapshots give every
+     * voter power == 1, so an attached AntiWhaleGuard has no practical
+     * effect on live governance votes (floor(sqrt(1)) = 1; cap(1) = 1).
+     * Kept for future experimental use.
      */
     void SetAntiWhaleGuard(AntiWhaleGuard* guard) { anti_whale_ = guard; }
 

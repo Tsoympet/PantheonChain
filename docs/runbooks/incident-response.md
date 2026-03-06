@@ -76,7 +76,7 @@ echo "Tip after recovery: ${MYTIP}"
 ## 4. P1 – Governance Attack
 
 Signs of a governance attack:
-- A proposal passed with abnormally high voting power from a single address.
+- Multiple accounts coordinated to swing a vote (sybil attack on 1A1V).
 - A CONSTITUTIONAL proposal raised without the required 2/3 threshold.
 - A TREASURY_SPENDING proposal withdrawn immediately after execution.
 
@@ -100,7 +100,7 @@ pantheon-cli governance vote \
   --signature <SIG>
 ```
 
-A VETO rate > 33.34 % of total voting power will reject the proposal and slash the proposer's
+A VETO rate > 33.34 % of total votes cast will reject the proposal and slash the proposer's
 deposit (Cosmos Hub model).
 
 ### 4.3 Submit a Corrective Emergency Proposal

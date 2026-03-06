@@ -1,4 +1,10 @@
 // ParthenonChain – AntiWhaleGuard Unit Tests
+//
+// AntiWhaleGuard is a standalone utility for balance-based vote-power
+// transformations.  In the one-address-one-vote (1A1V) governance model
+// every holder gets exactly 1 vote via BalanceVotingRegistry snapshots,
+// so the guard has no practical effect on live votes.  These tests
+// validate the utility class independently.
 
 #include "governance/antiwhale.h"
 
@@ -108,7 +114,8 @@ void TestDefaultConfig() {
 
     AntiWhaleGuard g;
     const auto& cfg = g.GetConfig();
-    assert(cfg.quadratic_voting_enabled);
+    // Default: quadratic disabled (1A1V makes it unnecessary for live votes)
+    assert(!cfg.quadratic_voting_enabled);
     assert(cfg.max_voting_power_cap == 0);
     assert(cfg.whale_threshold_bps  == 1000);
 

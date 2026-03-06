@@ -1,10 +1,12 @@
 // ParthenonChain – VotingSystem integration tests
-// Tests anti-whale scaling, Boule screening, proposal deposits,
+// Tests 1A1V snapshot voting, Boule screening, proposal deposits,
 // CONSTITUTIONAL / EMERGENCY proposal types.
 
 #include "governance/voting.h"
 #include "governance/antiwhale.h"
+#include "governance/balance_voting.h"
 #include "governance/boule.h"
+#include "governance/snapshot.h"
 #include "core/crypto/schnorr.h"
 #include "core/crypto/sha256.h"
 
@@ -40,54 +42,69 @@ static Schnorr::Signature MakeVoteSignature(const Schnorr::PrivateKey& priv,
 static std::vector<uint8_t> Addr(uint8_t b) { return std::vector<uint8_t>(32, b); }
 
 // ---------------------------------------------------------------------------
-// Anti-whale integration
+// 1A1V snapshot integration
 // ---------------------------------------------------------------------------
 
-void TestAntiWhaleScalesVotingPower() {
-    std::cout << "Test: Anti-whale guard scales effective voting power in tallies" << std::endl;
+void Test1A1VSnapshotVotingPower() {
+    std::cout << "Test: 1A1V – snapshot gives every holder exactly 1 vote" << std::endl;
 
-    AntiWhaleGuard::Config cfg;
-    cfg.quadratic_voting_enabled = true;
-    cfg.max_voting_power_cap     = 0;
-    cfg.whale_threshold_bps      = 0;
-    AntiWhaleGuard guard(cfg);
+    // Set up balance registry with holders of vastly different balances
+    BalanceVotingRegistry bvr;
+    Schnorr::PrivateKey priv1{}, priv2{};
+    priv1[31] = 0x11;
+    priv2[31] = 0x12;
+    auto pub1 = *Schnorr::GetPublicKey(priv1);
+    auto pub2 = *Schnorr::GetPublicKey(priv2);
+    std::vector<uint8_t> voter1(pub1.begin(), pub1.end());
+    std::vector<uint8_t> voter2(pub2.begin(), pub2.end());
 
+    bvr.UpdateBalance(voter1, 1u);          // tiny holder
+    bvr.UpdateBalance(voter2, 1000000000u); // whale-level holder
+
+    SnapshotRegistry snap;
     VotingSystem vs;
     vs.SetDefaultQuorum(0);
-    vs.SetAntiWhaleGuard(&guard);
-    vs.SetTotalSupply(1000000);
+    vs.SetBalanceVotingRegistry(&bvr);
+    vs.SetSnapshotRegistry(&snap);
 
-    Schnorr::PrivateKey priv{};
-    priv[31] = 0x11;
-    auto pub = *Schnorr::GetPublicKey(priv);
-    std::vector<uint8_t> voter(pub.begin(), pub.end());
-
+    // CreateProposal() automatically creates a snapshot via snap + bvr.
+    // In 1A1V every holder in the snapshot has power == 1.
     uint64_t id = vs.CreateProposal(Addr(0x01), ProposalType::GENERAL, "T", "D", {});
+
+    // Verify snapshot was auto-created and both holders have power == 1
+    assert(snap.HasSnapshot(id));
+    assert(snap.GetSnapshotPower(id, voter1) == 1);
+    assert(snap.GetSnapshotPower(id, voter2) == 1);
+    assert(snap.GetSnapshotTotalPower(id)    == 2);
+
     vs.UpdateBlockHeight(VOTING_START_DELAY + 1);
 
-    // Raw power = 10000 → effective = sqrt(10000) = 100
-    uint64_t raw_power = 10000;
-    auto sig = MakeVoteSignature(priv, id, pub, VoteChoice::YES, raw_power);
-    assert(vs.CastVote(id, voter, VoteChoice::YES, raw_power,
-                       std::vector<uint8_t>(sig.begin(), sig.end())));
+    // CastVote uses snapshot power (1), so signature must commit to power=1
+    auto sig1 = MakeVoteSignature(priv1, id, pub1, VoteChoice::YES, 1u);
+    auto sig2 = MakeVoteSignature(priv2, id, pub2, VoteChoice::YES, 1u);
+
+    assert(vs.CastVote(id, voter1, VoteChoice::YES, 1u,
+                       std::vector<uint8_t>(sig1.begin(), sig1.end())));
+    assert(vs.CastVote(id, voter2, VoteChoice::YES, 1u,
+                       std::vector<uint8_t>(sig2.begin(), sig2.end())));
 
     vs.UpdateBlockHeight(VOTING_START_DELAY + VOTING_PERIOD + 1);
     vs.TallyVotes(id);
 
     auto p = vs.GetProposal(id);
     assert(p.has_value());
-    // Tally should record effective power (100), not raw (10000)
-    assert(p->yes_votes == 100);
+    // Whale and tiny holder each contribute exactly 1 vote
+    assert(p->yes_votes == 2);
 
     std::cout << "  \u2713 Passed" << std::endl;
 }
 
-void TestAntiWhaleDetached() {
-    std::cout << "Test: Without anti-whale guard raw power is used" << std::endl;
+void TestNoSnapshotRawPowerUsed() {
+    std::cout << "Test: Without snapshot, caller-supplied power is used directly" << std::endl;
 
     VotingSystem vs;
     vs.SetDefaultQuorum(0);
-    // No guard attached
+    // No snapshot registry attached
 
     Schnorr::PrivateKey priv{};
     priv[31] = 0x22;
@@ -97,7 +114,7 @@ void TestAntiWhaleDetached() {
     uint64_t id = vs.CreateProposal(Addr(0x01), ProposalType::GENERAL, "T", "D", {});
     vs.UpdateBlockHeight(VOTING_START_DELAY + 1);
 
-    uint64_t raw_power = 10000;
+    uint64_t raw_power = 42;
     auto sig = MakeVoteSignature(priv, id, pub, VoteChoice::YES, raw_power);
     assert(vs.CastVote(id, voter, VoteChoice::YES, raw_power,
                        std::vector<uint8_t>(sig.begin(), sig.end())));
@@ -266,12 +283,12 @@ void TestProposalDeposit() {
 int main() {
     std::cout << "=============================================" << std::endl;
     std::cout << "VotingSystem Integration Test Suite" << std::endl;
-    std::cout << "(Anti-whale, Boule, Deposits, New Types)" << std::endl;
+    std::cout << "(1A1V Snapshot, Boule, Deposits, New Types)" << std::endl;
     std::cout << "=============================================" << std::endl << std::endl;
 
     try {
-        TestAntiWhaleScalesVotingPower();
-        TestAntiWhaleDetached();
+        Test1A1VSnapshotVotingPower();
+        TestNoSnapshotRawPowerUsed();
         TestBouleScreeningBlocksVoting();
         TestMarkBouleApproved();
         TestConstitutionalProposalHigherThreshold();

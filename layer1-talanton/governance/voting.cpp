@@ -174,13 +174,15 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
         }
     }
 
-    // Apply anti-whale scaling to raw voting_power before tallying.
+    // Optional post-processing by AntiWhaleGuard.
+    // In the 1A1V model the snapshot always gives power == 1, so the guard
+    // is effectively a no-op for live governance votes (floor(sqrt(1)) = 1).
     uint64_t effective_power = voting_power;
     if (anti_whale_ != nullptr) {
         effective_power = anti_whale_->ComputeEffectivePower(voting_power, total_supply_);
     }
 
-    // Create vote record (record raw power for auditability)
+    // Create vote record (record power for auditability)
     Vote vote;
     vote.proposal_id = proposal_id;
     vote.voter = voter;
@@ -192,7 +194,7 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
     // Add to votes
     votes_[proposal_id].push_back(vote);
 
-    // Update tallies using effective (anti-whale-scaled) power
+    // Update tallies using (snapshot-overridden) effective power
     switch (choice) {
         case VoteChoice::YES:
             proposal.yes_votes += effective_power;
