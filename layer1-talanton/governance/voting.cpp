@@ -162,13 +162,15 @@ bool VotingSystem::CastVote(uint64_t proposal_id, const std::vector<uint8_t>& vo
     }
 
     // If a snapshot exists for this proposal, override the caller-supplied
-    // voting_power with the frozen snapshot power.  This prevents a voter from
-    // accumulating tokens after the snapshot block to inflate their weight.
+    // voting_power with the frozen snapshot power.
+    // In the one-address-one-vote model every eligible voter has power == 1
+    // at snapshot time; voters who held no tokens at the snapshot block
+    // have power == 0 and are denied the vote.
     if (snapshot_registry_ != nullptr &&
         snapshot_registry_->HasSnapshot(proposal_id)) {
         voting_power = snapshot_registry_->GetSnapshotPower(proposal_id, voter);
         if (voting_power == 0) {
-            return false;  // Voter had no stake at snapshot time
+            return false;  // Voter held no tokens at snapshot block
         }
     }
 

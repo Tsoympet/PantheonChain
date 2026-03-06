@@ -172,36 +172,36 @@ TALANTON's cap and achievable supply are essentially identical (gap < 0.001 TALN
 DRACHMA and OBOLOS hard caps are set to **100,000,000,000** (100 billion), matching the XRP maximum supply.  
 Achievable supply for both DRM and OBL is ~99.96B (40M below the 100B hard cap).
 
-Governance quorum and anti-whale thresholds are calibrated to the **achievable supply**,
-not the hard cap, so percentages reflect tokens that can actually be in circulation.
+Governance quorum is expressed as a percentage of the total number of eligible voters
+(token holders), not of the token supply.
 
-### Governance balance-supply tiers
+### Governance — One-Address-One-Vote
 
-Voting power is derived directly from token balance; **no staking is required**.
+PantheonChain governance uses **one-address-one-vote (1A1V)**:
 
-| Tier      | Basis pts | TALN (21M)   | DRM (99.96B)      | OBL (99.96B)      | Purpose                        |
-|-----------|:---------:|:------------:|:-----------------:|:-----------------:|--------------------------------|
-| TIER_LOW  |  500 bps  | 1,050,000    | 4,998,000,000     | 4,998,000,000     | Minimum participation / quorum |
-| TIER_MID  | 1000 bps  | 2,100,000    | 9,996,000,000     | 9,996,000,000     | Anti-whale influence ceiling   |
-| TIER_HIGH | 5000 bps  | 10,500,000   | 49,980,000,000    | 49,980,000,000    | Treasury hard cap              |
+- Every address holding ≥ 1 token of any asset gets exactly **1 vote**.
+- The amount of tokens held has no effect on voting power.
+- A holder with 1 TALN and a holder with 100 billion DRM each cast votes of equal weight.
+- Quorum thresholds are percentages of the total eligible voter count.
+- Snapshots are taken at `voting_start` block; addresses that acquire tokens later cannot vote on that proposal.
 
 ### TALANTON
 
 - mining rewards (PoW)
 - L1 fees
-- no staking utility
+- no staking utility; governance voting via 1A1V
 
 ### DRACHMA
 
 - PoW mining rewards
 - L2 fees
-- no staking utility; governance voting via token balance
+- no staking utility; governance voting via 1A1V
 
 ### OBOLOS
 
 - PoW mining rewards
 - EVM gas fees
-- no staking utility; governance voting via token balance
+- no staking utility; governance voting via 1A1V
 
 ---
 
@@ -237,7 +237,7 @@ Genesis parameters include:
 ### RPC namespaces
 
 - `/chain/info`
-- `/governance/*` (balance-based voting; no staking required)
+- `/governance/*` (one-address-one-vote; no staking required)
 - `/commitments/*`
 - `/evm/*` (OBOLOS only)
 
@@ -248,7 +248,7 @@ Genesis parameters include:
 Required testing domains:
 
 - Unit tests:
-  - balance-based voting power
+  - one-address-one-vote (1A1V) voting power
   - proposer determinism (PoW hash-power weighted)
   - commitment validation
 - Integration tests:

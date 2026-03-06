@@ -162,22 +162,31 @@ Each voter may cast exactly one of the following:
 | **ABSTAIN** | Counts toward quorum but not toward YES/NO ratio |
 | **VETO** | Counts against passage; if veto votes exceed 33.34 % of all votes cast (including abstain), the proposal is unconditionally defeated and enters a 14-day re-submission blackout |
 
-### Section 4.2 — Voting Power and Anti-Whale Protection
+### Section 4.2 — Voting Power (One-Address-One-Vote)
 
-Voting power is derived directly from **token balance** (no staking required).  
-To prevent plutocratic capture, voting power is computed using **quadratic weighting**:
+PantheonChain uses **one-address-one-vote (1A1V)** governance.  Every address
+holding at least 1 token of any PantheonChain asset receives exactly **1 vote**,
+regardless of the size of its balance.
 
 ```
-votingPower(address) = floor(sqrt(tokenBalance(address, snapshotBlock)))
+votingPower(address) = 1   if tokenBalance(address, snapshotBlock) > 0
+                     = 0   otherwise
 ```
 
-The snapshot block is the block at which the proposal was created (`proposalBlock`). Tokens acquired after `proposalBlock` do not count toward this proposal.
+Rationale: token wealth should not translate directly into governance power.
+A holder with 1 TALN and a holder with 1,000,000,000 DRM each cast votes of
+identical weight.  Total voting power for a proposal equals the number of
+eligible voters (addresses that were holders at the snapshot block).
+
+The snapshot block is the `voting_start` block of the proposal. Tokens acquired
+after the snapshot block do not confer voting rights for that proposal.
 
 Implementation: `BalanceVotingRegistry` + `VotingSystem::getVotingPower(address, snapshotBlock)`.
 
 ### Section 4.3 — Delegation
 
-A token holder may delegate their voting power to another address via `VotingSystem::delegate(delegatee)`. Delegation:
+A token holder may delegate their vote to another address via
+`VotingSystem::delegate(delegatee)`. Delegation:
 - Is revocable at any time, effective at the next proposal snapshot.
 - Does not transfer token custody.
 - Is limited to one level (no transitive delegation).
@@ -188,9 +197,10 @@ Votes are final once cast and cannot be changed. The voting contract does not ex
 
 ### Section 4.5 — Snapshot Integrity
 
-The balance snapshot mechanism is implemented in `BalanceVotingRegistry::SetBalances()`.
-Snapshots are taken at the proposal's `voting_start` block, preventing last-block balance
-attacks from inflating a holder's voting power for an ongoing vote.
+The holder snapshot is implemented in `BalanceVotingRegistry::SetBalances()`.
+Snapshots are taken at the proposal's `voting_start` block.  Any address that
+acquires tokens after the snapshot block is ineligible to vote on that proposal,
+preventing last-block attacks.
 
 ---
 
@@ -206,19 +216,16 @@ The following bounds are hard-coded in `GovernanceConstants.sol` and enforced at
 | Standard voting window | 3 days | 30 days | |
 | Constitutional voting window | 7 days | 60 days | |
 | Emergency execution TTL | 12 hours | 7 days | |
-| Standard quorum | 5 % | 30 % | Of total staked supply |
+| Standard quorum | 5 % | 30 % | Of total eligible voters |
 | Constitutional quorum | 10 % | 40 % | |
 | Supermajority threshold | 60 % | 80 % | For CONSTITUTIONAL proposals |
 | Veto threshold | 20 % | 45 % | Fraction of total votes |
-| Min proposal stake | 0.001 % | 1 % | Of total staked supply |
-| Min council stake | 0.01 % | 5 % | Of total staked supply |
+| Min proposal balance | 0.001 % | 1 % | Of total eligible voters |
+| Min council balance | 0.01 % | 5 % | Of total eligible voters |
 | Max concurrent proposals | 5 | 100 | Active at any one time |
 | Execution delay (standard) | 1 day | 14 days | |
 | Execution delay (constitutional) | 3 days | 30 days | |
 | Large grant threshold | 0.1 % | 10 % | Of treasury balance |
-| Slashing — double sign | 1 % | 30 % | Of validator stake |
-| Slashing — downtime | 0.001 % | 5 % | Of validator stake |
-| Anti-flash-stake cooldown | 1 block | 14 days | Before staked tokens earn voting power |
 | Ostracism duration | 30 days | 365 days | |
 
 ---
@@ -265,52 +272,39 @@ All treasury inflows, outflows, and grant disbursements are emitted as on-chain 
 
 ---
 
-## Article VII: Staking and Voting Power
+## Article VII: Token Holder Voting Rights
 
-### Section 7.1 — Minimum Stake
+### Section 7.1 — Eligibility
 
-The minimum stake to participate in the Ekklesia is **1 OBL** (1 OBOLOS token, the smallest indivisible unit that conveys voting power after the anti-flash-stake cooldown). There is no minimum stake to receive staking rewards, but voting power requires satisfying the cooldown.
+Any address holding at least 1 token of any PantheonChain asset (TALN, DRM, or OBL)
+is eligible to participate in governance.  No minimum balance above 1 is required.
 
-### Section 7.2 — Lock Periods
+### Section 7.2 — Voting Power
 
-Stakers may choose voluntary lock periods to increase their effective staking yield:
+PantheonChain governance uses **one-address-one-vote (1A1V)**.  Every eligible
+address receives exactly 1 vote, regardless of how many tokens it holds.
+Token wealth does not confer additional governance influence.
 
-| Lock Period | Yield Multiplier |
-|-------------|-----------------|
-| No lock (liquid) | 1× |
-| 30 days | 1.25× |
-| 90 days | 1.5× |
-| 180 days | 1.75× |
-| 365 days | 2× |
+Implementation: `BalanceVotingRegistry::GetVotingPower()` returns 1 for any
+holder, 0 for non-holders.
 
-Lock periods do **not** affect voting power (which uses raw quadratic staked balance) to prevent plutocratic lock-up strategies from disproportionately amplifying governance influence.
+### Section 7.3 — Snapshot Eligibility
 
-### Section 7.3 — Slashing
+A holder's eligibility is determined at the `voting_start` block of the proposal
+(the snapshot block).  Addresses that acquire tokens after the snapshot are
+ineligible for that proposal.
 
-Validators are subject to slashing for:
+Implementation: `BalanceVotingRegistry::GetAllVotingPowers()` emits `(address, 1)`
+for each holder at snapshot time.
 
-| Offense | Default Penalty | Recovery |
-|---------|----------------|---------|
-| Double signing (equivocation) | 5 % of stake | Slashed tokens are burned; validator enters 2-epoch cooldown |
-| Downtime (missed > 10 % of blocks in epoch) | 0.1 % of stake | Warning on first offense; full slashing on third offense within 4 epochs |
-| Fraudulent VRF proof | 10 % of stake | Permanent removal from Boule pool |
-| Governance manipulation (proven via Apophasis) | Up to 30 % of stake | Subject to Ostracism (Article VIII) |
-
-Slashing penalties are configurable by PARAMETER_CHANGE proposals within the Isonomia bounds defined in Article V.
-
-### Section 7.4 — Anti-Flash-Stake Cooldown
-
-Tokens staked less than `ANTI_FLASH_STAKE_COOLDOWN` blocks before a proposal's snapshot block do not count toward voting power for that proposal. This prevents last-minute stake accumulation to influence a specific vote.
-
-Implementation: `Staking::snapshotAt` filters tokens by their `stakedAtBlock` against `proposalSnapshotBlock - ANTI_FLASH_STAKE_COOLDOWN`.
-
-### Section 7.5 — Vesting Grants
+### Section 7.4 — Vesting Grants
 
 The Treasury may issue vesting grants to contributors:
 
 - **Cliff period**: A minimum duration before any tokens vest.
 - **Linear vesting**: After the cliff, tokens vest continuously block-by-block.
-- Unvested tokens count toward voting power but are subject to clawback if the grant conditions are violated.
+- Unvested tokens count toward voting eligibility; the holder address is still
+  registered as an eligible voter.
 
 Implementation: `Treasury::createVestingGrant(recipient, amount, cliff, duration)`.
 

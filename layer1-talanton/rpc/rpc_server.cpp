@@ -1262,23 +1262,24 @@ RPCResponse RPCServer::HandleStakingGetPower(const RPCRequest& req) {
             response.error = "Invalid address";
             return response;
         }
-        // Look up the address's voting power from the balance registry.
+        // One-address-one-vote: GetVotingPower() returns 1 for any holder, 0 otherwise.
         uint64_t power = 0;
         uint64_t total = 0;
         if (balance_registry_) {
             power = balance_registry_->GetVotingPower(addr);
             total = balance_registry_->GetTotalVotingPower();
         } else if (wallet_) {
-            // Fallback: if no balance registry, return the wallet's own balance
-            // (only valid when querying the wallet's own address).
-            power = wallet_->GetBalance(primitives::AssetID::TALANTON);
+            // Fallback: check if the wallet holds any tokens.
+            power = (wallet_->GetBalance(primitives::AssetID::TALANTON) > 0 ||
+                     wallet_->GetBalance(primitives::AssetID::DRACHMA)  > 0 ||
+                     wallet_->GetBalance(primitives::AssetID::OBOLOS)   > 0) ? 1u : 0u;
         }
         json result;
-        result["address"]         = addr_hex;
-        result["voting_power"]    = power;
-        result["total_power"]     = total;
-        result["source"]          = "token_balance";
-        result["staking_enabled"] = false;
+        result["address"]           = addr_hex;
+        result["voting_power"]      = power;
+        result["total_voters"]      = total;
+        result["source"]            = "one_address_one_vote";
+        result["staking_enabled"]   = false;
         response.result = result.dump();
     } catch (const std::exception& e) {
         response.error = std::string("Parse error: ") + e.what();

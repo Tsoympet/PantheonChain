@@ -48,10 +48,12 @@ from >=2/3 contributing hash power are collected.
 
 ## Governance Voting
 
-All three layers use **balance-based governance voting**:
+All three layers use **one-address-one-vote (1A1V)** governance:
 
-- Voting power = token balance at snapshot block.
-- No staking required; any token holder can vote.
-- Snapshots are taken when a proposal enters the ACTIVE state to prevent
-  last-block attacks.
-- Anti-whale guard (quadratic voting or hard cap) limits plutocratic dominance.
+- Every address holding at least 1 token of any PantheonChain asset gets exactly **1 vote**.
+- The amount of tokens held has no effect on voting power.
+- A whale with 1 billion tokens and a new holder with 1 token each cast votes of equal weight.
+- Snapshots are taken when a proposal enters the ACTIVE state to freeze the eligible voter
+  set and prevent last-block balance attacks.
+- `BalanceVotingRegistry` tracks which addresses are holders; `GetAllVotingPowers()` returns
+  `(address, 1)` for every holder.
