@@ -32,4 +32,21 @@ L1_COMMIT=$(rpc_call 18332 commitments/get '["l1-anchor-1"]')
 echo "$L1_COMMIT" | grep -qE '"source_chain"\s*:\s*"DRACHMA"'
 echo "$L1_COMMIT" | grep -q "$OB_HASH"
 
+# Staking: stake on L2, check 1A1V voting power
+rpc_call 19332 staking/stake '[{"address":"devnet-addr1","amount":500,"layer":"l2"}]' | grep -q 'accepted'
+POWER=$(rpc_call 19332 staking/get_power '[{"address":"devnet-addr1"}]')
+echo "$POWER" | grep -qE '"voting_power"\s*:\s*1'
+echo "$POWER" | grep -q 'one_address_one_vote'
+
+# Governance: submit proposal and cast vote
+GOV_SUBMIT=$(rpc_call 19332 governance/submitProposal \
+  '[{"title":"Devnet Test","description":"Governance smoke test","proposer":"devnet-addr1","deposit_amount":100}]')
+PROP_ID=$(echo "$GOV_SUBMIT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["proposal_id"])')
+rpc_call 19332 governance/castVote "[{\"proposal_id\":${PROP_ID},\"voter\":\"devnet-addr1\",\"vote\":\"yes\"}]" \
+  | grep -q 'accepted'
+rpc_call 19332 governance/listProposals '[]' | grep -q 'proposals'
+
+# Treasury balance
+rpc_call 19332 treasury/getBalance '[]' | grep -q 'total'
+
 echo "devnet smoke test passed"

@@ -1,27 +1,108 @@
 version: '3.8'
+
+networks:
+  pantheon-net:
+    driver: bridge
+
+volumes:
+  l1-data:
+  l2-data:
+  l3-data:
+
 services:
   talanton-l1:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    command: ["pantheon-l1-talanton-node", "--layer=l1"]
+    command: ["pantheon-l1-talanton-node", "--layer=l1", "--config=/etc/pantheon/l1.conf"]
+    restart: unless-stopped
+    ports:
+      - "8332:8332"
+      - "8333:8333"
+    volumes:
+      - l1-data:/var/lib/pantheon/l1
+      - ../configs/mainnet/l1.conf:/etc/pantheon/l1.conf:ro
+    networks:
+      - pantheon-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8332/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
   drachma-l2:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    command: ["pantheon-l2-drachma-node", "--layer=l2"]
+    command: ["pantheon-l2-drachma-node", "--layer=l2", "--config=/etc/pantheon/l2.conf"]
+    restart: unless-stopped
+    ports:
+      - "9332:9332"
+      - "9333:9333"
+    volumes:
+      - l2-data:/var/lib/pantheon/l2
+      - ../configs/mainnet/l2.conf:/etc/pantheon/l2.conf:ro
+    networks:
+      - pantheon-net
+    depends_on:
+      talanton-l1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9332/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
   obolos-l3:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    command: ["pantheon-l3-obolos-node", "--layer=l3"]
-  relayer-l3:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    command: ["pantheon-relayer-l3"]
+    command: ["pantheon-l3-obolos-node", "--layer=l3", "--config=/etc/pantheon/l3.conf"]
+    restart: unless-stopped
+    ports:
+      - "10332:10332"
+      - "10333:10333"
+    volumes:
+      - l3-data:/var/lib/pantheon/l3
+      - ../configs/mainnet/l3.conf:/etc/pantheon/l3.conf:ro
+    networks:
+      - pantheon-net
+    depends_on:
+      drachma-l2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:10332/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
   relayer-l2:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     command: ["pantheon-relayer-l2"]
+    restart: unless-stopped
+    networks:
+      - pantheon-net
+    depends_on:
+      talanton-l1:
+        condition: service_healthy
+      drachma-l2:
+        condition: service_healthy
+
+  relayer-l3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["pantheon-relayer-l3"]
+    restart: unless-stopped
+    networks:
+      - pantheon-net
+    depends_on:
+      drachma-l2:
+        condition: service_healthy
+      obolos-l3:
+        condition: service_healthy
