@@ -91,7 +91,7 @@ updates:
     # Ignore major version updates for React Native (breaking changes)
     ignore:
       - dependency-name: "react-native"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
     # Group updates by type
