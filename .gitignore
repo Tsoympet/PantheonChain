@@ -156,3 +156,7 @@ Testing/Temporary/
 .DS_Store
 Thumbs.db
 scripts/__pycache__/
+
+# Devnet / testnet ephemeral runtime state
+.devnet/
+.testnet/
