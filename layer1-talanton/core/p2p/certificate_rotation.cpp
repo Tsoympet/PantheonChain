@@ -18,7 +18,9 @@
 #include <thread>
 
 #if !defined(_WIN32)
+#include <fcntl.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 namespace parthenon {
@@ -220,8 +222,24 @@ bool CertificateRotation::GenerateSelfSigned(const std::string& cert_path,
         return false;
     }
 
-    // Write private key to file (unencrypted; secure with restrictive permissions below)
-    FILE* key_fp = fopen(key_path.c_str(), "w");
+    // Write private key to file with restricted permissions (owner-read/write only, 0600).
+    // On POSIX, use open() with explicit mode so the file is never world-writable,
+    // even transiently.  On Windows, fall back to fopen().
+    FILE* key_fp = nullptr;
+#if !defined(_WIN32)
+    {
+        int key_fd = ::open(key_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
+                            S_IRUSR | S_IWUSR);
+        if (key_fd != -1) {
+            key_fp = ::fdopen(key_fd, "w");
+            if (!key_fp) {
+                ::close(key_fd);
+            }
+        }
+    }
+#else
+    key_fp = fopen(key_path.c_str(), "w");
+#endif
     if (!key_fp) {
         X509_free(x509);
         EVP_PKEY_free(pkey);
@@ -231,13 +249,24 @@ bool CertificateRotation::GenerateSelfSigned(const std::string& cert_path,
     bool key_ok = PEM_write_PrivateKey(key_fp, pkey, nullptr, nullptr, 0, nullptr, nullptr) == 1;
     fclose(key_fp);
 
-    // Restrict private key file permissions to owner-read/write only (0600)
+    // Write certificate to file with owner-write, world-read permissions (0644).
+    // On POSIX, use open() with explicit mode so the file is never world-writable,
+    // even transiently.  On Windows, fall back to fopen().
+    FILE* cert_fp = nullptr;
 #if !defined(_WIN32)
-    chmod(key_path.c_str(), S_IRUSR | S_IWUSR);
+    {
+        int cert_fd = ::open(cert_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
+                             S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        if (cert_fd != -1) {
+            cert_fp = ::fdopen(cert_fd, "w");
+            if (!cert_fp) {
+                ::close(cert_fd);
+            }
+        }
+    }
+#else
+    cert_fp = fopen(cert_path.c_str(), "w");
 #endif
-
-    // Write certificate to file
-    FILE* cert_fp = fopen(cert_path.c_str(), "w");
     if (!cert_fp) {
         X509_free(x509);
         EVP_PKEY_free(pkey);

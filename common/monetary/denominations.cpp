@@ -16,9 +16,14 @@ std::string LowerTrimmed(std::string value) {
                 }).base(),
                 value.end());
 
-    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-    });
+    for (char& ch : value) {
+        const int uc = static_cast<unsigned char>(ch);
+        // Only apply tolower to ASCII characters (0–127); for those values,
+        // std::tolower returns a value in [0, 127] that safely casts to char.
+        if (uc < 128) {
+            ch = static_cast<char>(std::tolower(uc));
+        }
+    }
     return value;
 }
 
@@ -74,6 +79,14 @@ const std::vector<DenominationDefinition>& GetAtticDisplayDenominations(
 
 const DenominationDefinition* ResolveDenomination(parthenon::primitives::AssetID asset,
                                                   const std::string& name_or_alias) {
+    // Denomination names are ASCII-only; reject strings containing bytes
+    // outside [0, 127] to prevent tainted data from reaching tolower.
+    for (const char c : name_or_alias) {
+        if (c < 0) {
+            return nullptr;
+        }
+    }
+
     const auto needle = LowerTrimmed(name_or_alias);
     if (needle.empty()) {
         return nullptr;
