@@ -13,8 +13,8 @@
     "build:ios:eas": "eas build --platform ios --profile ios-release"
   },
   "dependencies": {
-    "@react-navigation/native": "^7.1.31",
-    "@react-navigation/stack": "^7.8.2",
+    "@react-navigation/native": "^7.1.33",
+    "@react-navigation/stack": "^7.8.4",
     "expo": "^55.0.5",
     "react": "18.3.1",
     "react-native": "0.81.5",
