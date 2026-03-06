@@ -75,7 +75,9 @@ const App = () => {
 
   const toggleMining = () => {
     setMiningEnabled(!miningEnabled);
-    setHashrate(miningEnabled ? 0 : 1.2);
+    // Actual hashrate is read from the mining RPC endpoint.
+    // Set to 0 when disabled; the node reports the real value when enabled.
+    setHashrate(miningEnabled ? 0 : 0);
   };
 
   const WalletScreen = () => (

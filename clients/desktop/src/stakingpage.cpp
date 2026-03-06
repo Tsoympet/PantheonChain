@@ -45,7 +45,8 @@ void StakingPage::setupUI() {
     // Info banner
     QLabel *infoLabel = new QLabel(
         tr("Stake DRACHMA (DRM) on L2 or OBOLOS (OBL) on L3 to participate in Proof-of-Stake "
-           "consensus and earn governance voting power."),
+           "consensus. Note: staking does NOT affect governance voting weight — "
+           "every token holder gets exactly one vote regardless of stake size (1A1V model)."),
         this);
     infoLabel->setWordWrap(true);
     infoLabel->setStyleSheet("QLabel { background-color: #e8f4fd; border-left: 4px solid #007AFF; "
@@ -114,7 +115,7 @@ void StakingPage::setupUI() {
     QVBoxLayout *notesLayout = new QVBoxLayout(notesBox);
     const QStringList notes = {
         tr("• Staked tokens are locked during the unbonding period."),
-        tr("• Staking increases governance voting power proportionally."),
+        tr("• Staking does NOT increase governance voting power — all holders vote equally (1A1V)."),
         tr("• Slashing may apply for validator misbehaviour."),
         tr("• Rewards are distributed at the end of each epoch."),
     };

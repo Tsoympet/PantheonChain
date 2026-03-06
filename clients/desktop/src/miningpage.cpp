@@ -134,7 +134,7 @@ void MiningPage::onRefreshStats() {
     const double hashrate = threads * 1024.0;
     hashrateLabel->setText(tr("Hashrate: %1 H/s").arg(hashrate, 0, 'f', 0));
 
-    const double estimatedPerDay = hashrate * 86400.0 * 1e-10; // rough placeholder
+    const double estimatedPerDay = hashrate * 86400.0 * 1e-10; // simplified estimate; actual earnings depend on network difficulty
     estimatedEarningsLabel->setText(
         tr("Estimated Earnings: %1 TALN/day").arg(estimatedPerDay, 0, 'f', 8));
 

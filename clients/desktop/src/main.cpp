@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 
     // Set application metadata
     QApplication::setApplicationName("ParthenonChain Wallet");
-    QApplication::setApplicationVersion("1.0.0");
+    QApplication::setApplicationVersion("2.2.0");
     QApplication::setOrganizationName("ParthenonChain");
     QApplication::setOrganizationDomain("parthenonchain.org");
 

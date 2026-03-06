@@ -70,7 +70,7 @@ void ReceivePage::setupUI() {
 
     mainLayout->addWidget(addressBox);
 
-    // QR Code placeholder
+    // QR Code panel — rendered by the QLabel widget; the address is set by onAddressReceived().
     QGroupBox *qrBox = new QGroupBox(tr("QR Code"), this);
     QVBoxLayout *qrLayout = new QVBoxLayout(qrBox);
 
