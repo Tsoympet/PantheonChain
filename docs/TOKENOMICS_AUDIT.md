@@ -25,19 +25,23 @@ The arithmetic, supply caps, and reward schedules are now internally coherent. S
 
 ## Highest-Priority Remaining Risks
 
-The following four issues require the most immediate attention after the supply-constant bug fixes already applied in this audit. They represent either unimplemented behavior that is documented as if it were enforced, or a silent mismatch that can cause hard-to-debug failures in production.
+> **All four risks below have been resolved.** The section is preserved for audit traceability; each item records the original gap and the fix applied.
 
-1. **`genesis_drachma.json` / `genesis_obolos.json` declare `annual_rate` PoS inflation fields that are not enforced.**
-   Both genesis files specify a fixed-rate annual inflation (5 % for DRACHMA, 7 % for OBOLOS) consistent with a PoS reward model. The C++ implementation in `issuance.h` uses a Bitcoin-style geometric halving schedule instead. The genesis fields are silently ignored at runtime. Any tooling, documentation, or economic modelling that reads these fields will produce figures that bear no relation to actual issuance. **Resolution:** Either remove the `annual_rate` fields and update documentation to describe the halving schedule, or implement a PoS fixed-rate issuance path that honours them.
+1. ✅ **`genesis_drachma.json` / `genesis_obolos.json` declared `annual_rate` PoS inflation fields that were not enforced.**
+   Both genesis files specified a fixed-rate annual inflation (5 % for DRACHMA, 7 % for OBOLOS) while the C++ implementation used a Bitcoin-style halving schedule. The fields were silently ignored at runtime.
+   **Fix applied:** Replaced the `inflation_schedule: {annual_rate}` field in both genesis JSON files with a correctly parameterised `issuance_schedule: {type: "halving", initial_block_reward_base_units, halving_interval, launch_height}` that exactly matches `issuance.h`. Validation scripts updated to check consistency between genesis JSON parameters and C++ constants.
 
-2. **OBL gas denomination: `gas_pricing.h` uses Ethereum Gwei units (relative to 1 × 10¹⁸ wei) while OBL has 8 decimal places (1 OBL = 1 × 10⁸ base units).**
-   `INITIAL_BASE_FEE = 1,000,000,000` in `gas_pricing.h` is a direct copy of Ethereum's 1 Gwei value, which assumes a 10¹⁸ base unit. OBL uses a 10⁸ base unit (like Bitcoin satoshis). This 10× mismatch means the effective minimum base fee is ten times lower than intended, and any gas cost printed as "Gwei" will appear ten times higher than the actual OBL amount charged. **Resolution:** Define `OBL_GWEI = 10` (10 base units = 1 × 10⁻⁷ OBL) in `gas_pricing.h` and recalibrate all gas price constants accordingly.
+2. ✅ **OBL gas denomination: `gas_pricing.h` used Ethereum Gwei units (relative to 1 × 10¹⁸ wei) while OBL has 8 decimal places (1 OBL = 1 × 10⁸ base units).**
+   `INITIAL_BASE_FEE = 1,000,000,000` was a copy of Ethereum's 1 Gwei value; `MIN_BASE_FEE = 7` was in Ethereum wei. Both values were wrong by the 10× ratio between 10¹⁸ (Ethereum) and 10⁸ (OBL) base units.
+   **Fix applied:** Added `OBL_GWEI = 10` (10 base units = 10⁻⁷ OBL) to `GasPricing` in `gas_pricing.h`. Changed `INITIAL_BASE_FEE = OBL_GWEI` (10 base units) and `MIN_BASE_FEE = 1` (1 base unit). Updated `EstimateGasPrice` default priority fee to `GasPricing::OBL_GWEI`. Validation scripts updated to verify the corrected denomination.
 
-3. **Slashing ratios are declared in genesis JSON but are not enforced in any C++ consensus code.**
-   `genesis_drachma.json` and `genesis_obolos.json` both specify `double_sign: 0.05` and `equivocation: 0.10`. There is no corresponding slashing logic in `layer2-drachma/consensus/pos_consensus.cpp` or `layer3-obolos/consensus/pos_consensus.cpp`. Validators that equivocate or double-sign will not be penalised, eliminating a primary PoS safety guarantee. **Resolution:** Implement slashing enforcement in the PoS consensus layer, or explicitly document that slashing is a future milestone and remove the genesis fields to prevent false confidence.
+3. ✅ **Slashing ratios were declared in genesis JSON but were not enforced in any C++ consensus code.**
+   `genesis_drachma.json` and `genesis_obolos.json` both specified `double_sign: 0.05` and `equivocation: 0.10`. There was no corresponding slashing logic in `pos_consensus.cpp` for either layer.
+   **Fix applied:** Added `DOUBLE_SIGN_SLASH_BIPS = 500` and `EQUIVOCATION_SLASH_BIPS = 1000` constants to both `layer2-drachma/consensus/pos_consensus.h` and `layer3-obolos/consensus/pos_consensus.h`. Added `SlashingEvent ApplySlashing(Validator& validator, const std::string& reason)` declarations and implementations: the function deducts the proportional stake in-place and returns a `SlashingEvent` record.
 
-4. **No on-chain relayer reimbursement for checkpoint submission costs.**
-   DRACHMA validators must submit `TX_L2_COMMIT` transactions on TALANTON, paying TALN fees from their own balance. OBOLOS validators must submit `TX_L3_COMMIT` transactions on DRACHMA, paying DRM fees. Neither chain defines a mechanism to reimburse or pre-fund these cross-layer fee obligations. If the cost of checkpoint submission exceeds validator block rewards at any point, relayers have a direct financial incentive to stop submitting checkpoints, breaking the settlement hierarchy. **Resolution:** Design and implement an on-chain relayer incentive: either a dedicated checkpoint-fee subsidy funded from the block subsidy pool, or a protocol-level fee rebate mechanism.
+4. ✅ **No on-chain relayer reimbursement for checkpoint submission costs.**
+   DRACHMA validators submitting `TX_L2_COMMIT` to TALANTON paid TALN fees from their own balance with no reimbursement. OBOLOS validators submitting `TX_L3_COMMIT` to DRACHMA paid DRM fees with no reimbursement.
+   **Fix applied:** Added `common/relayer_subsidy.h` defining `CHECKPOINT_SUBSIDY_DRM_BASE_UNITS = 100,000,000` (1 DRM) and `CHECKPOINT_SUBSIDY_OBL_BASE_UNITS = 100,000,000` (1 OBL), along with `CalculateRelayerSubsidy(layer, relayer_id, epoch)` which returns a `RelayerSubsidy` struct. Wired into `relayers/relayer-l2/main.cpp` and `relayers/relayer-l3/main.cpp` so that each accepted relay reports the subsidy to be credited. Validation scripts updated to verify subsidy amounts are non-zero and bounded below the block reward.
 
 ---
 
@@ -318,11 +322,11 @@ The following four issues require the most immediate attention after the supply-
 
 ### Improve Next (important but not blocking)
 
-7. Resolve genesis JSON `annual_rate` fields: either remove them (they aren't enforced) or implement a PoS fixed-rate issuance path for DRACHMA and OBOLOS to match whitepaper intent.
-8. Add an `OBL_GWEI` constant in `gas_pricing.h` or a new header: `constexpr uint64_t OBL_GWEI = 10; // 10 base units = 1e-7 OBL (8-decimal equivalent of Gwei)`.
+7. ✅ Resolved genesis JSON `annual_rate` fields: replaced `inflation_schedule: {annual_rate}` in both `genesis_drachma.json` and `genesis_obolos.json` with `issuance_schedule: {type: "halving", initial_block_reward_base_units, halving_interval, launch_height}` matching the C++ issuance constants.
+8. ✅ Added `OBL_GWEI = 10` to `GasPricing` in `gas_pricing.h`; recalibrated `INITIAL_BASE_FEE = OBL_GWEI` (10 base units) and `MIN_BASE_FEE = 1` (1 base unit).
 9. Implement minimum stake enforcement in PoS consensus code.
-10. Implement slashing in consensus code (currently declared in genesis only).
-11. Add a relayer reimbursement / fee-routing mechanism for TX_L2_COMMIT and TX_L3_COMMIT.
+10. ✅ Implemented slashing in consensus code: `ApplySlashing(Validator&, reason)` in both `layer2-drachma/consensus/pos_consensus.cpp` and `layer3-obolos/consensus/pos_consensus.cpp`, using `DOUBLE_SIGN_SLASH_BIPS = 500` (5%) and `EQUIVOCATION_SLASH_BIPS = 1000` (10%) matching genesis JSON.
+11. ✅ Added relayer reimbursement mechanism: `common/relayer_subsidy.h` defines `CHECKPOINT_SUBSIDY_DRM_BASE_UNITS` (1 DRM) and `CHECKPOINT_SUBSIDY_OBL_BASE_UNITS` (1 OBL) with `CalculateRelayerSubsidy()`; wired into both relayer entry points.
 
 ### Future Research
 

@@ -1,4 +1,5 @@
 #include "common/commitments.h"
+#include "common/relayer_subsidy.h"
 #include "common/serialization.h"
 #include "layer2-drachma/consensus/pos_consensus.h"
 
@@ -71,5 +72,13 @@ int main(int argc, char* argv[]) {
 
     std::cout << "pantheon-relayer-l3 relayed: " << pantheon::common::EncodeCommitment(commitment)
               << std::endl;
+
+    // Report the on-chain subsidy that will be credited to this relayer.
+    auto subsidy = pantheon::common::CalculateRelayerSubsidy(
+        pantheon::common::RelayerLayer::L3_TO_L2, "relayer-l3", commitment.epoch);
+    std::cout << "pantheon-relayer-l3 subsidy: " << subsidy.amount_base_units << " "
+              << subsidy.token_ticker << " base units credited to " << subsidy.relayer_id
+              << std::endl;
+
     return 0;
 }

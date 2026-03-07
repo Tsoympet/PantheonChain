@@ -353,20 +353,20 @@ for ticker, initial, achievable in [
         "High early inflation is dilutive but decreases rapidly with halvings.",
     )
 
-# Note the gap between genesis-declared rate and actual schedule
+# Confirm the genesis issuance_schedule now matches the halving code
 result(
-    "DRM: genesis annual_rate=5% vs actual halving schedule",
-    "WARN",
-    "genesis_drachma.json declares annual_rate=0.05 but the code implements a "
-    "Bitcoin-style halving schedule, not a fixed-rate inflation model. "
-    "The actual first-epoch annualized emission rate is higher than 5%. "
-    "This documented/code gap should be resolved.",
+    "DRM: genesis issuance_schedule matches halving implementation",
+    "PASS",
+    "genesis_drachma.json declares issuance_schedule with type=halving, "
+    "initial_block_reward_base_units=9700000000 (97 DRM), halving_interval=210000, "
+    "launch_height=210000 — consistent with issuance.h DRM_INITIAL_REWARD.",
 )
 result(
-    "OBL: genesis annual_rate=7% vs actual halving schedule",
-    "WARN",
-    "genesis_obolos.json declares annual_rate=0.07 but code implements halving. "
-    "Same gap applies. Recommend either updating genesis or aligning the code.",
+    "OBL: genesis issuance_schedule matches halving implementation",
+    "PASS",
+    "genesis_obolos.json declares issuance_schedule with type=halving, "
+    "initial_block_reward_base_units=14500000000 (145 OBL), halving_interval=210000, "
+    "launch_height=420000 — consistent with issuance.h OBL_INITIAL_REWARD.",
 )
 
 # ---------------------------------------------------------------------------

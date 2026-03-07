@@ -54,11 +54,20 @@ OBL_MIN_STAKE = 500     # OBL
 # to consider the chain minimally secure.
 MIN_VALIDATORS = 4   # BFT requires >= 4 validators for 2/3 quorum
 
-# Annual PoS inflation rates declared in genesis JSONs (informational only;
-# NOT enforced in the current halving-schedule issuance code).
-# These represent documented aspirations, not implemented mechanics.
-DRACHMA_GENESIS_ANNUAL_RATE = 0.05   # 5 %
-OBOLOS_GENESIS_ANNUAL_RATE  = 0.07   # 7 %
+# Annual PoS inflation rates formerly declared in genesis JSONs (REMOVED in fix).
+# Both genesis files now carry issuance_schedule with the correct halving parameters
+# instead of the misleading annual_rate field.
+# DRACHMA_GENESIS_ANNUAL_RATE = 0.05  # removed
+# OBOLOS_GENESIS_ANNUAL_RATE  = 0.07  # removed
+
+# Genesis halving schedule parameters (now in genesis_drachma.json / genesis_obolos.json)
+DRM_GENESIS_INITIAL_REWARD_BASE = 9700000000   # 97 DRM * 1e8
+DRM_GENESIS_HALVING_INTERVAL    = 210000
+DRM_GENESIS_LAUNCH_HEIGHT       = 210000
+
+OBL_GENESIS_INITIAL_REWARD_BASE = 14500000000  # 145 OBL * 1e8
+OBL_GENESIS_HALVING_INTERVAL    = 210000
+OBL_GENESIS_LAUNCH_HEIGHT       = 420000
 
 PASS = "\033[32mPASS\033[0m"
 FAIL = "\033[31mFAIL\033[0m"
@@ -163,11 +172,19 @@ if drm_min_validator_stake / (DRM_MAX_SUPPLY) < 0.0001:
         "validator entry cost is very low, raising Sybil risk"
     )
 
-# Genesis declares PoS annual rate but code uses halving schedule – flag the gap
-warn(
-    "DRM: genesis_drachma.json declares annual_rate=0.05 (PoS model), but "
-    "issuance.cpp implements a PoW-style halving schedule. "
-    "The PoS annual-rate field is NOT enforced in the current implementation.",
+# Verify genesis_drachma.json issuance_schedule matches C++ constants
+check(
+    "DRM: genesis issuance_schedule initial_block_reward_base_units == DRM_INITIAL_REWARD * BASE_UNIT",
+    DRM_GENESIS_INITIAL_REWARD_BASE == DRM_INITIAL_REWARD * BASE_UNIT,
+    f"{DRM_GENESIS_INITIAL_REWARD_BASE} == {DRM_INITIAL_REWARD * BASE_UNIT}",
+)
+check(
+    "DRM: genesis issuance_schedule halving_interval matches HALVING_INTERVAL",
+    DRM_GENESIS_HALVING_INTERVAL == HALVING_INTERVAL,
+)
+check(
+    "DRM: genesis issuance_schedule launch_height matches expected DRM launch height",
+    DRM_GENESIS_LAUNCH_HEIGHT == HALVING_INTERVAL,
 )
 
 # ---------------------------------------------------------------------------
@@ -190,10 +207,19 @@ check(
     obl_min_validator_stake < obl_first_epoch_supply,
 )
 
-warn(
-    "OBL: genesis_obolos.json declares annual_rate=0.07 (PoS model), but "
-    "issuance.cpp implements a PoW-style halving schedule. "
-    "The PoS annual-rate field is NOT enforced in the current implementation.",
+# Verify genesis_obolos.json issuance_schedule matches C++ constants
+check(
+    "OBL: genesis issuance_schedule initial_block_reward_base_units == OBL_INITIAL_REWARD * BASE_UNIT",
+    OBL_GENESIS_INITIAL_REWARD_BASE == OBL_INITIAL_REWARD * BASE_UNIT,
+    f"{OBL_GENESIS_INITIAL_REWARD_BASE} == {OBL_INITIAL_REWARD * BASE_UNIT}",
+)
+check(
+    "OBL: genesis issuance_schedule halving_interval matches HALVING_INTERVAL",
+    OBL_GENESIS_HALVING_INTERVAL == HALVING_INTERVAL,
+)
+check(
+    "OBL: genesis issuance_schedule launch_height matches expected OBL launch height",
+    OBL_GENESIS_LAUNCH_HEIGHT == 2 * HALVING_INTERVAL,
 )
 
 # ---------------------------------------------------------------------------
@@ -201,42 +227,42 @@ warn(
 # ---------------------------------------------------------------------------
 section("4. OBOLOS – EIP-1559 gas fee path")
 
-MIN_BASE_FEE = 7           # wei (from gas_pricing.h)
-INITIAL_BASE_FEE = 1_000_000_000   # 1 Gwei
+# OBL_GWEI = 10 base units (= 10^-7 OBL), the 8-decimal analogue of Ethereum Gwei.
+# INITIAL_BASE_FEE = OBL_GWEI = 10 base units  (was 1,000,000,000 Ethereum wei — fixed).
+# MIN_BASE_FEE     = 1 base unit                (was 7 Ethereum wei — fixed).
+OBL_GWEI         = 10               # 10 base units = 10^-7 OBL  (gas_pricing.h)
+MIN_BASE_FEE     = 1                # 1 base unit  (gas_pricing.h)
+INITIAL_BASE_FEE = OBL_GWEI         # gas_pricing.h: INITIAL_BASE_FEE = OBL_GWEI
 TARGET_GAS_PER_BLOCK = 15_000_000
 MAX_GAS_PER_BLOCK    = 30_000_000
 
+check("OBL: OBL_GWEI > 0 (non-zero gas unit)", OBL_GWEI > 0)
 check("OBL: MIN_BASE_FEE > 0 (spam resistance floor)", MIN_BASE_FEE > 0)
 check("OBL: INITIAL_BASE_FEE >= MIN_BASE_FEE", INITIAL_BASE_FEE >= MIN_BASE_FEE)
 check("OBL: MAX_GAS_PER_BLOCK == 2 * TARGET_GAS_PER_BLOCK (EIP-1559 elasticity)",
       MAX_GAS_PER_BLOCK == 2 * TARGET_GAS_PER_BLOCK)
 
-# A full block at initial base fee: base_fee_burned per block
+# Verify the corrected denomination: INITIAL_BASE_FEE must be << OBL achievable supply
+# so a full block at initial base fee doesn't burn the entire supply in one epoch.
 max_burn_per_block = MAX_GAS_PER_BLOCK * INITIAL_BASE_FEE
-print(f"  [INFO] Max base-fee burn per block (full block, initial base fee): "
-      f"{max_burn_per_block:,} wei")
-
-# OBL block reward (initial): 145 OBL = 145 * 1e8 base units
-# But gas is denominated in wei (1e18) for Ethereum. OBOLOS uses OBL as gas token.
-# If OBL base unit = 1e8 (not 1e18), Gwei-equivalent = 1e8 / 1e9 = 0.1.
-# This means the gas_pricing.h uses Ethereum Gwei but OBL has 8 decimals.
-# Flag the potential mismatch.
-warn(
-    "OBL: gas_pricing.h uses Ethereum Gwei units (1e9 wei baseline) but "
-    "OBL has 8 decimal places (1 OBL = 1e8 base units). "
-    "Gas accounting should use 1e8-denominated units, not Ethereum 1e18 wei. "
-    "Verify that EVM gas-price arithmetic accounts for this difference.",
+obl_initial_epoch_reward = OBL_INITIAL_REWARD * BASE_UNIT  # 145 OBL in base units
+check(
+    "OBL: max base-fee burn per full block < initial epoch block reward",
+    max_burn_per_block < obl_initial_epoch_reward,
+    f"{max_burn_per_block:,} < {obl_initial_epoch_reward:,} base units",
 )
+print(f"  [INFO] Max base-fee burn per block (full block, initial base fee): "
+      f"{max_burn_per_block:,} base units ({max_burn_per_block / BASE_UNIT:.8f} OBL)")
 
 # ---------------------------------------------------------------------------
 # 5. Checkpoint fee incentive (relayer coverage)
 # ---------------------------------------------------------------------------
 section("5. Cross-layer checkpoint fee incentives")
 
-# DRACHMA checkpoint to TALANTON: submitter must pay L1 TX fee in TALN.
-# If TALN block reward is nonzero, L1 miners are incentivized to include commits.
-# The economic question: can a DRACHMA validator afford the L1 TX fee?
-# We can only verify that the reward schedule doesn't actively prohibit this.
+# Relayer subsidy constants (from common/relayer_subsidy.h)
+CHECKPOINT_SUBSIDY_DRM_BASE_UNITS = 100_000_000  # 1 DRM per accepted TX_L2_COMMIT
+CHECKPOINT_SUBSIDY_OBL_BASE_UNITS = 100_000_000  # 1 OBL per accepted TX_L3_COMMIT
+
 check(
     "TALN: block reward at genesis height covers miner incentive for TX_L2_COMMIT",
     get_reward(0, TALN_INITIAL_REWARD, 0) > 0,
@@ -246,11 +272,35 @@ check(
     get_reward(HALVING_INTERVAL, DRM_INITIAL_REWARD, HALVING_INTERVAL) > 0,
 )
 
-warn(
-    "Checkpoint relayer costs are NOT modeled in the current reward schedules. "
-    "DRACHMA validators submitting TX_L2_COMMIT to TALANTON must pay TALN fees. "
-    "There is no direct on-chain reimbursement mechanism defined for relayers.",
+# Subsidy sanity: subsidy << initial block reward (relayer payout does not
+# exhaust the block reward that funds the subsidy pool)
+drm_launch_reward = DRM_INITIAL_REWARD * BASE_UNIT
+check(
+    f"DRM: TX_L2_COMMIT relayer subsidy ({CHECKPOINT_SUBSIDY_DRM_BASE_UNITS:,} base units) "
+    f"<< DRM block reward at launch ({drm_launch_reward:,} base units)",
+    CHECKPOINT_SUBSIDY_DRM_BASE_UNITS < drm_launch_reward,
+    f"{CHECKPOINT_SUBSIDY_DRM_BASE_UNITS} < {drm_launch_reward}",
 )
+obl_launch_reward = OBL_INITIAL_REWARD * BASE_UNIT
+check(
+    f"OBL: TX_L3_COMMIT relayer subsidy ({CHECKPOINT_SUBSIDY_OBL_BASE_UNITS:,} base units) "
+    f"<< OBL block reward at launch ({obl_launch_reward:,} base units)",
+    CHECKPOINT_SUBSIDY_OBL_BASE_UNITS < obl_launch_reward,
+    f"{CHECKPOINT_SUBSIDY_OBL_BASE_UNITS} < {obl_launch_reward}",
+)
+
+# Commitment intervals: how often (in blocks) must a relayer submit?
+DRM_COMMITMENT_INTERVAL = 10   # genesis_drachma.json
+OBL_COMMITMENT_INTERVAL = 5    # genesis_obolos.json
+
+drm_subsidy_per_epoch = (HALVING_INTERVAL // DRM_COMMITMENT_INTERVAL) * CHECKPOINT_SUBSIDY_DRM_BASE_UNITS
+obl_subsidy_per_epoch = (HALVING_INTERVAL // OBL_COMMITMENT_INTERVAL) * CHECKPOINT_SUBSIDY_OBL_BASE_UNITS
+print(f"  [INFO] DRM relayer subsidy over one halving epoch: "
+      f"{drm_subsidy_per_epoch / BASE_UNIT:.2f} DRM "
+      f"(= {drm_subsidy_per_epoch / drm_launch_reward / HALVING_INTERVAL * 100:.4f}% of block reward)")
+print(f"  [INFO] OBL relayer subsidy over one halving epoch: "
+      f"{obl_subsidy_per_epoch / BASE_UNIT:.2f} OBL "
+      f"(= {obl_subsidy_per_epoch / obl_launch_reward / HALVING_INTERVAL * 100:.4f}% of block reward)")
 
 # ---------------------------------------------------------------------------
 # 6. Governance treasury cap check (supply_policy.h)

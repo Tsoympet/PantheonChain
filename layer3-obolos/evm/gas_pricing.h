@@ -11,14 +11,30 @@ namespace evm {
 
 /**
  * EIP-1559 gas pricing parameters
+ *
+ * OBL denomination note: OBOLOS uses 8 decimal places (1 OBL = 1e8 base units),
+ * matching Bitcoin's satoshi model rather than Ethereum's 18-decimal wei model.
+ * Gas fee constants are therefore expressed in OBL base units, NOT in Ethereum wei.
+ *
+ *   OBL_GWEI  = 10 base units = 10^-7 OBL
+ *             (the 8-decimal analogue of Gwei: Gwei = 10^-9 ETH, 10^9 wei)
+ *
+ * All gas price constants must use OBL base-unit arithmetic.
  */
 struct GasPricing {
     static constexpr uint64_t TARGET_GAS_PER_BLOCK = 15000000;  // 15M gas target
     static constexpr uint64_t MAX_GAS_PER_BLOCK = 30000000;     // 30M gas limit
     static constexpr uint64_t BASE_FEE_CHANGE_DENOMINATOR = 8;  // 12.5% max change
     static constexpr uint64_t ELASTICITY_MULTIPLIER = 2;        // Block can be 2x target
-    static constexpr uint64_t INITIAL_BASE_FEE = 1000000000;    // 1 Gwei
-    static constexpr uint64_t MIN_BASE_FEE = 7;                 // Minimum base fee (wei)
+
+    // OBL_GWEI: 10 base units, providing gas-price granularity for an 8-decimal token.
+    // Ethereum's Gwei (10^9 wei) provides similar granularity for an 18-decimal token.
+    // Using 10 base units (10^-7 OBL) keeps per-gas fees in a sensible range and
+    // prevents fees from rounding to zero on small transactions.
+    static constexpr uint64_t OBL_GWEI = 10;  // 10 base units per gas-Gwei
+
+    static constexpr uint64_t INITIAL_BASE_FEE = OBL_GWEI;  // 1 OBL_GWEI = 10 base units
+    static constexpr uint64_t MIN_BASE_FEE = 1;             // 1 base unit (spam floor)
 };
 
 /**
@@ -181,7 +197,7 @@ inline uint64_t CalculateTransactionFee(uint64_t gas_used, uint64_t base_fee,
  */
 inline uint64_t
 EstimateGasPrice(uint64_t current_base_fee,
-                 uint64_t recommended_priority_fee = 1000000000  // 1 Gwei default tip
+                 uint64_t recommended_priority_fee = GasPricing::OBL_GWEI  // 1 OBL_GWEI tip
 ) {
     // Account for potential base fee increase in next block
     // Assume worst case: gas usage at max, causing ~12.5% increase

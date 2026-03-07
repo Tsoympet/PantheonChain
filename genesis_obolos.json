@@ -3,7 +3,12 @@
   "layer": "l3",
   "consensus": "pos-bft",
   "native_token": "OBOLOS",
-  "inflation_schedule": {"annual_rate": 0.07},
+  "issuance_schedule": {
+    "type": "halving",
+    "initial_block_reward_base_units": 14500000000,
+    "halving_interval": 210000,
+    "launch_height": 420000
+  },
   "epoch_length": 60,
   "minimum_stake": 500,
   "slashing_ratios": {"double_sign": 0.05, "equivocation": 0.1},

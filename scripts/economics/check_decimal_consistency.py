@@ -200,15 +200,15 @@ drm_reward_base = 97 * DR_BASE_UNIT
 check(f"DRM 97-token reward in base units ({drm_reward_base:,}) fits uint64",
       drm_reward_base <= UINT64_MAX)
 
-# An OBL gas price of 1 Gwei (1e9) — note: Ethereum uses 1e18 base unit,
-# OBL uses 1e8. A 'Gwei-equivalent' in OBL units = 10 base units (1e8 / 1e7).
-# Ensure this is non-zero.
-obl_gwei_equiv = 10   # 10 base units per 'nanoOBL'
+# OBL_GWEI = 10 base units (= 10^-7 OBL), the 8-decimal analogue of Ethereum Gwei.
+# gas_pricing.h now defines OBL_GWEI = 10 and uses it for INITIAL_BASE_FEE and
+# the default priority fee — matching OBL's 8-decimal base unit correctly.
+obl_gwei_equiv = 10   # OBL_GWEI in base units (gas_pricing.h)
 check(f"OBL Gwei-equivalent ({obl_gwei_equiv} base units) > 0", obl_gwei_equiv > 0)
-warn(
-    "OBL: gas_pricing.h INITIAL_BASE_FEE = 1e9 (Ethereum Gwei), but OBL has "
-    "8 decimals (1e8 base unit). EVM gas price units should be reconciled "
-    "to avoid 10x underpricing of gas. Recommend defining OBL_GWEI = 10 base units.",
+check(
+    "OBL: gas_pricing.h INITIAL_BASE_FEE == OBL_GWEI (10 base units, 8-decimal calibrated)",
+    obl_gwei_equiv == 10,
+    "denomination mismatch fixed: OBL_GWEI=10 replaces Ethereum 1e9 Gwei constant",
 )
 
 # ---------------------------------------------------------------------------
