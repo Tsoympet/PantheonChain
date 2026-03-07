@@ -16,8 +16,8 @@ namespace primitives {
  * AssetID represents one of the three native assets in ParthenonChain
  *
  * TALANTON (TALN) - Primary currency, max supply 21,000,000
- * DRACHMA (DRM)   - Settlement asset, max supply 100,000,000,000 (XRP-equivalent)
- * OBOLOS (OBL)    - Gas/smart contract asset, max supply 100,000,000,000 (XRP-equivalent)
+ * DRACHMA (DRM)   - Settlement asset, max supply 41,000,000
+ * OBOLOS (OBL)    - Gas/smart contract asset, max supply 61,000,000
  *
  * Consensus-critical: Asset IDs must never change
  */
@@ -42,9 +42,9 @@ class AssetSupply {
     // Hard consensus caps (in base units) – no coinbase may push supply above these.
     // These are strict upper bounds enforced by validation; the issuance schedule
     // asymptotically approaches but never reaches the cap for DRM and OBL.
-    static constexpr uint64_t TALN_MAX_SUPPLY = 21000000ULL * BASE_UNIT;          // 21M TALN
-    static constexpr uint64_t DRM_MAX_SUPPLY  = 100000000000ULL * BASE_UNIT;      // 100B DRM (XRP-equivalent)
-    static constexpr uint64_t OBL_MAX_SUPPLY  = 100000000000ULL * BASE_UNIT;      // 100B OBL (XRP-equivalent)
+    static constexpr uint64_t TALN_MAX_SUPPLY = 21000000ULL * BASE_UNIT;       // 21M TALN
+    static constexpr uint64_t DRM_MAX_SUPPLY  = 41000000ULL * BASE_UNIT;       // 41M DRM
+    static constexpr uint64_t OBL_MAX_SUPPLY  = 61000000ULL * BASE_UNIT;       // 61M OBL
 
     // Achievable supply: the actual ceiling that the halving-schedule issuance can produce.
     // Formula: initial_block_reward × HALVING_INTERVAL × 2
@@ -52,11 +52,11 @@ class AssetSupply {
     //  Asset   reward/block    achievable              cap       gap
     //  ─────── ──────────── ────────────────────── ─────────── ────────────────
     //  TALN     50 TALN      21 000 000 TALN         21 000 000  ~0 TALN
-    //  DRM     238 000 DRM   99 960 000 000 DRM   100 000 000 000  40 000 000 DRM
-    //  OBL     238 000 OBL   99 960 000 000 OBL   100 000 000 000  40 000 000 OBL
+    //  DRM      97 DRM       40 740 000 DRM           41 000 000  260 000 DRM
+    //  OBL     145 OBL       60 900 000 OBL           61 000 000  100 000 OBL
     static constexpr uint64_t TALN_ACHIEVABLE_SUPPLY = 21000000ULL * BASE_UNIT;
-    static constexpr uint64_t DRM_ACHIEVABLE_SUPPLY  = 99960000000ULL * BASE_UNIT;
-    static constexpr uint64_t OBL_ACHIEVABLE_SUPPLY  = 99960000000ULL * BASE_UNIT;
+    static constexpr uint64_t DRM_ACHIEVABLE_SUPPLY  = 40740000ULL * BASE_UNIT;
+    static constexpr uint64_t OBL_ACHIEVABLE_SUPPLY  = 60900000ULL * BASE_UNIT;
 
     /**
      * Get maximum supply (hard consensus cap) for an asset
