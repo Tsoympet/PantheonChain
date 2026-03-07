@@ -54,7 +54,7 @@ uint64_t SignedStakeWeight(const Commitment& commitment) {
     std::unordered_set<std::string> seen;
     for (const auto& sig : commitment.signatures) {
         if (seen.insert(sig.validator_id).second) {
-            total += sig.hash_power;
+            total += sig.stake;
         }
     }
     return total;

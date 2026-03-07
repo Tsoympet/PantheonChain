@@ -1,4 +1,4 @@
-// PantheonChain — Layer-3 OBOLOS PoW Consensus Implementation
+// PantheonChain — Layer-3 OBOLOS PoS/BFT Consensus Implementation
 
 #include "pos_consensus.h"
 
@@ -6,36 +6,36 @@
 
 namespace pantheon::obolos {
 
-uint64_t TotalHashPower(const std::vector<Miner>& miners) {
+uint64_t TotalActiveStake(const std::vector<Validator>& validators) {
     uint64_t total = 0;
-    for (const auto& miner : miners) {
-        total += miner.hash_power;
+    for (const auto& v : validators) {
+        total += v.stake;
     }
     return total;
 }
 
-const Miner& SelectMiner(const std::vector<Miner>& miners,
-                         uint64_t epoch,
-                         uint64_t height) {
-    if (miners.empty()) {
-        throw std::invalid_argument("miners cannot be empty");
+const Validator& SelectDeterministicProposer(const std::vector<Validator>& validators,
+                                              uint64_t epoch,
+                                              uint64_t height) {
+    if (validators.empty()) {
+        throw std::invalid_argument("validators cannot be empty");
     }
 
-    const uint64_t total_pow = TotalHashPower(miners);
-    if (total_pow == 0) {
-        throw std::invalid_argument("total hash power cannot be zero");
+    const uint64_t total_stake = TotalActiveStake(validators);
+    if (total_stake == 0) {
+        throw std::invalid_argument("total active stake cannot be zero");
     }
 
     const uint64_t slot = (epoch << 32U) ^ height;
-    uint64_t cursor = slot % total_pow;
-    for (const auto& miner : miners) {
-        if (cursor < miner.hash_power) {
-            return miner;
+    uint64_t cursor = slot % total_stake;
+    for (const auto& v : validators) {
+        if (cursor < v.stake) {
+            return v;
         }
-        cursor -= miner.hash_power;
+        cursor -= v.stake;
     }
 
-    return miners.back();
+    return validators.back();
 }
 
 common::Commitment BuildL3Commitment(uint64_t epoch, uint64_t finalized_height,
@@ -49,7 +49,7 @@ common::Commitment BuildL3Commitment(uint64_t epoch, uint64_t finalized_height,
 
 common::CommitmentValidationResult ValidateL3Finality(const common::Commitment& commitment,
                                                       uint64_t last_finalized_height,
-                                                      uint64_t active_pow) {
+                                                      uint64_t active_stake) {
     if (commitment.source_chain != common::SourceChain::OBOLOS) {
         return {false, "L3 finality payload must originate from OBOLOS"};
     }
@@ -63,8 +63,8 @@ common::CommitmentValidationResult ValidateL3Finality(const common::Commitment& 
         return encoding;
     }
 
-    // Quorum check: >=2/3 of contributing hash power must have signed.
-    return common::ValidateFinalityQuorum(commitment, active_pow);
+    // Quorum check: >=2/3 of contributing stake must have signed.
+    return common::ValidateFinalityQuorum(commitment, active_stake);
 }
 
 }  // namespace pantheon::obolos

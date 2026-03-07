@@ -20,7 +20,7 @@ struct BlockInfo {
     std::string hash;
     std::string prev_hash;
     uint64_t timestamp;
-    std::string miner;
+    std::string proposer;
     uint64_t transaction_count;
     uint64_t size;
     uint64_t difficulty;

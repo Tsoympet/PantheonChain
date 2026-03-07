@@ -51,9 +51,8 @@ int main() {
     const auto &l3_proposer_b = obolos::SelectDeterministicProposer(l3_validators, 7, 99);
     assert(l3_proposer_a.id == l3_proposer_b.id);
 
-    // NOTE: Slashing (SlashDoubleSign / SlashEquivocation) was removed in the
-    // transition from PoS to PoW.  PoW miners are penalised by orphaned blocks
-    // (wasted electricity), not by on-chain token slashing.
+    // NOTE: On-chain slashing for equivocation is enforced via SlashingEvent;
+    // validators are penalised by loss of staked tokens.
 
     drachma::PaymentsStateMachine payments;
     payments.Credit("alice", 1000);

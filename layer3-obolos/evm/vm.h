@@ -44,7 +44,7 @@ struct ExecutionContext {
     uint64_t gas_price;               // Gas price (OBL per gas)
     uint64_t block_number;            // Current block number
     uint64_t timestamp;               // Block timestamp
-    Address coinbase;                 // Block miner
+    Address coinbase;                 // Block proposer
     uint64_t difficulty;              // Block difficulty
     uint64_t gas_limit_block;         // Block gas limit
     uint64_t chain_id;                // Chain ID

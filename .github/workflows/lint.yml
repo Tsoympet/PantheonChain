@@ -70,3 +70,19 @@ jobs:
         scandir: './installers'
         ignore_paths: 'node_modules third_party'
       continue-on-error: true
+
+  docs-terminology-lint:
+    name: Check Docs Terminology
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.x'
+
+    - name: Run terminology lint
+      run: python3 scripts/lint-docs-terminology.py

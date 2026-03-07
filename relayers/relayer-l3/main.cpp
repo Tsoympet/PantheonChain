@@ -40,9 +40,6 @@ int main(int argc, char* argv[]) {
             encoded_commitment = arg.substr(13);
         } else if (arg.rfind("--active-stake=", 0) == 0) {
             active_stake = ParseUint(arg.substr(15));
-        } else if (arg.rfind("--active-pow=", 0) == 0) {
-            // Legacy compatibility alias from older PoW-style terminology.
-            active_stake = ParseUint(arg.substr(13));
         } else if (arg.rfind("--last-finalized-height=", 0) == 0) {
             last_finalized_height = ParseUint(arg.substr(24));
         } else {

@@ -39,7 +39,7 @@ It is intended for testnet/mainnet operators and SRE/security teams.
 - Prefer graceful stop via service manager signal and wait for clean thread teardown.
 - On restart, verify no chainstate reconstruction errors were reported.
 - If startup fails on persisted data inconsistency, halt and trigger incident workflow.
-- For planned maintenance, stop miners first, then validators, then RPC edge nodes.
+- For planned maintenance, stop L1 miners first, then validators, then RPC edge nodes.
 - Capture final block height and tip hash before shutdown for post-restart verification.
 
 ## 4. Backup and restore
@@ -51,7 +51,7 @@ It is intended for testnet/mainnet operators and SRE/security teams.
 - Snapshot metadata must include chain height, tip hash, and snapshot creation timestamp.
 
 ### Backup runbook
-1. Pause miner/validator writes (or set node to read-only mode).
+1. Pause L1 miner/L2-L3 validator writes (or set node to read-only mode).
 2. Snapshot `chainstate/`, `blocks/`, and wallet databases.
 3. Encrypt and store snapshots in two geographically separated locations.
 4. Validate checksums before unlocking services.

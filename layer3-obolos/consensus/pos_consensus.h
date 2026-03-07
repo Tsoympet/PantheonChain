@@ -1,7 +1,5 @@
-// PantheonChain — Layer-3 OBOLOS PoW Consensus
-// Replaces the former PoS/BFT validator model.
-// Block producers are PoW miners; proposer selection uses accumulated
-// hash power rather than staked tokens.
+// PantheonChain — Layer-3 OBOLOS PoS/BFT Consensus
+// Block producers are validators operating under stake-weighted BFT consensus.
 
 #pragma once
 
@@ -14,39 +12,24 @@
 namespace pantheon::obolos {
 
 // ---------------------------------------------------------------------------
-// Miner — a PoW block producer.
+// Validator — a PoS/BFT block producer identified by its ID and stake weight.
 // ---------------------------------------------------------------------------
-struct Miner {
+struct Validator {
     std::string id;
-    uint64_t hash_power = 0;  // accumulated PoW difficulty contribution
+    uint64_t stake = 0;  // stake weight in consensus units
 };
 
-// Legacy type alias for source compatibility.
-using Validator = Miner;
+// ---------------------------------------------------------------------------
+// Compute the total active stake of all validators.
+// ---------------------------------------------------------------------------
+uint64_t TotalActiveStake(const std::vector<Validator>& validators);
 
 // ---------------------------------------------------------------------------
-// Compute the total hash power of all active miners.
+// Select the block proposer deterministically from the active validator set.
 // ---------------------------------------------------------------------------
-uint64_t TotalHashPower(const std::vector<Miner>& miners);
-
-// Legacy name kept for source compatibility.
-inline uint64_t TotalActiveStake(const std::vector<Miner>& miners) {
-    return TotalHashPower(miners);
-}
-
-// ---------------------------------------------------------------------------
-// Select the block proposer deterministically from the active miner set.
-// ---------------------------------------------------------------------------
-const Miner& SelectMiner(const std::vector<Miner>& miners,
-                         uint64_t epoch,
-                         uint64_t height);
-
-// Legacy name kept for source compatibility.
-inline const Miner& SelectDeterministicProposer(const std::vector<Miner>& miners,
-                                                uint64_t epoch,
-                                                uint64_t height) {
-    return SelectMiner(miners, epoch, height);
-}
+const Validator& SelectDeterministicProposer(const std::vector<Validator>& validators,
+                                              uint64_t epoch,
+                                              uint64_t height);
 
 // ---------------------------------------------------------------------------
 // Build an L3 commitment payload for anchoring to DRACHMA.
@@ -59,11 +42,10 @@ common::Commitment BuildL3Commitment(uint64_t epoch,
                                      std::vector<common::FinalitySignature> signatures);
 
 // ---------------------------------------------------------------------------
-// Validate L3 finality: >=2/3 of contributing hash power must have signed.
-// `active_pow` replaces the former `active_stake` parameter.
+// Validate L3 finality: >=2/3 of contributing stake must have signed.
 // ---------------------------------------------------------------------------
 common::CommitmentValidationResult ValidateL3Finality(const common::Commitment& commitment,
                                                       uint64_t last_finalized_height,
-                                                      uint64_t active_pow);
+                                                      uint64_t active_stake);
 
 }  // namespace pantheon::obolos
