@@ -61,3 +61,16 @@ Responses include:
 - `denom_used`
 
 This is presentation-only and does not change on-chain accounting.
+
+## Commitment Payload Canonical Fields
+
+Canonical encoded commitment format uses validator/stake fields (not miner/hash-power fields):
+
+`SOURCE:epoch:finalized_height:finalized_block_hash:state_root:validator_set_hash:upstream_commitment_hash:validator|stake|signature,...`
+
+Layer mapping:
+- `TX_L3_COMMIT` is submitted to DRACHMA with `source_chain=OBOLOS`.
+- `TX_L2_COMMIT` is submitted to TALANTON with `source_chain=DRACHMA`.
+
+Compatibility note: some tooling may still accept legacy PoW-era argument aliases for backward compatibility, but canonical operator usage should prefer validator/stake terminology.
+

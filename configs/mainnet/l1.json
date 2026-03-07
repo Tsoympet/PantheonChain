@@ -1,6 +1,6 @@
 {
   "layer": "l1",
-  "node_id": "talanton-mainnet-validator-1",
+  "node_id": "talanton-mainnet-miner-1",
   "network": "mainnet",
   "p2p_port": 8333,
   "rpc_port": 8332,

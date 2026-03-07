@@ -1,59 +1,49 @@
 # Consensus Specification
 
-## TALANTON (L1 / PoW)
+PantheonChain uses a **hybrid layered consensus model**, not a single shared consensus engine across all tokens.
 
-- Algorithm: SHA-256d Proof-of-Work.
-- TALANTON does not run staking.
-- Native token utility is restricted to mining rewards and L1 fees.
+## TALANTON (L1 / PoW settlement)
 
-### `TX_L2_COMMIT` Validation Rules
+- Consensus algorithm: SHA-256d Proof-of-Work.
+- Finality model: probabilistic finality under heaviest-valid-chain rules.
+- Role: root settlement chain and final anchoring destination for upper layers.
+- Native token role: PoW mining rewards, L1 fees, and base settlement utility.
+- TALANTON consensus is independent of DRACHMA/OBOLOS validator quorums.
+
+### `TX_L2_COMMIT` validation rules on TALANTON
 
 `TX_L2_COMMIT` must satisfy:
-
 1. `source_chain == DRACHMA`
-2. `finalized_height` is strictly monotonic relative to anchored L2 height.
+2. `finalized_height` is strictly monotonic relative to prior accepted L2 anchors.
 3. Payload fields are correctly encoded.
-4. Finality signatures represent >=2/3 of contributing DRACHMA miner hash power.
+4. Validator signatures represent >=2/3 of declared DRACHMA active stake for the commitment epoch.
 
-## DRACHMA (L2 / PoW)
+## DRACHMA (L2 / PoS + BFT payments)
 
-All DRACHMA commitments anchored to TALANTON must include a state commitment that reflects
-the latest finalized OBOLOS commitment hash (`upstream_commitment_hash`).
+- Consensus algorithm: PoS validator set with BFT-style quorum finalization.
+- Finality model: fast economic finality when quorum assumptions hold.
+- Role: payments, liquidity, and intermediate checkpoint layer to TALANTON.
+- Native token role: staking collateral, validator incentives, and L2 fee utility.
+- Security caveat: upper-layer safety can fail before TALANTON settlement if L2 validator assumptions break.
 
-- Epoch-based proposer rotation.
-- Deterministic miner selection weighted by hash power contribution.
-- Block finality requires signatures from >=2/3 contributing hash power.
-- Miner set is derived from on-chain PoW contribution records.
-- **No staking, no slashing.** Miners are penalised by orphaned blocks.
+All DRACHMA commitments anchored to TALANTON include a state commitment reflecting the latest finalized OBOLOS commitment hash (`upstream_commitment_hash`) to preserve transitive anchoring.
 
-### `TX_L3_COMMIT` Validation Rules
+### `TX_L3_COMMIT` validation rules on DRACHMA
 
 `TX_L3_COMMIT` must satisfy:
-
 1. `source_chain == OBOLOS`
 2. `finalized_height` is strictly monotonic against last accepted L3 commitment.
 3. Payload fields are correctly encoded.
-4. Finality signatures represent >=2/3 of contributing OBOLOS miner hash power.
+4. Validator signatures represent >=2/3 of declared OBOLOS active stake for the commitment epoch.
 
-## OBOLOS (L3 / PoW + EVM)
+## OBOLOS (L3 / PoS + BFT + EVM)
 
-- Epoch-based PoW with hash-power quorum finality (>=2/3 signatures).
-- Full EVM-style execution environment.
-- OBOLOS token is used for gas and mining rewards.
+- Consensus algorithm: PoS validator set with BFT-style quorum finalization.
+- Finality model: fast economic finality for execution outcomes.
+- Role: EVM execution, governance state transitions, and DeFi/application layer.
+- Native token role: gas, staking, and governance/economic utility on L3.
 - Finalized OBOLOS checkpoints are exported to DRACHMA as commitment payloads.
-- **No staking, no slashing.**
 
-`TX_L3_COMMIT` payloads are produced by OBOLOS miners and finalized once signatures
-from >=2/3 contributing hash power are collected.
+## Governance voting note
 
-## Governance Voting
-
-All three layers use **one-address-one-vote (1A1V)** governance:
-
-- Every address holding at least 1 token of any PantheonChain asset gets exactly **1 vote**.
-- The amount of tokens held has no effect on voting power.
-- A whale with 1 billion tokens and a new holder with 1 token each cast votes of equal weight.
-- Snapshots are taken when a proposal enters the ACTIVE state to freeze the eligible voter
-  set and prevent last-block balance attacks.
-- `BalanceVotingRegistry` tracks which addresses are holders; `GetAllVotingPowers()` returns
-  `(address, 1)` for every holder.
+Governance weighting, if configured via one-address-one-vote in current deployments, is a governance-layer rule and is not equivalent to consensus safety assumptions. Consensus safety for DRACHMA/OBOLOS remains tied to validator quorum honesty, while TALANTON safety remains tied to PoW security.

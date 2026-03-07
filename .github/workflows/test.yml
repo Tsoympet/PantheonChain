@@ -10,8 +10,30 @@ env:
   BUILD_TYPE: Debug
 
 jobs:
+  architecture-consistency:
+    name: Architecture Consistency Checks
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.x'
+
+    - name: Validate layered config model
+      run: |
+        python3 scripts/validate-config.py \
+          configs/devnet/l1.json configs/devnet/l2.json configs/devnet/l3.json \
+          configs/testnet/l1.json configs/testnet/l2.json configs/testnet/l3.json \
+          configs/mainnet/l1.json configs/mainnet/l2.json configs/mainnet/l3.json
+        python3 scripts/validate-layer-model.py
+
   test-ubuntu:
     name: Test (Ubuntu with Coverage)
+    needs: architecture-consistency
     runs-on: ubuntu-22.04
 
     steps:
@@ -71,6 +93,7 @@ jobs:
 
   test-macos:
     name: Test (macOS)
+    needs: architecture-consistency
     runs-on: macos-latest
 
     steps:
@@ -106,6 +129,7 @@ jobs:
 
   test-windows:
     name: Test (Windows)
+    needs: architecture-consistency
     runs-on: windows-latest
 
     steps:

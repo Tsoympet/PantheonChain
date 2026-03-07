@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "checkpoint_path": ["l3", "l2", "l1"],
+  "layers": {
+    "l1": {
+      "name": "TALANTON",
+      "consensus": "pow",
+      "node_role_hint": "miner"
+    },
+    "l2": {
+      "name": "DRACHMA",
+      "consensus": "pos_bft",
+      "node_role_hint": "validator"
+    },
+    "l3": {
+      "name": "OBOLOS",
+      "consensus": "pos_bft",
+      "node_role_hint": "validator"
+    }
+  },
+  "constraints": {
+    "checkpoint_interval_order": "l3 < l2 < l1"
+  }
+}

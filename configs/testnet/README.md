@@ -23,6 +23,7 @@ This directory contains the configuration files for the PantheonChain public tes
 
 ## Differences from Devnet
 
+- L1 node IDs should use miner-oriented naming; L2/L3 should use validator-oriented naming.
 - `network` is set to `testnet` (devnet uses `devnet`)
 - `rpc.allow_unauthenticated` is `false` (devnet uses `true`)
 - Data directories are under `.testnet/` (devnet uses `.devnet/`)
@@ -33,4 +34,8 @@ This directory contains the configuration files for the PantheonChain public tes
 ```bash
 ./scripts/run-testnet.sh
 ./tests/integration/testnet-smoke.sh
+python3 scripts/validate-layer-model.py
 ```
+
+
+Canonical layer metadata is versioned in `configs/layer-model.json` and validated by `scripts/validate-layer-model.py`.
