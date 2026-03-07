@@ -20,11 +20,6 @@ struct Validator {
 };
 
 // ---------------------------------------------------------------------------
-// Deprecated: legacy PoW-era type alias.  Use Validator instead.
-// ---------------------------------------------------------------------------
-using Miner [[deprecated("Use Validator (PoW-era alias; will be removed in a future release)")]] = Validator;
-
-// ---------------------------------------------------------------------------
 // SlashingEvent — on-chain slashing record for equivocation / misbehaviour.
 // ---------------------------------------------------------------------------
 struct SlashingEvent {
@@ -39,14 +34,6 @@ struct SlashingEvent {
 uint64_t TotalActiveStake(const std::vector<Validator>& validators);
 
 // ---------------------------------------------------------------------------
-// Deprecated: legacy PoW-era name.  Use TotalActiveStake instead.
-// ---------------------------------------------------------------------------
-[[deprecated("Use TotalActiveStake (PoW-era alias; will be removed in a future release)")]]
-inline uint64_t TotalHashPower(const std::vector<Validator>& validators) {
-    return TotalActiveStake(validators);
-}
-
-// ---------------------------------------------------------------------------
 // Select the block proposer deterministically from the active validator set
 // using a stake-weighted slot assignment:
 //   slot = (epoch << 32) XOR height
@@ -56,16 +43,6 @@ inline uint64_t TotalHashPower(const std::vector<Validator>& validators) {
 const Validator& SelectDeterministicProposer(const std::vector<Validator>& validators,
                                               uint64_t epoch,
                                               uint64_t height);
-
-// ---------------------------------------------------------------------------
-// Deprecated: legacy PoW-era name.  Use SelectDeterministicProposer instead.
-// ---------------------------------------------------------------------------
-[[deprecated("Use SelectDeterministicProposer (PoW-era alias; will be removed in a future release)")]]
-inline const Validator& SelectMiner(const std::vector<Validator>& validators,
-                                    uint64_t epoch,
-                                    uint64_t height) {
-    return SelectDeterministicProposer(validators, epoch, height);
-}
 
 // ---------------------------------------------------------------------------
 // Validate an L3 (OBOLOS) commitment that is being anchored into DRACHMA.

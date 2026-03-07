@@ -152,7 +152,7 @@ inline bool ValidateTransactionFees(uint64_t base_fee, uint64_t max_fee_per_gas,
  * @param max_fee_per_gas Transaction's max fee per gas
  * @param max_priority_fee_per_gas Transaction's max priority fee per gas
  * @param base_fee_burned Output: amount of base fee burned
- * @param priority_fee_paid Output: amount of priority fee paid to miner
+ * @param priority_fee_paid Output: amount of priority fee paid to block proposer
  * @return Total fee paid (base_fee_burned + priority_fee_paid)
  */
 inline uint64_t CalculateTransactionFee(uint64_t gas_used, uint64_t base_fee,
@@ -164,7 +164,7 @@ inline uint64_t CalculateTransactionFee(uint64_t gas_used, uint64_t base_fee,
     // Base fee portion is burned
     base_fee_burned = gas_used * base_fee;
 
-    // Priority fee goes to miner
+    // Priority fee goes to block proposer
     uint64_t priority_fee_per_gas =
         effective_gas_price >= base_fee ? effective_gas_price - base_fee : 0;
     priority_fee_paid = gas_used * priority_fee_per_gas;

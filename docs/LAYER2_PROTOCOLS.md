@@ -281,7 +281,7 @@ type Block {
   height: Int!
   timestamp: Int!
   transactions: [Transaction!]!
-  miner: String!
+  proposer: String!
 }
 
 type Transaction {

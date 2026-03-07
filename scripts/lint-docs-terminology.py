@@ -32,6 +32,7 @@ SCAN_GLOB = "**/*.md"
 # Each entry is (phrase_lower, human_readable_suggestion).
 DEPRECATED_PHRASES: Sequence[tuple[str, str]] = (
     ("active_pow", "Use active_stake instead of active_pow"),
+    ("--active-pow", "Use --active-stake instead of --active-pow"),
     ("total hash power", "Use 'total active stake' instead of 'total hash power'"),
     ("pow miners", "Use 'validators' instead of 'PoW miners'"),
     ("hash-power", "Use 'stake' instead of 'hash-power'"),

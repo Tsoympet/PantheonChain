@@ -12,12 +12,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Consensus Model Clarification
 - Rewrote architecture, consensus, threat, security, and whitepaper documentation to formalize PantheonChain as a layered hybrid model: TALANTON (L1 PoW settlement), DRACHMA (L2 PoS/BFT payments), and OBOLOS (L3 PoS/BFT EVM execution).
 - Added `docs/SETTLEMENT_AND_FINALITY.md` with explicit finality semantics, trust assumptions, and failure scenarios for checkpointed settlement (`OBOLOS -> DRACHMA -> TALANTON`).
-- Updated relayer CLI wording and compatibility comments to use PoS/BFT validator-stake terminology for L3->L2 commitments while retaining legacy `--active-pow` flag compatibility.
 - Added `scripts/validate-layer-model.py` and updated configuration docs to enforce role naming and checkpoint cadence consistency across L1/L2/L3 config profiles.
 - Added canonical machine-readable layer metadata in `configs/layer-model.json` and refactored `scripts/validate-layer-model.py` to validate against it as the single source of truth.
 - Added a CI architecture-consistency gate in `.github/workflows/test.yml` to run layered config and model checks before platform test matrices.
 - Expanded RPC documentation with canonical commitment payload field names and validator/stake terminology guidance.
 - Added `docs/ARCHITECTURE_ALIGNMENT_GAPS.md` to track unresolved ambiguities, potential code/docs divergence points, and prioritized next implementation steps.
+
+#### Architecture Alignment Gaps — Code-Level Improvements
+- **Validator/stake terminology** is now canonical throughout all L2/L3 code and documentation:
+  - `struct Validator` (with `stake` field) is the primary type in `layer2-drachma` and `layer3-obolos` consensus headers; the PoW-era `Miner`/`hash_power` names are fully removed.
+  - `TotalActiveStake()` and `SelectDeterministicProposer()` are now the sole canonical function names; `TotalHashPower()` and `SelectMiner()` are removed.
+  - `FinalitySignature::stake` replaces the former `hash_power` field in `common/serialization/commitments.h`.
+  - `active_stake` replaces `active_pow` in `ValidateL3Commit` and `ValidateL3Finality` signatures.
+- **Relayer CLI** (`pantheon-relayer-l3`): removed legacy `--active-pow` flag. Use `--active-stake`.
+- **EVM block context** (`layer3-obolos/evm`): renamed "Block miner" / "Priority fee goes to miner" comments to "Block proposer" throughout, consistent with PoS/BFT execution layer.
+- **Block explorer** (`tools/block_explorer`): renamed `BlockInfo::miner` field to `proposer`; updated GraphQL schema in `docs/LAYER2_PROTOCOLS.md` accordingly.
+- **Policy metadata**: extended `configs/layer-model.json` with `policy` object (`l1_min_confirmation_depth`, `bridge_unlock_min_l1_depth`, `checkpoint_freshness_slo_seconds`, `relayer_liveness_threshold_seconds`); added corresponding fields to all operator `l1.json` configs (devnet/testnet/mainnet).
+- **Terminology lint in CI**: added `scripts/lint-docs-terminology.py` and a `docs-terminology-lint` job in `.github/workflows/lint.yml` to reject known deprecated phrases in consensus-critical docs on every pull request.
+- **Operations docs**: updated `docs/OPERATIONS_RUNBOOK.md` to distinguish L1 miners from L2/L3 validators in maintenance procedures.
 
 ---
 
