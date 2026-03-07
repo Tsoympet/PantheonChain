@@ -41,7 +41,10 @@ int main(int argc, char* argv[]) {
         } else if (arg.rfind("--active-stake=", 0) == 0) {
             active_stake = ParseUint(arg.substr(15));
         } else if (arg.rfind("--active-pow=", 0) == 0) {
-            // Legacy compatibility alias from older PoW-style terminology.
+            // DEPRECATED: --active-pow is a legacy PoW-era alias for --active-stake.
+            // It will be removed in a future major release. Use --active-stake instead.
+            std::cerr << "WARNING: --active-pow is deprecated and will be removed in a future "
+                         "major release. Use --active-stake instead.\n";
             active_stake = ParseUint(arg.substr(13));
         } else if (arg.rfind("--last-finalized-height=", 0) == 0) {
             last_finalized_height = ParseUint(arg.substr(24));

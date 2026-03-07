@@ -1,7 +1,5 @@
-// PantheonChain — Layer-2 DRACHMA PoW Consensus
-// Replaces the former PoS/BFT validator model.
-// Block producers are PoW miners; proposer selection uses accumulated
-// hash power rather than staked tokens.
+// PantheonChain — Layer-2 DRACHMA PoS/BFT Consensus
+// Block producers are validators operating under stake-weighted BFT consensus.
 
 #pragma once
 
@@ -14,67 +12,67 @@
 namespace pantheon::drachma {
 
 // ---------------------------------------------------------------------------
-// Miner — a PoW block producer identified by its ID and hash-power
-// contribution (measured in arbitrary difficulty units, e.g. total work
-// submitted since epoch start).
+// Validator — a PoS/BFT block producer identified by its ID and stake weight.
 // ---------------------------------------------------------------------------
-struct Miner {
+struct Validator {
     std::string id;
-    uint64_t hash_power = 0;  // accumulated PoW difficulty contribution
+    uint64_t stake = 0;  // stake weight in consensus units
 };
 
 // ---------------------------------------------------------------------------
-// Legacy type alias kept for source compatibility with call sites that still
-// use the name "Validator".  New code should use Miner.
+// Deprecated: legacy PoW-era type alias.  Use Validator instead.
 // ---------------------------------------------------------------------------
-using Validator = Miner;
+using Miner [[deprecated("Use Validator (PoW-era alias; will be removed in a future release)")]] = Validator;
 
 // ---------------------------------------------------------------------------
-// SlashingEvent — retained for interface compatibility but unused in PoW.
-// PoW miners are penalised by orphaned blocks (wasted electricity), not by
-// on-chain slashing.
+// SlashingEvent — on-chain slashing record for equivocation / misbehaviour.
 // ---------------------------------------------------------------------------
 struct SlashingEvent {
-    std::string miner_id;
+    std::string validator_id;
     std::string reason;
     uint64_t    slashed_amount = 0;
 };
 
 // ---------------------------------------------------------------------------
-// Compute the total hash power of all active miners.
+// Compute the total active stake of all validators.
 // ---------------------------------------------------------------------------
-uint64_t TotalHashPower(const std::vector<Miner>& miners);
+uint64_t TotalActiveStake(const std::vector<Validator>& validators);
 
-// Legacy name kept for source compatibility.
-inline uint64_t TotalActiveStake(const std::vector<Miner>& miners) {
-    return TotalHashPower(miners);
+// ---------------------------------------------------------------------------
+// Deprecated: legacy PoW-era name.  Use TotalActiveStake instead.
+// ---------------------------------------------------------------------------
+[[deprecated("Use TotalActiveStake (PoW-era alias; will be removed in a future release)")]]
+inline uint64_t TotalHashPower(const std::vector<Validator>& validators) {
+    return TotalActiveStake(validators);
 }
 
 // ---------------------------------------------------------------------------
-// Select the block proposer deterministically from the active miner set
-// using a hash-power-weighted slot assignment:
+// Select the block proposer deterministically from the active validator set
+// using a stake-weighted slot assignment:
 //   slot = (epoch << 32) XOR height
-//   cursor = slot % total_hash_power
-// The miner whose cumulative range covers `cursor` is selected.
+//   cursor = slot % total_stake
+// The validator whose cumulative range covers `cursor` is selected.
 // ---------------------------------------------------------------------------
-const Miner& SelectMiner(const std::vector<Miner>& miners,
-                         uint64_t epoch,
-                         uint64_t height);
+const Validator& SelectDeterministicProposer(const std::vector<Validator>& validators,
+                                              uint64_t epoch,
+                                              uint64_t height);
 
-// Legacy name kept for source compatibility.
-inline const Miner& SelectDeterministicProposer(const std::vector<Miner>& miners,
-                                                uint64_t epoch,
-                                                uint64_t height) {
-    return SelectMiner(miners, epoch, height);
+// ---------------------------------------------------------------------------
+// Deprecated: legacy PoW-era name.  Use SelectDeterministicProposer instead.
+// ---------------------------------------------------------------------------
+[[deprecated("Use SelectDeterministicProposer (PoW-era alias; will be removed in a future release)")]]
+inline const Validator& SelectMiner(const std::vector<Validator>& validators,
+                                    uint64_t epoch,
+                                    uint64_t height) {
+    return SelectDeterministicProposer(validators, epoch, height);
 }
 
 // ---------------------------------------------------------------------------
 // Validate an L3 (OBOLOS) commitment that is being anchored into DRACHMA.
-// In PoW mode the `active_pow` parameter represents the total hash power
-// of signing miners (replaces `active_stake` from the PoS era).
+// `active_stake` is the total stake weight of signing validators.
 // ---------------------------------------------------------------------------
 common::CommitmentValidationResult ValidateL3Commit(const common::Commitment& commitment,
                                                     uint64_t last_l3_height,
-                                                    uint64_t active_pow);
+                                                    uint64_t active_stake);
 
 }  // namespace pantheon::drachma

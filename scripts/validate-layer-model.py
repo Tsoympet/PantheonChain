@@ -3,9 +3,11 @@
 
 Checks:
 - model schema sanity in configs/layer-model.json
+- policy metadata presence in configs/layer-model.json
 - expected layer IDs in l1/l2/l3 config filenames
 - role naming convention in node_id (l1=miner, l2/l3=validator)
 - monotonic checkpoint cadence (l3 interval < l2 interval < l1)
+- l1_min_confirmation_depth and bridge_unlock_min_l1_depth present in all l1 configs
 """
 
 from __future__ import annotations
@@ -17,6 +19,13 @@ from typing import Any
 
 NETWORKS = ("devnet", "testnet", "mainnet")
 MODEL_PATH = pathlib.Path("configs/layer-model.json")
+
+REQUIRED_POLICY_FIELDS = (
+    "l1_min_confirmation_depth",
+    "bridge_unlock_min_l1_depth",
+    "checkpoint_freshness_slo_seconds",
+    "relayer_liveness_threshold_seconds",
+)
 
 
 def fail(msg: str) -> None:
@@ -47,6 +56,15 @@ def validate_model(model: dict[str, Any]) -> dict[str, Any]:
     if checkpoint_path != ["l3", "l2", "l1"]:
         fail(f"{MODEL_PATH}: checkpoint_path must be ['l3', 'l2', 'l1']")
 
+    policy = model.get("policy")
+    if not isinstance(policy, dict):
+        fail(f"{MODEL_PATH}: missing object field 'policy'")
+    for field in REQUIRED_POLICY_FIELDS:
+        if field not in policy:
+            fail(f"{MODEL_PATH}: policy is missing required field '{field}'")
+        if not isinstance(policy[field], (int, float)) or policy[field] <= 0:
+            fail(f"{MODEL_PATH}: policy.{field} must be a positive number")
+
     return layers
 
 
@@ -68,6 +86,15 @@ for network in NETWORKS:
         role_hint = str(layers[layer]["node_role_hint"]).lower()
         if network == "mainnet" and role_hint not in node_id:
             fail(f"{base}/{layer}.json: mainnet node_id should include role hint '{role_hint}'")
+
+    # Validate that all l1 configs carry confirmation-depth policy fields.
+    l1_cfg = cfgs["l1"]
+    for field in ("l1_min_confirmation_depth", "bridge_unlock_min_l1_depth"):
+        val = l1_cfg.get(field)
+        if val is None:
+            fail(f"{base}/l1.json: missing required field '{field}'")
+        if not isinstance(val, (int, float)) or val <= 0:
+            fail(f"{base}/l1.json: '{field}' must be a positive number")
 
     l1 = int(cfgs["l1"].get("commitment_interval", 0))
     l2 = int(cfgs["l2"].get("commitment_interval", 0))

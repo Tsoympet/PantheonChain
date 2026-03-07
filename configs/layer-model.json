@@ -20,5 +20,11 @@
   },
   "constraints": {
     "checkpoint_interval_order": "l3 < l2 < l1"
+  },
+  "policy": {
+    "l1_min_confirmation_depth": 6,
+    "bridge_unlock_min_l1_depth": 6,
+    "checkpoint_freshness_slo_seconds": 300,
+    "relayer_liveness_threshold_seconds": 120
   }
 }
