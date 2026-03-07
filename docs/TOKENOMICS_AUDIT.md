@@ -23,6 +23,24 @@ The arithmetic, supply caps, and reward schedules are now internally coherent. S
 
 ---
 
+## Highest-Priority Remaining Risks
+
+The following four issues require the most immediate attention after the supply-constant bug fixes already applied in this audit. They represent either unimplemented behavior that is documented as if it were enforced, or a silent mismatch that can cause hard-to-debug failures in production.
+
+1. **`genesis_drachma.json` / `genesis_obolos.json` declare `annual_rate` PoS inflation fields that are not enforced.**
+   Both genesis files specify a fixed-rate annual inflation (5 % for DRACHMA, 7 % for OBOLOS) consistent with a PoS reward model. The C++ implementation in `issuance.h` uses a Bitcoin-style geometric halving schedule instead. The genesis fields are silently ignored at runtime. Any tooling, documentation, or economic modelling that reads these fields will produce figures that bear no relation to actual issuance. **Resolution:** Either remove the `annual_rate` fields and update documentation to describe the halving schedule, or implement a PoS fixed-rate issuance path that honours them.
+
+2. **OBL gas denomination: `gas_pricing.h` uses Ethereum Gwei units (relative to 1 × 10¹⁸ wei) while OBL has 8 decimal places (1 OBL = 1 × 10⁸ base units).**
+   `INITIAL_BASE_FEE = 1,000,000,000` in `gas_pricing.h` is a direct copy of Ethereum's 1 Gwei value, which assumes a 10¹⁸ base unit. OBL uses a 10⁸ base unit (like Bitcoin satoshis). This 10× mismatch means the effective minimum base fee is ten times lower than intended, and any gas cost printed as "Gwei" will appear ten times higher than the actual OBL amount charged. **Resolution:** Define `OBL_GWEI = 10` (10 base units = 1 × 10⁻⁷ OBL) in `gas_pricing.h` and recalibrate all gas price constants accordingly.
+
+3. **Slashing ratios are declared in genesis JSON but are not enforced in any C++ consensus code.**
+   `genesis_drachma.json` and `genesis_obolos.json` both specify `double_sign: 0.05` and `equivocation: 0.10`. There is no corresponding slashing logic in `layer2-drachma/consensus/pos_consensus.cpp` or `layer3-obolos/consensus/pos_consensus.cpp`. Validators that equivocate or double-sign will not be penalised, eliminating a primary PoS safety guarantee. **Resolution:** Implement slashing enforcement in the PoS consensus layer, or explicitly document that slashing is a future milestone and remove the genesis fields to prevent false confidence.
+
+4. **No on-chain relayer reimbursement for checkpoint submission costs.**
+   DRACHMA validators must submit `TX_L2_COMMIT` transactions on TALANTON, paying TALN fees from their own balance. OBOLOS validators must submit `TX_L3_COMMIT` transactions on DRACHMA, paying DRM fees. Neither chain defines a mechanism to reimburse or pre-fund these cross-layer fee obligations. If the cost of checkpoint submission exceeds validator block rewards at any point, relayers have a direct financial incentive to stop submitting checkpoints, breaking the settlement hierarchy. **Resolution:** Design and implement an on-chain relayer incentive: either a dedicated checkpoint-fee subsidy funded from the block subsidy pool, or a protocol-level fee rebate mechanism.
+
+---
+
 ## Tokenomics Matrix
 
 ### TALANTON (TALN) — Layer 1 PoW Settlement
