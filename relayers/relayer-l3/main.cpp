@@ -11,12 +11,12 @@ namespace {
 
 void PrintUsage() {
     std::cerr
-        << "Usage: pantheon-relayer-l3 --commitment=<encoded> --active-pow=<value> "
+        << "Usage: pantheon-relayer-l3 --commitment=<encoded> --active-stake=<value> "
            "--last-finalized-height=<value>\n"
-        << "  --active-pow              Total hash power of signing PoW miners\n"
+        << "  --active-stake            Total active stake of signing OBOLOS validators\n"
         << "  --last-finalized-height   Last accepted OBOLOS finalized height\n"
         << "Encoded format: OBOLOS:epoch:finalized_height:finalized_block_hash:state_root:"
-           "miner_set_hash:<empty_or_reserved>:miner_id|hash_power|signature(...)\n";
+           "validator_set_hash:<empty_or_reserved>:validator_id|stake|signature(...)\n";
 }
 
 std::optional<uint64_t> ParseUint(const std::string& value) {
@@ -31,18 +31,18 @@ std::optional<uint64_t> ParseUint(const std::string& value) {
 
 int main(int argc, char* argv[]) {
     std::optional<std::string> encoded_commitment;
-    std::optional<uint64_t> active_pow;
+    std::optional<uint64_t> active_stake;
     std::optional<uint64_t> last_finalized_height;
 
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg.rfind("--commitment=", 0) == 0) {
             encoded_commitment = arg.substr(13);
-        } else if (arg.rfind("--active-pow=", 0) == 0) {
-            active_pow = ParseUint(arg.substr(13));
         } else if (arg.rfind("--active-stake=", 0) == 0) {
-            // Legacy flag alias: --active-stake is accepted as --active-pow.
-            active_pow = ParseUint(arg.substr(15));
+            active_stake = ParseUint(arg.substr(15));
+        } else if (arg.rfind("--active-pow=", 0) == 0) {
+            // Legacy compatibility alias from older PoW-style terminology.
+            active_stake = ParseUint(arg.substr(13));
         } else if (arg.rfind("--last-finalized-height=", 0) == 0) {
             last_finalized_height = ParseUint(arg.substr(24));
         } else {
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (!encoded_commitment || !active_pow || !last_finalized_height) {
+    if (!encoded_commitment || !active_stake || !last_finalized_height) {
         PrintUsage();
         return 1;
     }
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     }
 
     auto validate_result =
-        pantheon::drachma::ValidateL3Commit(commitment, *last_finalized_height, *active_pow);
+        pantheon::drachma::ValidateL3Commit(commitment, *last_finalized_height, *active_stake);
     if (!validate_result.valid) {
         std::cerr << "pantheon-relayer-l3 rejected commitment: " << validate_result.reason
                   << std::endl;

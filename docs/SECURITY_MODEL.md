@@ -1,44 +1,45 @@
 # Security Model (Reference)
 
-This file aligns with the canonical MVP threat assumptions in `docs/threat-model.md`.
+This document summarizes MVP security posture and aligns with `docs/threat-model.md` and `docs/SETTLEMENT_AND_FINALITY.md`.
 
 ## Security Layers
 
 ### TALANTON (L1)
 
-- Security source: SHA-256d PoW economic security.
-- Role: immutable settlement anchor and root of trust.
-- No staking, no BFT validator quorum in consensus.
+- Security source: SHA-256d PoW.
+- Finality type: probabilistic.
+- Role: root settlement anchor and strongest trust-minimized layer.
 
 ### DRACHMA (L2)
 
-- Security source: PoS+BFT finality with >=2/3 active stake signatures.
-- Risks: validator collusion, key compromise, delayed commitments.
+- Security source: PoS/BFT validator quorum signatures.
+- Finality type: economic finality under validator honesty assumptions.
+- Key risks: validator collusion, key compromise, delayed checkpoint publication.
 
 ### OBOLOS (L3)
 
-- Security source: PoS+BFT finality with >=2/3 active stake signatures.
-- Risks: validator collusion, execution bugs, delayed commitment publication.
+- Security source: PoS/BFT validator quorum signatures.
+- Finality type: economic finality under validator honesty assumptions.
+- Key risks: validator collusion, execution bugs, delayed checkpoint publication.
 
 ## Commitment Security
 
-Anchoring path is strictly:
+Canonical checkpoint path:
 
 `OBOLOS -> DRACHMA -> TALANTON`
 
-`TX_L3_COMMIT` and `TX_L2_COMMIT` validation is signature-quorum and encoding based in MVP.
+`TX_L3_COMMIT` and `TX_L2_COMMIT` checks are quorum-signature and payload-validation based in MVP.
 
 ## MVP Limitations
 
 - No zk proofs.
 - No fraud proofs.
+- No claim of trustless bridging.
 - Bridge withdrawals are optimistic and include a trust window.
-- Relayers are liveness components; they do not replace consensus safety.
+- Relayers provide liveness, not root consensus safety.
 
 ## Operator Guidance
 
-- Monitor commitment freshness at each layer boundary.
-- Enforce secure validator key management (HSM/signing isolation recommended).
-- Treat bridge unlocks as delayed-finality operations.
-
-For the normative and complete threat model, refer to `docs/threat-model.md`.
+- Monitor checkpoint freshness at each layer boundary.
+- Enforce hardened key management for PoS validator infrastructure.
+- Use conservative TALANTON confirmation depth for high-value settlement actions.

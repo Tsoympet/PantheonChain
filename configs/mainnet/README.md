@@ -12,3 +12,7 @@ Before launch:
 3. Confirm P2P/RPC ports do not overlap with host services.
 4. Lock genesis references to audited, signed genesis artifacts.
 5. Run `python3 scripts/validate-config.py configs/mainnet/l1.json configs/mainnet/l2.json configs/mainnet/l3.json`.
+6. Run `python3 scripts/validate-layer-model.py` to verify canonical role and checkpoint ordering assumptions.
+
+
+Canonical layer metadata is versioned in `configs/layer-model.json` and validated by `scripts/validate-layer-model.py`.

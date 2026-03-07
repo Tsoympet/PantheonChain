@@ -5,6 +5,22 @@ All notable changes to PantheonChain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+#### Consensus Model Clarification
+- Rewrote architecture, consensus, threat, security, and whitepaper documentation to formalize PantheonChain as a layered hybrid model: TALANTON (L1 PoW settlement), DRACHMA (L2 PoS/BFT payments), and OBOLOS (L3 PoS/BFT EVM execution).
+- Added `docs/SETTLEMENT_AND_FINALITY.md` with explicit finality semantics, trust assumptions, and failure scenarios for checkpointed settlement (`OBOLOS -> DRACHMA -> TALANTON`).
+- Updated relayer CLI wording and compatibility comments to use PoS/BFT validator-stake terminology for L3->L2 commitments while retaining legacy `--active-pow` flag compatibility.
+- Added `scripts/validate-layer-model.py` and updated configuration docs to enforce role naming and checkpoint cadence consistency across L1/L2/L3 config profiles.
+- Added canonical machine-readable layer metadata in `configs/layer-model.json` and refactored `scripts/validate-layer-model.py` to validate against it as the single source of truth.
+- Added a CI architecture-consistency gate in `.github/workflows/test.yml` to run layered config and model checks before platform test matrices.
+- Expanded RPC documentation with canonical commitment payload field names and validator/stake terminology guidance.
+- Added `docs/ARCHITECTURE_ALIGNMENT_GAPS.md` to track unresolved ambiguities, potential code/docs divergence points, and prioritized next implementation steps.
+
+---
+
 ## [2.2.0] - 2026-03-06
 
 ### Changed

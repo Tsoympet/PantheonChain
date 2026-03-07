@@ -434,7 +434,7 @@ Fee routing is implemented in `layer3-obolos/fees/FeeRouter.sol` and `layer2-dra
 | DRACHMA (DRM) | 100 000 000 000 | L2 |
 | OBOLOS (OBL) | 100 000 000 000 | L3 |
 
-DRACHMA and OBOLOS maximum supplies are set to **100 billion** (matching the XRP maximum supply) and are PoW-mined.  
+DRACHMA and OBOLOS maximum supplies are set to **100 billion** (matching the XRP maximum supply) and are governed by their respective PoS/BFT layer issuance policies.  
 These maximum supplies are hard-coded at the consensus layer and cannot be changed by any governance action. Changing them requires a hard fork with community consensus.
 
 ### Section 11.2 — Supply Governance Thresholds

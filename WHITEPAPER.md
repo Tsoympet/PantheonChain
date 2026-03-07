@@ -1,81 +1,76 @@
-# PantheonChain Whitepaper
-
-**Version 2.0 (Layered Refactor Edition)**  
-**Date: January 2026**
-
----
+# PantheonChain Whitepaper (MVP Architecture)
 
 ## Abstract
 
-PantheonChain is a modular blockchain stack that separates security, payments, and execution into three anchored layers:
+PantheonChain is a hybrid layered blockchain network that separates settlement, payments, and execution into distinct chains with explicit trust boundaries.
 
-- **TALANTON (L1)** for Proof-of-Work settlement and root security.
-- **DRACHMA (L2)** for Proof-of-Stake payments and liquidity.
-- **OBOLOS (L3)** for Proof-of-Work EVM execution.
+- **TALANTON (L1):** Proof-of-Work base settlement and anchoring chain.
+- **DRACHMA (L2):** Proof-of-Stake + BFT payments layer with fast economic finality.
+- **OBOLOS (L3):** Proof-of-Stake + BFT EVM execution and governance layer.
 
-The system uses rollup-style commitment anchoring with hash-power quorum signatures on PoW layers. The canonical commitment path is **OBOLOS -> DRACHMA -> TALANTON**. This whitepaper defines the architecture, consensus model, commitment transaction formats, bridging flows, and MVP trust assumptions.
+The canonical checkpoint route is **OBOLOS -> DRACHMA -> TALANTON**. This document defines the consensus model, commitment formats, token roles, trust assumptions, and MVP limitations without claiming cryptographic properties that are not implemented.
 
 ---
 
 ## 1. Design Goals
 
-1. **Security minimization at L1**: Keep the settlement layer simple, immutable, and PoW-only.
-2. **Scalability through layering**: Move high-throughput payments and smart-contract execution to upper layers.
-3. **Deterministic finality semantics**: Use >=2/3 hash-power quorum signatures for DRACHMA and OBOLOS finality.
-4. **Operational clarity**: Define explicit responsibilities for miners, relayers, and bridge operators.
+1. Keep TALANTON as the only consensus-critical PoW settlement root.
+2. Provide high-throughput payments on DRACHMA with PoS/BFT finality.
+3. Provide EVM execution and governance on OBOLOS with PoS/BFT finality.
+4. Preserve explicit settlement hierarchy through chained checkpoints.
+5. Avoid ambiguity that all three tokens co-secure one shared consensus engine.
 
 ---
 
-## 2. System Architecture
+## 2. Layer Model
 
-### 2.1 Layer roles
+### 2.1 TALANTON — Layer 1 (PoW)
 
-#### TALANTON — Layer-1 (PoW)
-
-- Consensus: SHA-256d Proof-of-Work
+- Consensus: SHA-256d PoW.
+- Finality: probabilistic (heaviest valid chain).
 - Responsibilities:
-  - final settlement
-  - immutable anchor for higher layers
-  - root of trust
-- Native token: **TALANTON** (mining rewards and L1 fees only)
-- No staking
-- Accepts and validates `TX_L2_COMMIT` commitments from DRACHMA
+  - root settlement
+  - immutable anchor for higher-layer checkpoints
+- Native token: **TALANTON**
+  - PoW mining rewards
+  - L1 transaction fees / settlement utility
 
-#### DRACHMA — Layer-2 (PoW Payments)
+### 2.2 DRACHMA — Layer 2 (PoS + BFT payments)
 
-- Consensus: Epoch-based Proof-of-Work with hash-power quorum finality
-- Finality threshold: >=2/3 contributing hash-power signatures
+- Consensus: PoS validator set with BFT quorum finalization.
+- Finality: fast economic finality under validator honesty assumptions.
 - Responsibilities:
-  - fast payments
-  - liquidity and transfer throughput
-  - minimal execution (no general EVM)
-- Native token: **DRACHMA** (mining rewards + fees)
-- No staking
-- Accepts `TX_L3_COMMIT` from OBOLOS
-- Publishes `TX_L2_COMMIT` to TALANTON
+  - payments and liquidity routing
+  - checkpointing to TALANTON
+  - carrying latest accepted OBOLOS commitment reference
+- Native token: **DRACHMA**
+  - validator staking collateral
+  - L2 fee utility
 
-#### OBOLOS — Layer-3 (PoW Execution)
+### 2.3 OBOLOS — Layer 3 (PoS + BFT + EVM)
 
-- Consensus: Epoch-based Proof-of-Work with hash-power quorum finality
-- Finality threshold: >=2/3 contributing hash-power signatures
+- Consensus: PoS validator set with BFT quorum finalization.
+- Finality: fast economic finality under validator honesty assumptions.
 - Responsibilities:
   - EVM execution
-  - gas accounting
-- Native token: **OBOLOS** (gas + mining rewards)
-- No staking
-- Publishes finalized commitments to DRACHMA
+  - governance and DeFi state transitions
+  - checkpoint publishing to DRACHMA
+- Native token: **OBOLOS**
+  - gas
+  - staking collateral
+  - governance utility
 
-### 2.2 Canonical anchoring path
+### 2.4 Canonical checkpoint route
 
 `OBOLOS -> DRACHMA -> TALANTON`
 
-DRACHMA commitments include the latest finalized OBOLOS commitment hash to preserve transitive anchoring.
+DRACHMA commitments include the latest finalized OBOLOS checkpoint hash to maintain transitive anchoring.
 
 ---
 
 ## 3. Commitment Transactions
 
-### 3.1 `TX_L2_COMMIT` (on TALANTON)
+### 3.1 `TX_L2_COMMIT` (recorded on TALANTON)
 
 `source_chain = DRACHMA`
 
@@ -85,51 +80,54 @@ Required fields:
 - `finalized_height`
 - `finalized_block_hash`
 - `state_root`
-- `miner_set_hash`
-- `miner_signatures`
+- `validator_set_hash`
+- `validator_signatures`
+- `upstream_commitment_hash` (latest accepted OBOLOS commitment reference)
 
 Validation requirements on TALANTON:
 
 1. monotonic finalized height
 2. valid payload encoding
-3. quorum signatures >=2/3 contributing DRACHMA hash power
+3. quorum signatures >= 2/3 active DRACHMA validator stake
 
-### 3.2 `TX_L3_COMMIT` (on DRACHMA)
+### 3.2 `TX_L3_COMMIT` (recorded on DRACHMA)
 
 `source_chain = OBOLOS`
 
-Required fields mirror `TX_L2_COMMIT`:
+Required fields mirror `TX_L2_COMMIT` excluding upstream recursion:
 
 - `epoch`
 - `finalized_height`
 - `finalized_block_hash`
 - `state_root`
-- `miner_set_hash`
-- `miner_signatures`
+- `validator_set_hash`
+- `validator_signatures`
 
 Validation requirements on DRACHMA:
 
 1. monotonic finalized height
 2. valid payload encoding
-3. quorum signatures >=2/3 contributing OBOLOS hash power
+3. quorum signatures >= 2/3 active OBOLOS validator stake
 
 ---
 
-## 4. Consensus Specifications
+## 4. Consensus and Finality Semantics
 
-### 4.1 TALANTON PoW
+### 4.1 TALANTON finality
 
-TALANTON uses pure SHA-256d mining and heaviest-chain settlement semantics. Staking logic is disallowed by design.
+TALANTON settlement is PoW-based and probabilistic. Higher confirmation depth increases rollback cost and therefore settlement confidence.
 
-### 4.2 DRACHMA and OBOLOS PoW
+### 4.2 DRACHMA and OBOLOS finality
 
-All three layers use Proof-of-Work:
+DRACHMA and OBOLOS provide fast BFT-style economic finality under validator quorum assumptions. This finality is operationally strong but not equivalent to TALANTON settlement finality.
 
-- epoch-based operation
-- deterministic proposer selection weighted by hash power
-- miner sets derived from on-chain PoW contribution
-- no slashing (miners are penalised by orphaned blocks)
-- finality after >=2/3 contributing hash-power signatures
+### 4.3 Settlement hierarchy
+
+Security ordering for settlement assurance:
+
+`OBOLOS < DRACHMA < TALANTON`
+
+Upper-layer finality is strengthened when checkpoints are accepted by downstream layers and ultimately anchored on TALANTON.
 
 ---
 
@@ -137,147 +135,52 @@ All three layers use Proof-of-Work:
 
 ### 5.1 L1 <-> L2
 
-- **Deposit**: lock on TALANTON -> mint wrapped representation on DRACHMA
-- **Withdraw**: burn on DRACHMA -> unlock on TALANTON
+- Deposit: lock on TALANTON -> mint representation on DRACHMA
+- Withdraw: burn on DRACHMA -> unlock on TALANTON
 
 ### 5.2 L2 <-> L3
 
-- **Deposit**: lock on DRACHMA -> mint wrapped representation on OBOLOS
-- **Withdraw**: burn on OBOLOS -> unlock on DRACHMA
+- Deposit: lock on DRACHMA -> mint representation on OBOLOS
+- Withdraw: burn on OBOLOS -> unlock on DRACHMA
 
-### 5.3 MVP properties
+### 5.3 MVP bridge properties
 
-Withdrawals are optimistic and subject to a trust window. The bridge model is economic and operational, not validity-proof based.
-
----
-
-## 6. Token Economics
-
-PantheonChain has three native assets with independent issuance schedules.
-All three use Bitcoin-style geometric halvings (interval: 210,000 blocks ≈ 4 years).
-
-### Supply caps and issuance
-
-| Asset       | Ticker | Hard cap          | Achievable supply | Initial reward      | Launch height |
-|-------------|--------|------------------:|------------------:|:-------------------:|:-------------:|
-| TALANTON    | TALN   | 21,000,000        | ~21,000,000       | 50 TALN/block       | block 0       |
-| DRACHMA     | DRM    | 100,000,000,000   | ~99,960,000,000   | 238,000 DRM/block   | block 210,000 |
-| OBOLOS      | OBL    | 100,000,000,000   | ~99,960,000,000   | 238,000 OBL/block   | block 420,000 |
-
-**Hard cap** – the strict consensus limit; no coinbase can push the circulating supply above it.  
-**Achievable supply** – `initial_reward × 210,000 × 2`; the actual ceiling the halving
-schedule can reach (integer right-shift means the issuance approaches this asymptotically).
-
-TALANTON's cap and achievable supply are essentially identical (gap < 0.001 TALN).  
-DRACHMA and OBOLOS hard caps are set to **100,000,000,000** (100 billion), matching the XRP maximum supply.  
-Achievable supply for both DRM and OBL is ~99.96B (40M below the 100B hard cap).
-
-Governance quorum is expressed as a percentage of the total number of eligible voters
-(token holders), not of the token supply.
-
-### Governance — One-Address-One-Vote
-
-PantheonChain governance uses **one-address-one-vote (1A1V)**:
-
-- Every address holding ≥ 1 token of any asset gets exactly **1 vote**.
-- The amount of tokens held has no effect on voting power.
-- A holder with 1 TALN and a holder with 100 billion DRM each cast votes of equal weight.
-- Quorum thresholds are percentages of the total eligible voter count.
-- Snapshots are taken at `voting_start` block; addresses that acquire tokens later cannot vote on that proposal.
-
-### TALANTON
-
-- mining rewards (PoW)
-- L1 fees
-- no staking utility; governance voting via 1A1V
-
-### DRACHMA
-
-- PoW mining rewards
-- L2 fees
-- no staking utility; governance voting via 1A1V
-
-### OBOLOS
-
-- PoW mining rewards
-- EVM gas fees
-- no staking utility; governance voting via 1A1V
+- Withdrawals are optimistic and subject to a trust window.
+- No zk validity proofs are assumed.
+- No fraud proof system is assumed.
+- Safety depends on validator-honesty and relayer-liveness assumptions.
 
 ---
 
-## 7. Configuration and Genesis
+## 6. Token Economics (Role Separation)
 
-Network initialization is layer-specific:
+PantheonChain preserves three native assets with separate utility domains:
 
-- `genesis_talanton.json`
-- `genesis_drachma.json`
-- `genesis_obolos.json`
+- **TALANTON (TALN):** PoW mining rewards, L1 settlement fees, base-layer security token.
+- **DRACHMA (DRM):** L2 validator staking, payment-layer fee utility, L2 checkpoint economy.
+- **OBOLOS (OBL):** L3 validator staking, gas, governance, execution-layer economy.
 
-Genesis parameters include:
-
-- inflation schedules
-- epoch lengths
-- commitment intervals
+Supply schedule and network-specific issuance parameters are defined in genesis/config artifacts.
 
 ---
 
-## 8. Node, CLI, and RPC
-
-### Node mode
-
-`pantheon-node --layer=l1|l2|l3`
-
-### CLI examples
-
-- `pantheon-cli mine --layer=l2`
-- `pantheon-cli deploy-contract --layer=l3`
-- `pantheon-cli submit-commitment --layer=l2|l3`
-- `pantheon-cli governance vote --proposal-id=<id>`
-
-### RPC namespaces
-
-- `/chain/info`
-- `/governance/*` (one-address-one-vote; no staking required)
-- `/commitments/*`
-- `/evm/*` (OBOLOS only)
-
----
-
-## 9. Testing and Operations
-
-Required testing domains:
-
-- Unit tests:
-  - one-address-one-vote (1A1V) voting power
-  - proposer determinism (PoW hash-power weighted)
-  - commitment validation
-- Integration tests:
-  - L1+L2+L3 local orchestration
-  - anchoring verification (OBOLOS -> DRACHMA -> TALANTON)
-  - withdrawal flow verification
-- Fuzz testing:
-  - transaction decoding
-  - consensus message parsing
-
-CI includes build, lint, and test gates.
-
----
-
-## 10. Security and Trust Assumptions (MVP)
-
-PantheonChain MVP does **not** include zk proofs or fraud proofs by default.
-
-Security assumptions:
+## 7. Security and Trust Assumptions (MVP)
 
 1. TALANTON PoW remains economically secure against majority hash attacks.
-2. DRACHMA and OBOLOS finality is safe when <1/3 of total contributing hash power is Byzantine.
-3. Relayers are required for commitment liveness but do not define consensus safety.
-4. Bridge withdrawals are optimistic and should be treated as delayed-finality operations.
+2. DRACHMA safety/liveness depends on validator honesty threshold assumptions.
+3. OBOLOS safety/liveness depends on validator honesty threshold assumptions.
+4. Relayers are required for checkpoint publication liveness.
+5. Checkpoint and bridge flows are not trustless in MVP.
 
-These assumptions and limitations are intentionally explicit and operator-visible.
+Failure implications:
+
+- OBOLOS validator supermajority compromise can corrupt L3 economic finality before DRACHMA/TALANTON settlement.
+- DRACHMA validator supermajority compromise can corrupt L2 finality and downstream trust in OBOLOS-derived anchors.
+- Relayer censorship/liveness failures delay settlement progression.
+- TALANTON reorg events can delay certainty for recent upper-layer settlements.
 
 ---
 
-## 11. Conclusion
+## 8. Conclusion
 
-PantheonChain’s layered model decouples security, payments, and execution while preserving an auditable trust chain from OBOLOS through DRACHMA into TALANTON. The architecture is intentionally modular, enabling independent optimization of each layer without weakening the settlement anchor.
+PantheonChain is a layered hybrid architecture with explicit consensus separation: TALANTON secures base settlement via PoW, while DRACHMA and OBOLOS deliver higher throughput and faster economic finality through PoS/BFT validator quorums. The model intentionally keeps TALANTON as the root settlement chain and avoids claims of trustless bridging beyond implemented MVP guarantees.
