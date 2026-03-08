@@ -42,7 +42,7 @@ const std::vector<DenominationDefinition>& DrDenoms() {
         {"drachma", "DR", parthenon::primitives::AssetID::DRACHMA, 1, 1, 8, true, false,
          {"dr", "drachma", "drachmas"}},
         {"obol", "OB", parthenon::primitives::AssetID::DRACHMA, 1, 6, 8, true, true,
-         {"ob", "obol", "obolos"}},
+         {"ob", "obol"}},
         {"tetradrachm", "4DR", parthenon::primitives::AssetID::DRACHMA, 4, 1, 8, true, false,
          {"tetradrachm", "tetradrachma", "tetra"}},
         {"mina", "MNA", parthenon::primitives::AssetID::DRACHMA, 100, 1, 8, true, false,

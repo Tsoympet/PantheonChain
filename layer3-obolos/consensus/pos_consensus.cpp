@@ -38,6 +38,22 @@ const Validator& SelectDeterministicProposer(const std::vector<Validator>& valid
     return validators.back();
 }
 
+SlashingEvent ApplySlashing(Validator& validator, const std::string& reason) {
+    uint64_t slash_bips = 0;
+    if (reason == "double_sign") {
+        slash_bips = DOUBLE_SIGN_SLASH_BIPS;
+    } else if (reason == "equivocation") {
+        slash_bips = EQUIVOCATION_SLASH_BIPS;
+    } else {
+        throw std::invalid_argument("unrecognised slashing reason: " + reason);
+    }
+
+    // slashed_amount = stake * bips / 10000  (integer, rounds down)
+    const uint64_t slashed_amount = (validator.stake * slash_bips) / 10000ULL;
+    validator.stake -= slashed_amount;
+    return {validator.id, reason, slashed_amount};
+}
+
 common::Commitment BuildL3Commitment(uint64_t epoch, uint64_t finalized_height,
                                      const std::string& finalized_block_hash,
                                      const std::string& state_root,

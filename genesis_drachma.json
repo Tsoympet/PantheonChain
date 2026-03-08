@@ -3,7 +3,12 @@
   "layer": "l2",
   "consensus": "pos-bft",
   "native_token": "DRACHMA",
-  "inflation_schedule": {"annual_rate": 0.05},
+  "issuance_schedule": {
+    "type": "halving",
+    "initial_block_reward_base_units": 9700000000,
+    "halving_interval": 210000,
+    "launch_height": 210000
+  },
   "epoch_length": 120,
   "minimum_stake": 1000,
   "slashing_ratios": {"double_sign": 0.05, "equivocation": 0.1},

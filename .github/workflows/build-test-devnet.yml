@@ -10,6 +10,21 @@ permissions:
 
 jobs:
 
+  tokenomics-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Supply cap invariants
+        run: python3 scripts/economics/check_supply_caps.py
+      - name: Emission schedule invariants
+        run: python3 scripts/economics/check_emission_schedule.py
+      - name: Reward path checks
+        run: python3 scripts/economics/check_reward_paths.py
+      - name: Decimal consistency checks
+        run: python3 scripts/economics/check_decimal_consistency.py
+      - name: Stress-test scenarios
+        run: python3 scripts/economics/stress_test_tokenomics.py
+
   placeholder-gate:
     runs-on: ubuntu-latest
     steps:
