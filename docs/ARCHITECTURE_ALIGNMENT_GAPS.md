@@ -60,3 +60,19 @@ This document tracks remaining ambiguities after the layered consensus clarifica
 
 5. **Relayer interface standardization**
    - Normalize relayer and CLI interfaces so operator-facing options and help text are fully aligned with `validator_set_hash` / `validator_signatures` semantics in every layer tool.
+
+
+## Reality-check automation added
+
+- `scripts/audit-implementation-status.py` now validates core designed-vs-actual invariants (layer identity, consensus labels, checkpoint route, relayer source-chain enforcement, and trust-assumption wording hygiene).
+- CI (`.github/workflows/test.yml`, architecture-consistency job) now runs this audit so architectural drift fails early.
+- `docs/IMPLEMENTATION_STATUS.md` now tracks aligned/partial/incomplete status explicitly.
+
+
+## Resolved in latest hardening pass
+
+- Increased DRACHMA and OBOLOS `minimum_stake` values in genesis artifacts to reduce trivial validator-entry Sybil exposure.
+- Added adversarial commitment regression tests for replay, forged-source, and insufficient-quorum cases.
+- Enforced `checkpoint_freshness_slo_seconds` and `relayer_liveness_threshold_seconds` as required validated fields across all network config files.
+
+- Added runtime checkpoint watchdog and multi-node adversarial checker tooling to move enforcement beyond static config validation.

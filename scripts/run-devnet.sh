@@ -25,4 +25,12 @@ DR_HASH="0x0d040506"
 rpc_call 19332 commitments/submit "[{\"id\":\"l2-anchor-1\",\"source_chain\":\"OBOLOS\",\"obolos_hash\":\"${OB_HASH}\",\"height\":12}]" >/dev/null
 rpc_call 18332 commitments/submit "[{\"id\":\"l1-anchor-1\",\"source_chain\":\"DRACHMA\",\"drachma_hash\":\"${DR_HASH}\",\"references\":[\"${OB_HASH}\"],\"height\":33}]" >/dev/null
 
+
+FRESHNESS=$(python3 - <<'PY2'
+import json
+print(json.load(open('configs/devnet/l1.json'))['checkpoint_freshness_slo_seconds'])
+PY2
+)
+python3 scripts/runtime/checkpoint_watchdog.py   --l1-state .devnet/state/l1.json   --l2-state .devnet/state/l2.json   --freshness-seconds "$FRESHNESS"   --interval-seconds 5 >.devnet/logs/watchdog.log 2>&1 & echo $! >.devnet/watchdog.pid
+
 echo "Devnet started"

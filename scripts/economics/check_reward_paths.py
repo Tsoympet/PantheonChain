@@ -47,8 +47,8 @@ DRM_MAX_SUPPLY  = 41_000_000
 OBL_MAX_SUPPLY  = 61_000_000
 
 # Minimum stake (from genesis JSON)
-DRM_MIN_STAKE = 1_000   # DRM
-OBL_MIN_STAKE = 500     # OBL
+DRM_MIN_STAKE = 100_000   # DRM
+OBL_MIN_STAKE = 50_000     # OBL
 
 # DRACHMA staking: minimum count of validators at minimum stake
 # to consider the chain minimally secure.

@@ -30,6 +30,11 @@ jobs:
           configs/testnet/l1.json configs/testnet/l2.json configs/testnet/l3.json \
           configs/mainnet/l1.json configs/mainnet/l2.json configs/mainnet/l3.json
         python3 scripts/validate-layer-model.py
+        python3 scripts/audit-implementation-status.py
+        ./scripts/run-devnet.sh
+        python3 scripts/runtime/checkpoint_watchdog.py --oneshot
+        ./tests/integration/adversarial-multinode.sh
+        xargs -r kill < <(cat .devnet/*.pid) || true
 
   test-ubuntu:
     name: Test (Ubuntu with Coverage)

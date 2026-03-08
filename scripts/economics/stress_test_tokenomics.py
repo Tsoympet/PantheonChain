@@ -43,8 +43,8 @@ TALN_MAX_SUPPLY = 21_000_000
 DRM_MAX_SUPPLY  = 41_000_000
 OBL_MAX_SUPPLY  = 61_000_000
 
-DRM_MIN_STAKE   = 1_000    # DRM per validator
-OBL_MIN_STAKE   = 500      # OBL per validator
+DRM_MIN_STAKE   = 100_000    # DRM per validator
+OBL_MIN_STAKE   = 50_000      # OBL per validator
 BFT_MIN_VALIDATORS = 4     # minimum to maintain 2/3 quorum
 
 TALN_BLOCK_TIME_SECS = 600    # Bitcoin-style 10 min target
@@ -233,7 +233,7 @@ result(
     "WARN",
     f"DRACHMA requires >= {drm_min_validators_for_bft} honest validators for BFT safety. "
     "If validator count drops below this, the chain halts or becomes unsafe. "
-    "Minimum stake is 1000 DRM which is very accessible – Sybil-proofing depends "
+    "Minimum stake is 100,000 DRM after hardening; Sybil-proofing now depends "
     "on adequate stake, not validator count alone.",
 )
 
@@ -241,7 +241,7 @@ result(
     "OBL: BFT liveness floor",
     "WARN",
     f"OBOLOS requires >= {obl_min_validators_for_bft} honest validators for BFT safety. "
-    "Minimum stake 500 OBL is similarly low. "
+    "Minimum stake 50,000 OBL after hardening materially raises entry cost. "
     "Economic-finality safety depends on total staked value vs cost-of-corruption.",
 )
 
