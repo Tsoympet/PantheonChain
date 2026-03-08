@@ -5,10 +5,11 @@
 #ifndef PARTHENON_GOVERNANCE_BALANCE_VOTING_H
 #define PARTHENON_GOVERNANCE_BALANCE_VOTING_H
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace parthenon {
 namespace governance {

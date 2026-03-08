@@ -10,9 +10,7 @@ int main() {
     using namespace pantheon;
 
     common::Commitment valid_l3 = obolos::BuildL3Commitment(
-        7,
-        101,
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        7, 101, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
         {{"val1", 67, "sig-a"}, {"val2", 34, "sig-b"}});
