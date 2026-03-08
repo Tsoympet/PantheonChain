@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
@@ -100,6 +101,7 @@ class Handler(BaseHTTPRequestHandler):
         elif method == "commitments/submit":
             item = params[0]
             item.setdefault("id", f"{LAYER}-commit-{len(state['commitments']) + 1}")
+            item.setdefault("submitted_at_unix", int(time.time()))
             state["commitments"].append(item)
             state["height"] += 1
             persist()

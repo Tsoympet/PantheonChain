@@ -3,7 +3,17 @@ import json
 import pathlib
 import sys
 
-REQUIRED = ["layer", "node_id", "network", "p2p_port", "rpc_port", "data_dir", "commitment_interval"]
+REQUIRED = [
+    "layer",
+    "node_id",
+    "network",
+    "p2p_port",
+    "rpc_port",
+    "data_dir",
+    "commitment_interval",
+    "checkpoint_freshness_slo_seconds",
+    "relayer_liveness_threshold_seconds",
+]
 VALID_LAYERS = {"l1", "l2", "l3"}
 VALID_NETWORKS = {"devnet", "testnet", "mainnet"}
 
@@ -45,6 +55,11 @@ def validate(path: pathlib.Path) -> dict:
 
     if not isinstance(cfg["commitment_interval"], int) or cfg["commitment_interval"] <= 0:
         fail(f"{path}: commitment_interval must be a positive integer")
+
+    for policy_key in ("checkpoint_freshness_slo_seconds", "relayer_liveness_threshold_seconds"):
+        value = cfg[policy_key]
+        if not isinstance(value, int) or value <= 0:
+            fail(f"{path}: {policy_key} must be a positive integer")
 
     genesis = cfg.get("genesis_file")
     if genesis:

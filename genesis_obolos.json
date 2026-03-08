@@ -10,7 +10,7 @@
     "launch_height": 420000
   },
   "epoch_length": 60,
-  "minimum_stake": 500,
+  "minimum_stake": 50000,
   "slashing_ratios": {"double_sign": 0.05, "equivocation": 0.1},
   "commitment_interval": 5,
   "features": {"evm": true, "gas_token": "OBOLOS"}

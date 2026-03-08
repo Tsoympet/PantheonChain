@@ -69,3 +69,5 @@ SlashingEvent ApplySlashing(Validator& validator, const std::string& reason);
 common::CommitmentValidationResult ValidateL3Commit(const common::Commitment& commitment,
                                                     uint64_t last_l3_height,
                                                     uint64_t active_stake);
+
+}  // namespace pantheon::drachma

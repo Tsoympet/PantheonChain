@@ -251,7 +251,7 @@ The arithmetic, supply caps, and reward schedules are now internally coherent. S
 
 | Layer | Near-term | Long-term |
 |---|---|---|
-| TALN (PoW miners) | Viable — 50 TALN/block initial subsidy is substantial | **UNPROVEN** — fee-only security post-halving 33 |
+| TALN (PoW block producers) | Viable — 50 TALN/block initial subsidy is substantial | **UNPROVEN** — fee-only security post-halving 33 |
 | DRM (PoS validators) | Viable — 97 DRM/block subsidy covers operational cost | **UNPROVEN** — fee dependency long-term |
 | OBL (PoS validators) | Viable — 145 OBL/block; EIP-1559 burn/tip adds fee dimension | **UNPROVEN** — fee + gas burn dependency long-term |
 

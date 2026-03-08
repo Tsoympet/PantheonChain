@@ -9,3 +9,7 @@ add_test(NAME CommitmentSerializationTests COMMAND test_commitment_serialization
 add_executable(test_bridge_flows test_bridge_flows.cpp)
 target_link_libraries(test_bridge_flows PRIVATE pantheon_layers)
 add_test(NAME BridgeFlowTests COMMAND test_bridge_flows)
+
+add_executable(test_adversarial_commitments test_adversarial_commitments.cpp)
+target_link_libraries(test_adversarial_commitments PRIVATE pantheon_layers)
+add_test(NAME AdversarialCommitmentsTests COMMAND test_adversarial_commitments)

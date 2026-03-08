@@ -6,5 +6,7 @@
   "rpc_port": 9332,
   "data_dir": "/var/lib/pantheon/l2",
   "genesis_file": "genesis_drachma.json",
-  "commitment_interval": 10
+  "commitment_interval": 10,
+  "checkpoint_freshness_slo_seconds": 300,
+  "relayer_liveness_threshold_seconds": 120
 }

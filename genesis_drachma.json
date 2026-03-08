@@ -10,7 +10,7 @@
     "launch_height": 210000
   },
   "epoch_length": 120,
-  "minimum_stake": 1000,
+  "minimum_stake": 100000,
   "slashing_ratios": {"double_sign": 0.05, "equivocation": 0.1},
   "commitment_interval": 10,
   "features": {"tx_l3_commit": true, "general_evm": false}

@@ -68,7 +68,11 @@ def validate_model(model: dict[str, Any]) -> dict[str, Any]:
     return layers
 
 
-layers = validate_model(load_json(MODEL_PATH))
+model = load_json(MODEL_PATH)
+layers = validate_model(model)
+policy = model.get("policy", {})
+expected_freshness = int(policy.get("checkpoint_freshness_slo_seconds", 0))
+expected_liveness = int(policy.get("relayer_liveness_threshold_seconds", 0))
 
 for network in NETWORKS:
     base = pathlib.Path("configs") / network
@@ -95,6 +99,18 @@ for network in NETWORKS:
             fail(f"{base}/l1.json: missing required field '{field}'")
         if not isinstance(val, (int, float)) or val <= 0:
             fail(f"{base}/l1.json: '{field}' must be a positive number")
+
+    for layer, cfg in cfgs.items():
+        freshness = int(cfg.get("checkpoint_freshness_slo_seconds", 0))
+        liveness = int(cfg.get("relayer_liveness_threshold_seconds", 0))
+        if freshness != expected_freshness:
+            fail(
+                f"{base}/{layer}.json: checkpoint_freshness_slo_seconds must equal policy value {expected_freshness}"
+            )
+        if liveness != expected_liveness:
+            fail(
+                f"{base}/{layer}.json: relayer_liveness_threshold_seconds must equal policy value {expected_liveness}"
+            )
 
     l1 = int(cfgs["l1"].get("commitment_interval", 0))
     l2 = int(cfgs["l2"].get("commitment_interval", 0))

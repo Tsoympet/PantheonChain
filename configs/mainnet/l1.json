@@ -8,5 +8,7 @@
   "genesis_file": "genesis_talanton.json",
   "commitment_interval": 20,
   "l1_min_confirmation_depth": 6,
-  "bridge_unlock_min_l1_depth": 6
+  "bridge_unlock_min_l1_depth": 6,
+  "checkpoint_freshness_slo_seconds": 300,
+  "relayer_liveness_threshold_seconds": 120
 }
