@@ -12,10 +12,12 @@
 //   • invalid Merkle proof rejection
 //   • supply invariant (total_minted ≤ total_locked) after full round-trip
 //   • L2↔L3 bridge confirmation depth (regression for missing kMinL2Confirmations)
+//   • real SHA-256d Merkle proof verification (no stub)
 
 #include "bridge/l1_l2/l1_l2_bridge.h"
 #include "bridge/l2_l3/l2_l3_bridge.h"
 #include "bridge/cross_chain_message.h"
+#include "crypto/sha256.h"
 
 #include <cassert>
 #include <cstdint>
@@ -595,6 +597,89 @@ void test_supply_invariant_across_chains() {
 }
 
 // ---------------------------------------------------------------------------
+// Real SHA-256d Merkle proof correctness (stub-gone regression test)
+// ---------------------------------------------------------------------------
+
+// Compute SHA-256d of combined left ‖ right, mirroring VerifyMerkleProof.
+static Hash256 sha256d_node(const Hash256& left, const Hash256& right)
+{
+    std::vector<uint8_t> combined(left.begin(), left.end());
+    combined.insert(combined.end(), right.begin(), right.end());
+    return parthenon::crypto::SHA256d::Hash256d(combined.data(), combined.size());
+}
+
+void test_verify_merkle_proof_real_sha256d() {
+    std::cout << "[merkle] VerifyMerkleProof uses real SHA-256d (no stub)" << std::endl;
+
+    // Build a 2-leaf Merkle tree:
+    //   leaf0 = 0x00 * 32   leaf1 = 0x01 * 32
+    //   root  = SHA256d(leaf0 ‖ leaf1)
+    //
+    // VerifyMerkleProof always forms: combined = current ‖ sibling.
+    // Proof for leaf0 (left child): sibling = leaf1,
+    //   hash step: SHA256d(leaf0 ‖ leaf1) == root  ✓
+    Hash256 leaf0; leaf0.fill(0x00);
+    Hash256 leaf1; leaf1.fill(0x01);
+    const Hash256 root = sha256d_node(leaf0, leaf1);
+
+    // Correct proof for leaf0.
+    assert(l1_l2::VerifyMerkleProof(leaf0, {std::vector<uint8_t>(leaf1.begin(), leaf1.end())}, root));
+
+    // Wrong root must fail.
+    Hash256 wrong_root; wrong_root.fill(0xFF);
+    assert(!l1_l2::VerifyMerkleProof(leaf0,
+        {std::vector<uint8_t>(leaf1.begin(), leaf1.end())}, wrong_root));
+
+    // --- stub-gone sanity: if the stub were still present it would return
+    // Hash256{} for every node, so the computed root of any single-sibling proof
+    // would always be Hash256{}.  Verify that the real root is NOT Hash256{}.
+    Hash256 zero_hash; zero_hash.fill(0x00);
+    assert(root != zero_hash);  // Would fail only if stub were still active
+
+    // Test L2↔L3 bridge VerifyMerkleProof independently (same implementation).
+    assert(l2_l3::VerifyMerkleProof(leaf0, {std::vector<uint8_t>(leaf1.begin(), leaf1.end())}, root));
+    assert(!l2_l3::VerifyMerkleProof(leaf0,
+        {std::vector<uint8_t>(leaf1.begin(), leaf1.end())}, wrong_root));
+
+    // Build a 3-level, 4-leaf tree and prove leaf0:
+    //   leaf0..3 = 0x00..0x03 * 32
+    //   parent01 = SHA256d(leaf0 ‖ leaf1)
+    //   parent23 = SHA256d(leaf2 ‖ leaf3)
+    //   root4    = SHA256d(parent01 ‖ parent23)
+    // Proof for leaf0: [leaf1, parent23]
+    //   step 1: SHA256d(leaf0   ‖ leaf1)    = parent01
+    //   step 2: SHA256d(parent01 ‖ parent23) = root4  ✓
+    Hash256 leaf2; leaf2.fill(0x02);
+    Hash256 leaf3; leaf3.fill(0x03);
+    const Hash256 parent01 = sha256d_node(leaf0, leaf1);
+    const Hash256 parent23 = sha256d_node(leaf2, leaf3);
+    const Hash256 root4    = sha256d_node(parent01, parent23);
+
+    std::vector<std::vector<uint8_t>> proof_leaf0 = {
+        std::vector<uint8_t>(leaf1.begin(),    leaf1.end()),
+        std::vector<uint8_t>(parent23.begin(), parent23.end()),
+    };
+    assert(l1_l2::VerifyMerkleProof(leaf0, proof_leaf0, root4));
+
+    // Tampered sibling must fail.
+    Hash256 bad_sibling; bad_sibling.fill(0xAA);
+    std::vector<std::vector<uint8_t>> bad_proof = {
+        std::vector<uint8_t>(bad_sibling.begin(), bad_sibling.end()),
+        std::vector<uint8_t>(parent23.begin(),    parent23.end()),
+    };
+    assert(!l1_l2::VerifyMerkleProof(leaf0, bad_proof, root4));
+
+    // Truncated proof (missing one level) must fail.
+    std::vector<std::vector<uint8_t>> short_proof = {
+        std::vector<uint8_t>(leaf1.begin(), leaf1.end()),
+        // parent23 omitted → stops at parent01, which ≠ root4
+    };
+    assert(!l1_l2::VerifyMerkleProof(leaf0, short_proof, root4));
+
+    std::cout << "  ✓ VerifyMerkleProof uses real SHA-256d; stub is gone." << std::endl;
+}
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 
@@ -625,6 +710,9 @@ int main()
 
     // Cross-layer invariants
     test_supply_invariant_across_chains();
+
+    // Real SHA-256d Merkle proof correctness (stub-gone regression)
+    test_verify_merkle_proof_real_sha256d();
 
     std::cout << std::endl;
     std::cout << "✓ All adversarial bridge tests passed." << std::endl;

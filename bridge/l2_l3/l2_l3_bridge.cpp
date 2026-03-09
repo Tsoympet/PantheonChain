@@ -1,17 +1,11 @@
 // l2_l3_bridge.cpp — DRACHMA ↔ OBOLOS Bridge Implementation
 
 #include "bridge/l2_l3/l2_l3_bridge.h"
+#include "crypto/sha256.h"
+
 #include <cstdint>
 #include <limits>
 #include <sstream>
-
-static pantheon::bridge::Hash256 sha256d_stub(
-    const uint8_t* data, size_t len)
-{
-    (void)data; (void)len;
-    pantheon::bridge::Hash256 h{};
-    return h;
-}
 
 namespace pantheon {
 namespace bridge {
@@ -38,9 +32,10 @@ bool VerifyMerkleProof(
 {
     Hash256 current = leaf_hash;
     for (const auto& sibling : proof_nodes) {
+        // Combine current ‖ sibling, then hash with real SHA-256d.
         std::vector<uint8_t> combined(current.begin(), current.end());
         combined.insert(combined.end(), sibling.begin(), sibling.end());
-        current = sha256d_stub(combined.data(), combined.size());
+        current = parthenon::crypto::SHA256d::Hash256d(combined.data(), combined.size());
     }
     return current == expected_root;
 }
