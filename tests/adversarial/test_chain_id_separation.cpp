@@ -17,6 +17,7 @@
 #include "layer1-talanton/tx/l1_commitment_validator.h"
 #include "layer2-drachma/consensus/pos_consensus.h"
 #include "layer3-obolos/consensus/pos_consensus.h"
+#include "bridge_test_helpers.h"
 
 #include <cassert>
 #include <cstdint>
@@ -59,6 +60,7 @@ static bridge::CrossChainMessage make_message(bridge::ChainId origin, bridge::Ch
         msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
     msg.payload_hash.fill(0xAA);
     msg.state_root = msg.payload_hash;  // empty proof passes
+    bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
@@ -87,6 +89,7 @@ void test_l1_bridge_rejects_non_l1_messages() {
     std::cout << "[chain_id] L1↔L2 bridge rejects messages not addressed to it" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_tlt_base_units = 1000;
 
     // L2→L3 message sent to L1↔L2 mint function.
@@ -111,6 +114,7 @@ void test_l2_bridge_rejects_non_l2_messages() {
     std::cout << "[chain_id] L2↔L3 bridge rejects messages not addressed to it" << std::endl;
 
     bridge::l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_drc_base_units = 1000;
 
     // L1→L2 message sent to L2↔L3 mint function.
@@ -137,6 +141,8 @@ void test_l1_to_l3_direct_hop_rejected() {
 
     bridge::l1_l2::BridgeState l1_state;
     bridge::l2_l3::BridgeState l2_state;
+    bridge_test::setup_bridge_state(l1_state);
+    bridge_test::setup_bridge_state(l2_state);
     l1_state.total_locked_tlt_base_units = 1000;
     l2_state.total_locked_drc_base_units = 1000;
 
@@ -206,6 +212,7 @@ void test_wrong_direction_bridge_intent() {
     std::cout << "[chain_id] Wrong-direction BridgeTransferIntent rejected" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
 
     // Lock intent with destination == OBOLOS (should be DRACHMA for L1↔L2 bridge).
     bridge::BridgeTransferIntent bad_lock;
@@ -239,6 +246,8 @@ void test_message_nonce_includes_chain_context() {
 
     bridge::l1_l2::BridgeState l1_state;
     bridge::l2_l3::BridgeState l2_state;
+    bridge_test::setup_bridge_state(l1_state);
+    bridge_test::setup_bridge_state(l2_state);
     l1_state.total_locked_tlt_base_units = 1000;
     l2_state.total_locked_drc_base_units = 1000;
 

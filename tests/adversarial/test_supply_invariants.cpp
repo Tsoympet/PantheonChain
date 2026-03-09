@@ -16,6 +16,7 @@
 #include "layer2-drachma/consensus/pos_consensus.h"
 #include "layer3-obolos/consensus/pos_consensus.h"
 #include "common/commitments.h"
+#include "bridge_test_helpers.h"
 
 #include <cassert>
 #include <cstdint>
@@ -43,6 +44,7 @@ static bridge::CrossChainMessage make_tlt_mint_msg(uint64_t nonce, uint64_t amou
         msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
     msg.payload_hash.fill(hash_byte);
     msg.state_root = msg.payload_hash;  // empty proof: leaf == root
+    bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
@@ -60,6 +62,7 @@ static bridge::CrossChainMessage make_drc_mint_msg(uint64_t nonce, uint64_t amou
         msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
     msg.payload_hash.fill(hash_byte);
     msg.state_root = msg.payload_hash;
+    bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
@@ -95,10 +98,12 @@ void test_initial_supply_is_zero() {
     std::cout << "[supply] Initial bridge supply is zero" << std::endl;
 
     bridge::l1_l2::BridgeState s;
+    bridge_test::setup_bridge_state(s);
     assert(s.total_locked_tlt_base_units == 0);
     assert(s.total_minted_wtlt_base_units == 0);
 
     bridge::l2_l3::BridgeState s2;
+    bridge_test::setup_bridge_state(s2);
     assert(s2.total_locked_drc_base_units == 0);
     assert(s2.total_minted_wdrc_base_units == 0);
 
@@ -109,6 +114,7 @@ void test_lock_only_does_not_create_wrapped_supply() {
     std::cout << "[supply] Lock only — no wrapped tokens created until mint" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     auto result = bridge::l1_l2::RecordTltLock(state, make_tlt_lock("alice", 1, 5000));
     assert(result == bridge::l1_l2::BridgeResult::OK);
     assert(state.total_locked_tlt_base_units == 5000);
@@ -121,6 +127,7 @@ void test_minted_never_exceeds_locked() {
     std::cout << "[supply] Minted supply never exceeds locked supply" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     const uint64_t LOCKED = 10000;
     state.total_locked_tlt_base_units = LOCKED;
 
@@ -144,6 +151,7 @@ void test_burn_reduces_minted_supply() {
     std::cout << "[supply] Burn correctly reduces minted supply" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_tlt_base_units  = 5000;
     state.total_minted_wtlt_base_units = 5000;
 
@@ -163,6 +171,7 @@ void test_unlock_reduces_locked_supply() {
     std::cout << "[supply] Unlock correctly reduces locked supply" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_tlt_base_units = 4000;
 
     bridge::CrossChainMessage msg;
@@ -177,6 +186,7 @@ void test_unlock_reduces_locked_supply() {
         msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((AMT >> (8 * i)) & 0xFF);
     msg.payload_hash.fill(0xCD);
     msg.state_root = msg.payload_hash;
+    bridge_test::bridge_sign_message(msg);
 
     assert(bridge::l1_l2::ProcessWtltBurnUnlock(state, msg, 210, 200)
            == bridge::l1_l2::BridgeResult::OK);
@@ -189,6 +199,7 @@ void test_supply_overflow_protection_lock() {
     std::cout << "[supply] Supply overflow guard on RecordTltLock" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_tlt_base_units = std::numeric_limits<uint64_t>::max() - 100;
 
     // Locking 101 more would overflow uint64_t.
@@ -210,6 +221,7 @@ void test_multiple_senders_independent() {
     std::cout << "[supply] Multiple senders tracked independently" << std::endl;
 
     bridge::l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     const uint64_t A_AMT = 1000, B_AMT = 2500;
 
     // Both alice and bob lock tokens.
@@ -268,6 +280,7 @@ void test_l2_l3_supply_invariant() {
     std::cout << "[supply] L2↔L3 minted never exceeds locked" << std::endl;
 
     bridge::l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_drc_base_units = 8000;
 
     // Mint 8000 — exactly at the limit.
@@ -291,6 +304,7 @@ void test_bridge_state_recovery_preserves_invariant() {
     // Simulate a scenario where the bridge state is partially written to storage
     // and then reloaded. The invariant should still hold.
     bridge::l1_l2::BridgeState recovered_state;
+    bridge_test::setup_bridge_state(recovered_state);
 
     // Simulate: 3000 locked, 2000 minted (the remaining 1000 is in-flight).
     recovered_state.total_locked_tlt_base_units  = 3000;

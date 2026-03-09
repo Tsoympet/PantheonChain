@@ -18,6 +18,7 @@
 #include "bridge/l2_l3/l2_l3_bridge.h"
 #include "bridge/cross_chain_message.h"
 #include "crypto/sha256.h"
+#include "bridge_test_helpers.h"
 
 #include <cassert>
 #include <cstdint>
@@ -54,6 +55,7 @@ static CrossChainMessage make_l1_to_l2_message(uint64_t nonce, uint64_t amount,
     msg.state_root = msg.payload_hash;  // empty proof: current == leaf_hash == state_root
     // proof is left empty → VerifyMerkleProof returns (leaf_hash == state_root) == true
 
+    bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
@@ -76,6 +78,7 @@ static CrossChainMessage make_l2_to_l1_message(uint64_t nonce, uint64_t amount,
     msg.payload_hash.fill(0xCD);
     msg.state_root = msg.payload_hash;
 
+    bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
@@ -98,6 +101,7 @@ static CrossChainMessage make_l2_to_l3_message(uint64_t nonce, uint64_t amount,
     msg.payload_hash.fill(0xEF);
     msg.state_root = msg.payload_hash;
 
+    bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
@@ -120,6 +124,7 @@ static CrossChainMessage make_l3_to_l2_message(uint64_t nonce, uint64_t amount,
     msg.payload_hash.fill(0x12);
     msg.state_root = msg.payload_hash;
 
+    bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
@@ -195,6 +200,8 @@ void test_l1_l2_normal_round_trip() {
     std::cout << "[l1_l2] Normal lock → mint → burn → unlock round-trip" << std::endl;
 
     l1_l2::BridgeState l1_state, l2_state;
+    bridge_test::setup_bridge_state(l1_state);
+    bridge_test::setup_bridge_state(l2_state);
     const uint64_t AMOUNT = 1000;
 
     // Lock TLT on L1.
@@ -231,6 +238,7 @@ void test_l1_l2_replay_attack() {
     std::cout << "[l1_l2] Replay attack: same nonce processed twice" << std::endl;
 
     l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     const uint64_t AMOUNT = 500;
 
     // First submission succeeds.
@@ -252,6 +260,7 @@ void test_l1_l2_insufficient_confirmations() {
     std::cout << "[l1_l2] Insufficient confirmation depth" << std::endl;
 
     l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_tlt_base_units = 1000;
 
     auto msg = make_l1_to_l2_message(1, 1000, 100);
@@ -276,6 +285,7 @@ void test_l1_l2_wrong_chain_ids() {
     std::cout << "[l1_l2] Wrong chain ID on lock intent" << std::endl;
 
     l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
 
     // Intent with wrong origin (DRACHMA instead of TALANTON).
     BridgeTransferIntent bad_intent = make_tlt_lock_intent(1, 100);
@@ -305,6 +315,7 @@ void test_l1_l2_zero_amount() {
     std::cout << "[l1_l2] Zero-amount (dust) attack" << std::endl;
 
     l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
 
     // Zero amount lock intent must be rejected.
     auto intent = make_tlt_lock_intent(1, 0);
@@ -322,6 +333,7 @@ void test_l1_l2_supply_overflow() {
     std::cout << "[l1_l2] Supply overflow protection" << std::endl;
 
     l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
 
     // Lock a normal amount first.
     auto intent1 = make_tlt_lock_intent(1, 1000);
@@ -348,6 +360,7 @@ void test_l1_l2_invalid_proof() {
     std::cout << "[l1_l2] Invalid Merkle proof rejection" << std::endl;
 
     l1_l2::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_tlt_base_units = 1000;
 
     // Construct message where state_root ≠ payload_hash and no proof nodes.
@@ -356,6 +369,9 @@ void test_l1_l2_invalid_proof() {
     msg.payload_hash.fill(0x01);
     msg.state_root.fill(0x02);  // Mismatch → proof fails
     msg.proof.clear();
+    // Re-sign with the modified fields so VerifyValidatorQuorum passes.
+    msg.validator_signatures.clear();
+    bridge_test::bridge_sign_message(msg);
 
     auto result = l1_l2::ProcessTltLockMint(state, msg, 110, 100);
     assert(result == l1_l2::BridgeResult::ERR_INVALID_PROOF);
@@ -368,6 +384,7 @@ void test_l1_l2_cross_chain_replay_to_l2l3() {
     std::cout << "[l1_l2→l2_l3] Cross-chain replay: L1→L2 message submitted to L2→L3 bridge" << std::endl;
 
     l2_l3::BridgeState l3_state;
+    bridge_test::setup_bridge_state(l3_state);
     l3_state.total_locked_drc_base_units = 1000;
 
     // A valid L1→L2 message (TALANTON → DRACHMA) submitted to the L2→L3 bridge.
@@ -385,6 +402,7 @@ void test_l1_l2_burn_without_lock() {
     std::cout << "[l1_l2] Burn-without-lock: wTLT burn before any lock recorded" << std::endl;
 
     l1_l2::BridgeState l1_state;
+    bridge_test::setup_bridge_state(l1_state);
 
     // No lock ever recorded on L1 (total_locked == 0).
     // A burn unlock message arrives — should succeed in the check but unlock 0 due to guard.
@@ -406,6 +424,8 @@ void test_l2_l3_normal_round_trip() {
     std::cout << "[l2_l3] Normal lock → mint → burn → unlock round-trip" << std::endl;
 
     l2_l3::BridgeState l2_state, l3_state;
+    bridge_test::setup_bridge_state(l2_state);
+    bridge_test::setup_bridge_state(l3_state);
     const uint64_t AMOUNT = 2000;
 
     // Lock DRC on L2.
@@ -436,6 +456,7 @@ void test_l2_l3_insufficient_confirmations() {
     std::cout << "[l2_l3] Missing confirmation depth (regression: kMinL2Confirmations)" << std::endl;
 
     l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_drc_base_units = 1000;
 
     auto msg = make_l2_to_l3_message(1, 1000, 300);
@@ -460,6 +481,7 @@ void test_l2_l3_burn_unlock_insufficient_conf() {
     std::cout << "[l2_l3] Burn-unlock insufficient confirmation depth" << std::endl;
 
     l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_drc_base_units = 1000;
 
     auto msg = make_l3_to_l2_message(1, 1000, 400);
@@ -479,6 +501,7 @@ void test_l2_l3_replay_attack() {
     std::cout << "[l2_l3] Replay attack: same nonce processed twice" << std::endl;
 
     l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_drc_base_units = 2000;
 
     auto msg = make_l2_to_l3_message(7, 1000, 300);
@@ -497,6 +520,7 @@ void test_l2_l3_supply_overflow() {
     std::cout << "[l2_l3] Supply overflow: mint > locked" << std::endl;
 
     l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_drc_base_units = 500;
 
     // Attempt to mint 600 when only 500 is locked.
@@ -507,6 +531,7 @@ void test_l2_l3_supply_overflow() {
 
     // Lock near uint64_max — should trigger overflow guard.
     l2_l3::BridgeState s2;
+    bridge_test::setup_bridge_state(s2);
     auto intent = make_drc_lock_intent(1, 1000);
     assert(l2_l3::RecordDrcLock(s2, intent) == l2_l3::BridgeResult::OK);
 
@@ -521,6 +546,7 @@ void test_l2_l3_wrong_chain_ids() {
     std::cout << "[l2_l3] Wrong chain ID on L2↔L3 bridge" << std::endl;
 
     l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
     state.total_locked_drc_base_units = 1000;
 
     // L2→L1 message (DRACHMA→TALANTON) submitted to L3 mint function.
@@ -540,6 +566,7 @@ void test_l2_l3_zero_amount() {
     std::cout << "[l2_l3] Zero-amount (dust) attack on L2↔L3" << std::endl;
 
     l2_l3::BridgeState state;
+    bridge_test::setup_bridge_state(state);
 
     auto intent = make_drc_lock_intent(1, 0);
     assert(l2_l3::RecordDrcLock(state, intent) == l2_l3::BridgeResult::ERR_AMOUNT_ZERO);
@@ -559,6 +586,8 @@ void test_supply_invariant_across_chains() {
 
     // Simulate a sequence of operations and verify supply invariant after each step.
     l1_l2::BridgeState l1_side, l2_side;
+    bridge_test::setup_bridge_state(l1_side);
+    bridge_test::setup_bridge_state(l2_side);
 
     const uint64_t A1 = 3000, A2 = 1500;
 
