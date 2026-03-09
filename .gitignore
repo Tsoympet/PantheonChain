@@ -160,3 +160,4 @@ scripts/__pycache__/
 # Devnet / testnet ephemeral runtime state
 .devnet/
 .testnet/
+.multinode/

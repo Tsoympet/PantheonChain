@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
 
     - name: Install NSIS
       shell: pwsh
@@ -117,7 +117,7 @@ jobs:
         pwsh -ExecutionPolicy Bypass -File build.ps1
 
     - name: Upload Windows Installer
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
         name: windows-installer
         path: installers/windows/*.exe
@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
@@ -160,7 +160,7 @@ jobs:
         ./build.sh deb
 
     - name: Upload Ubuntu DEB
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
         name: ubuntu-deb
         path: installers/linux/*.deb
@@ -171,7 +171,7 @@ jobs:
     runs-on: macos-latest
     if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: brew install cmake openssl boost qt
@@ -191,7 +191,7 @@ jobs:
         ./build.sh
 
     - name: Upload macOS DMG
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
         name: macos-dmg
         path: installers/macos/*.dmg
@@ -204,7 +204,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
     
     - name: Test Installer Scripts Exist
       run: |

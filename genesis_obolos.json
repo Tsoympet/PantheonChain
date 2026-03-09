@@ -1,17 +1,31 @@
 {
   "chain": "OBOLOS",
+  "chain_id": 1003,
+  "network_id": 1003,
+  "address_prefix": "obl",
   "layer": "l3",
   "consensus": "pos-bft",
-  "native_token": "OBOLOS",
+  "native_token": "OBL",
+  "token_name": "OBOLOS",
+  "token_symbol": "OBL",
+  "rpc_port": 10332,
+  "p2p_port": 10333,
   "issuance_schedule": {
     "type": "halving",
     "initial_block_reward_base_units": 14500000000,
     "halving_interval": 210000,
     "launch_height": 420000
   },
+  "max_supply_base_units": 3045000000000000,
   "epoch_length": 60,
   "minimum_stake": 50000,
   "slashing_ratios": {"double_sign": 0.05, "equivocation": 0.1},
   "commitment_interval": 5,
-  "features": {"evm": true, "gas_token": "OBOLOS"}
+  "parent_chain_id": 1002,
+  "wrapped_assets": [
+    {"symbol": "wDRC", "origin_chain_id": 1002, "origin_token": "DRC"}
+  ],
+  "features": {"evm": true, "gas_token": "OBL"},
+  "genesis_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "genesis_timestamp": 0
 }
