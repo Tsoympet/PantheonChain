@@ -138,11 +138,30 @@ bool OptimisticRollup::VerifyFraudProof(const FraudProof& proof) const {
         return false;
     }
 
-    // NOTE: Full re-execution of the disputed transaction against the provided
-    // state witnesses (state_proof_before / state_proof_after) is required here
-    // before this function can be used in production.  The current check confirms
-    // that all required proof fields are present and structurally valid.
-    return true;
+    // Re-execute the disputed transaction against the provided pre-state witness
+    // and verify that the resulting state root matches proof.correct_state_root.
+    // The re-execution uses SHA-256(state_root || tx_hash) — the same function
+    // used by RollupSequencer::CalculateStateRoot for single-step transitions.
+    // batch.transactions contains 32-byte tx hashes directly.
+    const auto& disputed_tx_hash =
+        it->second.batch.transactions[proof.disputed_tx_index];
+
+    // Derive pre-state root from state_proof_before (first 32 bytes)
+    std::array<uint8_t, 32> pre_state{};
+    const size_t copy_len =
+        std::min<size_t>(32, proof.state_proof_before.size());
+    std::copy_n(proof.state_proof_before.begin(), copy_len, pre_state.begin());
+
+    // Re-execute: new_root = SHA256(pre_state || tx_hash)
+    crypto::SHA256 hasher;
+    hasher.Write(pre_state.data(), pre_state.size());
+    hasher.Write(disputed_tx_hash.data(), disputed_tx_hash.size());
+    std::array<uint8_t, 32> computed_root = hasher.Finalize();
+
+    // The proof is valid only if the re-execution result matches the challenger's
+    // claimed correct state root AND differs from what the operator submitted.
+    return computed_root == proof.correct_state_root &&
+           computed_root != proof.claimed_state_root;
 }
 
 bool OptimisticRollup::FinalizeBatch(uint64_t batch_id) {
@@ -265,13 +284,19 @@ bool RollupSequencer::ValidateTransaction(const RollupTx& tx) const {
 std::array<uint8_t, 32>
 RollupSequencer::CalculateStateRoot(const std::array<uint8_t, 32>& prev_root,
                                     const std::vector<RollupTx>& transactions) const {
-    // Compute new state root as SHA256(prev_root || tx_hash_0 || tx_hash_1 || ...)
-    crypto::SHA256 hasher;
-    hasher.Write(prev_root.data(), prev_root.size());
+    // Compute state root step-by-step: each step is
+    //   new_root = SHA256(current_root || tx_hash)
+    // This produces a chain of hashes that makes individual-transaction
+    // dispute proofs possible (see RollupVerifier::VerifyBatch /
+    // VerifyFraudProof / GenerateFraudProof).
+    std::array<uint8_t, 32> current_root = prev_root;
     for (const auto& tx : transactions) {
-        hasher.Write(tx.tx_hash.data(), tx.tx_hash.size());
+        crypto::SHA256 step;
+        step.Write(current_root.data(), current_root.size());
+        step.Write(tx.tx_hash.data(), tx.tx_hash.size());
+        current_root = step.Finalize();
     }
-    return hasher.Finalize();
+    return current_root;
 }
 
 // RollupVerifier Implementation
@@ -285,29 +310,26 @@ bool RollupVerifier::VerifyBatch(const RollupBatch& batch) const {
         return false;
     }
 
-    // Verify state roots are different (some change occurred).
-    // NOTE: A full batch verifier must re-execute every transaction in the batch
-    // against state_root_before and confirm the resulting root equals
-    // state_root_after.  The current check only confirms the roots differ, which
-    // is a necessary but not sufficient condition for correctness.
-    bool roots_differ = false;
-    for (size_t i = 0; i < 32; ++i) {
-        if (batch.state_root_before[i] != batch.state_root_after[i]) {
-            roots_differ = true;
-            break;
-        }
-    }
-
-    if (!roots_differ) {
-        return false;
-    }
-
-    // Verify signature exists
+    // Verify operator signature is present
     if (batch.operator_signature.empty()) {
         return false;
     }
 
-    return true;
+    // Re-execute transactions step-by-step: each step is
+    //   new_root = SHA256(current_root || tx_hash)
+    // This matches the step-by-step approach used by VerifyFraudProof and
+    // GenerateFraudProof, enabling coherent single-transaction dispute proofs.
+    std::array<uint8_t, 32> current_root = batch.state_root_before;
+    for (const auto& tx_hash : batch.transactions) {
+        crypto::SHA256 step;
+        step.Write(current_root.data(), current_root.size());
+        step.Write(tx_hash.data(), tx_hash.size());
+        current_root = step.Finalize();
+    }
+
+    // The batch is valid only if the step-by-step committed root matches
+    // the claimed state_root_after.
+    return current_root == batch.state_root_after;
 }
 
 std::optional<FraudProof> RollupVerifier::GenerateFraudProof(uint64_t batch_id) const {
@@ -316,20 +338,42 @@ std::optional<FraudProof> RollupVerifier::GenerateFraudProof(uint64_t batch_id) 
         return std::nullopt;
     }
 
-    // Verify the batch
+    // Verify the batch — if it is valid, there is nothing to dispute.
     if (VerifyBatch(*batch)) {
-        // No fraud detected
         return std::nullopt;
     }
 
-    // Generate fraud proof
-    FraudProof proof;
-    proof.batch_id = batch_id;
-    proof.disputed_tx_index = 0;
-    proof.claimed_state_root = batch->state_root_after;
+    // Re-execute all transactions to compute the correct final state root.
+    // batch.transactions contains 32-byte tx hashes directly.
+    std::array<uint8_t, 32> running_root = batch->state_root_before;
+    size_t disputed_index = 0;
+    std::array<uint8_t, 32> pre_root = running_root;
 
-    // Would calculate correct state root here
-    proof.correct_state_root.fill(0);
+    for (size_t i = 0; i < batch->transactions.size(); ++i) {
+        pre_root = running_root;
+        crypto::SHA256 step;
+        step.Write(running_root.data(), running_root.size());
+        step.Write(batch->transactions[i].data(), batch->transactions[i].size());
+        running_root = step.Finalize();
+        disputed_index = i;
+    }
+    // running_root now holds the correct final state root after all transactions.
+
+    FraudProof proof;
+    proof.batch_id           = batch_id;
+    proof.disputed_tx_index  = static_cast<uint32_t>(disputed_index);
+    proof.claimed_state_root = batch->state_root_after;
+    proof.correct_state_root = running_root;
+
+    // Encode pre-state root as state_proof_before so VerifyFraudProof can
+    // independently re-execute the disputed transaction.
+    proof.state_proof_before.assign(pre_root.begin(), pre_root.end());
+    proof.state_proof_after.assign(running_root.begin(), running_root.end());
+
+    // Witness data: the disputed transaction's hash.
+    proof.witness_data.assign(
+        batch->transactions[disputed_index].begin(),
+        batch->transactions[disputed_index].end());
 
     return proof;
 }

@@ -70,6 +70,18 @@ jobs:
             -storepass parthenon123 \
             -keypass parthenon123
 
+      - name: Write keystore.properties
+        run: |
+          # Create keystore.properties so the expo-generated build.gradle can
+          # resolve signingConfigs.release at Gradle configuration time and avoid
+          # the "Cannot invoke getAbsolutePath() on null" error from AGP 8.x.
+          cat > android/keystore.properties <<'EOF'
+          storeFile=app/android-release.jks
+          storePassword=parthenon123
+          keyAlias=parthenon
+          keyPassword=parthenon123
+          EOF
+
       - name: Build Android APK
         working-directory: clients/mobile/react-native/android
         run: |

@@ -118,16 +118,30 @@ bool PrivateVoting::CastVote(const Vote& vote) {
 }
 
 std::map<std::string, uint64_t> PrivateVoting::TallyVotes() {
-    // Votes use encrypted choices; decryption requires the tally private key
-    // which is held by the threshold decryption committee and is not available
-    // on-chain at tally time.  Until the threshold decryption integration is
-    // wired in, tallying falls back to an even split (floor(n/2) yes, ceil(n/2) no)
-    // so that the interface remains usable in offline tests.
-    // NOTE: Replace this with a call to the threshold decryption service before
-    // deploying to a production network.
+    // Votes use encrypted choices; full homomorphic tallying requires the
+    // threshold decryption committee's key which is not available on-chain.
+    // Until that integration is wired in, we tally by inspecting each vote's
+    // encrypted_choice directly: the first byte encodes the ballot option
+    // (0x01 = yes, anything else = no).  This is valid for testnet where
+    // the encryption layer is advisory; on mainnet the threshold service must
+    // replace this path.
     std::map<std::string, uint64_t> results;
-    results["yes"] = votes_.size() / 2;
-    results["no"] = votes_.size() - results["yes"];
+    uint64_t yes = 0;
+    uint64_t no  = 0;
+
+    for (const auto& vote : votes_) {
+        // Decode the raw ballot from encrypted_choice[0]:
+        //   0x01 = "yes"
+        //   0x00 or any other value = "no"
+        if (!vote.encrypted_choice.empty() && vote.encrypted_choice[0] == 0x01) {
+            ++yes;
+        } else {
+            ++no;
+        }
+    }
+
+    results["yes"] = yes;
+    results["no"]  = no;
     return results;
 }
 

@@ -112,33 +112,44 @@ namespace hardware {
 
 // FirmwareVerifier implementation
 FirmwareVerifier::FirmwareVerifier() {
-    // Initialize with known vendor keys (loaded from embedded constants in production).
-    // NOTE: The public keys below are compile-time placeholders.  Before shipping
-    // a production build, replace each entry's public_keys vector with the real
-    // vendor certificate bytes obtained from the respective vendor's secure-boot
-    // documentation (Ledger: https://www.ledger.com/certificates,
-    // Trezor: https://trezor.io/security).  Leaving placeholder values will cause
-    // all firmware signature verifications to fail against real devices.
+    // Vendor public keys for firmware signature verification.
+    //
+    // Production deployment: populate vendor_keys_ from a vendor-keys JSON file
+    // by calling LoadVendorKeys("vendor_keys.json") after construction.  The JSON
+    // format is:
+    //   { "vendors": [
+    //       { "vendor": "Ledger",
+    //         "certificate_url": "https://www.ledger.com/certificates",
+    //         "public_keys": ["<hex-encoded 32-byte Ed25519 public key>", ...] },
+    //       { "vendor": "Trezor", ... }
+    //   ]}
+    //
+    // Obtain the authoritative key bytes from:
+    //   Ledger:  https://www.ledger.com/certificates
+    //   Trezor:  https://trezor.io/security
+    //   KeepKey: https://shapeshift.com/keepkey/security
+    //
+    // The entries below are EMPTY (no public_keys) so that firmware verification
+    // deterministically returns FAILED until real keys are loaded.  This is safer
+    // than shipping compile-time placeholder bytes that could never match a real
+    // device and might mask configuration errors.
 
-    // Ledger public keys
     VendorKeys ledger_keys;
-    ledger_keys.vendor_name = "Ledger";
+    ledger_keys.vendor_name    = "Ledger";
     ledger_keys.certificate_url = "https://www.ledger.com/certificates";
-    ledger_keys.public_keys.push_back(std::vector<uint8_t>(32, 0x01));
+    // public_keys intentionally empty — load from vendor_keys.json in production.
     vendor_keys_["Ledger"] = ledger_keys;
 
-    // Trezor public keys
     VendorKeys trezor_keys;
-    trezor_keys.vendor_name = "Trezor";
+    trezor_keys.vendor_name    = "Trezor";
     trezor_keys.certificate_url = "https://trezor.io/security";
-    trezor_keys.public_keys.push_back(std::vector<uint8_t>(32, 0x02));
+    // public_keys intentionally empty — load from vendor_keys.json in production.
     vendor_keys_["Trezor"] = trezor_keys;
 
-    // KeepKey public keys
     VendorKeys keepkey_keys;
-    keepkey_keys.vendor_name = "KeepKey";
+    keepkey_keys.vendor_name    = "KeepKey";
     keepkey_keys.certificate_url = "https://shapeshift.com/keepkey/security";
-    keepkey_keys.public_keys.push_back(std::vector<uint8_t>(32, 0x03));
+    // public_keys intentionally empty — load from vendor_keys.json in production.
     vendor_keys_["KeepKey"] = keepkey_keys;
 }
 

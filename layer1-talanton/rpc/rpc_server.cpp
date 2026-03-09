@@ -17,6 +17,8 @@
 #include "governance/snapshot.h"
 #include "governance/ostracism.h"
 
+#include "evm/execution.h"
+
 #include <httplib.h>
 #include <algorithm>
 #include <charconv>
@@ -412,24 +414,45 @@ void RPCServer::InitializeStandardMethods() {
     RegisterMethod("commitments/list", [this](const RPCRequest& req) { return HandleCommitmentList(req); });
     RegisterMethod("evm/deploy", [this](const RPCRequest& req) { return HandleEvmDeploy(req); });
     RegisterMethod("evm/call", [this](const RPCRequest& req) {
-        // Execute a read-only EVM contract call (eth_call equivalent).
+        // Execute a read-only EVM-like call using the L3 execution engine.
         RPCResponse response;
         response.id = req.id;
-        json result;
-        result["status"] = "ok";
-        result["return_data"] = "0x";  // Placeholder: real EVM exec returns ABI-encoded bytes
-        result["note"] = "Wire the L3 EVM execution engine to return actual return data.";
-        response.result = result.dump();
+        try {
+            auto p = json::parse(req.params);
+            std::string payload   = p.value("data", "");
+            uint64_t gas_limit    = p.value("gas", uint64_t{21000});
+            uint64_t base_fee     = p.value("base_fee", uint64_t{10});  // OBL_GWEI default
+
+            auto exec_result = pantheon::obolos::ExecuteEvmLikeCall(payload, gas_limit, base_fee);
+
+            json result;
+            result["status"]      = exec_result.success ? "ok" : "revert";
+            result["return_data"] = exec_result.output;
+            result["gas_used"]    = exec_result.gas_used;
+            response.result = result.dump();
+        } catch (const std::exception& e) {
+            response.error = std::string("evm/call error: ") + e.what();
+        }
         return response;
     });
     RegisterMethod("evm/estimate_gas", [this](const RPCRequest& req) {
-        // Estimate gas for a transaction (eth_estimateGas equivalent).
+        // Estimate gas by performing a dry-run through the L3 execution engine.
         RPCResponse response;
         response.id = req.id;
-        // Default 21000 gas for a simple transfer; contract calls cost more.
-        // Wire the L3 EVM execution engine for accurate estimates.
-        json result = 21000;
-        response.result = result.dump();
+        try {
+            auto p = json::parse(req.params);
+            std::string payload = p.value("data", "");
+            uint64_t gas_limit  = p.value("gas", uint64_t{10000000});  // generous ceiling
+            uint64_t base_fee   = p.value("base_fee", uint64_t{10});
+
+            auto exec_result = pantheon::obolos::ExecuteEvmLikeCall(payload, gas_limit, base_fee);
+
+            // Return the gas consumed by the dry-run.
+            json result = exec_result.gas_used;
+            response.result = result.dump();
+        } catch (const std::exception& e) {
+            response.error = std::string("evm/estimate_gas error: ") + e.what();
+        }
         return response;
     });
 
