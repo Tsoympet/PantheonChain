@@ -1,6 +1,7 @@
 // l2_l3_bridge.cpp — DRACHMA ↔ OBOLOS Bridge Implementation
 
 #include "bridge/l2_l3/l2_l3_bridge.h"
+#include "crypto/schnorr.h"
 #include "crypto/sha256.h"
 
 #include <cstdint>
@@ -38,6 +39,54 @@ bool VerifyMerkleProof(
         current = parthenon::crypto::SHA256d::Hash256d(combined.data(), combined.size());
     }
     return current == expected_root;
+}
+
+// Canonical commitment hash that validators sign over a CrossChainMessage.
+// SHA256d(origin_chain_id_LE32 || dest_chain_id_LE32 || nonce_LE64
+//         || payload_hash_32   || state_root_32)
+static Hash256 compute_message_commitment(const CrossChainMessage& message)
+{
+    std::vector<uint8_t> data;
+    data.reserve(80);
+
+    auto push_le32 = [&](uint32_t v) {
+        for (int i = 0; i < 4; ++i)
+            data.push_back(static_cast<uint8_t>((v >> (8 * i)) & 0xFF));
+    };
+    auto push_le64 = [&](uint64_t v) {
+        for (int i = 0; i < 8; ++i)
+            data.push_back(static_cast<uint8_t>((v >> (8 * i)) & 0xFF));
+    };
+
+    push_le32(static_cast<uint32_t>(message.origin_chain_id));
+    push_le32(static_cast<uint32_t>(message.destination_chain_id));
+    push_le64(message.message_nonce);
+    data.insert(data.end(), message.payload_hash.begin(), message.payload_hash.end());
+    data.insert(data.end(), message.state_root.begin(), message.state_root.end());
+
+    return parthenon::crypto::SHA256d::Hash256d(data.data(), data.size());
+}
+
+bool VerifyValidatorQuorum(
+    const BridgeState& state,
+    const CrossChainMessage& message)
+{
+    const Hash256 commit = compute_message_commitment(message);
+    uint32_t valid_count = 0;
+
+    for (const auto& vs : message.validator_signatures) {
+        parthenon::crypto::Schnorr::PublicKey xonly_key;
+        std::copy(vs.public_key.begin() + 1, vs.public_key.end(), xonly_key.begin());
+
+        // O(log n) set membership test.
+        if (!state.trusted_validator_pubkeys.count(xonly_key)) continue;
+
+        parthenon::crypto::Schnorr::Signature sig = vs.signature;
+        if (parthenon::crypto::Schnorr::Verify(xonly_key, commit.data(), sig))
+            ++valid_count;
+    }
+
+    return valid_count >= state.min_validator_sigs;
 }
 
 BridgeResult RecordDrcLock(
@@ -85,6 +134,9 @@ BridgeResult ProcessWdrcBurnUnlock(
     if (state.processed_nonce_keys.count(key))
         return BridgeResult::ERR_REPLAY;
 
+    if (!VerifyValidatorQuorum(state, message))
+        return BridgeResult::ERR_INSUFFICIENT_SIGNATURES;
+
     if (!VerifyMerkleProof(message.payload_hash, message.proof, message.state_root))
         return BridgeResult::ERR_INVALID_PROOF;
 
@@ -117,6 +169,9 @@ BridgeResult ProcessDrcLockMint(
         message.message_nonce);
     if (state.processed_nonce_keys.count(key))
         return BridgeResult::ERR_REPLAY;
+
+    if (!VerifyValidatorQuorum(state, message))
+        return BridgeResult::ERR_INSUFFICIENT_SIGNATURES;
 
     if (!VerifyMerkleProof(message.payload_hash, message.proof, message.state_root))
         return BridgeResult::ERR_INVALID_PROOF;

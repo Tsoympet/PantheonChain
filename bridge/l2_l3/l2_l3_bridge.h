@@ -6,7 +6,9 @@
 // - Burn wDRC on OBOLOS → unlock DRC on DRACHMA
 
 #include "bridge/cross_chain_message.h"
+#include <array>
 #include <cstdint>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -24,22 +26,41 @@ struct BridgeState {
     std::unordered_set<std::string> processed_nonce_keys;  // "<sender>:<nonce>"
     uint64_t total_locked_drc_base_units{0};
     uint64_t total_minted_wdrc_base_units{0};
+
+    // Trusted validator public keys (x-only 32-byte BIP-340 Schnorr keys).
+    // A CrossChainMessage must carry at least min_validator_sigs valid Schnorr
+    // signatures from keys in this set before any state change is permitted.
+    // Using std::set provides O(log n) membership tests and enforces uniqueness.
+    std::set<std::array<uint8_t, 32>> trusted_validator_pubkeys;
+
+    // Minimum number of valid signatures from trusted validators required to
+    // accept a CrossChainMessage.  Must be > 0 in production.
+    uint32_t min_validator_sigs{1};
 };
 
 enum class BridgeResult : uint8_t {
-    OK                    = 0,
-    ERR_INVALID_PROOF     = 1,
-    ERR_REPLAY            = 2,
-    ERR_AMOUNT_ZERO       = 3,
-    ERR_INVALID_CHAIN     = 4,
-    ERR_INSUFFICIENT_CONF = 5,  // L2 block not deep enough
-    ERR_SUPPLY_OVERFLOW   = 6,  // Would exceed max wDRC supply
+    OK                        = 0,
+    ERR_INVALID_PROOF         = 1,
+    ERR_REPLAY                = 2,
+    ERR_AMOUNT_ZERO           = 3,
+    ERR_INVALID_CHAIN         = 4,
+    ERR_INSUFFICIENT_CONF     = 5,  // L2 block not deep enough
+    ERR_SUPPLY_OVERFLOW       = 6,  // Would exceed max wDRC supply
+    ERR_INSUFFICIENT_SIGNATURES = 7, // Validator quorum not met
 };
 
 bool VerifyMerkleProof(
     const Hash256& leaf_hash,
     const std::vector<std::vector<uint8_t>>& proof_nodes,
     const Hash256& expected_root);
+
+// Verify the validator signature quorum on a CrossChainMessage.
+//
+// Returns true iff the number of valid Schnorr signatures from trusted
+// validators in message.validator_signatures >= state.min_validator_sigs.
+bool VerifyValidatorQuorum(
+    const BridgeState& state,
+    const CrossChainMessage& message);
 
 // ── L2 side (DRACHMA) ────────────────────────────────────────────────────────
 
