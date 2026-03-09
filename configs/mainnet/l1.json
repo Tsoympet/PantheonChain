@@ -10,5 +10,20 @@
   "l1_min_confirmation_depth": 6,
   "bridge_unlock_min_l1_depth": 6,
   "checkpoint_freshness_slo_seconds": 300,
-  "relayer_liveness_threshold_seconds": 120
+  "relayer_liveness_threshold_seconds": 120,
+  "p2p_bootstrap_nodes": [
+    "seed1.l1.pantheonchain.org:8333",
+    "seed2.l1.pantheonchain.org:8333",
+    "seed3.l1.pantheonchain.org:8333",
+    "seed4.l1.pantheonchain.org:8333",
+    "seed5.l1.pantheonchain.org:8333",
+    "seed6.l1.pantheonchain.org:8333",
+    "seed7.l1.pantheonchain.org:8333",
+    "seed8.l1.pantheonchain.org:8333"
+  ],
+  "dns_seeds": [
+    "dnsseed.l1.pantheonchain.org",
+    "seed.l1.pantheonchain.org",
+    "nodes.l1.pantheonchain.org"
+  ]
 }

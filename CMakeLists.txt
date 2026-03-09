@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
-project(PantheonChain VERSION 1.0.0 LANGUAGES C CXX)
+
+# Read version from VERSION.txt so it stays in sync with the release tag.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" PANTHEONCHAIN_VERSION_RAW)
+string(STRIP "${PANTHEONCHAIN_VERSION_RAW}" PANTHEONCHAIN_VERSION)
+
+project(PantheonChain VERSION ${PANTHEONCHAIN_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -87,3 +92,99 @@ add_subdirectory(clients)
 
 # Test suite
 add_subdirectory(tests)
+
+# ------------------------------------------------------------------ #
+#  Install rules                                                       #
+# ------------------------------------------------------------------ #
+include(GNUInstallDirs)
+
+# Node binaries
+install(PROGRAMS
+    $<TARGET_FILE:pantheon-l1-talanton-node>
+    $<TARGET_FILE:pantheon-l2-drachma-node>
+    $<TARGET_FILE:pantheon-l3-obolos-node>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT runtime
+)
+
+# Daemon binary (parthenond)
+install(PROGRAMS
+    $<TARGET_FILE:parthenond>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT runtime
+)
+
+# CLI
+install(PROGRAMS
+    $<TARGET_FILE:pantheon-cli>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT runtime
+)
+
+# Relayers
+install(PROGRAMS
+    $<TARGET_FILE:pantheon-relayer-l2>
+    $<TARGET_FILE:pantheon-relayer-l3>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT runtime
+)
+
+# Default configuration
+install(FILES
+    parthenond.conf.example
+    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/pantheon
+    RENAME parthenond.conf
+    COMPONENT config
+)
+
+install(DIRECTORY
+    configs/devnet configs/testnet configs/mainnet
+    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/pantheon
+    COMPONENT config
+)
+
+install(FILES
+    genesis_talanton.json genesis_drachma.json genesis_obolos.json
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/pantheon
+    COMPONENT config
+)
+
+# Documentation
+install(FILES
+    README.md CHANGELOG.md LICENSE WHITEPAPER.md EULA.md
+    DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    COMPONENT docs
+)
+
+# ------------------------------------------------------------------ #
+#  CPack packaging                                                     #
+# ------------------------------------------------------------------ #
+set(CPACK_PACKAGE_NAME            "pantheonchain")
+set(CPACK_PACKAGE_VENDOR          "PantheonChain Foundation")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "PantheonChain — three-layer PoW/PoS blockchain with EVM smart contracts")
+set(CPACK_PACKAGE_VERSION         "${PANTHEONCHAIN_VERSION}")
+set(CPACK_PACKAGE_CONTACT         "contact@pantheonchain.org")
+set(CPACK_PACKAGE_HOMEPAGE_URL    "https://pantheonchain.org")
+set(CPACK_RESOURCE_FILE_LICENSE   "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README    "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_STRIP_FILES             ON)
+set(CPACK_COMPONENTS_ALL          runtime config docs)
+
+# DEB-specific
+set(CPACK_DEBIAN_PACKAGE_NAME     "pantheonchain")
+set(CPACK_DEBIAN_PACKAGE_SECTION  "net")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS
+    "libssl3 (>= 3.0.0), libboost-system1.74.0 | libboost-system1.83.0, \
+libboost-filesystem1.74.0 | libboost-filesystem1.83.0, \
+libboost-thread1.74.0 | libboost-thread1.83.0")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "curl")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "PantheonChain Foundation <contact@pantheonchain.org>")
+
+# RPM-specific
+set(CPACK_RPM_PACKAGE_NAME        "pantheonchain")
+set(CPACK_RPM_PACKAGE_LICENSE     "MIT")
+set(CPACK_RPM_PACKAGE_GROUP       "Applications/Internet")
+set(CPACK_RPM_PACKAGE_REQUIRES    "openssl >= 3.0.0, boost >= 1.74.0")
+
+include(CPack)

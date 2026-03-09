@@ -1,18 +1,18 @@
 #!/bin/bash
-# Build Debian package for ParthenonChain
+# Build Debian package for PantheonChain
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-VERSION="1.0.0"
+VERSION="$(cat "${ROOT_DIR}/VERSION.txt" | tr -d '[:space:]')"
 ARCH="amd64"
-PACKAGE_NAME="parthenon"
+PACKAGE_NAME="pantheonchain"
 BUILD_DIR="${ROOT_DIR}/build"
 DEB_DIR="${SCRIPT_DIR}/deb_build"
 
-echo "=== Building Debian package for ParthenonChain v${VERSION} ==="
+echo "=== Building Debian package for PantheonChain v${VERSION} ==="
 
 # Clean previous build
 rm -rf "${DEB_DIR}"

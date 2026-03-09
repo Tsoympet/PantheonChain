@@ -5,7 +5,72 @@ All notable changes to PantheonChain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.0] - 2026-03-09
+
+### Added
+
+#### Build System
+- CMakeLists.txt now reads version from `VERSION.txt` (was hardcoded `1.0.0`).
+- Added `install()` rules for all five binaries, configs, genesis files, and docs.
+- Added CPack configuration for DEB and RPM package generation.
+
+#### Network Bootstrap
+- Added `p2p_bootstrap_nodes` and `dns_seeds` arrays to all testnet and mainnet JSON configs
+  (`configs/testnet/l1.json`, `l2.json`, `l3.json`, `configs/mainnet/l1.json`, `l2.json`, `l3.json`).
+- Updated `configs/config.schema.json` with full schema for new fields, including a
+  conditional rule requiring ≥5 bootstrap nodes and ≥1 DNS seed on mainnet.
+
+#### Prometheus Metrics
+- Expanded `MetricsRegistry` (`common/metrics/`) with gauges, histograms, labeled counters,
+  `ScopedTimer` RAII helper, and `PrometheusText()` Prometheus v0.0.4 exposition format.
+- Added `/metrics` HTTP endpoint to `RPCServer` exposing live block height, peer count,
+  sync status, and per-method RPC request count / latency histogram.
+- Enriched `/health` response with `best_height`, `peer_count`, and `syncing` fields.
+
+#### Deployment
+- Added five systemd unit files under `installers/linux/systemd/`:
+  `pantheon-l1.service`, `pantheon-l2.service`, `pantheon-l3.service`,
+  `pantheon-relayer-l2.service`, `pantheon-relayer-l3.service`.
+  Each unit includes security hardening: `NoNewPrivileges`, `CapabilityBoundingSet=`,
+  `ProtectSystem=strict`, memory and CPU limits.
+- Added `docker/docker-compose.testnet.yml` with bootstrap peer config, fixed subnets,
+  structured JSON logging (`json-file` driver, 7-day rotation), resource limits, and
+  security context for each service.
+- Upgraded `docker/docker-compose.yml` (mainnet) with the same hardening.
+
+#### CLI Commands
+- Added `wallet create|import|export|list|balance` subcommand group.
+- Added `account balance|nonce|txs` subcommand group.
+- Added `staking deposit|withdraw|rewards|status` subcommand group.
+- Added `governance propose|vote|tally|list|get|execute` subcommand group.
+- Added `node sync-status|peer-info|stop` subcommand group.
+- Added `rpc call` for raw JSON-RPC invocation.
+- Added `config validate` delegating to `scripts/validate-config.py`.
+- Added `--version` flag.
+- Improved output prefix: `[layer] action: detail` instead of raw `action accepted on layer`.
+
+#### Operations
+- Added `docs/ops/mainnet_launch_checklist.md` — four-phase launch checklist with
+  code/security, config, infrastructure, validator-set, dry-run, and launch-day steps.
+- Added `docs/ops/validator_runbook.md` — complete validator lifecycle guide:
+  setup, staking, key rotation, backup/restore, incident response, reward claiming, exit.
+- Added `scripts/setup-validator.sh` — interactive wizard that generates a secp256k1
+  keypair, prints staking and key-import commands, and enforces key file permissions.
+- Added `scripts/run-mainnet.sh` — production launch script with pre-flight checks,
+  ordered startup (L1→L2→L3), relayer launch, checkpoint watchdog, and graceful shutdown.
+
+#### Security
+- Rewrote `SECURITY.md` with severity classification table (Critical/High/Medium/Low/Info),
+  response SLA table, in-scope component matrix, hardening checklist, and known limitations.
+
+### Fixed
+
+- DEB control file: package name `parthenon` → `pantheonchain`, version `1.0.0` → `2.2.0`,
+  removed Qt dependencies (not required for node binaries), correct maintainer contact.
+- RPM spec file: same name/version corrections, updated `%files` for all five binaries
+  and systemd units, replaced `parthenon` user with `pantheon`.
+- `build-deb.sh`: reads version from `VERSION.txt` instead of hardcoded `1.0.0`.
+
 
 ### Changed
 

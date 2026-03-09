@@ -18,6 +18,7 @@
 #include "governance/ostracism.h"
 
 #include "evm/execution.h"
+#include "common/metrics/metrics.h"
 
 #include <httplib.h>
 #include <algorithm>
@@ -236,8 +237,35 @@ bool RPCServer::Start() {
 #ifndef CPP_HTTPLIB_STUB_H
     http_server_->Get("/health", [this](const httplib::Request& req, httplib::Response& res) {
         (void)req;
-        json health = {{"status", running_ ? "ok" : "stopped"}, {"rpc_port", port_}};
+        json health;
+        health["status"]   = running_ ? "ok" : "stopped";
+        health["rpc_port"] = port_;
+        if (node_) {
+            health["best_height"]  = node_->GetHeight();
+            health["peer_count"]   = (int)node_->GetPeers().size();
+            auto ss = node_->GetSyncStatus();
+            health["syncing"]      = ss.is_syncing;
+            if (ss.is_syncing) {
+                health["sync_progress"] = ss.progress_percent;
+            }
+        }
         res.set_content(health.dump(), "application/json");
+    });
+
+    // Prometheus metrics endpoint — expose to monitoring systems.
+    http_server_->Get("/metrics", [this](const httplib::Request& req, httplib::Response& res) {
+        (void)req;
+        // Refresh live gauges before rendering.
+        if (node_) {
+            metrics_.SetGauge("pantheon_best_block_height",
+                              static_cast<double>(node_->GetHeight()));
+            metrics_.SetGauge("pantheon_peer_count",
+                              static_cast<double>(node_->GetPeers().size()));
+            auto ss = node_->GetSyncStatus();
+            metrics_.SetGauge("pantheon_syncing", ss.is_syncing ? 1.0 : 0.0);
+        }
+        std::string body = metrics_.PrometheusText();
+        res.set_content(body, "text/plain; version=0.0.4; charset=utf-8");
     });
 #endif
 
@@ -387,11 +415,22 @@ RPCResponse RPCServer::HandleRequest(const RPCRequest& request,
 
     auto it = methods_.find(request.method);
     if (it == methods_.end()) {
+        metrics_.Increment("pantheon_rpc_requests_total",
+                           {{"method", request.method}, {"status", "unknown_method"}});
         response.error = "Method not found: " + request.method;
         return response;
     }
 
-    return it->second(request);
+    // Time the handler and update Prometheus metrics.
+    {
+        pantheon::common::ScopedTimer timer(
+            metrics_, "pantheon_rpc_request_duration_seconds");
+        response = it->second(request);
+    }
+    const std::string status = response.IsError() ? "error" : "ok";
+    metrics_.Increment("pantheon_rpc_requests_total",
+                       {{"method", request.method}, {"status", status}});
+    return response;
 }
 
 void RPCServer::InitializeStandardMethods() {

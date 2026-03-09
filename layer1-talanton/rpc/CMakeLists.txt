@@ -10,6 +10,7 @@ target_include_directories(parthenon_rpc PUBLIC
     ${CMAKE_SOURCE_DIR}/layer1-talanton/core
     ${CMAKE_SOURCE_DIR}/layer1-talanton
     ${CMAKE_SOURCE_DIR}/layer3-obolos
+    ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/third_party/stubs/cpp-httplib
 )
 
@@ -21,6 +22,7 @@ target_link_libraries(parthenon_rpc PUBLIC
     parthenon_wallet
     parthenon_governance
     pantheon_l3
+    pantheon_common
     leveldb
     Threads::Threads
 )

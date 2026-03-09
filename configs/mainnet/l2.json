@@ -8,5 +8,20 @@
   "genesis_file": "genesis_drachma.json",
   "commitment_interval": 10,
   "checkpoint_freshness_slo_seconds": 300,
-  "relayer_liveness_threshold_seconds": 120
+  "relayer_liveness_threshold_seconds": 120,
+  "p2p_bootstrap_nodes": [
+    "seed1.l2.pantheonchain.org:9333",
+    "seed2.l2.pantheonchain.org:9333",
+    "seed3.l2.pantheonchain.org:9333",
+    "seed4.l2.pantheonchain.org:9333",
+    "seed5.l2.pantheonchain.org:9333",
+    "seed6.l2.pantheonchain.org:9333",
+    "seed7.l2.pantheonchain.org:9333",
+    "seed8.l2.pantheonchain.org:9333"
+  ],
+  "dns_seeds": [
+    "dnsseed.l2.pantheonchain.org",
+    "seed.l2.pantheonchain.org",
+    "nodes.l2.pantheonchain.org"
+  ]
 }

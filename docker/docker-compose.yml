@@ -1,5 +1,18 @@
 version: '3.8'
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "200m"
+    max-file: "14"
+    labels: "network,layer,service"
+
+x-security: &default-security
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
 networks:
   pantheon-net:
     driver: bridge
@@ -24,12 +37,27 @@ services:
       - ../configs/mainnet/l1.conf:/etc/pantheon/l1.conf:ro
     networks:
       - pantheon-net
+    environment:
+      - PANTHEON_NETWORK=mainnet
+      - PANTHEON_LAYER=l1
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8332/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 20s
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+        reservations:
+          memory: 512M
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: mainnet
+      layer: l1
 
   drachma-l2:
     build:
@@ -45,6 +73,9 @@ services:
       - ../configs/mainnet/l2.conf:/etc/pantheon/l2.conf:ro
     networks:
       - pantheon-net
+    environment:
+      - PANTHEON_NETWORK=mainnet
+      - PANTHEON_LAYER=l2
     depends_on:
       talanton-l1:
         condition: service_healthy
@@ -53,7 +84,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 20s
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+        reservations:
+          memory: 1G
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: mainnet
+      layer: l2
 
   obolos-l3:
     build:
@@ -69,6 +112,9 @@ services:
       - ../configs/mainnet/l3.conf:/etc/pantheon/l3.conf:ro
     networks:
       - pantheon-net
+    environment:
+      - PANTHEON_NETWORK=mainnet
+      - PANTHEON_LAYER=l3
     depends_on:
       drachma-l2:
         condition: service_healthy
@@ -77,7 +123,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 20s
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+        reservations:
+          memory: 1G
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: mainnet
+      layer: l3
 
   relayer-l2:
     build:
@@ -87,11 +145,29 @@ services:
     restart: unless-stopped
     networks:
       - pantheon-net
+    environment:
+      - PANTHEON_NETWORK=mainnet
     depends_on:
       talanton-l1:
         condition: service_healthy
       drachma-l2:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://talanton-l1:8332/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: mainnet
+      service: relayer-l2
 
   relayer-l3:
     build:
@@ -101,8 +177,26 @@ services:
     restart: unless-stopped
     networks:
       - pantheon-net
+    environment:
+      - PANTHEON_NETWORK=mainnet
     depends_on:
       drachma-l2:
         condition: service_healthy
       obolos-l3:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://drachma-l2:9332/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: mainnet
+      service: relayer-l3
