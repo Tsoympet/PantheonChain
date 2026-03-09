@@ -44,6 +44,14 @@ add_library(pantheon_l3 STATIC
 target_include_directories(pantheon_l3 PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/layer1-talanton/core)
 target_link_libraries(pantheon_l3 PUBLIC pantheon_common)
 
+# Bridge implementations (L1↔L2 and L2↔L3 canonical lock-mint/burn-unlock bridge)
+add_library(pantheon_bridge STATIC
+  bridge/l1_l2/l1_l2_bridge.cpp
+  bridge/l2_l3/l2_l3_bridge.cpp
+)
+target_include_directories(pantheon_bridge PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(pantheon_bridge PUBLIC pantheon_common)
+
 add_executable(pantheon-l1-talanton-node common/utils/pantheon_node.cpp)
 add_executable(pantheon-l2-drachma-node common/utils/pantheon_node.cpp)
 add_executable(pantheon-l3-obolos-node common/utils/pantheon_node.cpp)
@@ -78,7 +86,7 @@ target_link_libraries(parthenon_monetary INTERFACE pantheon_common)
 
 # Convenience aggregate: pantheon_layers bundles all layer libraries for tests/relayers
 add_library(pantheon_layers INTERFACE)
-target_link_libraries(pantheon_layers INTERFACE pantheon_common pantheon_l1 pantheon_l2 pantheon_l3)
+target_link_libraries(pantheon_layers INTERFACE pantheon_common pantheon_l1 pantheon_l2 pantheon_l3 pantheon_bridge)
 
 # Mobile SDK and other tools
 add_subdirectory(tools)

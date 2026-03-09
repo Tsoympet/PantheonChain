@@ -1,15 +1,12 @@
 // l2_l3_bridge.cpp — DRACHMA ↔ OBOLOS Bridge Implementation
 
 #include "bridge/l2_l3/l2_l3_bridge.h"
-#include <sstream>
+#include "crypto/schnorr.h"
+#include "crypto/sha256.h"
 
-static pantheon::bridge::Hash256 sha256d_stub(
-    const uint8_t* data, size_t len)
-{
-    (void)data; (void)len;
-    pantheon::bridge::Hash256 h{};
-    return h;
-}
+#include <cstdint>
+#include <limits>
+#include <sstream>
 
 namespace pantheon {
 namespace bridge {
@@ -22,6 +19,13 @@ static std::string make_nonce_key(const std::string& sender, uint64_t nonce)
     return oss.str();
 }
 
+// Decode an amount (uint64_t, little-endian) from the first 8 bytes of a payload.
+// Returns 0 if the payload is shorter than 8 bytes.
+static uint64_t decode_amount_from_payload(const std::vector<uint8_t>& payload)
+{
+    return DecodeAmountFromPayload(payload);
+}
+
 bool VerifyMerkleProof(
     const Hash256& leaf_hash,
     const std::vector<std::vector<uint8_t>>& proof_nodes,
@@ -29,11 +33,60 @@ bool VerifyMerkleProof(
 {
     Hash256 current = leaf_hash;
     for (const auto& sibling : proof_nodes) {
+        // Combine current ‖ sibling, then hash with real SHA-256d.
         std::vector<uint8_t> combined(current.begin(), current.end());
         combined.insert(combined.end(), sibling.begin(), sibling.end());
-        current = sha256d_stub(combined.data(), combined.size());
+        current = parthenon::crypto::SHA256d::Hash256d(combined.data(), combined.size());
     }
     return current == expected_root;
+}
+
+// Canonical commitment hash that validators sign over a CrossChainMessage.
+// SHA256d(origin_chain_id_LE32 || dest_chain_id_LE32 || nonce_LE64
+//         || payload_hash_32   || state_root_32)
+static Hash256 compute_message_commitment(const CrossChainMessage& message)
+{
+    std::vector<uint8_t> data;
+    data.reserve(80);
+
+    auto push_le32 = [&](uint32_t v) {
+        for (int i = 0; i < 4; ++i)
+            data.push_back(static_cast<uint8_t>((v >> (8 * i)) & 0xFF));
+    };
+    auto push_le64 = [&](uint64_t v) {
+        for (int i = 0; i < 8; ++i)
+            data.push_back(static_cast<uint8_t>((v >> (8 * i)) & 0xFF));
+    };
+
+    push_le32(static_cast<uint32_t>(message.origin_chain_id));
+    push_le32(static_cast<uint32_t>(message.destination_chain_id));
+    push_le64(message.message_nonce);
+    data.insert(data.end(), message.payload_hash.begin(), message.payload_hash.end());
+    data.insert(data.end(), message.state_root.begin(), message.state_root.end());
+
+    return parthenon::crypto::SHA256d::Hash256d(data.data(), data.size());
+}
+
+bool VerifyValidatorQuorum(
+    const BridgeState& state,
+    const CrossChainMessage& message)
+{
+    const Hash256 commit = compute_message_commitment(message);
+    uint32_t valid_count = 0;
+
+    for (const auto& vs : message.validator_signatures) {
+        parthenon::crypto::Schnorr::PublicKey xonly_key;
+        std::copy(vs.public_key.begin() + 1, vs.public_key.end(), xonly_key.begin());
+
+        // O(log n) set membership test.
+        if (!state.trusted_validator_pubkeys.count(xonly_key)) continue;
+
+        parthenon::crypto::Schnorr::Signature sig = vs.signature;
+        if (parthenon::crypto::Schnorr::Verify(xonly_key, commit.data(), sig))
+            ++valid_count;
+    }
+
+    return valid_count >= state.min_validator_sigs;
 }
 
 BridgeResult RecordDrcLock(
@@ -47,6 +100,11 @@ BridgeResult RecordDrcLock(
     if (intent.amount_base_units == 0)
         return BridgeResult::ERR_AMOUNT_ZERO;
 
+    // Guard against supply overflow before updating state.
+    if (intent.amount_base_units >
+        std::numeric_limits<uint64_t>::max() - state.total_locked_drc_base_units)
+        return BridgeResult::ERR_SUPPLY_OVERFLOW;
+
     const std::string key = make_nonce_key(intent.sender_address, intent.nonce);
     if (state.processed_nonce_keys.count(key))
         return BridgeResult::ERR_REPLAY;
@@ -58,11 +116,17 @@ BridgeResult RecordDrcLock(
 
 BridgeResult ProcessWdrcBurnUnlock(
     BridgeState& state,
-    const CrossChainMessage& message)
+    const CrossChainMessage& message,
+    uint64_t current_l2_height,
+    uint64_t lock_l2_height)
 {
     if (message.origin_chain_id != ChainId::OBOLOS ||
         message.destination_chain_id != ChainId::DRACHMA)
         return BridgeResult::ERR_INVALID_CHAIN;
+
+    // Enforce minimum L2 confirmation depth.
+    if (current_l2_height < lock_l2_height + kMinL2Confirmations)
+        return BridgeResult::ERR_INSUFFICIENT_CONF;
 
     const std::string key = make_nonce_key(
         std::to_string(static_cast<uint32_t>(message.origin_chain_id)),
@@ -70,8 +134,17 @@ BridgeResult ProcessWdrcBurnUnlock(
     if (state.processed_nonce_keys.count(key))
         return BridgeResult::ERR_REPLAY;
 
+    if (!VerifyValidatorQuorum(state, message))
+        return BridgeResult::ERR_INSUFFICIENT_SIGNATURES;
+
     if (!VerifyMerkleProof(message.payload_hash, message.proof, message.state_root))
         return BridgeResult::ERR_INVALID_PROOF;
+
+    const uint64_t amount = decode_amount_from_payload(message.payload);
+    // Decrement locked supply (burn reduces the amount that can be unlocked).
+    if (amount > 0 && amount <= state.total_locked_drc_base_units) {
+        state.total_locked_drc_base_units -= amount;
+    }
 
     state.processed_nonce_keys.insert(key);
     return BridgeResult::OK;
@@ -79,11 +152,17 @@ BridgeResult ProcessWdrcBurnUnlock(
 
 BridgeResult ProcessDrcLockMint(
     BridgeState& state,
-    const CrossChainMessage& message)
+    const CrossChainMessage& message,
+    uint64_t current_l2_height,
+    uint64_t lock_l2_height)
 {
     if (message.origin_chain_id != ChainId::DRACHMA ||
         message.destination_chain_id != ChainId::OBOLOS)
         return BridgeResult::ERR_INVALID_CHAIN;
+
+    // Enforce minimum L2 confirmation depth.
+    if (current_l2_height < lock_l2_height + kMinL2Confirmations)
+        return BridgeResult::ERR_INSUFFICIENT_CONF;
 
     const std::string key = make_nonce_key(
         std::to_string(static_cast<uint32_t>(message.origin_chain_id)),
@@ -91,15 +170,25 @@ BridgeResult ProcessDrcLockMint(
     if (state.processed_nonce_keys.count(key))
         return BridgeResult::ERR_REPLAY;
 
+    if (!VerifyValidatorQuorum(state, message))
+        return BridgeResult::ERR_INSUFFICIENT_SIGNATURES;
+
     if (!VerifyMerkleProof(message.payload_hash, message.proof, message.state_root))
         return BridgeResult::ERR_INVALID_PROOF;
 
-    state.processed_nonce_keys.insert(key);
+    const uint64_t amount = decode_amount_from_payload(message.payload);
+    if (amount > 0) {
+        // Guard: minted supply must never exceed locked supply.
+        if (amount > state.total_locked_drc_base_units - state.total_minted_wdrc_base_units)
+            return BridgeResult::ERR_SUPPLY_OVERFLOW;
 
-    // The actual mint amount is encoded in the message payload as a
-    // serialised BridgeTransferIntent. In production, deserialise the
-    // payload and use BridgeTransferIntent::amount_base_units.
-    // total_minted_wdrc_base_units is updated after deserialization.
+        if (amount > std::numeric_limits<uint64_t>::max() - state.total_minted_wdrc_base_units)
+            return BridgeResult::ERR_SUPPLY_OVERFLOW;
+
+        state.total_minted_wdrc_base_units += amount;
+    }
+
+    state.processed_nonce_keys.insert(key);
     return BridgeResult::OK;
 }
 
@@ -117,6 +206,11 @@ BridgeResult RecordWdrcBurn(
     const std::string key = make_nonce_key(intent.sender_address, intent.nonce);
     if (state.processed_nonce_keys.count(key))
         return BridgeResult::ERR_REPLAY;
+
+    // Decrement minted supply on burn.
+    if (intent.amount_base_units <= state.total_minted_wdrc_base_units) {
+        state.total_minted_wdrc_base_units -= intent.amount_base_units;
+    }
 
     state.processed_nonce_keys.insert(key);
     return BridgeResult::OK;

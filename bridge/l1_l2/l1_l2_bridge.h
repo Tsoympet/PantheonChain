@@ -6,8 +6,10 @@
 // - Burn wTLT on DRACHMA → unlock TLT on TALANTON
 
 #include "bridge/cross_chain_message.h"
+#include <array>
 #include <cstdint>
 #include <functional>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -31,18 +33,29 @@ struct BridgeState {
 
     // Total wTLT minted on L2 (in base units).
     uint64_t total_minted_wtlt_base_units{0};
+
+    // Trusted validator public keys (x-only 32-byte BIP-340 Schnorr keys).
+    // A CrossChainMessage must carry at least min_validator_sigs valid Schnorr
+    // signatures from keys in this set before any state change is permitted.
+    // Using std::set provides O(log n) membership tests and enforces uniqueness.
+    std::set<std::array<uint8_t, 32>> trusted_validator_pubkeys;
+
+    // Minimum number of valid signatures from trusted validators required to
+    // accept a CrossChainMessage.  Must be > 0 in production.
+    uint32_t min_validator_sigs{1};
 };
 
 // Result of a bridge operation.
 enum class BridgeResult : uint8_t {
-    OK                    = 0,
-    ERR_INVALID_PROOF     = 1,
-    ERR_REPLAY            = 2,       // Nonce already used
-    ERR_INSUFFICIENT_CONF = 3,       // L1 block not deep enough
-    ERR_AMOUNT_ZERO       = 4,
-    ERR_SUPPLY_OVERFLOW   = 5,       // Would exceed max wTLT supply
-    ERR_FRAUD_DETECTED    = 6,
-    ERR_INVALID_CHAIN     = 7,       // Wrong origin/destination chain ID
+    OK                        = 0,
+    ERR_INVALID_PROOF         = 1,
+    ERR_REPLAY                = 2,       // Nonce already used
+    ERR_INSUFFICIENT_CONF     = 3,       // L1 block not deep enough
+    ERR_AMOUNT_ZERO           = 4,
+    ERR_SUPPLY_OVERFLOW       = 5,       // Would exceed max wTLT supply
+    ERR_FRAUD_DETECTED        = 6,
+    ERR_INVALID_CHAIN         = 7,       // Wrong origin/destination chain ID
+    ERR_INSUFFICIENT_SIGNATURES = 8,    // Validator quorum not met
 };
 
 // Verify a Merkle inclusion proof for a bridge transfer.
@@ -53,6 +66,18 @@ bool VerifyMerkleProof(
     const Hash256& leaf_hash,
     const std::vector<std::vector<uint8_t>>& proof_nodes,
     const Hash256& expected_root);
+
+// Verify the validator signature quorum on a CrossChainMessage.
+//
+// Computes the canonical commitment hash over the message identity fields and
+// counts how many of the message's validator_signatures are (a) from a key in
+// state.trusted_validator_pubkeys and (b) a valid BIP-340 Schnorr signature
+// over that hash.
+//
+// Returns true iff the count of valid trusted signatures >= state.min_validator_sigs.
+bool VerifyValidatorQuorum(
+    const BridgeState& state,
+    const CrossChainMessage& message);
 
 // ── L1 side (TALANTON) ───────────────────────────────────────────────────────
 

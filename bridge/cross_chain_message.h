@@ -102,6 +102,21 @@ struct BridgeTransferIntent {
     uint64_t    lock_block_height;     // Block height when tokens were locked
 };
 
+// Decode an amount (uint64_t, little-endian) from the first 8 bytes of a
+// CrossChainMessage payload.  Returns 0 if the payload is shorter than 8 bytes.
+//
+// The bridge uses this encoding to embed BridgeTransferIntent::amount_base_units
+// in the on-chain message payload for supply-tracking on the destination side.
+inline uint64_t DecodeAmountFromPayload(const std::vector<uint8_t>& payload)
+{
+    if (payload.size() < 8) return 0;
+    uint64_t amount = 0;
+    for (int i = 0; i < 8; ++i) {
+        amount |= static_cast<uint64_t>(payload[static_cast<size_t>(i)]) << (8 * i);
+    }
+    return amount;
+}
+
 // FraudProof — evidence of invalid state transition for dispute resolution.
 struct FraudProof {
     ChainId  disputed_chain_id;   // Chain where the invalid transition occurred
