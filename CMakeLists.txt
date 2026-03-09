@@ -51,6 +51,14 @@ target_compile_definitions(pantheon-l1-talanton-node PRIVATE PANTHEON_NODE_LAYER
 target_compile_definitions(pantheon-l2-drachma-node PRIVATE PANTHEON_NODE_LAYER="l2")
 target_compile_definitions(pantheon-l3-obolos-node PRIVATE PANTHEON_NODE_LAYER="l3")
 
+# Canonical node binary aliases per the PantheonChain architecture spec.
+# These names (pantheon_tlt_node, pantheon_drc_node, pantheon_obl_node) are
+# the required public-facing binary names.  The *-node targets above are kept
+# as the primary build targets to avoid renaming source references.
+set_target_properties(pantheon-l1-talanton-node PROPERTIES OUTPUT_NAME "pantheon_tlt_node")
+set_target_properties(pantheon-l2-drachma-node  PROPERTIES OUTPUT_NAME "pantheon_drc_node")
+set_target_properties(pantheon-l3-obolos-node   PROPERTIES OUTPUT_NAME "pantheon_obl_node")
+
 add_executable(pantheon-cli cli/pantheon-cli/main.cpp)
 target_link_libraries(pantheon-cli PRIVATE pantheon_common)
 
@@ -98,7 +106,7 @@ add_subdirectory(tests)
 # ------------------------------------------------------------------ #
 include(GNUInstallDirs)
 
-# Node binaries
+# Node binaries (output as pantheon_tlt_node / pantheon_drc_node / pantheon_obl_node)
 install(PROGRAMS
     $<TARGET_FILE:pantheon-l1-talanton-node>
     $<TARGET_FILE:pantheon-l2-drachma-node>

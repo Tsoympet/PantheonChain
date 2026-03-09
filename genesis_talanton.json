@@ -1,12 +1,23 @@
 {
   "chain": "TALANTON",
+  "chain_id": 1001,
+  "network_id": 1001,
+  "address_prefix": "tlt",
   "layer": "l1",
   "consensus": "pow-sha256d",
-  "native_token": "TALANTON",
+  "native_token": "TLT",
+  "token_name": "TALANTON",
+  "token_symbol": "TLT",
+  "rpc_port": 8332,
+  "p2p_port": 8333,
   "inflation_schedule": {"initial_block_reward": 50, "halving_interval": 210000},
+  "max_supply": 21000000,
   "epoch_length": 144,
   "minimum_stake": 0,
   "slashing_ratios": {},
   "commitment_interval": 20,
-  "features": {"tx_l2_commit": true, "staking": false}
+  "features": {"tx_l2_commit": true, "staking": false},
+  "genesis_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "genesis_timestamp": 0,
+  "initial_difficulty": "0x00000000ffff0000000000000000000000000000000000000000000000000000"
 }
