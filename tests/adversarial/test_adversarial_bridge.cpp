@@ -618,23 +618,23 @@ void test_verify_merkle_proof_real_sha256d() {
     // VerifyMerkleProof always forms: combined = current ‖ sibling.
     // Proof for leaf0 (left child): sibling = leaf1,
     //   hash step: SHA256d(leaf0 ‖ leaf1) == root  ✓
-    Hash256 leaf0; leaf0.fill(0x00);
-    Hash256 leaf1; leaf1.fill(0x01);
+    Hash256 leaf0{}; leaf0.fill(0x00);
+    Hash256 leaf1{}; leaf1.fill(0x01);
     const Hash256 root = sha256d_node(leaf0, leaf1);
 
     // Correct proof for leaf0.
     assert(l1_l2::VerifyMerkleProof(leaf0, {std::vector<uint8_t>(leaf1.begin(), leaf1.end())}, root));
 
     // Wrong root must fail.
-    Hash256 wrong_root; wrong_root.fill(0xFF);
+    Hash256 wrong_root{}; wrong_root.fill(0xFF);
     assert(!l1_l2::VerifyMerkleProof(leaf0,
         {std::vector<uint8_t>(leaf1.begin(), leaf1.end())}, wrong_root));
 
     // --- stub-gone sanity: if the stub were still present it would return
     // Hash256{} for every node, so the computed root of any single-sibling proof
-    // would always be Hash256{}.  Verify that the real root is NOT Hash256{}.
-    Hash256 zero_hash; zero_hash.fill(0x00);
-    assert(root != zero_hash);  // Would fail only if stub were still active
+    // would always be Hash256{} (all zeros).  Reuse leaf0 (also all zeros) to
+    // verify the real root is non-zero.
+    assert(root != leaf0);  // Would fail only if sha256d_stub were still active
 
     // Test L2↔L3 bridge VerifyMerkleProof independently (same implementation).
     assert(l2_l3::VerifyMerkleProof(leaf0, {std::vector<uint8_t>(leaf1.begin(), leaf1.end())}, root));
@@ -649,8 +649,8 @@ void test_verify_merkle_proof_real_sha256d() {
     // Proof for leaf0: [leaf1, parent23]
     //   step 1: SHA256d(leaf0   ‖ leaf1)    = parent01
     //   step 2: SHA256d(parent01 ‖ parent23) = root4  ✓
-    Hash256 leaf2; leaf2.fill(0x02);
-    Hash256 leaf3; leaf3.fill(0x03);
+    Hash256 leaf2{}; leaf2.fill(0x02);
+    Hash256 leaf3{}; leaf3.fill(0x03);
     const Hash256 parent01 = sha256d_node(leaf0, leaf1);
     const Hash256 parent23 = sha256d_node(leaf2, leaf3);
     const Hash256 root4    = sha256d_node(parent01, parent23);
@@ -662,7 +662,7 @@ void test_verify_merkle_proof_real_sha256d() {
     assert(l1_l2::VerifyMerkleProof(leaf0, proof_leaf0, root4));
 
     // Tampered sibling must fail.
-    Hash256 bad_sibling; bad_sibling.fill(0xAA);
+    Hash256 bad_sibling{}; bad_sibling.fill(0xAA);
     std::vector<std::vector<uint8_t>> bad_proof = {
         std::vector<uint8_t>(bad_sibling.begin(), bad_sibling.end()),
         std::vector<uint8_t>(parent23.begin(),    parent23.end()),
