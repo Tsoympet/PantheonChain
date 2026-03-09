@@ -246,7 +246,6 @@ void scenario_04_wrap_unwrap_cycling() {
 
     for (int cycle = 0; cycle < CYCLES; ++cycle) {
         uint64_t lock_nonce = static_cast<uint64_t>(cycle) * 2 + 1;
-        uint64_t burn_nonce = static_cast<uint64_t>(cycle) * 2 + 2;
 
         // Lock.
         assert(bridge::l1_l2::RecordTltLock(l1s, tlt_lock("cycler", lock_nonce, AMT))
@@ -267,8 +266,6 @@ void scenario_04_wrap_unwrap_cycling() {
         auto unlock_msg = build_l2l1_unlock_msg(lock_nonce, AMT, 200 + lock_nonce);
         assert(bridge::l1_l2::ProcessWtltBurnUnlock(l1s, unlock_msg,
                210 + lock_nonce, 200 + lock_nonce) == bridge::l1_l2::BridgeResult::OK);
-
-        (void)burn_nonce;
     }
 
     // After CYCLES complete wrap/unwrap round-trips, supply must be zero on both sides.

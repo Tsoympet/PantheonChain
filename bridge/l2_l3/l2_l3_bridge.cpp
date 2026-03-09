@@ -28,12 +28,7 @@ static std::string make_nonce_key(const std::string& sender, uint64_t nonce)
 // Returns 0 if the payload is shorter than 8 bytes.
 static uint64_t decode_amount_from_payload(const std::vector<uint8_t>& payload)
 {
-    if (payload.size() < 8) return 0;
-    uint64_t amount = 0;
-    for (int i = 0; i < 8; ++i) {
-        amount |= static_cast<uint64_t>(payload[static_cast<size_t>(i)]) << (8 * i);
-    }
-    return amount;
+    return DecodeAmountFromPayload(payload);
 }
 
 bool VerifyMerkleProof(
