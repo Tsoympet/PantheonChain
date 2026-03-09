@@ -17,6 +17,9 @@
 #include "governance/snapshot.h"
 #include "governance/ostracism.h"
 
+#include "evm/execution.h"
+#include "common/metrics/metrics.h"
+
 #include <httplib.h>
 #include <algorithm>
 #include <charconv>
@@ -234,8 +237,35 @@ bool RPCServer::Start() {
 #ifndef CPP_HTTPLIB_STUB_H
     http_server_->Get("/health", [this](const httplib::Request& req, httplib::Response& res) {
         (void)req;
-        json health = {{"status", running_ ? "ok" : "stopped"}, {"rpc_port", port_}};
+        json health;
+        health["status"]   = running_ ? "ok" : "stopped";
+        health["rpc_port"] = port_;
+        if (node_) {
+            health["best_height"]  = node_->GetHeight();
+            health["peer_count"]   = (int)node_->GetPeers().size();
+            auto ss = node_->GetSyncStatus();
+            health["syncing"]      = ss.is_syncing;
+            if (ss.is_syncing) {
+                health["sync_progress"] = ss.progress_percent;
+            }
+        }
         res.set_content(health.dump(), "application/json");
+    });
+
+    // Prometheus metrics endpoint — expose to monitoring systems.
+    http_server_->Get("/metrics", [this](const httplib::Request& req, httplib::Response& res) {
+        (void)req;
+        // Refresh live gauges before rendering.
+        if (node_) {
+            metrics_.SetGauge("pantheon_best_block_height",
+                              static_cast<double>(node_->GetHeight()));
+            metrics_.SetGauge("pantheon_peer_count",
+                              static_cast<double>(node_->GetPeers().size()));
+            auto ss = node_->GetSyncStatus();
+            metrics_.SetGauge("pantheon_syncing", ss.is_syncing ? 1.0 : 0.0);
+        }
+        std::string body = metrics_.PrometheusText();
+        res.set_content(body, "text/plain; version=0.0.4; charset=utf-8");
     });
 #endif
 
@@ -385,11 +415,22 @@ RPCResponse RPCServer::HandleRequest(const RPCRequest& request,
 
     auto it = methods_.find(request.method);
     if (it == methods_.end()) {
+        metrics_.Increment("pantheon_rpc_requests_total",
+                           {{"method", request.method}, {"status", "unknown_method"}});
         response.error = "Method not found: " + request.method;
         return response;
     }
 
-    return it->second(request);
+    // Time the handler and update Prometheus metrics.
+    {
+        pantheon::common::ScopedTimer timer(
+            metrics_, "pantheon_rpc_request_duration_seconds");
+        response = it->second(request);
+    }
+    const std::string status = response.IsError() ? "error" : "ok";
+    metrics_.Increment("pantheon_rpc_requests_total",
+                       {{"method", request.method}, {"status", status}});
+    return response;
 }
 
 void RPCServer::InitializeStandardMethods() {
@@ -412,24 +453,45 @@ void RPCServer::InitializeStandardMethods() {
     RegisterMethod("commitments/list", [this](const RPCRequest& req) { return HandleCommitmentList(req); });
     RegisterMethod("evm/deploy", [this](const RPCRequest& req) { return HandleEvmDeploy(req); });
     RegisterMethod("evm/call", [this](const RPCRequest& req) {
-        // Execute a read-only EVM contract call (eth_call equivalent).
+        // Execute a read-only EVM-like call using the L3 execution engine.
         RPCResponse response;
         response.id = req.id;
-        json result;
-        result["status"] = "ok";
-        result["return_data"] = "0x";  // Placeholder: real EVM exec returns ABI-encoded bytes
-        result["note"] = "Wire the L3 EVM execution engine to return actual return data.";
-        response.result = result.dump();
+        try {
+            auto p = json::parse(req.params);
+            std::string payload   = p.value("data", "");
+            uint64_t gas_limit    = p.value("gas", uint64_t{21000});
+            uint64_t base_fee     = p.value("base_fee", uint64_t{10});  // OBL_GWEI default
+
+            auto exec_result = pantheon::obolos::ExecuteEvmLikeCall(payload, gas_limit, base_fee);
+
+            json result;
+            result["status"]      = exec_result.success ? "ok" : "revert";
+            result["return_data"] = exec_result.output;
+            result["gas_used"]    = exec_result.gas_used;
+            response.result = result.dump();
+        } catch (const std::exception& e) {
+            response.error = std::string("evm/call error: ") + e.what();
+        }
         return response;
     });
     RegisterMethod("evm/estimate_gas", [this](const RPCRequest& req) {
-        // Estimate gas for a transaction (eth_estimateGas equivalent).
+        // Estimate gas by performing a dry-run through the L3 execution engine.
         RPCResponse response;
         response.id = req.id;
-        // Default 21000 gas for a simple transfer; contract calls cost more.
-        // Wire the L3 EVM execution engine for accurate estimates.
-        json result = 21000;
-        response.result = result.dump();
+        try {
+            auto p = json::parse(req.params);
+            std::string payload = p.value("data", "");
+            uint64_t gas_limit  = p.value("gas", uint64_t{10000000});  // generous ceiling
+            uint64_t base_fee   = p.value("base_fee", uint64_t{10});
+
+            auto exec_result = pantheon::obolos::ExecuteEvmLikeCall(payload, gas_limit, base_fee);
+
+            // Return the gas consumed by the dry-run.
+            json result = exec_result.gas_used;
+            response.result = result.dump();
+        } catch (const std::exception& e) {
+            response.error = std::string("evm/estimate_gas error: ") + e.what();
+        }
         return response;
     });
 

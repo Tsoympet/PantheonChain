@@ -27,10 +27,20 @@ using namespace parthenon::crypto;
 // ---------------------------------------------------------------------------
 
 static std::pair<Schnorr::PrivateKey, Schnorr::PublicKey> MakeKey(uint8_t seed) {
+    // Derive a fully-populated 32-byte private key by hashing the seed byte so
+    // that all key bytes are non-zero and the key is deterministic across test
+    // runs.  SHA-256(seed || 0x50..0x5F) produces a uniformly distributed 32-byte
+    // value that satisfies the secp256k1 scalar range requirement.
+    std::vector<uint8_t> seed_buf(32, 0x50);
+    seed_buf[0] = seed;
+    auto hash_bytes = SHA256::Hash256(seed_buf.data(), seed_buf.size());
+
     Schnorr::PrivateKey priv{};
-    priv[0] = seed;
-    priv[1] = 0x01;
-    // rest remain zero – deterministic stub key
+    std::copy(hash_bytes.begin(), hash_bytes.end(), priv.begin());
+    // Ensure the key is non-zero (extremely unlikely to be zero from SHA-256,
+    // but guard defensively).
+    if (priv[0] == 0) priv[0] = seed | 0x01;
+
     auto pub_opt = Schnorr::GetPublicKey(priv);
     Schnorr::PublicKey pub{};
     if (pub_opt.has_value())

@@ -8,5 +8,20 @@
   "genesis_file": "genesis_obolos.json",
   "commitment_interval": 5,
   "checkpoint_freshness_slo_seconds": 300,
-  "relayer_liveness_threshold_seconds": 120
+  "relayer_liveness_threshold_seconds": 120,
+  "p2p_bootstrap_nodes": [
+    "seed1.l3.pantheonchain.org:10333",
+    "seed2.l3.pantheonchain.org:10333",
+    "seed3.l3.pantheonchain.org:10333",
+    "seed4.l3.pantheonchain.org:10333",
+    "seed5.l3.pantheonchain.org:10333",
+    "seed6.l3.pantheonchain.org:10333",
+    "seed7.l3.pantheonchain.org:10333",
+    "seed8.l3.pantheonchain.org:10333"
+  ],
+  "dns_seeds": [
+    "dnsseed.l3.pantheonchain.org",
+    "seed.l3.pantheonchain.org",
+    "nodes.l3.pantheonchain.org"
+  ]
 }

@@ -1,0 +1,50 @@
+[Unit]
+Description=PantheonChain L3 Obolos Node (EVM / PoS)
+Documentation=https://docs.pantheonchain.org/operations
+After=network-online.target
+Wants=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+User=pantheon
+Group=pantheon
+WorkingDirectory=/var/lib/pantheon/l3
+
+ExecStart=/usr/local/bin/pantheon-l3-obolos-node \
+    --layer=l3 \
+    --config=/etc/pantheon/mainnet/l3.conf
+
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=60
+KillMode=process
+
+Restart=on-failure
+RestartSec=10
+StartLimitBurst=5
+StartLimitIntervalSec=120
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pantheon-l3
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pantheon/l3 /var/log/pantheon
+ProtectHome=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SecureBits=noroot
+
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=8G
+CPUQuota=400%
+
+Environment=PANTHEON_NETWORK=mainnet
+Environment=PANTHEON_LAYER=l3
+
+[Install]
+WantedBy=multi-user.target

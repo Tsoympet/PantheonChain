@@ -4,6 +4,7 @@
 #pragma once
 
 #include "rate_limiter.h"
+#include "common/metrics/metrics.h"
 
 #include <cstdint>
 #include <functional>
@@ -174,6 +175,9 @@ class RPCServer {
     
     // Rate limiting
     std::unique_ptr<RateLimiter> rate_limiter_;
+
+    // Prometheus-compatible metrics registry
+    mutable pantheon::common::MetricsRegistry metrics_;
 
     // Optional Basic auth credentials
     std::string auth_user_;

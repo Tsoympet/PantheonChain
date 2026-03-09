@@ -10,5 +10,16 @@
   "l1_min_confirmation_depth": 6,
   "bridge_unlock_min_l1_depth": 6,
   "checkpoint_freshness_slo_seconds": 300,
-  "relayer_liveness_threshold_seconds": 120
+  "relayer_liveness_threshold_seconds": 120,
+  "p2p_bootstrap_nodes": [
+    "testnet-seed1.l1.pantheonchain.org:28333",
+    "testnet-seed2.l1.pantheonchain.org:28333",
+    "testnet-seed3.l1.pantheonchain.org:28333",
+    "testnet-seed4.l1.pantheonchain.org:28333",
+    "testnet-seed5.l1.pantheonchain.org:28333"
+  ],
+  "dns_seeds": [
+    "dnsseed.l1.testnet.pantheonchain.org",
+    "seed.l1.testnet.pantheonchain.org"
+  ]
 }

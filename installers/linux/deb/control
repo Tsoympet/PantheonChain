@@ -1,25 +1,27 @@
-Package: parthenon
-Version: 1.0.0
+Package: pantheonchain
+Version: 2.3.0
 Section: net
 Priority: optional
 Architecture: amd64
 Depends: libssl3 (>= 3.0.0),
- libboost-system1.74.0 | libboost-system1.81.0,
- libboost-filesystem1.74.0 | libboost-filesystem1.81.0,
- libqt6core6 (>= 6.2.0) | libqt5core5a,
- libqt6gui6 (>= 6.2.0) | libqt5gui5,
- libqt6widgets6 (>= 6.2.0) | libqt5widgets5,
- libqt6network6 (>= 6.2.0) | libqt5network5,
- libgl1
-Maintainer: ParthenonChain Foundation <contact@parthenonchain.org>
-Description: ParthenonChain - Production-grade Layer-1 blockchain
- ParthenonChain is a Proof-of-Work blockchain with multi-asset UTXO ledger,
- Schnorr signatures, and EVM-compatible smart contracts.
+ libboost-system1.74.0 | libboost-system1.81.0 | libboost-system1.83.0,
+ libboost-filesystem1.74.0 | libboost-filesystem1.81.0 | libboost-filesystem1.83.0,
+ libboost-thread1.74.0 | libboost-thread1.81.0 | libboost-thread1.83.0,
+ curl
+Recommends: prometheus-node-exporter
+Maintainer: PantheonChain Foundation <contact@pantheonchain.org>
+Description: PantheonChain — three-layer hybrid blockchain
+ PantheonChain is a production-grade multi-layer blockchain consisting of:
+  - TALANTON (L1): SHA-256d Proof-of-Work settlement layer (21M TALN cap)
+  - DRACHMA  (L2): PoS/BFT payment and validator layer (41M DRM cap)
+  - OBOLOS   (L3): EVM-compatible smart-contract execution layer (61M OBL cap)
  .
  Features:
-  - SHA-256d PoW consensus
-  - Three native tokens: TALANTON (21M), DRACHMA (41M), OBOLOS (61M)
-  - Schnorr signatures (BIP-340)
-  - OBL EVM-compatible smart contracts
-  - DRM settlement primitives
-Homepage: https://parthenonchain.org
+  - Schnorr signatures (BIP-340) across all layers
+  - Cross-layer commitment anchoring (OBOLOS → DRACHMA → TALANTON)
+  - Governance: 1A1V voting, veto, parameter changes, emergency actions
+  - Full node daemon, CLI, relayer daemons, and hardware wallet support
+ .
+ Binaries installed: pantheon-l1-talanton-node, pantheon-l2-drachma-node,
+  pantheon-l3-obolos-node, pantheon-cli, pantheon-relayer-l2, pantheon-relayer-l3
+Homepage: https://pantheonchain.org

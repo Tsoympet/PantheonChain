@@ -5,6 +5,37 @@ jest.mock('react-native-sha256', () => ({
   sha256: jest.fn((input) => Promise.resolve('aabbccdd' + input.length.toString(16).padStart(56, '0'))),
 }));
 
+// Mock @noble/secp256k1 with deterministic test stubs.
+jest.mock('@noble/secp256k1', () => {
+  let keyCounter = 0;
+  const makeBytes = (seed, len) => {
+    const buf = new Uint8Array(len);
+    for (let i = 0; i < len; i++) buf[i] = (seed + i) & 0xff;
+    return buf;
+  };
+  return {
+    utils: {
+      randomPrivateKey: jest.fn(() => makeBytes(0x42 + keyCounter++, 32)),
+    },
+    getPublicKey: jest.fn((privKey) => {
+      // Return a deterministic 33-byte compressed public key.
+      const pub = new Uint8Array(33);
+      pub[0] = 0x02;
+      for (let i = 1; i < 33; i++) pub[i] = privKey[i - 1];
+      return pub;
+    }),
+    schnorr: {
+      sign: jest.fn((msgHash, privKey) => {
+        // Return a deterministic 64-byte signature (r = privKey repeated, s = msgHash repeated).
+        const sig = new Uint8Array(64);
+        for (let i = 0; i < 32; i++) sig[i]      = privKey[i];
+        for (let i = 0; i < 32; i++) sig[32 + i]  = msgHash[i];
+        return sig;
+      }),
+    },
+  };
+});
+
 const WalletServiceModule = require('../src/WalletService');
 // WalletService exports a singleton instance
 const WalletService = WalletServiceModule.default || WalletServiceModule;
@@ -94,8 +125,15 @@ describe('WalletService', () => {
       expect(result).toBeTruthy();
       expect(typeof result.txid_hash).toBe('string');
       expect(typeof result.signature).toBe('string');
+      expect(typeof result.pubkey).toBe('string');
       expect(typeof result.payload_hex).toBe('string');
       expect(result.payload_hex.length).toBeGreaterThan(0);
+      // BIP-340 Schnorr signature is 64 bytes = 128 hex chars.
+      expect(result.signature.length).toBe(128);
+      // Compressed public key is 33 bytes = 66 hex chars.
+      expect(result.pubkey.length).toBe(66);
+      // txid_hash and signature must be distinct (hash ≠ sig).
+      expect(result.signature).not.toBe(result.txid_hash);
     });
 
     it('includes asset, recipient, and amount in the payload hex', async () => {
@@ -140,8 +178,10 @@ describe('WalletService', () => {
       const tx = { asset: 'OBL', to, amount: 2.5, memo: 'memo' };
       const r1 = await WalletService.signTransaction(tx);
       const r2 = await WalletService.signTransaction(tx);
+      // Same key + same payload → same signature (BIP-340 is deterministic).
       expect(r1.signature).toBe(r2.signature);
       expect(r1.payload_hex).toBe(r2.payload_hex);
+      expect(r1.pubkey).toBe(r2.pubkey);
     });
   });
 });

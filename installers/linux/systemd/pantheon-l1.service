@@ -1,0 +1,57 @@
+[Unit]
+Description=PantheonChain L1 Talanton Node (PoW)
+Documentation=https://docs.pantheonchain.org/operations
+After=network-online.target
+Wants=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+User=pantheon
+Group=pantheon
+WorkingDirectory=/var/lib/pantheon/l1
+
+# Binary and startup flags
+ExecStart=/usr/local/bin/pantheon-l1-talanton-node \
+    --layer=l1 \
+    --config=/etc/pantheon/mainnet/l1.conf
+
+# Graceful shutdown: send SIGTERM, wait 60s, then SIGKILL
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=60
+KillMode=process
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitBurst=5
+StartLimitIntervalSec=120
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pantheon-l1
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pantheon/l1 /var/log/pantheon
+ProtectHome=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SecureBits=noroot
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=4G
+CPUQuota=400%
+
+# Environment
+Environment=PANTHEON_NETWORK=mainnet
+Environment=PANTHEON_LAYER=l1
+
+[Install]
+WantedBy=multi-user.target

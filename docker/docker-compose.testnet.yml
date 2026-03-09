@@ -1,0 +1,271 @@
+# PantheonChain — Testnet Docker Compose
+# Three-layer deployment: TALANTON (L1 PoW) + DRACHMA (L2 PoS) + OBOLOS (L3 EVM)
+# + both commitment relayers.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.testnet.yml up -d
+#
+# Environment variables (override in .env or shell):
+#   PANTHEON_IMAGE   — pre-built image tag (default: builds locally)
+#   L1_P2P_PORT      — host-side L1 P2P port (default: 28333)
+#   L2_P2P_PORT      — host-side L2 P2P port (default: 29333)
+#   L3_P2P_PORT      — host-side L3 P2P port (default: 30333)
+
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "100m"
+    max-file: "7"
+    labels: "network,layer,service"
+
+x-security: &default-security
+  security_opt:
+    - no-new-privileges:true
+  read_only: false          # set to true once data-dir paths are all on named volumes
+  cap_drop:
+    - ALL
+
+networks:
+  pantheon-testnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  testnet-l1-data:
+  testnet-l2-data:
+  testnet-l3-data:
+
+services:
+  # ------------------------------------------------------------------ #
+  #  L1 — TALANTON  (PoW settlement layer)                              #
+  # ------------------------------------------------------------------ #
+  talanton-l1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ${PANTHEON_IMAGE:-pantheonchain:latest}
+    container_name: pantheon-testnet-l1
+    command:
+      - "pantheon-l1-talanton-node"
+      - "--layer=l1"
+      - "--config=/etc/pantheon/l1.conf"
+    restart: unless-stopped
+    ports:
+      - "${L1_RPC_PORT:-28332}:28332"
+      - "${L1_P2P_PORT:-28333}:28333"
+    volumes:
+      - testnet-l1-data:/var/lib/pantheon/l1
+      - ../configs/testnet/l1.conf:/etc/pantheon/l1.conf:ro
+      - ../configs/testnet/l1.json:/etc/pantheon/l1.json:ro
+      - ../genesis_talanton.json:/etc/pantheon/genesis_talanton.json:ro
+    networks:
+      pantheon-testnet:
+        ipv4_address: 172.28.0.10
+    environment:
+      - PANTHEON_NETWORK=testnet
+      - PANTHEON_LAYER=l1
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:28332/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+        reservations:
+          memory: 512M
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: testnet
+      layer: l1
+      service: talanton-node
+
+  # ------------------------------------------------------------------ #
+  #  L2 — DRACHMA  (PoS/BFT payments layer)                            #
+  # ------------------------------------------------------------------ #
+  drachma-l2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ${PANTHEON_IMAGE:-pantheonchain:latest}
+    container_name: pantheon-testnet-l2
+    command:
+      - "pantheon-l2-drachma-node"
+      - "--layer=l2"
+      - "--config=/etc/pantheon/l2.conf"
+    restart: unless-stopped
+    ports:
+      - "${L2_RPC_PORT:-29332}:29332"
+      - "${L2_P2P_PORT:-29333}:29333"
+    volumes:
+      - testnet-l2-data:/var/lib/pantheon/l2
+      - ../configs/testnet/l2.conf:/etc/pantheon/l2.conf:ro
+      - ../configs/testnet/l2.json:/etc/pantheon/l2.json:ro
+      - ../genesis_drachma.json:/etc/pantheon/genesis_drachma.json:ro
+    networks:
+      pantheon-testnet:
+        ipv4_address: 172.28.0.11
+    environment:
+      - PANTHEON_NETWORK=testnet
+      - PANTHEON_LAYER=l2
+    depends_on:
+      talanton-l1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:29332/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+        reservations:
+          memory: 1G
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: testnet
+      layer: l2
+      service: drachma-node
+
+  # ------------------------------------------------------------------ #
+  #  L3 — OBOLOS  (EVM smart-contract layer)                           #
+  # ------------------------------------------------------------------ #
+  obolos-l3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ${PANTHEON_IMAGE:-pantheonchain:latest}
+    container_name: pantheon-testnet-l3
+    command:
+      - "pantheon-l3-obolos-node"
+      - "--layer=l3"
+      - "--config=/etc/pantheon/l3.conf"
+    restart: unless-stopped
+    ports:
+      - "${L3_RPC_PORT:-30332}:30332"
+      - "${L3_P2P_PORT:-30333}:30333"
+    volumes:
+      - testnet-l3-data:/var/lib/pantheon/l3
+      - ../configs/testnet/l3.conf:/etc/pantheon/l3.conf:ro
+      - ../configs/testnet/l3.json:/etc/pantheon/l3.json:ro
+      - ../genesis_obolos.json:/etc/pantheon/genesis_obolos.json:ro
+    networks:
+      pantheon-testnet:
+        ipv4_address: 172.28.0.12
+    environment:
+      - PANTHEON_NETWORK=testnet
+      - PANTHEON_LAYER=l3
+    depends_on:
+      drachma-l2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:30332/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+        reservations:
+          memory: 1G
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: testnet
+      layer: l3
+      service: obolos-node
+
+  # ------------------------------------------------------------------ #
+  #  Relayer: L2 → L1  (DRACHMA commitments → TALANTON)                #
+  # ------------------------------------------------------------------ #
+  relayer-l2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ${PANTHEON_IMAGE:-pantheonchain:latest}
+    container_name: pantheon-testnet-relayer-l2
+    command: ["pantheon-relayer-l2"]
+    restart: unless-stopped
+    networks:
+      pantheon-testnet:
+        ipv4_address: 172.28.0.20
+    environment:
+      - PANTHEON_NETWORK=testnet
+      - L1_RPC_URL=http://172.28.0.10:28332
+      - L2_RPC_URL=http://172.28.0.11:29332
+    depends_on:
+      talanton-l1:
+        condition: service_healthy
+      drachma-l2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://172.28.0.10:28332/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: testnet
+      service: relayer-l2
+
+  # ------------------------------------------------------------------ #
+  #  Relayer: L3 → L2  (OBOLOS commitments → DRACHMA)                  #
+  # ------------------------------------------------------------------ #
+  relayer-l3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ${PANTHEON_IMAGE:-pantheonchain:latest}
+    container_name: pantheon-testnet-relayer-l3
+    command: ["pantheon-relayer-l3"]
+    restart: unless-stopped
+    networks:
+      pantheon-testnet:
+        ipv4_address: 172.28.0.21
+    environment:
+      - PANTHEON_NETWORK=testnet
+      - L2_RPC_URL=http://172.28.0.11:29332
+      - L3_RPC_URL=http://172.28.0.12:30332
+    depends_on:
+      drachma-l2:
+        condition: service_healthy
+      obolos-l3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://172.28.0.11:29332/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging: *default-logging
+    <<: *default-security
+    labels:
+      network: testnet
+      service: relayer-l3

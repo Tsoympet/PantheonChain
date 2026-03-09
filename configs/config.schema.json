@@ -15,18 +15,15 @@
   ],
   "properties": {
     "layer": {
-      "enum": [
-        "l1",
-        "l2",
-        "l3"
-      ]
+      "enum": ["l1", "l2", "l3"]
     },
     "node_id": {
       "type": "string",
       "minLength": 3
     },
     "network": {
-      "type": "string"
+      "type": "string",
+      "enum": ["devnet", "testnet", "mainnet"]
     },
     "p2p_port": {
       "type": "integer",
@@ -57,6 +54,66 @@
     "relayer_liveness_threshold_seconds": {
       "type": "integer",
       "minimum": 1
+    },
+    "p2p_bootstrap_nodes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9._-]+:[0-9]{1,5}$"
+      },
+      "minItems": 0,
+      "description": "Static bootstrap peers in host:port format. Recommended: ≥5 for testnet, ≥8 for mainnet."
+    },
+    "dns_seeds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9._-]+$"
+      },
+      "minItems": 0,
+      "description": "DNS seed hostnames used for automatic peer discovery via SRV/A record lookup."
+    },
+    "l1_min_confirmation_depth": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Minimum L1 confirmation depth before a commitment is considered finalised."
+    },
+    "bridge_unlock_min_l1_depth": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Minimum L1 depth before a cross-layer bridge unlock is permitted."
+    },
+    "max_peers": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 125,
+      "description": "Maximum number of simultaneous P2P connections."
+    },
+    "rpc_max_connections": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 64,
+      "description": "Maximum simultaneous RPC connections."
+    },
+    "log_level": {
+      "type": "string",
+      "enum": ["trace", "debug", "info", "warn", "error"],
+      "default": "info"
+    },
+    "metrics_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "Port on which the Prometheus /metrics endpoint is exposed. Omit to disable."
+    }
+  },
+  "if": {
+    "properties": { "network": { "const": "mainnet" } }
+  },
+  "then": {
+    "properties": {
+      "p2p_bootstrap_nodes": { "minItems": 5 },
+      "dns_seeds": { "minItems": 1 }
     }
   }
 }

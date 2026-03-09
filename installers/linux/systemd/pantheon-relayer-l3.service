@@ -1,0 +1,49 @@
+[Unit]
+Description=PantheonChain L3→L2 Commitment Relayer
+Documentation=https://docs.pantheonchain.org/operations/relayers
+After=network-online.target pantheon-l2.service pantheon-l3.service
+Wants=network-online.target
+BindsTo=pantheon-l2.service pantheon-l3.service
+
+[Service]
+Type=simple
+User=pantheon
+Group=pantheon
+WorkingDirectory=/var/lib/pantheon
+
+ExecStart=/usr/local/bin/pantheon-relayer-l3 \
+    --config=/etc/pantheon/mainnet/l2.conf \
+    --l2-rpc=http://127.0.0.1:9332 \
+    --l3-rpc=http://127.0.0.1:10332
+
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=30
+KillMode=process
+
+Restart=on-failure
+RestartSec=15
+StartLimitBurst=10
+StartLimitIntervalSec=300
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pantheon-relayer-l3
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pantheon /var/log/pantheon
+ProtectHome=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SecureBits=noroot
+
+LimitNOFILE=4096
+MemoryMax=512M
+CPUQuota=50%
+
+Environment=PANTHEON_NETWORK=mainnet
+
+[Install]
+WantedBy=multi-user.target

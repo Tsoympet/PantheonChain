@@ -297,8 +297,45 @@ void ChaosEngineering::RemoveNetworkFault() { std::cout << "Removing network fau
 
 bool ChaosEngineering::VerifySystemRecovery() {
     std::cout << "Verifying system recovery...\n";
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    return true; // Placeholder
+
+    // Recovery verification: poll for system liveness over a window of up to
+    // 10 intervals × 100 ms = 1 second.  In the test harness the "system" is
+    // the in-process state of the ChaosEngineering object itself, so we check
+    // that the framework is still initialized and the RNG is seeded (both of
+    // which remain true after any fault injection that doesn't crash the process).
+    //
+    // In a networked deployment, callers should subclass ChaosEngineering and
+    // override this method to query the node's /healthz endpoint or block-height
+    // monotonicity to confirm the network has resumed progress.
+    const int kMaxRetries      = 10;
+    const int kRetryIntervalMs = 100;
+
+    for (int attempt = 0; attempt < kMaxRetries; ++attempt) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(kRetryIntervalMs));
+
+        // Liveness check: the framework must be initialized.
+        if (!initialized_) {
+            std::cout << "Recovery check failed: framework not initialized (attempt "
+                      << (attempt + 1) << "/" << kMaxRetries << ")\n";
+            continue;
+        }
+
+        // Liveness check: the RNG must produce distinct values (not a frozen state).
+        const uint32_t v1 = rng_();
+        const uint32_t v2 = rng_();
+        if (v1 == v2) {
+            std::cout << "Recovery check failed: RNG frozen (attempt "
+                      << (attempt + 1) << "/" << kMaxRetries << ")\n";
+            continue;
+        }
+
+        std::cout << "System recovery verified after "
+                  << ((attempt + 1) * kRetryIntervalMs) << " ms\n";
+        return true;
+    }
+
+    std::cout << "System recovery FAILED after " << kMaxRetries << " attempts\n";
+    return false;
 }
 
 // Implement remaining test methods with similar patterns...

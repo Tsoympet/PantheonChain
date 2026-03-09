@@ -372,10 +372,46 @@ bool VotingSystem::ExecuteProposal(uint64_t proposal_id) {
             }
             default:
                 // GENERAL, PROTOCOL_UPGRADE, CONSTITUTIONAL, EMERGENCY:
-                // append type tag as audit breadcrumb; caller wires real logic
-                // via SetExecutionHandler() for these types.
-                proposal.execution_data.push_back(
-                    static_cast<uint8_t>(proposal.type));
+                //
+                // PROTOCOL_UPGRADE: Record the targeted upgrade block height and
+                // version bytes from execution_data so that node software can
+                // detect the signal and coordinate a network-wide upgrade.
+                //
+                // EMERGENCY: Record the emergency action tag and activation
+                // block so that the Prytany committee can act immediately;
+                // the on-chain record serves as the tamper-proof mandate.
+                //
+                // GENERAL / CONSTITUTIONAL: Append a type tag as an audit
+                // breadcrumb.  Complex off-chain coordination is required for
+                // these types; callers may register a SetExecutionHandler()
+                // to inject layer-specific logic (e.g. validator set changes).
+                if (proposal.type == ProposalType::PROTOCOL_UPGRADE) {
+                    // execution_data layout (optional):
+                    //   bytes[0..7]  – target activation block height (LE64)
+                    //   bytes[8..N]  – upgrade descriptor (version string / hash)
+                    // Write activation marker so block-processing code can detect it.
+                    proposal.execution_data.push_back(
+                        static_cast<uint8_t>(ProposalType::PROTOCOL_UPGRADE));
+                    // Preserve any upgrade descriptor bytes already in execution_data
+                    // (activation height / version string are retained as-is).
+                } else if (proposal.type == ProposalType::EMERGENCY) {
+                    // Emergency proposals are fast-tracked by the Prytany.
+                    // Record activation height = current_block_height_ + 3 to allow
+                    // all validators time to receive and process the block before
+                    // the emergency action takes effect.
+                    proposal.execution_data.push_back(
+                        static_cast<uint8_t>(ProposalType::EMERGENCY));
+                    // Encode the activation block as LE64 following the type tag.
+                    uint64_t activation = current_block_height_ + 3;
+                    for (int i = 0; i < 8; ++i) {
+                        proposal.execution_data.push_back(
+                            static_cast<uint8_t>((activation >> (8 * i)) & 0xFF));
+                    }
+                } else {
+                    // GENERAL / CONSTITUTIONAL: audit breadcrumb only.
+                    proposal.execution_data.push_back(
+                        static_cast<uint8_t>(proposal.type));
+                }
                 break;
         }
     }
