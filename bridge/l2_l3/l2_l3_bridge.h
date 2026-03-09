@@ -15,6 +15,10 @@ namespace pantheon {
 namespace bridge {
 namespace l2_l3 {
 
+// Minimum L2 confirmation depth before a bridge unlock or mint is processed.
+// Must match configs/*/l2.json: bridge_min_l2_depth.
+static constexpr uint32_t kMinL2Confirmations = 10;
+
 // Bridge state for the L2↔L3 bridge.
 struct BridgeState {
     std::unordered_set<std::string> processed_nonce_keys;  // "<sender>:<nonce>"
@@ -23,11 +27,13 @@ struct BridgeState {
 };
 
 enum class BridgeResult : uint8_t {
-    OK                = 0,
-    ERR_INVALID_PROOF = 1,
-    ERR_REPLAY        = 2,
-    ERR_AMOUNT_ZERO   = 3,
-    ERR_INVALID_CHAIN = 4,
+    OK                    = 0,
+    ERR_INVALID_PROOF     = 1,
+    ERR_REPLAY            = 2,
+    ERR_AMOUNT_ZERO       = 3,
+    ERR_INVALID_CHAIN     = 4,
+    ERR_INSUFFICIENT_CONF = 5,  // L2 block not deep enough
+    ERR_SUPPLY_OVERFLOW   = 6,  // Would exceed max wDRC supply
 };
 
 bool VerifyMerkleProof(
@@ -37,24 +43,53 @@ bool VerifyMerkleProof(
 
 // ── L2 side (DRACHMA) ────────────────────────────────────────────────────────
 
-// Record a DRC lock on DRACHMA.
+// Record a DRC lock on DRACHMA. Called by the bridge contract when a user
+// deposits DRC to be bridged to OBOLOS.
+//
+// Returns OK on success. The BridgeTransferIntent is serialised and emitted
+// as an on-chain event so relayers can pick it up.
 BridgeResult RecordDrcLock(
     BridgeState& state,
     const BridgeTransferIntent& intent);
 
-// Process a wDRC burn proof from OBOLOS → unlock DRC on DRACHMA.
+// Verify and execute a wDRC burn proof from OBOLOS.
+// Called when the L2 bridge receives a burn message from a relayer.
+//
+// Checks:
+//   1. origin == OBOLOS, destination == DRACHMA
+//   2. Merkle proof against the OBOLOS state root
+//   3. Nonce not already processed (replay protection)
+//   4. L2 block is at least kMinL2Confirmations deep
+//
+// On success, unlocks DRC to intent.recipient_address.
 BridgeResult ProcessWdrcBurnUnlock(
     BridgeState& state,
-    const CrossChainMessage& message);
+    const CrossChainMessage& message,
+    uint64_t current_l2_height,
+    uint64_t lock_l2_height);
 
 // ── L3 side (OBOLOS) ─────────────────────────────────────────────────────────
 
-// Process a DRC lock proof from DRACHMA → mint wDRC on OBOLOS.
+// Verify and execute a DRC lock proof from DRACHMA.
+// Called when the L3 bridge receives a lock message from a relayer.
+//
+// Checks:
+//   1. origin == DRACHMA, destination == OBOLOS
+//   2. Merkle proof against the DRACHMA state root
+//   3. Nonce not already processed (replay protection)
+//   4. ≥ kMinL2Confirmations L2 confirmations
+//
+// On success, mints wDRC to intent.recipient_address.
 BridgeResult ProcessDrcLockMint(
     BridgeState& state,
-    const CrossChainMessage& message);
+    const CrossChainMessage& message,
+    uint64_t current_l2_height,
+    uint64_t lock_l2_height);
 
-// Record a wDRC burn on OBOLOS.
+// Record a wDRC burn on OBOLOS. Called when a user burns wDRC to recover DRC.
+//
+// Returns OK on success. The BridgeTransferIntent is emitted on-chain so
+// the L2 bridge can process the unlock.
 BridgeResult RecordWdrcBurn(
     BridgeState& state,
     const BridgeTransferIntent& intent);

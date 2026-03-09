@@ -1,6 +1,8 @@
 // l1_l2_bridge.cpp — TALANTON ↔ DRACHMA Bridge Implementation
 
 #include "bridge/l1_l2/l1_l2_bridge.h"
+#include <cstdint>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -22,6 +24,18 @@ static std::string make_nonce_key(const std::string& sender, uint64_t nonce)
     std::ostringstream oss;
     oss << sender << ":" << nonce;
     return oss.str();
+}
+
+// Decode an amount (uint64_t, little-endian) from the first 8 bytes of a payload.
+// Returns 0 if the payload is shorter than 8 bytes.
+static uint64_t decode_amount_from_payload(const std::vector<uint8_t>& payload)
+{
+    if (payload.size() < 8) return 0;
+    uint64_t amount = 0;
+    for (int i = 0; i < 8; ++i) {
+        amount |= static_cast<uint64_t>(payload[static_cast<size_t>(i)]) << (8 * i);
+    }
+    return amount;
 }
 
 bool VerifyMerkleProof(
@@ -51,6 +65,11 @@ BridgeResult RecordTltLock(
 
     if (intent.amount_base_units == 0)
         return BridgeResult::ERR_AMOUNT_ZERO;
+
+    // Guard against supply overflow before updating state.
+    if (intent.amount_base_units >
+        std::numeric_limits<uint64_t>::max() - state.total_locked_tlt_base_units)
+        return BridgeResult::ERR_SUPPLY_OVERFLOW;
 
     const std::string key = make_nonce_key(intent.sender_address, intent.nonce);
     if (state.processed_nonce_keys.count(key))
@@ -84,6 +103,12 @@ BridgeResult ProcessWtltBurnUnlock(
     if (!VerifyMerkleProof(message.payload_hash, message.proof, message.state_root))
         return BridgeResult::ERR_INVALID_PROOF;
 
+    // Decode the unlock amount and update the locked supply.
+    const uint64_t amount = decode_amount_from_payload(message.payload);
+    if (amount > 0 && amount <= state.total_locked_tlt_base_units) {
+        state.total_locked_tlt_base_units -= amount;
+    }
+
     state.processed_nonce_keys.insert(key);
     return BridgeResult::OK;
 }
@@ -112,12 +137,20 @@ BridgeResult ProcessTltLockMint(
     if (!VerifyMerkleProof(message.payload_hash, message.proof, message.state_root))
         return BridgeResult::ERR_INVALID_PROOF;
 
-    state.processed_nonce_keys.insert(key);
+    // Decode the mint amount from the serialised BridgeTransferIntent payload.
+    const uint64_t amount = decode_amount_from_payload(message.payload);
+    if (amount > 0) {
+        // Guard: minted supply must never exceed locked supply.
+        if (amount > state.total_locked_tlt_base_units - state.total_minted_wtlt_base_units)
+            return BridgeResult::ERR_SUPPLY_OVERFLOW;
 
-    // The actual mint amount is encoded in the message payload as a
-    // serialised BridgeTransferIntent. In production, deserialise the
-    // payload and use BridgeTransferIntent::amount_base_units.
-    // total_minted_wtlt_base_units is updated after deserialization.
+        if (amount > std::numeric_limits<uint64_t>::max() - state.total_minted_wtlt_base_units)
+            return BridgeResult::ERR_SUPPLY_OVERFLOW;
+
+        state.total_minted_wtlt_base_units += amount;
+    }
+
+    state.processed_nonce_keys.insert(key);
     return BridgeResult::OK;
 }
 
@@ -135,6 +168,11 @@ BridgeResult RecordWtltBurn(
     const std::string key = make_nonce_key(intent.sender_address, intent.nonce);
     if (state.processed_nonce_keys.count(key))
         return BridgeResult::ERR_REPLAY;
+
+    // Decrement minted supply on burn.
+    if (intent.amount_base_units <= state.total_minted_wtlt_base_units) {
+        state.total_minted_wtlt_base_units -= intent.amount_base_units;
+    }
 
     state.processed_nonce_keys.insert(key);
     return BridgeResult::OK;
