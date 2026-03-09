@@ -7,6 +7,7 @@
 #include "layer2-drachma/rollups/optimistic_rollup.h"
 #include "layer2-drachma/rollups/zk_rollup.h"
 #include "privacy/zk_snark.h"
+#include "crypto/sha256.h"
 
 #include <cassert>
 #include <iostream>
@@ -213,7 +214,17 @@ void test_rollup_lifecycle() {
     proof.batch_id = 1;
     proof.disputed_tx_index = 0;
     proof.claimed_state_root = batch.state_root_after;
-    proof.correct_state_root = batch.state_root_before;
+
+    // Compute the actual correct state root by re-executing the disputed
+    // transaction against the pre-batch state root (all zeros for the first batch).
+    // This mirrors what VerifyFraudProof computes: SHA256(pre_state || tx_hash).
+    {
+        parthenon::crypto::SHA256 h;
+        h.Write(batch.state_root_before.data(), batch.state_root_before.size());
+        h.Write(tx.tx_hash.data(), tx.tx_hash.size());
+        proof.correct_state_root = h.Finalize();
+    }
+
     proof.witness_data = {0x01, 0x02};
     proof.state_proof_before = {0xAA, 0xBB}; // pre-state witness
     proof.state_proof_after = {0xCC, 0xDD};  // post-state witness
