@@ -26,14 +26,14 @@
 // 19.  Chain halt during pending mint: no phantom tokens on resumption
 // 20.  Large-scale wrap/unwrap: supply sums to zero at end
 
+#include "bridge/cross_chain_message.h"
 #include "bridge/l1_l2/l1_l2_bridge.h"
 #include "bridge/l2_l3/l2_l3_bridge.h"
-#include "bridge/cross_chain_message.h"
+#include "bridge_test_helpers.h"
 #include "common/commitments.h"
 #include "layer1-talanton/tx/l1_commitment_validator.h"
 #include "layer2-drachma/consensus/pos_consensus.h"
 #include "layer3-obolos/consensus/pos_consensus.h"
-#include "bridge_test_helpers.h"
 
 #include <cassert>
 #include <cstdint>
@@ -50,32 +50,13 @@ using namespace pantheon;
 static std::string hex64(char c) { return std::string(64, c); }
 
 static bridge::CrossChainMessage build_l1l2_mint_msg(uint64_t nonce, uint64_t amount,
-                                                      uint64_t lock_h, uint8_t hb = 0xAB)
-{
+                                                     uint64_t lock_h, uint8_t hb = 0xAB) {
     bridge::CrossChainMessage m;
-    m.origin_chain_id      = bridge::ChainId::TALANTON;
+    m.origin_chain_id = bridge::ChainId::TALANTON;
     m.destination_chain_id = bridge::ChainId::DRACHMA;
-    m.message_nonce        = nonce;
-    m.block_height         = lock_h;
-    m.timestamp            = 1000000 + lock_h;
-    m.payload.resize(8);
-    for (int i = 0; i < 8; ++i)
-        m.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
-    m.payload_hash.fill(hb);
-    m.state_root = m.payload_hash;
-    bridge_test::bridge_sign_message(m);
-    return m;
-}
-
-static bridge::CrossChainMessage build_l2l3_mint_msg(uint64_t nonce, uint64_t amount,
-                                                      uint64_t lock_h, uint8_t hb = 0xEF)
-{
-    bridge::CrossChainMessage m;
-    m.origin_chain_id      = bridge::ChainId::DRACHMA;
-    m.destination_chain_id = bridge::ChainId::OBOLOS;
-    m.message_nonce        = nonce;
-    m.block_height         = lock_h;
-    m.timestamp            = 3000000 + lock_h;
+    m.message_nonce = nonce;
+    m.block_height = lock_h;
+    m.timestamp = 1000000 + lock_h;
     m.payload.resize(8);
     for (int i = 0; i < 8; ++i)
         m.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
@@ -86,14 +67,13 @@ static bridge::CrossChainMessage build_l2l3_mint_msg(uint64_t nonce, uint64_t am
 }
 
 static bridge::CrossChainMessage build_l2l1_unlock_msg(uint64_t nonce, uint64_t amount,
-                                                         uint64_t lock_h)
-{
+                                                       uint64_t lock_h) {
     bridge::CrossChainMessage m;
-    m.origin_chain_id      = bridge::ChainId::DRACHMA;
+    m.origin_chain_id = bridge::ChainId::DRACHMA;
     m.destination_chain_id = bridge::ChainId::TALANTON;
-    m.message_nonce        = nonce;
-    m.block_height         = lock_h;
-    m.timestamp            = 2000000 + lock_h;
+    m.message_nonce = nonce;
+    m.block_height = lock_h;
+    m.timestamp = 2000000 + lock_h;
     m.payload.resize(8);
     for (int i = 0; i < 8; ++i)
         m.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
@@ -103,62 +83,54 @@ static bridge::CrossChainMessage build_l2l1_unlock_msg(uint64_t nonce, uint64_t 
     return m;
 }
 
-static bridge::BridgeTransferIntent tlt_lock(const std::string& s, uint64_t n, uint64_t a)
-{
+static bridge::BridgeTransferIntent tlt_lock(const std::string &s, uint64_t n, uint64_t a) {
     bridge::BridgeTransferIntent i;
-    i.origin_chain_id      = bridge::ChainId::TALANTON;
+    i.origin_chain_id = bridge::ChainId::TALANTON;
     i.destination_chain_id = bridge::ChainId::DRACHMA;
-    i.sender_address       = s;
-    i.amount_base_units    = a;
-    i.nonce                = n;
+    i.sender_address = s;
+    i.amount_base_units = a;
+    i.nonce = n;
     return i;
 }
 
-static bridge::BridgeTransferIntent wtlt_burn(const std::string& s, uint64_t n, uint64_t a)
-{
+static bridge::BridgeTransferIntent wtlt_burn(const std::string &s, uint64_t n, uint64_t a) {
     bridge::BridgeTransferIntent i;
-    i.origin_chain_id      = bridge::ChainId::DRACHMA;
+    i.origin_chain_id = bridge::ChainId::DRACHMA;
     i.destination_chain_id = bridge::ChainId::TALANTON;
-    i.sender_address       = s;
-    i.amount_base_units    = a;
-    i.nonce                = n;
-    return i;
-}
-
-static bridge::BridgeTransferIntent drc_lock(const std::string& s, uint64_t n, uint64_t a)
-{
-    bridge::BridgeTransferIntent i;
-    i.origin_chain_id      = bridge::ChainId::DRACHMA;
-    i.destination_chain_id = bridge::ChainId::OBOLOS;
-    i.sender_address       = s;
-    i.amount_base_units    = a;
-    i.nonce                = n;
+    i.sender_address = s;
+    i.amount_base_units = a;
+    i.nonce = n;
     return i;
 }
 
 static common::Commitment obolos_commit(uint64_t epoch, uint64_t height,
-                                        std::vector<common::FinalitySignature> sigs = {})
-{
-    if (sigs.empty()) sigs = {{"v1", 100, "sig"}};
+                                        std::vector<common::FinalitySignature> sigs = {}) {
+    if (sigs.empty())
+        sigs = {{"v1", 100, "sig"}};
     return obolos::BuildL3Commitment(epoch, height, hex64('a'), hex64('b'), hex64('c'),
                                      std::move(sigs));
 }
 
 static common::Commitment drachma_commit(uint64_t epoch, uint64_t height,
-                                          std::vector<common::FinalitySignature> sigs = {})
-{
-    if (sigs.empty()) sigs = {{"v3", 100, "sig3"}};
-    return common::Commitment{
-        common::SourceChain::DRACHMA, epoch, height,
-        hex64('d'), hex64('e'), hex64('f'), hex64('9'),
-        std::move(sigs)};
+                                         std::vector<common::FinalitySignature> sigs = {}) {
+    if (sigs.empty())
+        sigs = {{"v3", 100, "sig3"}};
+    return common::Commitment{common::SourceChain::DRACHMA,
+                              epoch,
+                              height,
+                              hex64('d'),
+                              hex64('e'),
+                              hex64('f'),
+                              hex64('9'),
+                              std::move(sigs)};
 }
 
 // ---------------------------------------------------------------------------
 // Scenario 1 — High-load bridge + 30% validator downtime
 // ---------------------------------------------------------------------------
 void scenario_01_high_load_partial_validator_downtime() {
-    std::cout << "[scenario 01] High bridge load + 30% validator downtime: consistency" << std::endl;
+    std::cout << "[scenario 01] High bridge load + 30% validator downtime: consistency"
+              << std::endl;
 
     bridge::l1_l2::BridgeState l1_state, l2_state;
     bridge_test::setup_bridge_state(l1_state);
@@ -167,8 +139,8 @@ void scenario_01_high_load_partial_validator_downtime() {
 
     // N senders each lock 1000 TLT.
     for (int i = 0; i < N; ++i) {
-        auto r = bridge::l1_l2::RecordTltLock(l1_state,
-                     tlt_lock("user" + std::to_string(i), static_cast<uint64_t>(i), 1000));
+        auto r = bridge::l1_l2::RecordTltLock(
+            l1_state, tlt_lock("user" + std::to_string(i), static_cast<uint64_t>(i), 1000));
         assert(r == bridge::l1_l2::BridgeResult::OK);
     }
     assert(l1_state.total_locked_tlt_base_units == static_cast<uint64_t>(N) * 1000);
@@ -199,7 +171,8 @@ void scenario_01_high_load_partial_validator_downtime() {
 // Scenario 2 — TALANTON low-hashpower: L2 checkpoint anchoring still works
 // ---------------------------------------------------------------------------
 void scenario_02_low_hashpower_l1_checkpoint() {
-    std::cout << "[scenario 02] TALANTON low hashpower: L2 checkpoint finality still enforced" << std::endl;
+    std::cout << "[scenario 02] TALANTON low hashpower: L2 checkpoint finality still enforced"
+              << std::endl;
 
     // Even during a TALANTON low-hashpower period, the L2 commitment validator
     // must still check quorum and monotonic height.
@@ -224,7 +197,8 @@ void scenario_02_low_hashpower_l1_checkpoint() {
 // Scenario 3 — Network partition + stale proof from minority relayer
 // ---------------------------------------------------------------------------
 void scenario_03_partition_stale_proof_rejected() {
-    std::cout << "[scenario 03] Network partition: stale commitment from minority side rejected" << std::endl;
+    std::cout << "[scenario 03] Network partition: stale commitment from minority side rejected"
+              << std::endl;
 
     // Majority side finalized height 30.
     // Minority relayer submits a stale commit at height 25 after reconnection.
@@ -237,7 +211,8 @@ void scenario_03_partition_stale_proof_rejected() {
     auto valid = obolos_commit(2, 31, {{"v1", 100, "sig1"}});
     assert(drachma::ValidateL3Commit(valid, 30, 150).valid);
 
-    std::cout << "  ✓ Stale proof from minority relayer rejected after partition heals." << std::endl;
+    std::cout << "  ✓ Stale proof from minority relayer rejected after partition heals."
+              << std::endl;
 }
 
 // ---------------------------------------------------------------------------
@@ -256,24 +231,26 @@ void scenario_04_wrap_unwrap_cycling() {
         uint64_t lock_nonce = static_cast<uint64_t>(cycle) * 2 + 1;
 
         // Lock.
-        assert(bridge::l1_l2::RecordTltLock(l1s, tlt_lock("cycler", lock_nonce, AMT))
-               == bridge::l1_l2::BridgeResult::OK);
+        assert(bridge::l1_l2::RecordTltLock(l1s, tlt_lock("cycler", lock_nonce, AMT)) ==
+               bridge::l1_l2::BridgeResult::OK);
         l2s.total_locked_tlt_base_units = l1s.total_locked_tlt_base_units;
 
         // Mint.
         auto mint_msg = build_l1l2_mint_msg(lock_nonce, AMT, 100 + lock_nonce,
-                                             static_cast<uint8_t>(0x20 + cycle));
-        assert(bridge::l1_l2::ProcessTltLockMint(l2s, mint_msg,
-               110 + lock_nonce, 100 + lock_nonce) == bridge::l1_l2::BridgeResult::OK);
+                                            static_cast<uint8_t>(0x20 + cycle));
+        assert(
+            bridge::l1_l2::ProcessTltLockMint(l2s, mint_msg, 110 + lock_nonce, 100 + lock_nonce) ==
+            bridge::l1_l2::BridgeResult::OK);
 
         // Burn on L2.
-        assert(bridge::l1_l2::RecordWtltBurn(l2s, wtlt_burn("cycler", lock_nonce, AMT))
-               == bridge::l1_l2::BridgeResult::OK);
+        assert(bridge::l1_l2::RecordWtltBurn(l2s, wtlt_burn("cycler", lock_nonce, AMT)) ==
+               bridge::l1_l2::BridgeResult::OK);
 
         // Unlock on L1.
         auto unlock_msg = build_l2l1_unlock_msg(lock_nonce, AMT, 200 + lock_nonce);
-        assert(bridge::l1_l2::ProcessWtltBurnUnlock(l1s, unlock_msg,
-               210 + lock_nonce, 200 + lock_nonce) == bridge::l1_l2::BridgeResult::OK);
+        assert(bridge::l1_l2::ProcessWtltBurnUnlock(l1s, unlock_msg, 210 + lock_nonce,
+                                                    200 + lock_nonce) ==
+               bridge::l1_l2::BridgeResult::OK);
     }
 
     // After CYCLES complete wrap/unwrap round-trips, supply must be zero on both sides.
@@ -287,7 +264,8 @@ void scenario_04_wrap_unwrap_cycling() {
 // Scenario 5 — Sequential replay from multiple attackers
 // ---------------------------------------------------------------------------
 void scenario_05_multi_attacker_replay() {
-    std::cout << "[scenario 05] Sequential replay attack from multiple independent attackers" << std::endl;
+    std::cout << "[scenario 05] Sequential replay attack from multiple independent attackers"
+              << std::endl;
 
     bridge::l1_l2::BridgeState state;
     bridge_test::setup_bridge_state(state);
@@ -295,27 +273,27 @@ void scenario_05_multi_attacker_replay() {
 
     // Attacker A processes nonce 1 legitimately.
     auto msgA = build_l1l2_mint_msg(1, 1000, 100, 0xA1);
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msgA, 110, 100)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msgA, 110, 100) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // Attacker A tries to replay nonce 1 → rejected.
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msgA, 111, 100)
-           == bridge::l1_l2::BridgeResult::ERR_REPLAY);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msgA, 111, 100) ==
+           bridge::l1_l2::BridgeResult::ERR_REPLAY);
 
     // Attacker B processes nonce 2 legitimately.
     auto msgB = build_l1l2_mint_msg(2, 1000, 105, 0xB2);
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msgB, 115, 105)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msgB, 115, 105) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // Attacker B tries to replay nonce 2 → rejected.
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msgB, 120, 105)
-           == bridge::l1_l2::BridgeResult::ERR_REPLAY);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msgB, 120, 105) ==
+           bridge::l1_l2::BridgeResult::ERR_REPLAY);
 
     // Attacker C sends nonce 1 again with a different payload_hash trick → still rejected
     // (nonce key is "1001:1" regardless of payload_hash).
-    auto msgC = build_l1l2_mint_msg(1, 1000, 100, 0xC3);  // Different hash byte but same nonce
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msgC, 130, 100)
-           == bridge::l1_l2::BridgeResult::ERR_REPLAY);
+    auto msgC = build_l1l2_mint_msg(1, 1000, 100, 0xC3); // Different hash byte but same nonce
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msgC, 130, 100) ==
+           bridge::l1_l2::BridgeResult::ERR_REPLAY);
 
     // Total minted: only 2000 (not 3000 or more).
     assert(state.total_minted_wtlt_base_units == 2000);
@@ -332,18 +310,18 @@ void scenario_06_bridge_recovery_no_phantom_tokens() {
     // Before crash: 3000 locked, 2000 minted.
     bridge::l1_l2::BridgeState recovered;
     bridge_test::setup_bridge_state(recovered);
-    recovered.total_locked_tlt_base_units  = 3000;
+    recovered.total_locked_tlt_base_units = 3000;
     recovered.total_minted_wtlt_base_units = 2000;
 
     // On recovery, the in-flight mint message (nonce 99, amount 1000) arrives.
     auto msg = build_l1l2_mint_msg(99, 1000, 500, 0x77);
-    assert(bridge::l1_l2::ProcessTltLockMint(recovered, msg, 510, 500)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(recovered, msg, 510, 500) ==
+           bridge::l1_l2::BridgeResult::OK);
     assert(recovered.total_minted_wtlt_base_units == 3000);
 
     // Replay of the same in-flight message after recovery → rejected.
-    assert(bridge::l1_l2::ProcessTltLockMint(recovered, msg, 515, 500)
-           == bridge::l1_l2::BridgeResult::ERR_REPLAY);
+    assert(bridge::l1_l2::ProcessTltLockMint(recovered, msg, 515, 500) ==
+           bridge::l1_l2::BridgeResult::ERR_REPLAY);
 
     // No phantom tokens: minted == locked (all in-flight messages settled).
     assert(recovered.total_minted_wtlt_base_units == recovered.total_locked_tlt_base_units);
@@ -384,15 +362,16 @@ void scenario_08_double_slash() {
     drachma::Validator v{"bad", 100000};
     uint64_t initial = v.stake;
 
-    auto e1 = drachma::ApplySlashing(v, "double_sign");   // 5%: −5000
-    auto e2 = drachma::ApplySlashing(v, "equivocation");  // 10% of 95000: −9500
+    auto e1 = drachma::ApplySlashing(v, "double_sign");  // 5%: −5000
+    auto e2 = drachma::ApplySlashing(v, "equivocation"); // 10% of 95000: −9500
 
     assert(e1.slashed_amount == 5000);
     assert(e2.slashed_amount == 9500);
     assert(v.stake == initial - 5000 - 9500);
     assert(v.stake < initial);
 
-    std::cout << "  ✓ Both slash events applied; total slashed = " << (5000 + 9500) << "." << std::endl;
+    std::cout << "  ✓ Both slash events applied; total slashed = " << (5000 + 9500) << "."
+              << std::endl;
 }
 
 // ---------------------------------------------------------------------------
@@ -403,39 +382,41 @@ void scenario_09_burn_then_relock_nonce_isolation() {
 
     // In the protocol, L1 and L2 bridge sides each have their OWN state.
     // RecordTltLock (L1 side) and RecordWtltBurn (L2 side) track nonces independently.
-    bridge::l1_l2::BridgeState l1_state;  // L1 side: handles locks and unlock proofs
-    bridge::l1_l2::BridgeState l2_state;  // L2 side: handles mints and burns
+    bridge::l1_l2::BridgeState l1_state; // L1 side: handles locks and unlock proofs
+    bridge::l1_l2::BridgeState l2_state; // L2 side: handles mints and burns
     bridge_test::setup_bridge_state(l1_state);
     bridge_test::setup_bridge_state(l2_state);
 
     // Alice locks TLT with nonce 1 on L1.
-    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("alice", 1, 1000))
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("alice", 1, 1000)) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // Alice burns wTLT with nonce 1 on L2 side (separate state — no nonce collision).
-    assert(bridge::l1_l2::RecordWtltBurn(l2_state, wtlt_burn("alice", 1, 1000))
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::RecordWtltBurn(l2_state, wtlt_burn("alice", 1, 1000)) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // Alice locks again with nonce 2 on L1 → succeeds (nonce 2 is fresh on L1 state).
-    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("alice", 2, 1000))
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("alice", 2, 1000)) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // Alice tries to lock again with nonce 1 on L1 → replayed on L1 state → rejected.
-    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("alice", 1, 1000))
-           == bridge::l1_l2::BridgeResult::ERR_REPLAY);
+    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("alice", 1, 1000)) ==
+           bridge::l1_l2::BridgeResult::ERR_REPLAY);
 
     // Alice tries to burn again with nonce 1 on L2 → replayed on L2 state → rejected.
-    assert(bridge::l1_l2::RecordWtltBurn(l2_state, wtlt_burn("alice", 1, 1000))
-           == bridge::l1_l2::BridgeResult::ERR_REPLAY);
+    assert(bridge::l1_l2::RecordWtltBurn(l2_state, wtlt_burn("alice", 1, 1000)) ==
+           bridge::l1_l2::BridgeResult::ERR_REPLAY);
 
-    std::cout << "  ✓ L1 and L2 nonce spaces are independent; replays rejected on both sides." << std::endl;
+    std::cout << "  ✓ L1 and L2 nonce spaces are independent; replays rejected on both sides."
+              << std::endl;
 }
 
 // ---------------------------------------------------------------------------
 // Scenario 10 — Stale validator set: commitment replayed after rotation
 // ---------------------------------------------------------------------------
 void scenario_10_stale_validator_set_replay() {
-    std::cout << "[scenario 10] Stale validator set: old commitment replayed at new height" << std::endl;
+    std::cout << "[scenario 10] Stale validator set: old commitment replayed at new height"
+              << std::endl;
 
     // Old commitment from epoch 1 that was accepted.
     auto old_commit = obolos_commit(1, 10, {{"v1", 100, "old_sig"}});
@@ -450,14 +431,16 @@ void scenario_10_stale_validator_set_replay() {
     auto new_commit = obolos_commit(1, 11, {{"v1", 100, "new_sig"}});
     assert(obolos::ValidateL3Finality(new_commit, 10, 150).valid);
 
-    std::cout << "  ✓ Stale commitment replay at same height rejected; new height accepted." << std::endl;
+    std::cout << "  ✓ Stale commitment replay at same height rejected; new height accepted."
+              << std::endl;
 }
 
 // ---------------------------------------------------------------------------
 // Scenario 11 — Tampered upstream_commitment_hash in DRACHMA commit
 // ---------------------------------------------------------------------------
 void scenario_11_tampered_upstream_hash() {
-    std::cout << "[scenario 11] Tampered upstream_commitment_hash in DRACHMA commit rejected" << std::endl;
+    std::cout << "[scenario 11] Tampered upstream_commitment_hash in DRACHMA commit rejected"
+              << std::endl;
 
     // A valid DRACHMA commitment with a well-formed upstream_commitment_hash.
     auto good = drachma_commit(1, 20);
@@ -465,7 +448,8 @@ void scenario_11_tampered_upstream_hash() {
 
     // Attacker changes the upstream_commitment_hash to a non-hex string.
     common::Commitment tampered = good;
-    tampered.upstream_commitment_hash = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
+    tampered.upstream_commitment_hash =
+        "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
     assert(!talanton::ValidateL2Commit(tampered, {10}, 150).valid);
 
     // Attacker sets upstream_commitment_hash to wrong length.
@@ -479,7 +463,8 @@ void scenario_11_tampered_upstream_hash() {
 // Scenario 12 — Out-of-order delivery: mint arrives before lock height confirmed
 // ---------------------------------------------------------------------------
 void scenario_12_out_of_order_mint() {
-    std::cout << "[scenario 12] Out-of-order delivery: mint before L1 confirmation depth" << std::endl;
+    std::cout << "[scenario 12] Out-of-order delivery: mint before L1 confirmation depth"
+              << std::endl;
 
     bridge::l1_l2::BridgeState state;
     bridge_test::setup_bridge_state(state);
@@ -488,12 +473,12 @@ void scenario_12_out_of_order_mint() {
     auto msg = build_l1l2_mint_msg(1, 2000, 500);
 
     // Relayer delivers mint message only 3 blocks after lock (< 6 required).
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msg, 503, 500)
-           == bridge::l1_l2::BridgeResult::ERR_INSUFFICIENT_CONF);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msg, 503, 500) ==
+           bridge::l1_l2::BridgeResult::ERR_INSUFFICIENT_CONF);
 
     // After sufficient confirmation, delivery is accepted.
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msg, 506, 500)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msg, 506, 500) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     std::cout << "  ✓ Out-of-order mint blocked until confirmation depth met." << std::endl;
 }
@@ -507,7 +492,7 @@ void scenario_13_n_sender_max_locks() {
     bridge::l1_l2::BridgeState state;
     bridge_test::setup_bridge_state(state);
     const int N = 10;
-    const uint64_t PER_SENDER = 1000000000ULL;  // 1 billion base units each
+    const uint64_t PER_SENDER = 1000000000ULL; // 1 billion base units each
 
     for (int i = 0; i < N; ++i) {
         auto r = bridge::l1_l2::RecordTltLock(
@@ -516,8 +501,8 @@ void scenario_13_n_sender_max_locks() {
     }
     assert(state.total_locked_tlt_base_units == static_cast<uint64_t>(N) * PER_SENDER);
 
-    std::cout << "  ✓ " << N << " senders × " << PER_SENDER << " = " <<
-              static_cast<uint64_t>(N) * PER_SENDER << " total locked." << std::endl;
+    std::cout << "  ✓ " << N << " senders × " << PER_SENDER << " = "
+              << static_cast<uint64_t>(N) * PER_SENDER << " total locked." << std::endl;
 }
 
 // ---------------------------------------------------------------------------
@@ -535,24 +520,25 @@ void scenario_14_burn_proof_wrong_endpoint() {
 
     // A DRACHMA→TALANTON burn message (correct for L1 bridge).
     bridge::CrossChainMessage burn_msg;
-    burn_msg.origin_chain_id      = bridge::ChainId::DRACHMA;
+    burn_msg.origin_chain_id = bridge::ChainId::DRACHMA;
     burn_msg.destination_chain_id = bridge::ChainId::TALANTON;
-    burn_msg.message_nonce        = 1;
-    burn_msg.block_height         = 200;
+    burn_msg.message_nonce = 1;
+    burn_msg.block_height = 200;
     burn_msg.payload.resize(8);
     for (int i = 0; i < 8; ++i)
-        burn_msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((1000ULL >> (8 * i)) & 0xFF);
+        burn_msg.payload[static_cast<size_t>(i)] =
+            static_cast<uint8_t>((1000ULL >> (8 * i)) & 0xFF);
     burn_msg.payload_hash.fill(0xBB);
     burn_msg.state_root = burn_msg.payload_hash;
     bridge_test::bridge_sign_message(burn_msg);
 
     // Correct endpoint: L1 bridge unlock → should succeed.
-    assert(bridge::l1_l2::ProcessWtltBurnUnlock(l1_state, burn_msg, 210, 200)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessWtltBurnUnlock(l1_state, burn_msg, 210, 200) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // Wrong endpoint: submitted to L2↔L3 burn unlock function → wrong chain IDs.
-    assert(bridge::l2_l3::ProcessWdrcBurnUnlock(l2_state, burn_msg, 215, 200)
-           == bridge::l2_l3::BridgeResult::ERR_INVALID_CHAIN);
+    assert(bridge::l2_l3::ProcessWdrcBurnUnlock(l2_state, burn_msg, 215, 200) ==
+           bridge::l2_l3::BridgeResult::ERR_INVALID_CHAIN);
 
     std::cout << "  ✓ Burn proof rejected by wrong bridge endpoint." << std::endl;
 }
@@ -561,7 +547,8 @@ void scenario_14_burn_proof_wrong_endpoint() {
 // Scenario 15 — Message with no payload (zero-length): missing amount info
 // ---------------------------------------------------------------------------
 void scenario_15_no_payload_missing_amount() {
-    std::cout << "[scenario 15] Message with no payload: zero amount decoded, no supply change" << std::endl;
+    std::cout << "[scenario 15] Message with no payload: zero amount decoded, no supply change"
+              << std::endl;
 
     bridge::l1_l2::BridgeState state;
     bridge_test::setup_bridge_state(state);
@@ -569,7 +556,7 @@ void scenario_15_no_payload_missing_amount() {
 
     // Message with empty payload (no amount encoded).
     auto msg = build_l1l2_mint_msg(1, 0, 100);
-    msg.payload.clear();  // Zero length payload → decode_amount_from_payload returns 0
+    msg.payload.clear(); // Zero length payload → decode_amount_from_payload returns 0
 
     // The proof still passes (payload_hash was set from the original build); let's fix:
     msg.payload_hash.fill(0x00);
@@ -582,7 +569,7 @@ void scenario_15_no_payload_missing_amount() {
     // Should succeed (no error for zero decoded amount when total > minted),
     // but no supply change because amount == 0.
     assert(r == bridge::l1_l2::BridgeResult::OK);
-    assert(state.total_minted_wtlt_base_units == 0);  // No tokens minted (amount was 0)
+    assert(state.total_minted_wtlt_base_units == 0); // No tokens minted (amount was 0)
 
     std::cout << "  ✓ Zero-payload message produces no supply change." << std::endl;
 }
@@ -598,11 +585,12 @@ void scenario_16_validator_stake_exhaustion() {
     // Apply equivocation slashes until stake reaches zero.
     for (int i = 0; i < 200; ++i) {
         drachma::ApplySlashing(v, "equivocation");
-        if (v.stake == 0) break;
+        if (v.stake == 0)
+            break;
     }
 
     // Stake must be zero or very small (integer truncation).
-    assert(v.stake <= 10000);  // Never exceeded initial
+    assert(v.stake <= 10000); // Never exceeded initial
 
     // A zero-stake validator should not cause arithmetic issues.
     if (v.stake == 0) {
@@ -630,12 +618,13 @@ void scenario_17_competing_commitments() {
     // Both forks pass validation individually (finality check is stateless).
     // The chain must reject the second one based on the last_finalized_height
     // being updated after accepting fork A.
-    assert(obolos::ValidateL3Finality(fork_b, 5, 150).valid);  // Valid individually
+    assert(obolos::ValidateL3Finality(fork_b, 5, 150).valid); // Valid individually
 
     // After fork A is accepted (last_finalized_height = 10), fork B must fail.
     assert(!obolos::ValidateL3Finality(fork_b, 10, 150).valid);
 
-    std::cout << "  ✓ Second competing commit at same height rejected after first accepted." << std::endl;
+    std::cout << "  ✓ Second competing commit at same height rejected after first accepted."
+              << std::endl;
 }
 
 // ---------------------------------------------------------------------------
@@ -650,34 +639,34 @@ void scenario_18_empty_proof_leaf_equals_root() {
 
     // Correct: payload_hash == state_root with empty proof → passes.
     bridge::CrossChainMessage valid_msg;
-    valid_msg.origin_chain_id      = bridge::ChainId::TALANTON;
+    valid_msg.origin_chain_id = bridge::ChainId::TALANTON;
     valid_msg.destination_chain_id = bridge::ChainId::DRACHMA;
-    valid_msg.message_nonce        = 1;
-    valid_msg.block_height         = 100;
+    valid_msg.message_nonce = 1;
+    valid_msg.block_height = 100;
     valid_msg.payload.resize(8);
     uint64_t AMT = 1000;
     for (int i = 0; i < 8; ++i)
         valid_msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((AMT >> (8 * i)) & 0xFF);
     valid_msg.payload_hash.fill(0x55);
-    valid_msg.state_root = valid_msg.payload_hash;  // leaf == root: empty proof is valid
+    valid_msg.state_root = valid_msg.payload_hash; // leaf == root: empty proof is valid
     valid_msg.proof.clear();
     bridge_test::bridge_sign_message(valid_msg);
 
-    assert(bridge::l1_l2::ProcessTltLockMint(state, valid_msg, 110, 100)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, valid_msg, 110, 100) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // Incorrect: payload_hash ≠ state_root with empty proof → fails.
     bridge::CrossChainMessage invalid_msg = valid_msg;
-    invalid_msg.message_nonce = 2;  // Different nonce
+    invalid_msg.message_nonce = 2; // Different nonce
     invalid_msg.payload_hash.fill(0x55);
-    invalid_msg.state_root.fill(0x66);  // Mismatch!
+    invalid_msg.state_root.fill(0x66); // Mismatch!
     invalid_msg.proof.clear();
     // Re-sign after modifying payload_hash and state_root so quorum check passes.
     invalid_msg.validator_signatures.clear();
     bridge_test::bridge_sign_message(invalid_msg);
 
-    assert(bridge::l1_l2::ProcessTltLockMint(state, invalid_msg, 120, 100)
-           == bridge::l1_l2::BridgeResult::ERR_INVALID_PROOF);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, invalid_msg, 120, 100) ==
+           bridge::l1_l2::BridgeResult::ERR_INVALID_PROOF);
 
     std::cout << "  ✓ Empty proof accepted iff payload_hash == state_root." << std::endl;
 }
@@ -693,8 +682,8 @@ void scenario_19_chain_halt_pending_mint() {
     bridge_test::setup_bridge_state(l2_state);
 
     // Lock committed on L1 before halt.
-    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("dana", 1, 3000))
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::RecordTltLock(l1_state, tlt_lock("dana", 1, 3000)) ==
+           bridge::l1_l2::BridgeResult::OK);
 
     // L2 was processing a different mint (nonce 99) when it halted.
     l2_state.total_locked_tlt_base_units = 3000;
@@ -705,14 +694,14 @@ void scenario_19_chain_halt_pending_mint() {
     l2_state.processed_nonce_keys.insert("1001:99");
 
     auto msg_99 = build_l1l2_mint_msg(99, 1000, 400, 0x88);
-    assert(bridge::l1_l2::ProcessTltLockMint(l2_state, msg_99, 410, 400)
-           == bridge::l1_l2::BridgeResult::ERR_REPLAY);
-    assert(l2_state.total_minted_wtlt_base_units == 0);  // No phantom tokens
+    assert(bridge::l1_l2::ProcessTltLockMint(l2_state, msg_99, 410, 400) ==
+           bridge::l1_l2::BridgeResult::ERR_REPLAY);
+    assert(l2_state.total_minted_wtlt_base_units == 0); // No phantom tokens
 
     // New mint (nonce 1) for dana's lock is processed normally after halt recovery.
     auto msg_1 = build_l1l2_mint_msg(1, 3000, 450, 0x89);
-    assert(bridge::l1_l2::ProcessTltLockMint(l2_state, msg_1, 460, 450)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(l2_state, msg_1, 460, 450) ==
+           bridge::l1_l2::BridgeResult::OK);
     assert(l2_state.total_minted_wtlt_base_units == 3000);
 
     std::cout << "  ✓ No phantom tokens after chain halt; replay prevented." << std::endl;
@@ -739,9 +728,9 @@ void scenario_20_large_scale_round_trip() {
 
     // All users mint wTLT on L2.
     for (int i = 0; i < N_USERS; ++i) {
-        auto m = build_l1l2_mint_msg(static_cast<uint64_t>(i), PER_USER,
-                                     100 + static_cast<uint64_t>(i),
-                                     static_cast<uint8_t>(0x30 + (i % 0xBF)));
+        auto m =
+            build_l1l2_mint_msg(static_cast<uint64_t>(i), PER_USER, 100 + static_cast<uint64_t>(i),
+                                static_cast<uint8_t>(0x30 + (i % 0xBF)));
         bridge::l1_l2::ProcessTltLockMint(l2_state, m, 110 + i, 100 + i);
     }
     assert(l2_state.total_minted_wtlt_base_units == static_cast<uint64_t>(N_USERS) * PER_USER);
@@ -768,8 +757,7 @@ void scenario_20_large_scale_round_trip() {
 // main
 // ---------------------------------------------------------------------------
 
-int main()
-{
+int main() {
     std::cout << "=== PantheonChain Composite Chaos Scenarios (Phase J) ===" << std::endl;
     std::cout << std::endl;
 

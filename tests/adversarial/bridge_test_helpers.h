@@ -13,7 +13,7 @@
 // remaining reproducible.
 
 #ifdef PANTHEON_PRODUCTION_BUILD
-#  error "bridge_test_helpers.h must not be included in production builds."
+#error "bridge_test_helpers.h must not be included in production builds."
 #endif
 
 #include "bridge/cross_chain_message.h"
@@ -24,6 +24,7 @@
 
 #include <array>
 #include <cstdint>
+#include <cstdlib>
 #include <vector>
 
 namespace bridge_test {
@@ -31,27 +32,25 @@ namespace bridge_test {
 // Deterministic test private key (non-zero, well below curve order).
 // seckey = 0x00...0001 (big-endian, value = 1)
 static const parthenon::crypto::Schnorr::PrivateKey kBridgeTestPrivKey = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 };
 
 // Derive the x-only (32-byte BIP-340) public key from kBridgeTestPrivKey.
-inline parthenon::crypto::Schnorr::PublicKey bridge_test_pubkey()
-{
+inline parthenon::crypto::Schnorr::PublicKey bridge_test_pubkey() {
     auto opt = parthenon::crypto::Schnorr::GetPublicKey(kBridgeTestPrivKey);
     // key is always valid; abort loudly if stub misbehaves
-    if (!opt) { __builtin_trap(); }
+    if (!opt) {
+        std::abort();
+    }
     return *opt;
 }
 
 // Compute the canonical message commitment hash (same formula as VerifyValidatorQuorum).
 // SHA256d(origin_chain_id_LE32 || dest_chain_id_LE32 || nonce_LE64
 //         || payload_hash_32   || state_root_32)
-inline pantheon::bridge::Hash256 bridge_commit_hash(
-    const pantheon::bridge::CrossChainMessage& msg)
-{
+inline pantheon::bridge::Hash256
+bridge_commit_hash(const pantheon::bridge::CrossChainMessage &msg) {
     std::vector<uint8_t> data;
     data.reserve(80);
 
@@ -75,13 +74,16 @@ inline pantheon::bridge::Hash256 bridge_commit_hash(
 
 // Sign a CrossChainMessage with the test private key and append the
 // resulting ValidatorSignature to message.validator_signatures.
-inline void bridge_sign_message(pantheon::bridge::CrossChainMessage& msg)
-{
+inline void bridge_sign_message(pantheon::bridge::CrossChainMessage &msg) {
     pantheon::bridge::Hash256 commit = bridge_commit_hash(msg);
     auto sig_opt = parthenon::crypto::Schnorr::Sign(kBridgeTestPrivKey, commit.data());
-    if (!sig_opt) { __builtin_trap(); }
+    if (!sig_opt) {
+        std::abort();
+    }
     auto pk_opt = parthenon::crypto::Schnorr::GetPublicKey(kBridgeTestPrivKey);
-    if (!pk_opt) { __builtin_trap(); }
+    if (!pk_opt) {
+        std::abort();
+    }
 
     pantheon::bridge::ValidatorSignature vs;
     vs.signature = *sig_opt;
@@ -92,17 +94,15 @@ inline void bridge_sign_message(pantheon::bridge::CrossChainMessage& msg)
 }
 
 // Configure a L1↔L2 BridgeState to trust the test validator and require 1 signature.
-inline void setup_bridge_state(pantheon::bridge::l1_l2::BridgeState& state)
-{
+inline void setup_bridge_state(pantheon::bridge::l1_l2::BridgeState &state) {
     state.trusted_validator_pubkeys.insert(bridge_test_pubkey());
     state.min_validator_sigs = 1;
 }
 
 // Configure a L2↔L3 BridgeState to trust the test validator and require 1 signature.
-inline void setup_bridge_state(pantheon::bridge::l2_l3::BridgeState& state)
-{
+inline void setup_bridge_state(pantheon::bridge::l2_l3::BridgeState &state) {
     state.trusted_validator_pubkeys.insert(bridge_test_pubkey());
     state.min_validator_sigs = 1;
 }
 
-}  // namespace bridge_test
+} // namespace bridge_test
