@@ -10,13 +10,13 @@
 //   • multiple parallel senders tracked independently
 //   • recovery: supply invariant holds after simulated bridge-state restart
 
+#include "bridge/cross_chain_message.h"
 #include "bridge/l1_l2/l1_l2_bridge.h"
 #include "bridge/l2_l3/l2_l3_bridge.h"
-#include "bridge/cross_chain_message.h"
+#include "bridge_test_helpers.h"
+#include "common/commitments.h"
 #include "layer2-drachma/consensus/pos_consensus.h"
 #include "layer3-obolos/consensus/pos_consensus.h"
-#include "common/commitments.h"
-#include "bridge_test_helpers.h"
 
 #include <cassert>
 #include <cstdint>
@@ -30,33 +30,31 @@ using namespace pantheon;
 // Helpers
 // ---------------------------------------------------------------------------
 
-static bridge::CrossChainMessage make_tlt_mint_msg(uint64_t nonce, uint64_t amount, uint64_t lock_height,
-                                           uint8_t hash_byte = 0xAB)
-{
+static bridge::CrossChainMessage make_tlt_mint_msg(uint64_t nonce, uint64_t amount,
+                                                   uint64_t lock_height, uint8_t hash_byte = 0xAB) {
     bridge::CrossChainMessage msg;
-    msg.origin_chain_id      = bridge::ChainId::TALANTON;
+    msg.origin_chain_id = bridge::ChainId::TALANTON;
     msg.destination_chain_id = bridge::ChainId::DRACHMA;
-    msg.message_nonce        = nonce;
-    msg.block_height         = lock_height;
-    msg.timestamp            = 1000000 + lock_height;
+    msg.message_nonce = nonce;
+    msg.block_height = lock_height;
+    msg.timestamp = 1000000 + lock_height;
     msg.payload.resize(8);
     for (int i = 0; i < 8; ++i)
         msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
     msg.payload_hash.fill(hash_byte);
-    msg.state_root = msg.payload_hash;  // empty proof: leaf == root
+    msg.state_root = msg.payload_hash; // empty proof: leaf == root
     bridge_test::bridge_sign_message(msg);
     return msg;
 }
 
-static bridge::CrossChainMessage make_drc_mint_msg(uint64_t nonce, uint64_t amount, uint64_t lock_height,
-                                           uint8_t hash_byte = 0xEF)
-{
+static bridge::CrossChainMessage make_drc_mint_msg(uint64_t nonce, uint64_t amount,
+                                                   uint64_t lock_height, uint8_t hash_byte = 0xEF) {
     bridge::CrossChainMessage msg;
-    msg.origin_chain_id      = bridge::ChainId::DRACHMA;
+    msg.origin_chain_id = bridge::ChainId::DRACHMA;
     msg.destination_chain_id = bridge::ChainId::OBOLOS;
-    msg.message_nonce        = nonce;
-    msg.block_height         = lock_height;
-    msg.timestamp            = 3000000 + lock_height;
+    msg.message_nonce = nonce;
+    msg.block_height = lock_height;
+    msg.timestamp = 3000000 + lock_height;
     msg.payload.resize(8);
     for (int i = 0; i < 8; ++i)
         msg.payload[static_cast<size_t>(i)] = static_cast<uint8_t>((amount >> (8 * i)) & 0xFF);
@@ -66,27 +64,25 @@ static bridge::CrossChainMessage make_drc_mint_msg(uint64_t nonce, uint64_t amou
     return msg;
 }
 
-static bridge::BridgeTransferIntent make_tlt_lock(const std::string& sender,
-                                                   uint64_t nonce, uint64_t amount)
-{
+static bridge::BridgeTransferIntent make_tlt_lock(const std::string &sender, uint64_t nonce,
+                                                  uint64_t amount) {
     bridge::BridgeTransferIntent intent;
-    intent.origin_chain_id      = bridge::ChainId::TALANTON;
+    intent.origin_chain_id = bridge::ChainId::TALANTON;
     intent.destination_chain_id = bridge::ChainId::DRACHMA;
-    intent.sender_address       = sender;
-    intent.amount_base_units    = amount;
-    intent.nonce                = nonce;
+    intent.sender_address = sender;
+    intent.amount_base_units = amount;
+    intent.nonce = nonce;
     return intent;
 }
 
-static bridge::BridgeTransferIntent make_wtlt_burn(const std::string& sender,
-                                                    uint64_t nonce, uint64_t amount)
-{
+static bridge::BridgeTransferIntent make_wtlt_burn(const std::string &sender, uint64_t nonce,
+                                                   uint64_t amount) {
     bridge::BridgeTransferIntent intent;
-    intent.origin_chain_id      = bridge::ChainId::DRACHMA;
+    intent.origin_chain_id = bridge::ChainId::DRACHMA;
     intent.destination_chain_id = bridge::ChainId::TALANTON;
-    intent.sender_address       = sender;
-    intent.amount_base_units    = amount;
-    intent.nonce                = nonce;
+    intent.sender_address = sender;
+    intent.amount_base_units = amount;
+    intent.nonce = nonce;
     return intent;
 }
 
@@ -118,7 +114,7 @@ void test_lock_only_does_not_create_wrapped_supply() {
     auto result = bridge::l1_l2::RecordTltLock(state, make_tlt_lock("alice", 1, 5000));
     assert(result == bridge::l1_l2::BridgeResult::OK);
     assert(state.total_locked_tlt_base_units == 5000);
-    assert(state.total_minted_wtlt_base_units == 0);  // No mint has happened
+    assert(state.total_minted_wtlt_base_units == 0); // No mint has happened
 
     std::cout << "  ✓ Lock records locked supply without creating wrapped supply." << std::endl;
 }
@@ -133,14 +129,14 @@ void test_minted_never_exceeds_locked() {
 
     // Mint exactly the locked amount — should succeed.
     auto msg = make_tlt_mint_msg(1, LOCKED, 100);
-    assert(bridge::l1_l2::ProcessTltLockMint(state, msg, 110, 100)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(state, msg, 110, 100) ==
+           bridge::l1_l2::BridgeResult::OK);
     assert(state.total_minted_wtlt_base_units == LOCKED);
     assert(state.total_minted_wtlt_base_units <= state.total_locked_tlt_base_units);
 
     // Attempt to mint one more unit — invariant violation, must be rejected.
-    state.total_locked_tlt_base_units = LOCKED;  // Reset locked to same value
-    auto msg2 = make_tlt_mint_msg(2, 1, 100, 0xBB);  // 1 more on top of LOCKED already minted
+    state.total_locked_tlt_base_units = LOCKED;     // Reset locked to same value
+    auto msg2 = make_tlt_mint_msg(2, 1, 100, 0xBB); // 1 more on top of LOCKED already minted
     auto r2 = bridge::l1_l2::ProcessTltLockMint(state, msg2, 110, 100);
     assert(r2 == bridge::l1_l2::BridgeResult::ERR_SUPPLY_OVERFLOW);
 
@@ -152,7 +148,7 @@ void test_burn_reduces_minted_supply() {
 
     bridge::l1_l2::BridgeState state;
     bridge_test::setup_bridge_state(state);
-    state.total_locked_tlt_base_units  = 5000;
+    state.total_locked_tlt_base_units = 5000;
     state.total_minted_wtlt_base_units = 5000;
 
     auto burn = make_wtlt_burn("alice", 1, 2000);
@@ -175,11 +171,11 @@ void test_unlock_reduces_locked_supply() {
     state.total_locked_tlt_base_units = 4000;
 
     bridge::CrossChainMessage msg;
-    msg.origin_chain_id      = bridge::ChainId::DRACHMA;
+    msg.origin_chain_id = bridge::ChainId::DRACHMA;
     msg.destination_chain_id = bridge::ChainId::TALANTON;
-    msg.message_nonce        = 1;
-    msg.block_height         = 200;
-    msg.timestamp            = 2000200;
+    msg.message_nonce = 1;
+    msg.block_height = 200;
+    msg.timestamp = 2000200;
     msg.payload.resize(8);
     const uint64_t AMT = 1500;
     for (int i = 0; i < 8; ++i)
@@ -188,8 +184,8 @@ void test_unlock_reduces_locked_supply() {
     msg.state_root = msg.payload_hash;
     bridge_test::bridge_sign_message(msg);
 
-    assert(bridge::l1_l2::ProcessWtltBurnUnlock(state, msg, 210, 200)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessWtltBurnUnlock(state, msg, 210, 200) ==
+           bridge::l1_l2::BridgeResult::OK);
     assert(state.total_locked_tlt_base_units == 4000 - 1500);
 
     std::cout << "  ✓ Unlock correctly reduces locked supply." << std::endl;
@@ -225,10 +221,10 @@ void test_multiple_senders_independent() {
     const uint64_t A_AMT = 1000, B_AMT = 2500;
 
     // Both alice and bob lock tokens.
-    assert(bridge::l1_l2::RecordTltLock(state, make_tlt_lock("alice", 1, A_AMT))
-           == bridge::l1_l2::BridgeResult::OK);
-    assert(bridge::l1_l2::RecordTltLock(state, make_tlt_lock("bob",   1, B_AMT))
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::RecordTltLock(state, make_tlt_lock("alice", 1, A_AMT)) ==
+           bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::RecordTltLock(state, make_tlt_lock("bob", 1, B_AMT)) ==
+           bridge::l1_l2::BridgeResult::OK);
     assert(state.total_locked_tlt_base_units == A_AMT + B_AMT);
 
     // Alice tries to replay her nonce 1 — must be rejected (different sender, same nonce key).
@@ -271,7 +267,7 @@ void test_slashing_never_creates_tokens() {
         // If stake is 0, 10% rounds down to 0 so it stays at 0.
     }
     // Stake should have converged to 0 or a very small value.
-    assert(tiny.stake <= 5);  // Never exceeded initial
+    assert(tiny.stake <= 5); // Never exceeded initial
 
     std::cout << "  ✓ Slashing reduces stake; no token creation." << std::endl;
 }
@@ -285,8 +281,8 @@ void test_l2_l3_supply_invariant() {
 
     // Mint 8000 — exactly at the limit.
     auto msg = make_drc_mint_msg(1, 8000, 300);
-    assert(bridge::l2_l3::ProcessDrcLockMint(state, msg, 315, 300)
-           == bridge::l2_l3::BridgeResult::OK);
+    assert(bridge::l2_l3::ProcessDrcLockMint(state, msg, 315, 300) ==
+           bridge::l2_l3::BridgeResult::OK);
     assert(state.total_minted_wdrc_base_units == 8000);
     assert(state.total_minted_wdrc_base_units <= state.total_locked_drc_base_units);
 
@@ -307,7 +303,7 @@ void test_bridge_state_recovery_preserves_invariant() {
     bridge_test::setup_bridge_state(recovered_state);
 
     // Simulate: 3000 locked, 2000 minted (the remaining 1000 is in-flight).
-    recovered_state.total_locked_tlt_base_units  = 3000;
+    recovered_state.total_locked_tlt_base_units = 3000;
     recovered_state.total_minted_wtlt_base_units = 2000;
 
     // Invariant holds on recovery.
@@ -316,16 +312,16 @@ void test_bridge_state_recovery_preserves_invariant() {
 
     // Mint the remaining 1000 on recovery.
     auto msg = make_tlt_mint_msg(99, 1000, 500, 0x77);
-    assert(bridge::l1_l2::ProcessTltLockMint(recovered_state, msg, 510, 500)
-           == bridge::l1_l2::BridgeResult::OK);
+    assert(bridge::l1_l2::ProcessTltLockMint(recovered_state, msg, 510, 500) ==
+           bridge::l1_l2::BridgeResult::OK);
     assert(recovered_state.total_minted_wtlt_base_units == 3000);
     assert(recovered_state.total_minted_wtlt_base_units <=
            recovered_state.total_locked_tlt_base_units);
 
     // Attempt to mint beyond the locked ceiling after recovery — must be rejected.
     auto msg2 = make_tlt_mint_msg(100, 1, 505, 0x78);
-    assert(bridge::l1_l2::ProcessTltLockMint(recovered_state, msg2, 515, 505)
-           == bridge::l1_l2::BridgeResult::ERR_SUPPLY_OVERFLOW);
+    assert(bridge::l1_l2::ProcessTltLockMint(recovered_state, msg2, 515, 505) ==
+           bridge::l1_l2::BridgeResult::ERR_SUPPLY_OVERFLOW);
 
     std::cout << "  ✓ Supply invariant preserved after state recovery." << std::endl;
 }
@@ -334,8 +330,7 @@ void test_bridge_state_recovery_preserves_invariant() {
 // main
 // ---------------------------------------------------------------------------
 
-int main()
-{
+int main() {
     std::cout << "=== PantheonChain Supply Invariant Tests (Phase D + Phase K) ===" << std::endl;
     std::cout << std::endl;
 
