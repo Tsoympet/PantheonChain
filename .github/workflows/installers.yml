@@ -117,7 +117,7 @@ jobs:
         pwsh -ExecutionPolicy Bypass -File build.ps1
 
     - name: Upload Windows Installer
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: windows-installer
         path: installers/windows/*.exe
@@ -160,7 +160,7 @@ jobs:
         ./build.sh deb
 
     - name: Upload Ubuntu DEB
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ubuntu-deb
         path: installers/linux/*.deb
@@ -191,7 +191,7 @@ jobs:
         ./build.sh
 
     - name: Upload macOS DMG
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: macos-dmg
         path: installers/macos/*.dmg
