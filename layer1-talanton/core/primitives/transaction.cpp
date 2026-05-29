@@ -301,7 +301,6 @@ std::optional<Transaction> Transaction::Deserialize(const uint8_t* data, size_t 
     ptr += 4;
     consumed = static_cast<size_t>(ptr - data);
     tx.cached_serialized_size_ = consumed;
-    tx.cached_txid_ = crypto::SHA256d::Hash256d(std::vector<uint8_t>(data, data + consumed));
     return tx;
 }
 

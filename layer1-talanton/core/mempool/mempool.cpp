@@ -55,11 +55,11 @@ bool Mempool::ValidateTransaction(const primitives::Transaction& tx,
 
     uint64_t input_value = 0;
     uint64_t output_value = 0;
-    for (const auto& [_, amount] : validation_result.input_amounts) {
-        input_value += amount;
+    for (const auto& entry : validation_result.input_amounts) {
+        input_value += entry.second;
     }
-    for (const auto& [_, amount] : validation_result.output_amounts) {
-        output_value += amount;
+    for (const auto& entry : validation_result.output_amounts) {
+        output_value += entry.second;
     }
     fee = (input_value > output_value) ? (input_value - output_value) : 0;
 

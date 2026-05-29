@@ -264,6 +264,8 @@ bool PeerConnection::ReceiveMessage() {
     // Remove processed message from buffer
     if (total_size == recv_buffer_.size()) {
         recv_buffer_.clear();
+    } else if (total_size * 2 < recv_buffer_.size()) {
+        recv_buffer_.erase(recv_buffer_.begin(), recv_buffer_.begin() + total_size);
     } else {
         std::vector<uint8_t> remaining(recv_buffer_.begin() + total_size, recv_buffer_.end());
         recv_buffer_.swap(remaining);
@@ -610,9 +612,7 @@ void NetworkManager::HandlePeer(const std::string& peer_id) {
         if (!peer->DrainSendQueue() || !peer->ReceiveMessage()) {
             break;
         }
-        if (!peer->HasQueuedSends()) {
-            std::this_thread::yield();
-        }
+        std::this_thread::yield();
     }
 
     peer->Disconnect();

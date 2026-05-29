@@ -26,10 +26,6 @@ bool Chain::ValidateTransaction(const primitives::Transaction& tx, uint32_t heig
         return true;
     }
 
-    if (!tx.IsValid()) {
-        return false;
-    }
-
     std::map<primitives::AssetID, uint64_t> input_amounts;
     std::map<primitives::AssetID, uint64_t> output_amounts;
     input_coins.reserve(tx.inputs.size());
