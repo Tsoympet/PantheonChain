@@ -165,3 +165,4 @@ scripts/__pycache__/
 # Expo prebuild native output
 clients/mobile/react-native/android/
 clients/mobile/react-native/ios/
+clients/mobile/react-native/.expo/
