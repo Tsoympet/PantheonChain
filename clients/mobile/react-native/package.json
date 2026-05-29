@@ -13,7 +13,7 @@
     "build:ios:eas": "eas build --platform ios --profile ios-release"
   },
   "dependencies": {
-    "@noble/secp256k1": "^2.1.0",
+    "@noble/secp256k1": "^3.0.0",
     "@react-navigation/native": "^7.1.33",
     "@react-navigation/stack": "^7.8.4",
     "expo": "^55.0.5",
