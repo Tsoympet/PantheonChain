@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@noble/secp256k1": "^2.1.0",
-    "@react-navigation/native": "^7.1.33",
-    "@react-navigation/stack": "^7.8.4",
+    "@react-navigation/native": "^7.2.0",
+    "@react-navigation/stack": "^7.8.7",
     "expo": "^55.0.5",
     "react": "18.3.1",
     "react-native": "0.81.6",
