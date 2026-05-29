@@ -10,7 +10,7 @@ PATHS=(layer1-talanton layer2-drachma layer3-obolos common relayers cli scripts 
 if command -v rg >/dev/null 2>&1; then
   SEARCH_CMD=(rg -n "$PATTERN" "${PATHS[@]}")
 else
-  SEARCH_CMD=(grep -R -n -E "$PATTERN" "${PATHS[@]}")
+  SEARCH_CMD=(grep -r -n -E "$PATTERN" "${PATHS[@]}")
 fi
 
 if "${SEARCH_CMD[@]}"; then

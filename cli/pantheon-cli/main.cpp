@@ -1,8 +1,14 @@
 #include "common/serialization.h"
 
-#include <cctype>
 #include <iostream>
 #include <string>
+
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 namespace {
 
@@ -97,16 +103,29 @@ std::string DefaultRpcUrl(const std::string& layer) {
     return "http://127.0.0.1:8332";
 }
 
-bool IsSafeConfigPath(const std::string& file) {
-    if (file.empty()) return false;
-    for (unsigned char ch : file) {
-        if (std::isalnum(ch) || ch == '/' || ch == '\\' || ch == '.' ||
-            ch == '_' || ch == '-' || ch == ':') {
-            continue;
-        }
-        return false;
+int RunConfigValidator(const std::string& file) {
+#ifdef _WIN32
+    int rc = _spawnlp(_P_WAIT, "python3", "python3", "scripts/validate-config.py", file.c_str(), nullptr);
+    if (rc == -1) {
+        rc = _spawnlp(_P_WAIT, "python", "python", "scripts/validate-config.py", file.c_str(), nullptr);
     }
-    return true;
+    return rc;
+#else
+    pid_t pid = fork();
+    if (pid < 0) {
+        return -1;
+    }
+    if (pid == 0) {
+        execlp("python3", "python3", "scripts/validate-config.py", file.c_str(),
+               static_cast<char*>(nullptr));
+        _exit(127);
+    }
+    int status = 0;
+    if (waitpid(pid, &status, 0) < 0) {
+        return -1;
+    }
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+#endif
 }
 
 }  // namespace
@@ -425,13 +444,12 @@ int main(int argc, char* argv[]) {
     if (command == "config" && argc >= 3 && std::string(argv[2]) == "validate") {
         const std::string file = FindValue(argc, argv, "--file=");
         if (file.empty()) { std::cerr << "missing --file" << std::endl; return 1; }
-        if (!IsSafeConfigPath(file)) {
-            std::cerr << "invalid --file path" << std::endl;
+        // Delegate to the Python validator (available in the repo).
+        const int rc = RunConfigValidator(file);
+        if (rc < 0) {
+            std::cerr << "failed to run config validator" << std::endl;
             return 1;
         }
-        // Delegate to the Python validator (available in the repo).
-        const std::string cmd = "python3 scripts/validate-config.py " + file;
-        int rc = std::system(cmd.c_str());
         return rc == 0 ? 0 : 1;
     }
 
