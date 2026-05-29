@@ -25,12 +25,12 @@
     "react-native-sha256": "^1.4.10"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "@babel/preset-env": "^7.24.0",
-    "@babel/runtime": "^7.24.0",
-    "@react-native/babel-preset": "^0.83.2",
-    "@react-native/metro-config": "^0.83.2",
-    "jest": "^30.2.0",
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "@babel/runtime": "^7.29.7",
+    "@react-native/babel-preset": "^0.85.3",
+    "@react-native/metro-config": "^0.85.3",
+    "jest": "^30.4.2",
     "metro-react-native-babel-preset": "0.77.0"
   },
   "jest": {
