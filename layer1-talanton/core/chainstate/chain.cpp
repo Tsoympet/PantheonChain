@@ -17,55 +17,40 @@ Chain::Chain() : height_(0), tip_hash_{} {
     total_supply_[primitives::AssetID::OBOLOS] = 0;
 }
 
-bool Chain::ValidateTransaction(const primitives::Transaction& tx, uint32_t height) const {
+bool Chain::ValidateTransaction(const primitives::Transaction& tx, uint32_t height,
+                                std::vector<Coin>& input_coins) const {
+    input_coins.clear();
+
     // Coinbase transactions are validated separately
     if (tx.IsCoinbase()) {
         return true;
     }
 
-    // Check that all inputs exist in UTXO set
-    for (const auto& input : tx.inputs) {
-        auto coin = utxo_set_.GetCoin(input.prevout);
-        if (!coin) {
-            return false;  // Input does not exist
-        }
-
-        // Check if coin is spendable (coinbase maturity)
-        if (!coin->IsSpendable(height)) {
-            return false;  // Coinbase not yet mature
-        }
+    if (!tx.IsValid()) {
+        return false;
     }
 
-    // Check no duplicate inputs
-    std::set<primitives::OutPoint> seen_inputs;
-    for (const auto& input : tx.inputs) {
-        if (seen_inputs.count(input.prevout) > 0) {
-            return false;  // Duplicate input
-        }
-        seen_inputs.insert(input.prevout);
-    }
-
-    // Asset conservation: inputs == outputs per asset
     std::map<primitives::AssetID, uint64_t> input_amounts;
     std::map<primitives::AssetID, uint64_t> output_amounts;
+    input_coins.reserve(tx.inputs.size());
 
     for (const auto& input : tx.inputs) {
         auto coin = utxo_set_.GetCoin(input.prevout);
-        if (coin) {
-            auto asset = coin->output.value.asset;
-            input_amounts[asset] += coin->output.value.amount;
+        if (!coin || !coin->IsSpendable(height)) {
+            return false;
         }
+
+        input_amounts[coin->output.value.asset] += coin->output.value.amount;
+        input_coins.push_back(*coin);
     }
 
     for (const auto& output : tx.outputs) {
-        auto asset = output.value.asset;
-        output_amounts[asset] += output.value.amount;
+        output_amounts[output.value.asset] += output.value.amount;
     }
 
-    // Check conservation for each asset
     for (const auto& [asset, amount] : output_amounts) {
         if (input_amounts[asset] < amount) {
-            return false;  // Cannot create assets from thin air
+            return false;
         }
     }
 
@@ -147,18 +132,14 @@ bool Chain::ConnectBlock(const primitives::Block& block, BlockUndo& undo) {
             }
         } else {
             // Regular transaction: validate and update UTXO set
-            if (!ValidateTransaction(tx, block_height)) {
+            std::vector<Coin> tx_undo;
+            if (!ValidateTransaction(tx, block_height, tx_undo)) {
                 return false;
             }
 
             // Collect spent coins for undo
-            std::vector<Coin> tx_undo;
-            for (const auto& input : tx.inputs) {
-                auto coin = utxo_set_.GetCoin(input.prevout);
-                if (coin) {
-                    tx_undo.push_back(*coin);
-                    utxo_set_.SpendCoin(input.prevout);
-                }
+            for (size_t input_index = 0; input_index < tx.inputs.size(); ++input_index) {
+                utxo_set_.SpendCoin(tx.inputs[input_index].prevout);
             }
             undo.AddTxUndo(tx_undo);
 

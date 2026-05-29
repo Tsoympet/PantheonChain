@@ -6,6 +6,7 @@
 
 #include "chainstate/utxo.h"
 #include "primitives/transaction.h"
+#include "validation/validation.h"
 
 #include <map>
 #include <optional>
@@ -45,7 +46,7 @@ struct MempoolEntry {
     MempoolEntry(const primitives::Transaction& t, uint64_t f, uint32_t tm, uint32_t h,
                  bool rbf = false)
         : tx(t), fee(f), time(tm), height(h), signals_rbf(rbf) {
-        size = tx.Serialize().size();
+        size = tx.GetSerializedSize();
         fee_rate = (size > 0) ? (fee / size) : 0;
         // Initialize ancestor values to self
         ancestor_fee = fee;
@@ -219,7 +220,7 @@ class Mempool {
      * Validate transaction for mempool acceptance
      */
     bool ValidateTransaction(const primitives::Transaction& tx, const chainstate::UTXOSet& utxo_set,
-                             uint32_t height) const;
+                             uint32_t height, uint64_t& fee, size_t& tx_size) const;
 
     /**
      * Check for conflicts with existing mempool transactions

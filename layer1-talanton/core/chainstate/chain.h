@@ -134,7 +134,8 @@ class Chain {
     /**
      * Validate transaction against UTXO set
      */
-    bool ValidateTransaction(const primitives::Transaction& tx, uint32_t height) const;
+    bool ValidateTransaction(const primitives::Transaction& tx, uint32_t height,
+                             std::vector<Coin>& input_coins) const;
 
     /**
      * Update supply tracking when connecting a block
