@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <cstring>
+#include <thread>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -50,7 +51,8 @@ PeerConnection::PeerConnection(int socket_fd, const std::string& address, uint16
       height_(0),
       services_(0),
       nonce_(0),
-      network_magic_(network_magic) {
+      network_magic_(network_magic),
+      send_queue_offset_(0) {
     // Generate random nonce for this connection
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -140,6 +142,10 @@ bool PeerConnection::SendRaw(const std::vector<uint8_t>& data) {
     }
 
     std::lock_guard<std::mutex> lock(send_mutex_);
+    if (!send_queue_.empty()) {
+        send_queue_.push(data);
+        return true;
+    }
 
     size_t sent = 0;
     while (sent < data.size()) {
@@ -157,6 +163,41 @@ bool PeerConnection::SendRaw(const std::vector<uint8_t>& data) {
     }
 
     return true;
+}
+
+bool PeerConnection::DrainSendQueue() {
+    if (socket_fd_ < 0 || state_ == PeerState::DISCONNECTED) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(send_mutex_);
+    while (!send_queue_.empty()) {
+        const auto& data = send_queue_.front();
+        while (send_queue_offset_ < data.size()) {
+            ssize_t result =
+                send(socket_fd_, reinterpret_cast<const char*>(data.data() + send_queue_offset_),
+                     static_cast<int>(data.size() - send_queue_offset_), 0);
+            if (result < 0) {
+                if (SOCKET_WOULD_BLOCK()) {
+                    return true;
+                }
+                std::cerr << "Queued send failed: " << strerror(errno) << std::endl;
+                return false;
+            }
+            if (result == 0) {
+                return true;
+            }
+            send_queue_offset_ += static_cast<size_t>(result);
+        }
+        send_queue_.pop();
+        send_queue_offset_ = 0;
+    }
+    return true;
+}
+
+bool PeerConnection::HasQueuedSends() {
+    std::lock_guard<std::mutex> lock(send_mutex_);
+    return !send_queue_.empty();
 }
 
 bool PeerConnection::ReceiveRaw(size_t bytes) {
@@ -183,10 +224,11 @@ bool PeerConnection::ReceiveRaw(size_t bytes) {
 
 bool PeerConnection::ReceiveMessage() {
     // Ensure we have at least a header
-    while (recv_buffer_.size() < 24) {
-        if (!ReceiveRaw(1024)) {
-            return false;
-        }
+    if (recv_buffer_.size() < 24 && !ReceiveRaw(1024)) {
+        return false;
+    }
+    if (recv_buffer_.size() < 24) {
+        return true;
     }
 
     // Parse header
@@ -206,10 +248,11 @@ bool PeerConnection::ReceiveMessage() {
 
     // Wait for full message
     size_t total_size = 24 + header.length;
-    while (recv_buffer_.size() < total_size) {
-        if (!ReceiveRaw(4096)) {
-            return false;
-        }
+    if (recv_buffer_.size() < total_size && !ReceiveRaw(4096)) {
+        return false;
+    }
+    if (recv_buffer_.size() < total_size) {
+        return true;
     }
 
     // Extract payload
@@ -219,7 +262,12 @@ bool PeerConnection::ReceiveMessage() {
     ProcessMessage(header, payload, header.length);
 
     // Remove processed message from buffer
-    recv_buffer_.erase(recv_buffer_.begin(), recv_buffer_.begin() + total_size);
+    if (total_size == recv_buffer_.size()) {
+        recv_buffer_.clear();
+    } else {
+        std::vector<uint8_t> remaining(recv_buffer_.begin() + total_size, recv_buffer_.end());
+        recv_buffer_.swap(remaining);
+    }
 
     return true;
 }
@@ -559,10 +607,12 @@ void NetworkManager::HandlePeer(const std::string& peer_id) {
 
     // Message receive loop
     while (running_ && peer->IsConnected()) {
-        if (!peer->ReceiveMessage()) {
+        if (!peer->DrainSendQueue() || !peer->ReceiveMessage()) {
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (!peer->HasQueuedSends()) {
+            std::this_thread::yield();
+        }
     }
 
     peer->Disconnect();

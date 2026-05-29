@@ -66,6 +66,8 @@ class PeerConnection {
 
     // Message receiving
     bool ReceiveMessage();
+    bool DrainSendQueue();
+    bool HasQueuedSends();
 
     // Getters
     std::string GetAddress() const { return address_; }
@@ -119,6 +121,7 @@ class PeerConnection {
     // Send/receive buffers
     std::vector<uint8_t> recv_buffer_;
     std::queue<std::vector<uint8_t>> send_queue_;
+    size_t send_queue_offset_;
     std::mutex send_mutex_;
 
     // Callbacks

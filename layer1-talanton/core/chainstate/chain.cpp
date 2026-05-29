@@ -268,6 +268,10 @@ std::optional<BlockIndex> Chain::GetBlockIndex(const std::array<uint8_t, 32>& ha
     return std::nullopt;
 }
 
+bool Chain::HasBlock(const std::array<uint8_t, 32>& hash) const {
+    return block_index_.find(hash) != block_index_.end();
+}
+
 void Chain::Reset() {
     utxo_set_.Clear();
     height_ = 0;
@@ -276,6 +280,24 @@ void Chain::Reset() {
     total_supply_[primitives::AssetID::TALANTON] = 0;
     total_supply_[primitives::AssetID::DRACHMA] = 0;
     total_supply_[primitives::AssetID::OBOLOS] = 0;
+}
+
+ChainSnapshot Chain::CreateSnapshot() const {
+    ChainSnapshot snapshot;
+    snapshot.utxo_set = utxo_set_;
+    snapshot.height = height_;
+    snapshot.tip_hash = tip_hash_;
+    snapshot.block_index = block_index_;
+    snapshot.total_supply = total_supply_;
+    return snapshot;
+}
+
+void Chain::RestoreSnapshot(const ChainSnapshot& snapshot) {
+    utxo_set_ = snapshot.utxo_set;
+    height_ = snapshot.height;
+    tip_hash_ = snapshot.tip_hash;
+    block_index_ = snapshot.block_index;
+    total_supply_ = snapshot.total_supply;
 }
 
 }  // namespace chainstate

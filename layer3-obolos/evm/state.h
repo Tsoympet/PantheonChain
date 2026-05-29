@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstdint>
+#include <set>
 #include <map>
 #include <optional>
 #include <vector>
@@ -143,6 +144,10 @@ class WorldState {
     struct Snapshot {
         std::map<Address, AccountState> accounts;
         std::map<std::pair<Address, uint256_t>, uint256_t> storage;
+        std::map<Address, std::array<uint8_t, 32>> storage_roots;
+        std::set<Address> dirty_storage_roots;
+        std::optional<std::array<uint8_t, 32>> state_root;
+        bool state_root_dirty;
     };
 
     Snapshot CreateSnapshot() const;
@@ -151,6 +156,13 @@ class WorldState {
   private:
     std::map<Address, AccountState> accounts_;
     std::map<std::pair<Address, uint256_t>, uint256_t> storage_;
+    mutable std::map<Address, std::array<uint8_t, 32>> storage_roots_;
+    mutable std::set<Address> dirty_storage_roots_;
+    mutable std::optional<std::array<uint8_t, 32>> cached_state_root_;
+    mutable bool state_root_dirty_ = true;
+
+    void MarkAccountDirty(const Address& addr);
+    std::array<uint8_t, 32> CalculateStorageRoot(const Address& addr) const;
 };
 
 /**

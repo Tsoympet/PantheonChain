@@ -120,6 +120,11 @@ class Transaction {
     std::array<uint8_t, 32> GetTxID() const;
 
     /**
+     * Get serialized transaction size.
+     */
+    size_t GetSerializedSize() const;
+
+    /**
      * Get transaction hash for signing (excludes signatures)
      * Used during signature verification
      */
@@ -134,6 +139,12 @@ class Transaction {
      * Deserialize transaction from bytes
      */
     static std::optional<Transaction> Deserialize(const uint8_t* data, size_t len);
+
+    /**
+     * Deserialize transaction from the beginning of a byte span and report bytes consumed.
+     */
+    static std::optional<Transaction> Deserialize(const uint8_t* data, size_t len,
+                                                  size_t& consumed);
 
     /**
      * Validate transaction structure
@@ -153,6 +164,9 @@ class Transaction {
     }
 
   private:
+    mutable std::optional<std::array<uint8_t, 32>> cached_txid_;
+    mutable std::optional<size_t> cached_serialized_size_;
+
     /**
      * Serialize for signing (excludes input signatures)
      */

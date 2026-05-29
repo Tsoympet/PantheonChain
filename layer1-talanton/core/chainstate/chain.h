@@ -40,6 +40,14 @@ struct BlockIndex {
           chain_work(work) {}
 };
 
+struct ChainSnapshot {
+    UTXOSet utxo_set;
+    uint32_t height;
+    std::array<uint8_t, 32> tip_hash;
+    std::map<std::array<uint8_t, 32>, BlockIndex> block_index;
+    std::map<primitives::AssetID, uint64_t> total_supply;
+};
+
 /**
  * Chain manages the blockchain state including UTXO set and block indices
  */
@@ -92,6 +100,11 @@ class Chain {
     std::optional<BlockIndex> GetBlockIndex(const std::array<uint8_t, 32>& hash) const;
 
     /**
+     * Lightweight block existence check.
+     */
+    bool HasBlock(const std::array<uint8_t, 32>& hash) const;
+
+    /**
      * Get tip (best block) hash
      */
     const std::array<uint8_t, 32>& GetTip() const { return tip_hash_; }
@@ -100,6 +113,12 @@ class Chain {
      * Reset chain to genesis state
      */
     void Reset();
+
+    /**
+     * Snapshot/restore chainstate for startup warm state and rollback.
+     */
+    ChainSnapshot CreateSnapshot() const;
+    void RestoreSnapshot(const ChainSnapshot& snapshot);
 
   private:
     UTXOSet utxo_set_;

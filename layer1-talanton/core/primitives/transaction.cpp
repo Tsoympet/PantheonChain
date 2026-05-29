@@ -232,6 +232,17 @@ std::vector<uint8_t> Transaction::Serialize() const {
 }
 
 std::optional<Transaction> Transaction::Deserialize(const uint8_t* data, size_t len) {
+    size_t consumed = 0;
+    auto tx = Deserialize(data, len, consumed);
+    if (!tx || consumed != len) {
+        return std::nullopt;
+    }
+    return tx;
+}
+
+std::optional<Transaction> Transaction::Deserialize(const uint8_t* data, size_t len,
+                                                    size_t& consumed) {
+    consumed = 0;
     if (len < 10)
         return std::nullopt;  // Minimum transaction size
 
@@ -288,12 +299,28 @@ std::optional<Transaction> Transaction::Deserialize(const uint8_t* data, size_t 
     tx.locktime = ptr[0] | (static_cast<uint32_t>(ptr[1]) << 8) |
                   (static_cast<uint32_t>(ptr[2]) << 16) | (static_cast<uint32_t>(ptr[3]) << 24);
     ptr += 4;
+    consumed = static_cast<size_t>(ptr - data);
+    tx.cached_serialized_size_ = consumed;
+    tx.cached_txid_ = crypto::SHA256d::Hash256d(std::vector<uint8_t>(data, data + consumed));
     return tx;
 }
 
 std::array<uint8_t, 32> Transaction::GetTxID() const {
+    if (cached_txid_) {
+        return *cached_txid_;
+    }
     auto serialized = Serialize();
-    return crypto::SHA256d::Hash256d(serialized);
+    cached_txid_ = crypto::SHA256d::Hash256d(serialized);
+    cached_serialized_size_ = serialized.size();
+    return *cached_txid_;
+}
+
+size_t Transaction::GetSerializedSize() const {
+    if (cached_serialized_size_) {
+        return *cached_serialized_size_;
+    }
+    cached_serialized_size_ = Serialize().size();
+    return *cached_serialized_size_;
 }
 
 std::vector<uint8_t> Transaction::SerializeForSigning(size_t input_index) const {
