@@ -161,3 +161,7 @@ scripts/__pycache__/
 .devnet/
 .testnet/
 .multinode/
+
+# Expo prebuild native output
+clients/mobile/react-native/android/
+clients/mobile/react-native/ios/
