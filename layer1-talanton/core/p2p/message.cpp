@@ -435,10 +435,6 @@ std::optional<BlockMessage> BlockMessage::Deserialize(const uint8_t* data, size_
         return std::nullopt;
     }
 
-    if (block_opt->Serialize().size() != len) {
-        return std::nullopt;
-    }
-
     return BlockMessage(*block_opt);
 }
 
@@ -447,12 +443,13 @@ std::vector<uint8_t> TxMessage::Serialize() const {
 }
 
 std::optional<TxMessage> TxMessage::Deserialize(const uint8_t* data, size_t len) {
-    auto tx_opt = primitives::Transaction::Deserialize(data, len);
+    size_t consumed = 0;
+    auto tx_opt = primitives::Transaction::Deserialize(data, len, consumed);
     if (!tx_opt) {
         return std::nullopt;
     }
 
-    if (tx_opt->Serialize().size() != len) {
+    if (consumed != len) {
         return std::nullopt;
     }
 

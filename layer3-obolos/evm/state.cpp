@@ -12,6 +12,11 @@
 namespace parthenon {
 namespace evm {
 
+void WorldState::MarkAccountDirty(const Address& addr) {
+    dirty_storage_roots_.insert(addr);
+    state_root_dirty_ = true;
+}
+
 std::optional<AccountState> WorldState::GetAccount(const Address& addr) const {
     auto it = accounts_.find(addr);
     if (it == accounts_.end()) {
@@ -22,6 +27,7 @@ std::optional<AccountState> WorldState::GetAccount(const Address& addr) const {
 
 void WorldState::SetAccount(const Address& addr, const AccountState& state) {
     accounts_[addr] = state;
+    MarkAccountDirty(addr);
 }
 
 bool WorldState::AccountExists(const Address& addr) const {
@@ -54,6 +60,7 @@ void WorldState::SetStorage(const Address& addr, const uint256_t& key, const uin
     } else {
         storage_[storage_key] = value;
     }
+    MarkAccountDirty(addr);
 }
 
 std::vector<uint8_t> WorldState::GetCode(const Address& addr) const {
@@ -77,6 +84,7 @@ void WorldState::SetCode(const Address& addr, const std::vector<uint8_t>& code) 
         auto hash = hasher.Finalize();
         std::memcpy(account.code_hash.data(), hash.data(), 32);
     }
+    MarkAccountDirty(addr);
 }
 
 uint256_t WorldState::GetBalance(const Address& addr) const {
@@ -89,6 +97,7 @@ uint256_t WorldState::GetBalance(const Address& addr) const {
 
 void WorldState::SetBalance(const Address& addr, const uint256_t& balance) {
     accounts_[addr].balance = balance;
+    state_root_dirty_ = true;
 }
 
 uint64_t WorldState::GetNonce(const Address& addr) const {
@@ -101,6 +110,7 @@ uint64_t WorldState::GetNonce(const Address& addr) const {
 
 void WorldState::SetNonce(const Address& addr, uint64_t nonce) {
     accounts_[addr].nonce = nonce;
+    state_root_dirty_ = true;
 }
 
 void WorldState::DeleteAccount(const Address& addr) {
@@ -116,12 +126,39 @@ void WorldState::DeleteAccount(const Address& addr) {
             ++it;
         }
     }
+    storage_roots_.erase(addr);
+    dirty_storage_roots_.erase(addr);
+    state_root_dirty_ = true;
+}
+
+std::array<uint8_t, 32> WorldState::CalculateStorageRoot(const Address& addr) const {
+    auto cached = storage_roots_.find(addr);
+    if (cached != storage_roots_.end() && dirty_storage_roots_.count(addr) == 0) {
+        return cached->second;
+    }
+
+    MerklePatriciaTrie storage_trie;
+    auto it = storage_.lower_bound(std::make_pair(addr, uint256_t{}));
+    while (it != storage_.end() && it->first.first == addr) {
+        std::vector<uint8_t> storage_key(it->first.second.begin(), it->first.second.end());
+        std::vector<uint8_t> storage_value(it->second.begin(), it->second.end());
+        storage_trie.Put(storage_key, storage_value);
+        ++it;
+    }
+
+    auto root = storage_trie.GetRootHash();
+    storage_roots_[addr] = root;
+    dirty_storage_roots_.erase(addr);
+    return root;
 }
 
 std::array<uint8_t, 32> WorldState::CalculateStateRoot() const {
+    if (!state_root_dirty_ && cached_state_root_) {
+        return *cached_state_root_;
+    }
+
     // Production-grade Merkle Patricia Trie state root calculation
     // Implements Ethereum-compatible MPT structure
-
     MerklePatriciaTrie trie;
 
     // Insert all accounts into the MPT
@@ -144,16 +181,7 @@ std::array<uint8_t, 32> WorldState::CalculateStateRoot() const {
         account_value.insert(account_value.end(), account.code_hash.begin(),
                              account.code_hash.end());
 
-        // Storage root - build MPT for account's storage
-        MerklePatriciaTrie storage_trie;
-        for (const auto& [key_pair, value] : storage_) {
-            if (key_pair.first == addr) {
-                std::vector<uint8_t> storage_key(key_pair.second.begin(), key_pair.second.end());
-                std::vector<uint8_t> storage_value(value.begin(), value.end());
-                storage_trie.Put(storage_key, storage_value);
-            }
-        }
-        auto storage_root = storage_trie.GetRootHash();
+        auto storage_root = CalculateStorageRoot(addr);
         account_value.insert(account_value.end(), storage_root.begin(), storage_root.end());
 
         // Insert account into main trie
@@ -161,19 +189,29 @@ std::array<uint8_t, 32> WorldState::CalculateStateRoot() const {
     }
 
     // Return the root hash of the account trie
-    return trie.GetRootHash();
+    cached_state_root_ = trie.GetRootHash();
+    state_root_dirty_ = false;
+    return *cached_state_root_;
 }
 
 WorldState::Snapshot WorldState::CreateSnapshot() const {
     Snapshot snapshot;
     snapshot.accounts = accounts_;
     snapshot.storage = storage_;
+    snapshot.storage_roots = storage_roots_;
+    snapshot.dirty_storage_roots = dirty_storage_roots_;
+    snapshot.state_root = cached_state_root_;
+    snapshot.state_root_dirty = state_root_dirty_;
     return snapshot;
 }
 
 void WorldState::RestoreSnapshot(const Snapshot& snapshot) {
     accounts_ = snapshot.accounts;
     storage_ = snapshot.storage;
+    storage_roots_ = snapshot.storage_roots;
+    dirty_storage_roots_ = snapshot.dirty_storage_roots;
+    cached_state_root_ = snapshot.state_root;
+    state_root_dirty_ = snapshot.state_root_dirty;
 }
 
 }  // namespace evm

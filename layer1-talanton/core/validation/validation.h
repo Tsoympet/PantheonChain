@@ -10,6 +10,7 @@
 
 #include <map>
 #include <optional>
+#include <vector>
 #include <string>
 
 namespace parthenon {
@@ -55,6 +56,12 @@ struct ValidationError {
  */
 class TransactionValidator {
   public:
+    struct UTXOValidationResult {
+        std::map<primitives::AssetID, uint64_t> input_amounts;
+        std::map<primitives::AssetID, uint64_t> output_amounts;
+        std::vector<chainstate::Coin> input_coins;
+    };
+
     /**
      * Validate transaction structure
      * - Must have inputs and outputs
@@ -76,6 +83,10 @@ class TransactionValidator {
     static std::optional<ValidationError> ValidateAgainstUTXO(const primitives::Transaction& tx,
                                                               const chainstate::UTXOSet& utxo_set,
                                                               uint32_t height);
+
+    static std::optional<ValidationError>
+    ValidateAgainstUTXO(const primitives::Transaction& tx, const chainstate::UTXOSet& utxo_set,
+                        uint32_t height, UTXOValidationResult& result);
 
     /**
      * Validate transaction signatures

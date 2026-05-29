@@ -243,16 +243,14 @@ std::optional<Block> Block::Deserialize(const uint8_t* data, size_t len) {
     // Transactions
     for (uint64_t i = 0; i < tx_count; i++) {
         size_t remaining = static_cast<size_t>(end - ptr);
-        auto tx = Transaction::Deserialize(ptr, remaining);
+        size_t consumed = 0;
+        auto tx = Transaction::Deserialize(ptr, remaining, consumed);
         if (!tx)
             return std::nullopt;
         block.transactions.push_back(*tx);
-
-        // Advance pointer by re-serializing the deserialized transaction to measure its byte length
-        auto tx_bytes = tx->Serialize();
-        if (tx_bytes.size() > remaining)
+        if (consumed == 0 || consumed > remaining)
             return std::nullopt;
-        ptr += tx_bytes.size();
+        ptr += consumed;
     }
 
     if (ptr != end) {

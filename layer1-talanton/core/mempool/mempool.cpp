@@ -37,19 +37,31 @@ uint64_t Mempool::CalculateFee(const primitives::Transaction& tx,
 }
 
 bool Mempool::ValidateTransaction(const primitives::Transaction& tx,
-                                  const chainstate::UTXOSet& utxo_set, uint32_t height) const {
+                                  const chainstate::UTXOSet& utxo_set, uint32_t height,
+                                  uint64_t& fee, size_t& tx_size) const {
+    fee = 0;
+    tx_size = tx.GetSerializedSize();
+
     // Use validation module
     auto error = validation::TransactionValidator::ValidateStructure(tx);
     if (error)
         return false;
 
-    error = validation::TransactionValidator::ValidateAgainstUTXO(tx, utxo_set, height);
+    validation::TransactionValidator::UTXOValidationResult validation_result;
+    error =
+        validation::TransactionValidator::ValidateAgainstUTXO(tx, utxo_set, height, validation_result);
     if (error)
         return false;
 
-    // Check fee rate meets minimum (with overflow protection)
-    size_t tx_size = tx.Serialize().size();
-    uint64_t fee = CalculateFee(tx, utxo_set);
+    uint64_t input_value = 0;
+    uint64_t output_value = 0;
+    for (const auto& entry : validation_result.input_amounts) {
+        input_value += entry.second;
+    }
+    for (const auto& entry : validation_result.output_amounts) {
+        output_value += entry.second;
+    }
+    fee = (input_value > output_value) ? (input_value - output_value) : 0;
 
     // Calculate fee rate safely (satoshis per KB)
     uint64_t fee_rate = 0;
@@ -83,6 +95,8 @@ bool Mempool::HasConflict(const primitives::Transaction& tx) const {
 bool Mempool::AddTransaction(const primitives::Transaction& tx, const chainstate::UTXOSet& utxo_set,
                              uint32_t height) {
     auto txid = tx.GetTxID();
+    uint64_t fee = 0;
+    size_t tx_size = 0;
 
     // Check if already in mempool
     if (transactions_.find(txid) != transactions_.end()) {
@@ -90,7 +104,7 @@ bool Mempool::AddTransaction(const primitives::Transaction& tx, const chainstate
     }
 
     // Validate transaction
-    if (!ValidateTransaction(tx, utxo_set, height)) {
+    if (!ValidateTransaction(tx, utxo_set, height, fee, tx_size)) {
         return false;
     }
 
@@ -105,7 +119,6 @@ bool Mempool::AddTransaction(const primitives::Transaction& tx, const chainstate
     }
 
     // Calculate fee and size
-    uint64_t fee = CalculateFee(tx, utxo_set);
     uint32_t time = static_cast<uint32_t>(std::time(nullptr));
     bool signals_rbf = CheckRBFSignaling(tx);
 
@@ -206,7 +219,9 @@ void Mempool::RemoveConflicting(const std::vector<primitives::Transaction>& conf
     std::vector<std::array<uint8_t, 32>> to_remove;
 
     for (const auto& [txid, entry] : transactions_) {
-        if (!ValidateTransaction(entry.tx, utxo_set, height)) {
+        uint64_t fee = 0;
+        size_t tx_size = 0;
+        if (!ValidateTransaction(entry.tx, utxo_set, height, fee, tx_size)) {
             to_remove.push_back(txid);
         }
     }
@@ -282,8 +297,12 @@ bool Mempool::ReplaceTransaction(const primitives::Transaction& tx,
         }
     }
 
-    // Calculate fees
-    uint64_t new_fee = CalculateFee(tx, utxo_set);
+    // Validate once and reuse the computed fee and size.
+    uint64_t new_fee = 0;
+    size_t new_size = 0;
+    if (!ValidateTransaction(tx, utxo_set, height, new_fee, new_size)) {
+        return false;
+    }
     uint64_t replaced_fees = CalculateReplacedFees(conflicting);
 
     // Verify RBF rules:
@@ -298,7 +317,6 @@ bool Mempool::ReplaceTransaction(const primitives::Transaction& tx,
     }
 
     // 3. New transaction fee rate should be higher
-    size_t new_size = tx.Serialize().size();
     uint64_t new_fee_rate = (new_size > 0) ? (new_fee / new_size) : 0;
 
     // Get minimum fee rate of replaced transactions

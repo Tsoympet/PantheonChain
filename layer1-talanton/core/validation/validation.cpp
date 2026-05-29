@@ -53,16 +53,23 @@ TransactionValidator::ValidateStructure(const primitives::Transaction& tx) {
 std::optional<ValidationError>
 TransactionValidator::ValidateAgainstUTXO(const primitives::Transaction& tx,
                                           const chainstate::UTXOSet& utxo_set, uint32_t height) {
+    UTXOValidationResult result;
+    return ValidateAgainstUTXO(tx, utxo_set, height, result);
+}
+
+std::optional<ValidationError>
+TransactionValidator::ValidateAgainstUTXO(const primitives::Transaction& tx,
+                                          const chainstate::UTXOSet& utxo_set, uint32_t height,
+                                          UTXOValidationResult& result) {
+    result = UTXOValidationResult{};
+
     // Coinbase doesn't spend inputs
     if (tx.IsCoinbase()) {
         return std::nullopt;
     }
 
-    // Track inputs and outputs by asset
-    std::map<primitives::AssetID, uint64_t> input_amounts;
-    std::map<primitives::AssetID, uint64_t> output_amounts;
-
     // Check all inputs exist and are spendable
+    result.input_coins.reserve(tx.inputs.size());
     for (const auto& input : tx.inputs) {
         auto coin = utxo_set.GetCoin(input.prevout);
         if (!coin) {
@@ -78,18 +85,19 @@ TransactionValidator::ValidateAgainstUTXO(const primitives::Transaction& tx,
 
         // Accumulate input amounts
         auto asset = coin->output.value.asset;
-        input_amounts[asset] += coin->output.value.amount;
+        result.input_amounts[asset] += coin->output.value.amount;
+        result.input_coins.push_back(*coin);
     }
 
     // Accumulate output amounts
     for (const auto& output : tx.outputs) {
         auto asset = output.value.asset;
-        output_amounts[asset] += output.value.amount;
+        result.output_amounts[asset] += output.value.amount;
     }
 
     // Check asset conservation
-    for (const auto& [asset, out_amount] : output_amounts) {
-        uint64_t in_amount = input_amounts[asset];
+    for (const auto& [asset, out_amount] : result.output_amounts) {
+        uint64_t in_amount = result.input_amounts[asset];
         if (in_amount < out_amount) {
             return ValidationError(ValidationError::Type::TX_ASSET_CONSERVATION,
                                    "Transaction creates assets from thin air");
