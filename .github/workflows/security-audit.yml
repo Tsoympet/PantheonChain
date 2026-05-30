@@ -63,7 +63,7 @@ jobs:
           --suppress=missingIncludeSystem \
           --suppress=unusedFunction \
           --inline-suppr \
-          layer1/ || echo "Static analysis found issues (non-blocking)"
+          layer1-talanton/ || echo "Static analysis found issues (non-blocking)"
         
         echo "Running static analysis on Layer 2..."
         cppcheck --enable=warning,style,performance,portability \
@@ -71,7 +71,7 @@ jobs:
           --suppress=missingIncludeSystem \
           --suppress=unusedFunction \
           --inline-suppr \
-          layer2/ || echo "Static analysis found issues (non-blocking)"
+          layer2-drachma/ || echo "Static analysis found issues (non-blocking)"
     
     - name: Check for hardcoded secrets
       run: |
