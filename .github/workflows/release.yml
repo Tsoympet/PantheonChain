@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: false
         fetch-depth: 0
@@ -46,7 +46,7 @@ jobs:
     - name: Mark /workspace as safe for git
       run: git config --global --add safe.directory /workspace
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: false
 
@@ -256,7 +256,7 @@ jobs:
     - name: Mark /workspace as safe for git
       run: git config --global --add safe.directory /workspace
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: false
 
@@ -302,7 +302,7 @@ jobs:
     - name: Mark /workspace as safe for git
       run: git config --global --add safe.directory /workspace
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: false
 
@@ -426,7 +426,7 @@ jobs:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Download All Artifacts
       uses: actions/download-artifact@v4

@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install NSIS
       shell: pwsh
@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install dependencies
       run: |
@@ -171,7 +171,7 @@ jobs:
     runs-on: macos-latest
     if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install dependencies
       run: brew install cmake openssl boost qt
@@ -204,7 +204,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Test Installer Scripts Exist
       run: |
